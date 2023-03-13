@@ -1,0 +1,325 @@
+/* ========================================
+   SITE.CSS - Custom Styles (Dark Theme)
+   ======================================== */
+
+/* ========================================
+   1. LAYOUT
+   ======================================== */
+
+#app {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.main-content {
+    flex: 1;
+    padding: 1rem;
+}
+
+/* Content area responsive padding */
+@media (min-width: 768px) {
+    .main-content {
+        padding: 1.5rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .main-content {
+        padding: 2rem;
+    }
+}
+
+/* ========================================
+   2. RADZEN LAYOUT OVERRIDES
+   ======================================== */
+
+/* Radzen Header styling */
+.rz-header {
+    background-color: #1e1e1e !important;
+    border-bottom: 1px solid #333 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Brand logo styling in header */
+.brand-logo {
+    border-radius: 6px;
+    transition: transform 0.2s ease;
+}
+
+.brand-logo:hover {
+    transform: scale(1.05);
+}
+
+.brand-text {
+    font-weight: 600;
+    color: #64b5f6;
+    letter-spacing: 0.5px;
+}
+
+/* Radzen Sidebar styling */
+.rz-sidebar {
+    background-color: #1e1e1e !important;
+    border-right: 1px solid #333 !important;
+}
+
+/* Radzen Footer styling */
+.rz-footer {
+    background-color: #1e1e1e !important;
+    border-top: 1px solid #333 !important;
+    color: #b0b0b0 !important;
+}
+
+.hamburger-btn {
+    border: none;
+    background: transparent;
+    padding: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e0e0e0;
+}
+
+.hamburger-btn:hover {
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 4px;
+}
+
+/* ========================================
+   3. RADZEN COMPONENT OVERRIDES
+   ======================================== */
+
+/* Radzen sidebar menu styling */
+.rz-navigation-menu {
+    padding: 1rem 0;
+}
+
+.rz-navigation-item {
+    margin: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.rz-navigation-item-link {
+    padding: 0.75rem 1rem;
+    color: #b0b0b0;
+    transition: all 0.2s ease;
+}
+
+.rz-navigation-item-link:hover {
+    background-color: rgba(100, 181, 246, 0.2);
+    color: #64b5f6;
+}
+
+.rz-navigation-item-link-active {
+    background-color: #64b5f6;
+    color: #fff !important;
+}
+
+/* Radzen card customization */
+.rz-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: box-shadow 0.3s ease;
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    color: #e0e0e0;
+}
+
+.rz-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+
+/* Radzen DataGrid responsive */
+.rz-datatable {
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+
+@media (max-width: 767.98px) {
+    .rz-datatable-scrollable-body {
+        overflow-x: auto;
+    }
+}
+
+/* ========================================
+   4. CARDS & WIDGETS
+   ======================================== */
+
+.dashboard-card {
+    height: 100%;
+    border-radius: 8px;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #424242 0%, #616161 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(66, 66, 66, 0.5);
+    transition: transform 0.2s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-4px);
+}
+
+.dashboard-card h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-card p {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.dashboard-card.card-primary {
+    background: linear-gradient(135deg, #424242 0%, #616161 100%);
+}
+
+.dashboard-card.card-success {
+    background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+}
+
+.dashboard-card.card-warning {
+    background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+}
+
+.dashboard-card.card-info {
+    background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
+}
+
+/* ========================================
+   5. FORMS
+   ======================================== */
+
+.form-section {
+    background: #1e1e1e;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    border: 1px solid #333;
+    color: #e0e0e0;
+}
+
+.form-section h2 {
+    margin-bottom: 1.5rem;
+    color: #e0e0e0;
+    font-weight: 600;
+}
+
+/* Ensure form elements are touch-friendly on mobile */
+@media (max-width: 767.98px) {
+    .rz-textbox,
+    .rz-dropdown,
+    .rz-button {
+        min-height: 44px;
+    }
+}
+
+/* ========================================
+   6. UTILITIES
+   ======================================== */
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.shadow-sm-custom {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Spacing utilities for consistency */
+.section-spacing {
+    margin-bottom: 2rem;
+}
+
+/* ========================================
+   7. RESPONSIVE GRID
+   ======================================== */
+
+/* Dashboard grid - 1 column on phone, 2 on tablet, 3+ on desktop */
+.dashboard-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 576px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 992px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1400px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ========================================
+   8. ANIMATIONS
+   ======================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ========================================
+   9. ACCESSIBILITY
+   ======================================== */
+
+/* Ensure interactive elements are accessible */
+.btn:focus,
+.rz-button:focus,
+button:focus {
+    outline: 2px solid #64b5f6;
+    outline-offset: 2px;
+}
+
+/* Skip to main content link for screen readers */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #000;
+    color: #fff;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}

@@ -1,0 +1,43 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch and Debug Blazor WebAssembly",
+            "type": "blazorwasm",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "browser": "edge",
+            "url": "https://localhost:5001",
+            "trace": "verbose"
+        },
+        {
+            "name": ".NET Core Launch (web)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/bin/Debug/net10.0/Client.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "serverReadyAction": {
+                "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+                "uriFormat": "%s",
+                "action": "debugWithChrome"
+            },
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "sourceFileMap": {
+                "/Views": "${workspaceFolder}/Views"
+            }
+        },
+        {
+            "name": "Debug in Edge",
+            "type": "msedge",
+            "request": "launch",
+            "url": "https://localhost:5001",
+            "webRoot": "${workspaceFolder}/wwwroot",
+            "sourceMaps": true
+        }
+    ]
+}

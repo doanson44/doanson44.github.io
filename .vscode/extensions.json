@@ -1,0 +1,12 @@
+{
+    "recommendations": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.blazorwasm-companion",
+        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-json",
+        "formulahendry.auto-rename-tag",
+        "ms-vscode.vscode-css-peek",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode"
+    ]
+}

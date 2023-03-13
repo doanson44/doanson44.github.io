@@ -1,0 +1,65 @@
+<!-- file: img/logo-son.svg -->
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Son Dev Icon</title>
+  <desc id="desc">Personal developer icon with angle brackets and letter S</desc>
+
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="accent-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#22D3EE" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded tile -->
+  <rect x="16" y="16" width="224" height="224" rx="48" ry="48" fill="url(#bg-gradient)"/>
+
+  <!-- Glow circle behind symbol -->
+  <circle cx="128" cy="128" r="74" fill="url(#accent-gradient)" opacity="0.18"/>
+
+  <!-- Angle brackets -->
+  <path
+    d="M76 88 L52 128 L76 168"
+    fill="none"
+    stroke="#E5E7EB"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.9" />
+  <path
+    d="M180 88 L204 128 L180 168"
+    fill="none"
+    stroke="#E5E7EB"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    opacity="0.9" />
+
+  <!-- Stylized S (dev / speed feeling) -->
+  <path
+    d="M102 96
+       C114 86, 142 86, 154 96
+       C166 106, 162 120, 148 127
+       L124 138
+       C112 144, 108 150, 108 158
+       C108 170, 120 176, 134 176
+       C144 176, 152 174, 160 170"
+    fill="none"
+    stroke="#F9FAFB"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round" />
+
+  <!-- Small highlight on top-left -->
+  <path
+    d="M44 76 C64 52, 96 40, 128 40"
+    fill="none"
+    stroke="#38BDF8"
+    stroke-width="6"
+    stroke-linecap="round"
+    opacity="0.6" />
+</svg>

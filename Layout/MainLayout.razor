@@ -1,0 +1,53 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject Client.Services.SyncTriggerService SyncTriggerService
+@using Radzen
+@using Radzen.Blazor
+@using Client.Layout
+
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-p-2">
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <img src="logo-son.svg" alt="Son Thai Dev" style="height: 32px; width: 32px; border-radius: 6px;" />
+            <RadzenLabel Text="Son Thai Dev" class="fw-semibold" style="color: #64b5f6; margin: 0;" />
+            <div class="ms-auto">
+                <LanguageSelector />
+            </div>
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenSidebar @bind-Expanded="@sidebarExpanded">
+        <NavMenu />
+    </RadzenSidebar>
+    <RadzenBody>
+        <div class="rz-p-4">
+            @Body
+        </div>
+    </RadzenBody>
+    <RadzenFooter>
+        <div class="rz-p-3 text-center" style="background-color: #1e1e1e; color: #b0b0b0; border-top: 1px solid #333;">
+            <small>&copy; 2025 Son Thai Dev. All rights reserved. | Made with ❤️ using Blazor</small>
+        </div>
+    </RadzenFooter>
+</RadzenLayout>
+
+<RadzenDialog />
+<RadzenNotification Style="@NotificationStyle" />
+
+@code {
+    bool sidebarExpanded = true;
+
+    /// <summary>
+    /// Global style for all notification messages - displays at bottom right corner
+    /// </summary>
+    private string NotificationStyle => "position: fixed; bottom: 1rem; right: 1rem; z-index: 9999;";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await SyncTriggerService.InitializeAsync();
+        }
+    }
+}
+

@@ -1,0 +1,187 @@
+﻿@page "/"
+@using Client.Common.CQRS
+@using Client.Modules.TodoModule.Queries
+@using Client.Models
+@using Client.Services
+@inject IMediator Mediator
+@inject LocalizationService Localizer
+
+<PageTitle>@Localizer["Dashboard"]</PageTitle>
+
+<div class="fade-in">
+    <h1 class="mb-4">@Localizer["Dashboard"]</h1>
+
+    <!-- Dashboard Cards Grid -->
+    <!-- Responsive: 1 column on mobile, 2 on tablet, 3 on desktop, 4 on xl screens -->
+    <div class="dashboard-grid mb-4">
+        <div class="dashboard-card card-primary">
+            <h3>@totalTodos</h3>
+            <p>@Localizer["TotalTasks"]</p>
+        </div>
+
+        <div class="dashboard-card card-success">
+            <h3>@completedTodos</h3>
+            <p>@Localizer["Completed"]</p>
+        </div>
+
+        <div class="dashboard-card card-warning">
+            <h3>@pendingTodos</h3>
+            <p>@Localizer["Pending"]</p>
+        </div>
+
+        <div class="dashboard-card card-info">
+            <h3>@completionRate%</h3>
+            <p>@Localizer["CompletionRate"]</p>
+        </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="row">
+        <div class="col-12">
+            <RadzenCard class="mb-4">
+                <h3 class="mb-3">@Localizer["RecentActivity"]</h3>
+                @if (isLoading)
+                {
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">@Localizer["Loading"]</span>
+                        </div>
+                    </div>
+                }
+                else if (recentTodos.Any())
+                {
+                    <div class="list-group">
+                        @foreach (var todo in recentTodos)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            @if (todo.IsCompleted)
+                                            {
+                                                <span class="text-success">✓</span>
+                                            }
+                                            @todo.Title
+                                        </h5>
+                                        <p class="mb-1 text-muted small">@todo.Description</p>
+                                        <small class="text-muted">Created @FormatRelativeTime(todo.CreatedAt)</small>
+                                    </div>
+                                    <span class="badge @GetPriorityBadgeClass(todo.Priority)">@todo.Priority</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> @Localizer["NoRecentActivity"]
+                    </div>
+                }
+            </RadzenCard>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12 col-md-6 mb-3">
+            <RadzenCard>
+                <h4 class="mb-3">@Localizer["QuickActions"]</h4>
+                <div class="d-grid gap-2">
+                    <RadzenButton Text="@Localizer["AddNewTodo"]" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" Click="@(() => NavigateToNewTodo())" />
+                    <RadzenButton Text="@Localizer["ViewAllTodos"]" Icon="list" ButtonStyle="ButtonStyle.Secondary" Click="@(() => NavigateToTodos())" />
+                </div>
+            </RadzenCard>
+        </div>
+
+        <div class="col-12 col-md-6 mb-3">
+            <RadzenCard>
+                <h4 class="mb-3">@Localizer["AboutThisApp"]</h4>
+                <p class="mb-2"><strong>@Localizer["Architecture"]</strong></p>
+                <p class="mb-2"><strong>@Localizer["Caching"]</strong></p>
+                <p class="mb-2"><strong>@Localizer["Mapping"]</strong></p>
+                <p class="mb-2"><strong>@Localizer["UI"]</strong></p>
+                <p class="mb-0"><strong>@Localizer["Framework"]</strong></p>
+            </RadzenCard>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<TodoDto> recentTodos = new();
+    private int totalTodos = 0;
+    private int completedTodos = 0;
+    private int pendingTodos = 0;
+    private double completionRate = 0;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        isLoading = true;
+
+        try
+        {
+            // Get statistics using CQRS Query
+            var statsQuery = new GetTodoStatisticsQuery();
+            var stats = await Mediator.QueryAsync<GetTodoStatisticsQuery, TodoStatisticsDto>(statsQuery);
+
+            totalTodos = stats.TotalTodos;
+            completedTodos = stats.CompletedTodos;
+            pendingTodos = stats.PendingTodos;
+            completionRate = stats.CompletionRate;
+
+            // Get all todos for recent activity
+            var allTodosQuery = new GetAllTodosQuery();
+            var allTodos = await Mediator.QueryAsync<GetAllTodosQuery, List<TodoDto>>(allTodosQuery);
+
+            // Get 5 most recent todos
+            recentTodos = allTodos.OrderByDescending(t => t.CreatedAt).Take(5).ToList();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetPriorityBadgeClass(string priority)
+    {
+        return priority switch
+        {
+            "High" => "bg-danger",
+            "Medium" => "bg-warning text-dark",
+            "Low" => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string FormatRelativeTime(DateTime date)
+    {
+        var diff = DateTime.UtcNow - date;
+
+        if (diff.TotalMinutes < 1) return Localizer["JustNow"];
+        if (diff.TotalMinutes < 60) return string.Format(Localizer["MinutesAgo"], (int)diff.TotalMinutes);
+        if (diff.TotalHours < 24) return string.Format(Localizer["HoursAgo"], (int)diff.TotalHours);
+        if (diff.TotalDays < 7) return string.Format(Localizer["DaysAgo"], (int)diff.TotalDays);
+
+        return date.ToString("MMM dd, yyyy");
+    }
+
+    private void NavigateToNewTodo()
+    {
+        Navigation.NavigateTo("/todos/new");
+    }
+
+    private void NavigateToTodos()
+    {
+        Navigation.NavigateTo("/todos");
+    }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+}
+

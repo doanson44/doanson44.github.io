@@ -1,0 +1,215 @@
+You are a senior .NET/Blazor architect and DevOps engineer.
+
+I want to initialize a **pure Blazor WebAssembly (standalone)** project directly in my GitHub Pages repository:
+
+- Repository name: `doanson44.github.io`
+- Site URL (must work after deployment): `https://doanson44.github.io`
+- No ASP.NET Core hosted backend, only **standalone Blazor WebAssembly**.
+
+====================================
+0. .NET SDK: global.json (.NET 10)
+====================================
+- Create a `global.json` file in the repository root to **pin the .NET SDK to .NET 10**.
+- Example (I will adjust the exact version later if needed):
+  - Use `"version": "10.0.100"` or a corresponding .NET 10 SDK version.
+- Ensure all CLI commands and workflow examples assume this .NET 10 SDK.
+
+====================================
+1. Project Setup (in this repo)
+====================================
+- Initialize a **Blazor WebAssembly standalone** project in the root of this repository (or in a clear structure like `/src/Client` — if you choose a subfolder, explain it and make CI/CD work accordingly).
+- Use the latest stable project template compatible with **.NET 10**.
+- Configure the project so that it can be published as a **static site** that GitHub Pages can serve.
+
+Technical requirements:
+- Correct `index.html` configuration:
+  - `<base href="/" />` so it works at the root of `doanson44.github.io`.
+  - `<meta name="viewport" content="width=device-width, initial-scale=1" />` for responsive behavior.
+- Ensure `dotnet publish` creates a build output folder that GitHub Pages can serve (for example `./publish/wwwroot`).
+
+====================================
+2. UI Frameworks: Bootstrap 5.3.8 + Radzen
+====================================
+Integrate **Bootstrap 5.3.8**:
+- Add Bootstrap 5.3.8 via CDN or LibMan (no other Bootstrap version).
+- Configure a clean, modern, light theme.
+- Use Bootstrap utility classes for spacing, layout, and responsive grid.
+
+Integrate **Radzen Blazor**:
+- Add the `Radzen.Blazor` package to the Blazor WebAssembly project.
+- Register Radzen services in `Program.cs`:
+  - `DialogService`
+  - `NotificationService`
+  - `TooltipService`
+  - `ContextMenuService`
+- Add Radzen CSS & JS in `wwwroot/index.html` following Radzen’s recommended setup.
+
+====================================
+3. Architecture: CQRS + Cache + AutoMapper (Client-side)
+====================================
+I want a simple but clean **client-side architecture** using **CQRS**, **caching**, and **AutoMapper**.
+
+3.1 CQRS pattern (inside Blazor WASM)
+- Implement a basic CQRS abstraction directly in the Client project:
+  - `ICommand` / `ICommandHandler<TCommand>`
+  - `IQuery<TResult>` / `IQueryHandler<TQuery, TResult>`
+- Provide an example feature like **Todo items** using CQRS:
+  - Commands: `CreateTodoCommand`, `UpdateTodoCommand`, `DeleteTodoCommand`.
+  - Queries: `GetTodoListQuery`, optionally `GetTodoByIdQuery`.
+- Implement a simple in-memory repository or service for Todo items (no real backend).
+- Register all handlers with DI in `Program.cs` (Client).
+
+3.2 Cache service
+- Create a generic `ICacheService` abstraction with methods like:
+  - `Task<T?> GetOrAddAsync<T>(string key, Func<Task<T>> factory, TimeSpan? absoluteExpiration = null);`
+  - `void Remove(string key);`
+- Implement at least an **in-memory** cache:
+  - Use `IMemoryCache` from `Microsoft.Extensions.Caching.Memory` (if supported on WASM) or a simple dictionary-based cache.
+- Use this `ICacheService` in at least one `QueryHandler` (for example `GetTodoListQueryHandler`) to cache the results for a few minutes.
+- Clearly comment how/where the cache is used.
+
+3.3 AutoMapper integration
+- Add `AutoMapper` and `AutoMapper.Extensions.Microsoft.DependencyInjection`.
+- Register AutoMapper in `Program.cs` (Client):
+  - Scan for profiles in the Client assembly.
+- Create at least one **AutoMapper Profile** (for example `TodoProfile`):
+  - Map between domain entity `TodoItem` and `TodoDto`.
+  - Map between `CreateTodoCommand` and `TodoItem`.
+- Use AutoMapper inside command/query handlers instead of manual mapping.
+
+====================================
+4. Responsive Layout (Mobile / Tablet / Desktop)
+====================================
+Create a main layout (e.g. `MainLayout.razor`) that works well on:
+- Mobile phones
+- Tablets
+- Desktops
+
+Layout requirements:
+- **Top navbar** (Bootstrap 5.3.8):
+  - Contains brand/logo text.
+  - Contains a hamburger menu button for small screens.
+- **Sidebar navigation** (Radzen):
+  - Uses `RadzenSidebar` and `RadzenPanelMenu` (or similar).
+  - On desktop: sidebar is open/pinned by default.
+  - On tablet/mobile: sidebar is hidden by default and can be toggled by the navbar hamburger button.
+- **Content area**:
+  - Automatically resizes when the sidebar is opened/closed.
+  - Uses Bootstrap grid for responsiveness and consistent spacing.
+
+Behavior:
+- Use Bootstrap responsive classes (e.g. `d-none d-md-block`, `d-block d-md-none`) to control visibility across breakpoints.
+- Ensure all interactive elements are large enough for touch on mobile.
+- Add clear comments explaining the sidebar toggle mechanism and responsive behavior.
+
+====================================
+5. Example Pages (using CQRS + Radzen + Bootstrap)
+====================================
+Create at least three demo pages to showcase Bootstrap + Radzen + CQRS + cache + AutoMapper + responsiveness:
+
+1. **Dashboard page**
+   - Use Radzen cards or simple styled panels.
+   - Use a responsive grid:
+     - 1 column on phones
+     - 2 columns on tablets
+     - 3 or more columns on desktops
+   - Show some sample metrics or widgets (can be mock data).
+
+2. **Data List / CRUD page (Todo list)**
+   - Use `RadzenDataGrid` to display Todo items.
+   - Use CQRS:
+     - A query handler to get the Todo list (optionally cached with `ICacheService`).
+     - Command handlers for Add/Edit/Delete.
+   - Show how the grid is usable on mobile (horizontal scroll or stacked layout).
+   - Use AutoMapper to map between entities, DTOs, and command models.
+   - Add comments to highlight where CQRS, cache, and AutoMapper are used.
+
+3. **Form page**
+   - Use Radzen form components (`RadzenTemplateForm`, inputs, dropdowns, etc.).
+   - Bind the form to a command object (for example `CreateTodoCommand`).
+   - Apply DataAnnotations for validation and display validation messages.
+   - Ensure proper spacing and alignment using Bootstrap utilities so it looks good on phone, tablet, and desktop.
+
+====================================
+6. Styling & Custom CSS
+====================================
+- Put all custom styles in `wwwroot/css/site.css` (or equivalent).
+- Organize CSS sections:
+  - Layout (main container, content spacing)
+  - Navbar (height, brand, hamburger)
+  - Sidebar (width, transitions, overlay on mobile)
+  - Radzen overrides (only if needed)
+- Keep the design minimal, clean, modern.
+- Prefer Bootstrap utilities instead of heavy custom CSS where possible.
+
+====================================
+7. GitHub Pages CI/CD (same repo)
+====================================
+Configure **GitHub Actions** to automatically build and deploy this Blazor WASM app to GitHub Pages whenever I push to the `main` branch.
+
+- Repository: `doanson44.github.io`
+- Branch: `main`
+- Hosting: GitHub Pages for a **user site** (root URL is `https://doanson44.github.io`).
+
+Create a workflow file:
+- Path: `.github/workflows/deploy.yml`
+
+Workflow behavior:
+- Trigger:
+  - On push to `main`.
+- Jobs:
+  1. **Build**
+     - Checkout code.
+     - Setup .NET SDK **10** (matching the version in `global.json`).
+     - Restore dependencies.
+     - Run `dotnet publish` for the Blazor WebAssembly project:
+       - Configuration: `Release`
+       - Output folder: for example `./publish`.
+     - Ensure the static site files are in a subfolder like `./publish/wwwroot`.
+
+  2. **Deploy to GitHub Pages**
+     - Use `actions/configure-pages` (or equivalent) to configure GitHub Pages.
+     - Upload the static site artifact from `./publish/wwwroot`.
+     - Use `actions/deploy-pages` to deploy to GitHub Pages.
+
+Important:
+- The final deployed site must be accessible at `https://doanson44.github.io`.
+- Do not require a separate `gh-pages` repository; use this **same** repo `doanson44.github.io` with GitHub Pages configured via Actions.
+
+====================================
+8. Code Quality
+====================================
+- All **code, comments, and identifiers** must be in **English**.
+- Use clear separation of concerns:
+  - Services for data/state management and CQRS handlers.
+  - Components/pages for UI.
+- Add short comments to explain:
+  - CQRS abstractions and how they are used.
+  - Cache behavior and where it is applied.
+  - AutoMapper configuration and usage.
+  - Sidebar toggle mechanism and responsive layout.
+  - Any special handling for GitHub Pages or static hosting.
+
+====================================
+9. What to Output
+====================================
+Show or describe clearly:
+
+1. Repository/project structure in `doanson44.github.io` including `global.json`.
+2. Key Blazor files:
+   - `Program.cs` (with Radzen services, CQRS registrations, cache service, AutoMapper).
+   - `wwwroot/index.html` (with `<base href="/" />`, Bootstrap 5.3.8, Radzen CSS/JS, viewport meta).
+   - `MainLayout.razor` with navbar + sidebar + responsive layout.
+   - Example pages: `Pages/Dashboard.razor`, `Pages/TodoList.razor` (or `DataList.razor`), `Pages/FormExample.razor`.
+   - CQRS abstractions (`ICommand`, `ICommandHandler<>`, `IQuery<>`, `IQueryHandler<>`) and example handlers.
+   - `ICacheService` and its implementation.
+   - AutoMapper profile(s) such as `TodoProfile`.
+   - `wwwroot/css/site.css` with structured custom CSS.
+3. The full `.github/workflows/deploy.yml` workflow.
+4. Instructions:
+   - How to build and run locally (`dotnet` CLI commands, using .NET 10 SDK).
+   - How deployment works on push to `main`.
+   - How to verify that `https://doanson44.github.io` is serving the latest build.
+
+Final goal:
+> A Blazor WebAssembly **standalone** project in `doanson44.github.io`, using Bootstrap 5.3.8, Radzen, CQRS, caching, and AutoMapper, pinned to **.NET 10** via `global.json`, automatically built and deployed to GitHub Pages via GitHub Actions whenever I push to the `main` branch.
