@@ -7,20 +7,26 @@ $(document).ready(function () {
         if (inputVal) {
             $("#txtOutputPlus3").val(inputVal * 1.03);
             $("#txtOutputPlus5").val(inputVal * 1.05);
+            $("#txtOutputPlus10").val(inputVal * 1.1);
 
             $("#txtOutputMinus3").val(inputVal / 1.03);
             $("#txtOutputMinus5").val(inputVal / 1.05);
+            $("#txtOutputMinus10").val(inputVal / 1.1);
         }
         else {
             $("#txtOutputPlus3").val("");
             $("#txtOutputPlus5").val("");
+            $("#txtOutputPlus10").val("");
 
             $("#txtOutputMinus3").val("");
             $("#txtOutputMinus5").val("");
+            $("#txtOutputMinus10").val("");
         }
 
         if (!isFromOther) {
             $("#selectedSymbolPercent").text("");
+            $("#selectedSymbolHighest").text("");
+            $("#selectedSymbolLowest").text("");
             $("#txtRecommededLongItem").text("");
             $("#txtRecommededShortItem").text("");
 
@@ -60,6 +66,25 @@ $(document).ready(function () {
         }
         $("#txtStopLossForShortPercent").text(stopLossForShort);
         $("#selectedSymbolPercent").text(data.priceChangePercent);
+
+        var settingsKlines = {
+            "url": `https://fapi.binance.com/fapi/v1/klines?symbol=${data.symbol}&interval=1d&limit=100`,
+            "method": "GET",
+            "timeout": 0,
+            "headers": {
+              "Content-Type": "application/json"
+            },
+          };
+          
+          $.ajax(settingsKlines).done(function (response) {
+            console.log(response);
+            setTimeout(() => {
+                var highest = Math.max(...response.map(x => x[2]));
+                var lowest = Math.min(...response.map(x => x[3]))
+                $("#selectedSymbolHighest").text(highest);
+                $("#selectedSymbolLowest").text(lowest);
+            }, 1000);
+          });
     }
 
     $("#txtSelectedSymbol").on("input", function () {

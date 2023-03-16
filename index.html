@@ -33,7 +33,9 @@
                   <datalist id="datalistOptions">
                   </datalist>
                 </div>
-                <span class="badge bg-info mt-3"><i id="selectedSymbolPercent"></i>%</span>
+                <span class="badge bg-info mt-3">Change Percent: <i id="selectedSymbolPercent"></i>%</span>
+                <span class="badge bg-danger mt-3">Lowest value in 100 days: <i id="selectedSymbolLowest"></i></span>
+                <span class="badge bg-success mt-3">Highest value in 100 days: <i id="selectedSymbolHighest"></i></span>
                 <div class="input-group mt-3">
                   <input type="text" class="form-control" id="txtInput" aria-label="Dollar amount"
                     placeholder="Current value">
@@ -50,6 +52,10 @@
                   <input type="text" class="form-control" id="txtOutputMinus5" placeholder="TP +50%" disabled />
                 </div>
                 <div class="form-group">
+                  <label for="txtOutputMinus10">TP +100%</label>
+                  <input type="text" class="form-control" id="txtOutputMinus10" placeholder="TP +100%" disabled />
+                </div>
+                <div class="form-group">
                   <label for="txtStopLossForShort">Stop loss value (Loss: <span
                       id="txtStopLossForShortPercent"></span>%)</label>
                   <input type="text" class="form-control" id="txtStopLossForShort" placeholder="Stop loss value"
@@ -64,6 +70,10 @@
                 <div class="form-group">
                   <label for="txtOutputPlus5">TP +50%</label>
                   <input type="text" class="form-control" id="txtOutputPlus5" placeholder="TP +50%" disabled />
+                </div>
+                <div class="form-group">
+                  <label for="txtOutputPlus10">TP +100%</label>
+                  <input type="text" class="form-control" id="txtOutputPlus10" placeholder="TP +100%" disabled />
                 </div>
                 <div class="form-group">
                   <label for="txtStopLossForLong">Stop loss value (Loss: <span
