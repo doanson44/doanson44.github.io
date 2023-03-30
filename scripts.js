@@ -77,7 +77,6 @@ $(document).ready(function () {
           };
           
           $.ajax(settingsKlines).done(function (response) {
-            console.log(response);
             setTimeout(() => {
                 var highest = Math.max(...response.map(x => x[2]));
                 var lowest = Math.min(...response.map(x => x[3]))
