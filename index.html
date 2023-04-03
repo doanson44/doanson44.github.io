@@ -28,9 +28,11 @@
             <!-- form start -->
             <form>
               <div class="card-body">
-                <div class="form-group">
+                <div class="input-group">
                   <input type="text" class="form-control" id="txtSelectedSymbol" list="datalistOptions"
                     placeholder="Selected symbol" />
+                  <button class="btn btn-primary" type="button" id="btnFollow" data-bs-toggle="modal"
+                    data-bs-target="#followModal">Follow</button>
                   <datalist id="datalistOptions">
                   </datalist>
                 </div>
@@ -87,6 +89,55 @@
           </div>
         </div>
       </div>
+
+      <div class="row mt-2">
+        <div class="col-md-12">
+          <div class="card card-primary">
+            <div class="card-header d-flex justify-content-between">
+              <h4 class="card-title m-0">Following</h4>
+              <div>
+                <button class="h4 btn btn-success" style="margin-top:8px;" id="btnRefreshFollowing">
+                  Refresh
+                </button>
+              </div>
+            </div>
+            <!-- /.card-header -->
+            <!-- form start -->
+            <div class="alert alert-success mb-0 border-0 rounded-0" role="alert">
+              <label>Refresh time: <span id="refreshTimeFollowing"></span></label>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table id="dataTableFollowing" class="display responsive nowrap table hover dataTable" style="width:100%">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Entry</th>
+                      <th>Current</th>
+                      <th>Amount</th>
+                      <th>Profit/Loss Percent</th>
+                      <th>Profit/Loss</th>
+                    </tr>
+                  </thead>
+                  <tfoot>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Entry</th>
+                      <th>Current</th>
+                      <th>Amount</th>
+                      <th>Profit/Loss Percent</th>
+                      <th>Profit/Loss</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="row mt-2">
         <div class="col-md-12">
           <div class="card card-primary">
@@ -128,6 +179,49 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="followModal" tabindex="-1" aria-labelledby="followModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="followModalLabel">Follow Item</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <div class="mb-3">
+              <label for="txtSelectedSymbolToAdd" class="form-label">Symbol</label>
+              <input disabled type="email" class="form-control" id="txtSelectedSymbolToAdd" aria-describedby="txtSelectedSymbolToAddHelp">
+              <div id="txtSelectedSymbolToAddHelp" class="form-text">We will store this symbol to your local storage.</div>
+            </div>
+            <div class="mb-3">
+              <label for="selectType" class="form-label">Type</label>
+              <select id="selectType" class="form-select">
+                <option selected value="Long">Long</option>
+                <option value="Short">Short</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="txtEntry" class="form-label">Entry</label>
+              <input type="text" class="form-control" id="txtEntry">
+            </div>
+            <div class="mb-3">
+              <label for="txtAmount" class="form-label">Amount</label>
+              <div class="input-group">
+                <input id="txtAmount" type="text" class="form-control" aria-label="Amount (to the nearest dollar)">
+                <span class="input-group-text">$</span>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="btnSaveChanges">Save changes</button>
         </div>
       </div>
     </div>
