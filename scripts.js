@@ -19,24 +19,36 @@ $(document).ready(function () {
                 }
 
                 followingSymbols = responseFollowings.record.following;
-                
+
                 var settingsTickerPrices = {
                     "url": "https://fapi.binance.com/fapi/v1/ticker/price",
                     "method": "GET",
                     "timeout": 0,
                     "headers": {
-                      "Content-Type": "application/json"
+                        "Content-Type": "application/json"
                     },
-                  };
-                  
-                  $.ajax(settingsTickerPrices).done(function (response) {
+                };
+
+                $.ajax(settingsTickerPrices).done(function (response) {
                     var followingSymbolsTable = [];
-                    for(var item in followingSymbols) {
-                        var dataSymbol = response.filter(x => x.symbol === item.symbol);
-                        var current = dataSymbol.price;
-                        var profitLossPercent = 
+                    for (var index in followingSymbols) {
+                        var item = followingSymbols[index];
+                        var dataSymbol = response.find(x => x.symbol === item.symbol);
+
+                        if (dataSymbol) {
+                            var current = dataSymbol.price;
+                            var profitLossPercent = 0;
+                            var profitLossValue = 0;
+                            if (item.type === "LONG") {
+                                profitLossPercent = (current - item.entry) / item.entry * 1000;
+                                profitLossValue = profitLossPercent * item.amount / 100;
+                            } else {
+                                profitLossPercent = (item.entry - current) / current * 1000;
+                                profitLossValue = profitLossPercent * item.amount / 100;
+                            }
+                        }
                     }
-                  });
+                });
             }, 1000);
         });
     }
