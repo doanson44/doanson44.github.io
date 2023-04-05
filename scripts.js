@@ -222,7 +222,7 @@ $(document).ready(function () {
             $("#btnFollow").prop('disabled', false);
             $("#txtSelectedSymbolToAdd").val(selectedSymbol);
             $("#txtEntry").val(inputVal);
-            $("#txtAmount").val(50);
+            $("#txtAmount").val(5);
         }
     });
 
