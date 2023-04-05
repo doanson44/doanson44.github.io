@@ -2,6 +2,97 @@ $(document).ready(function () {
     var symbols = [];
     var followingSymbols = {};
 
+    function Symbol(symbol, entry, amount, type) {
+        this.symbol = symbol;
+        this.entry = entry;
+        this.amount = amount;
+        this.type = type;
+    }
+
+    function FollowingSymbol(name, type, entry, current, amount, profitLossPercent, profitLossValue) {
+        this.name = name;
+        this.type = type;
+        this.entry = entry;
+        this.current = current;
+        this.amount = amount;
+        this.profitLossPercent = profitLossPercent;
+        this.profitLossValue = profitLossValue;
+    }
+
+    function updateFollowingTable(init = true) {
+        $("#refreshTimeFollowing").text(new Date().toLocaleString());
+
+        var settingsTickerPrices = {
+            "url": "https://fapi.binance.com/fapi/v1/ticker/price",
+            "method": "GET",
+            "timeout": 0,
+            "headers": {
+                "Content-Type": "application/json"
+            },
+        };
+
+        $.ajax(settingsTickerPrices).done(function (response) {
+            var followingSymbolsTable = [];
+            for (var index in followingSymbols) {
+                var item = followingSymbols[index];
+                var dataSymbol = response.find(x => x.symbol === item.symbol);
+
+                if (dataSymbol) {
+                    var current = dataSymbol.price;
+                    var profitLossPercent = 0;
+                    var profitLossValue = 0;
+                    if (item.type.toLowerCase() === "long") {
+                        profitLossPercent = (current - item.entry) / item.entry * 1000;
+                        profitLossValue = profitLossPercent * item.amount / 100;
+                    } else {
+                        profitLossPercent = (item.entry - current) / item.entry * 1000;
+                        profitLossValue = profitLossPercent * item.amount / 100;
+                    }
+                    followingSymbolsTable.push(new FollowingSymbol(item.symbol, item.type, item.entry, current, item.amount, profitLossPercent.toFixed(2), profitLossValue.toFixed(2)));
+                }
+            }
+
+            if (followingSymbolsTable) {
+                var table = null;
+                if (init) {
+                    table = $("#dataTableFollowing").DataTable({
+                        data: followingSymbolsTable,
+                        columns: [
+                            { data: 'name' },
+                            { data: 'type' },
+                            { data: 'entry' },
+                            { data: 'current' },
+                            { data: 'amount' },
+                            { data: 'profitLossPercent' },
+                            { data: 'profitLossValue' }
+                        ],
+                        columnDefs: [
+                            {
+                                targets: 7,
+                                data: null,
+                                defaultContent: '<button class="btn btn-sm btn-danger">Remove</button>',
+                            },
+                        ],
+                        order: [[1, 'asc']]
+                    });
+                } else {
+                    table = $("#dataTableFollowing").DataTable();
+                    table.clear().draw();
+                    table.rows.add(followingSymbolsTable);
+                    table.columns.adjust().draw();
+                }
+
+                $('#dataTableFollowing tbody').on('click', 'button', function () {
+                    var data = table.row(this).data();
+                    if (data) {
+                        followingSymbols = followingSymbols.filter(x => x.symbol !== data.name);
+                        updateFollowingSymbols();
+                    }
+                });
+            }
+        });
+    }
+
     function getFollowingSymbols() {
         var settingGetFollowingSymbols = {
             "url": "https://api.jsonbin.io/v3/b/64270f93ebd26539d0a1b9af/latest",
@@ -13,43 +104,12 @@ $(document).ready(function () {
         };
 
         $.ajax(settingGetFollowingSymbols).done(function (responseFollowings) {
-            setTimeout(() => {
-                if (!responseFollowings) {
-                    return;
-                }
+            if (!responseFollowings) {
+                return;
+            }
 
-                followingSymbols = responseFollowings.record.following;
-
-                var settingsTickerPrices = {
-                    "url": "https://fapi.binance.com/fapi/v1/ticker/price",
-                    "method": "GET",
-                    "timeout": 0,
-                    "headers": {
-                        "Content-Type": "application/json"
-                    },
-                };
-
-                $.ajax(settingsTickerPrices).done(function (response) {
-                    var followingSymbolsTable = [];
-                    for (var index in followingSymbols) {
-                        var item = followingSymbols[index];
-                        var dataSymbol = response.find(x => x.symbol === item.symbol);
-
-                        if (dataSymbol) {
-                            var current = dataSymbol.price;
-                            var profitLossPercent = 0;
-                            var profitLossValue = 0;
-                            if (item.type === "LONG") {
-                                profitLossPercent = (current - item.entry) / item.entry * 1000;
-                                profitLossValue = profitLossPercent * item.amount / 100;
-                            } else {
-                                profitLossPercent = (item.entry - current) / current * 1000;
-                                profitLossValue = profitLossPercent * item.amount / 100;
-                            }
-                        }
-                    }
-                });
-            }, 1000);
+            followingSymbols = responseFollowings.record;
+            updateFollowingTable();
         });
     }
 
@@ -66,13 +126,49 @@ $(document).ready(function () {
         };
 
         $.ajax(settingUpdateFollowingSymbol).done(function (response) {
-            console.log(response);
+            followingSymbols = response.record;
+            updateFollowingTable(false);
         });
     }
 
-    function updateFollowingTable(data) {
+    $("#btnSaveChanges").on("click", function () {
+        if (!followingSymbols) {
+            followingSymbols = {};
+        }
+        var symbol = $("#txtSelectedSymbolToAdd").val();
+        var entry = parseFloat($("#txtEntry").val());
+        var amount = parseFloat($("#txtAmount").val());
+        var type = $("#selectType :selected").val();
+        var item = new Symbol(symbol, entry, amount, type);
+        var oldItemIndex = followingSymbols.findIndex(x => x.symbol === symbol);
+        if (oldItemIndex >= 0) {
+            var oldItem = followingSymbols[oldItemIndex];
 
-    }
+            if (type === oldItem.type) {
+                var newAmount = amount + oldItem.amount;
+                var newEntry = (entry * amount + oldItem.entry * oldItem.amount) / (amount + oldItem.amount);
+                followingSymbols[oldItemIndex] = new Symbol(symbol, newEntry, newAmount, type);
+            }
+            else {
+                var newAmount = Math.abs(amount - oldItem.amount);
+                var newEntry = Math.abs(entry * amount - oldItem.entry * oldItem.amount) / Math.abs(amount - oldItem.amount);
+                followingSymbols[oldItemIndex] = new Symbol(symbol, newEntry, newAmount, type);
+            }
+        }
+        else {
+            followingSymbols.push(item);
+        }
+        setTimeout(() => {
+            updateFollowingSymbols();
+        }, 2000);
+        $('#followModal').modal('hide');
+    });
+
+    $("#btnRefreshFollowing").on("click", function () {
+        setTimeout(() => {
+            updateFollowingTable(false);
+        }, 2000);
+    });
 
     getFollowingSymbols();
     $("#btnFollow").prop('disabled', true);
