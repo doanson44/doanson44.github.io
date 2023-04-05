@@ -73,6 +73,14 @@ $(document).ready(function () {
                                 defaultContent: '<button class="btn btn-sm btn-danger">Remove</button>',
                             },
                         ],
+                        "createdRow": function (row, data, index) {
+                            if (data.profitLossValue > 0) {
+                                $(row).addClass("table-success");
+                            }
+                            else {
+                                $(row).addClass("table-danger");
+                            }
+                        },
                         order: [[1, 'asc']]
                     });
                 } else {
@@ -89,6 +97,19 @@ $(document).ready(function () {
                         updateFollowingSymbols();
                     }
                 });
+
+                const total = followingSymbolsTable.reduce((accumulator, object) => {
+                    return accumulator + parseFloat(object.profitLossValue);
+                }, 0);
+
+                if (total > 0) {
+                    $("#txtProfitLossTotalClass").addClass("alert-success");
+                }
+                else {
+                    $("#txtProfitLossTotalClass").addClass("alert-danger");
+                }
+
+                $("#txtProfitLossTotal").text(total.toFixed(2));
             }
         });
     }
@@ -160,14 +181,14 @@ $(document).ready(function () {
         }
         setTimeout(() => {
             updateFollowingSymbols();
-        }, 2000);
+        }, 500);
         $('#followModal').modal('hide');
     });
 
     $("#btnRefreshFollowing").on("click", function () {
         setTimeout(() => {
             updateFollowingTable(false);
-        }, 2000);
+        }, 500);
     });
 
     getFollowingSymbols();
@@ -334,7 +355,7 @@ $(document).ready(function () {
                 $("#txtSelectedSymbol").val(data.symbol);
                 setUpLongShortValue(data);
             });
-        }, 2000);
+        }, 500);
     });
 
     $("#btnRefresh").on('click', function () {
@@ -353,4 +374,9 @@ $(document).ready(function () {
             });
         });
     });
+
+    window.setInterval(() => {
+        $("#btnRefresh").trigger("click");
+        $("#btnRefreshFollowing").trigger("click");
+    }, 300000);
 });
