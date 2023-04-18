@@ -168,12 +168,12 @@ $(document).ready(function () {
             if (type === oldItem.type) {
                 var newAmount = amount + oldItem.amount;
                 var newEntry = (entry * amount + oldItem.entry * oldItem.amount) / (amount + oldItem.amount);
-                followingSymbols[oldItemIndex] = new Symbol(symbol, newEntry, newAmount, type);
+                followingSymbols[oldItemIndex] = new Symbol(symbol, newEntry.toFixed(2), newAmount, type);
             }
             else {
                 var newAmount = Math.abs(amount - oldItem.amount);
                 var newEntry = Math.abs(entry * amount - oldItem.entry * oldItem.amount) / Math.abs(amount - oldItem.amount);
-                followingSymbols[oldItemIndex] = new Symbol(symbol, newEntry, newAmount, type);
+                followingSymbols[oldItemIndex] = new Symbol(symbol, newEntry.toFixed(2), newAmount, type);
             }
         }
         else {
@@ -341,7 +341,7 @@ $(document).ready(function () {
                         $(row).addClass("table-success");
                     }
                     var stopLossForShort = ((data.lastPrice - data.highPrice) * 1000 / data.lastPrice).toFixed(2);
-                    if (stopLossForShort >= -30 && data.priceChangePercent > 10) {
+                    if (stopLossForShort >= -30 && data.priceChangePercent > 20) {
                         $(row).addClass("table-danger");
                     }
                 },
