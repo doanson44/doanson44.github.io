@@ -341,8 +341,9 @@ $(document).ready(function () {
                         $(row).addClass("table-success");
                     }
                     var stopLossForShort = ((data.lastPrice - data.highPrice) * 1000 / data.lastPrice).toFixed(2);
-                    if (stopLossForShort >= -30 && data.priceChangePercent > 20) {
+                    if (stopLossForShort >= -50 && data.priceChangePercent > 20) {
                         $(row).addClass("table-danger");
+                        notificationNow(`Good entry for short: ${data.symbol}`);
                     }
                 },
                 select: true
@@ -374,6 +375,34 @@ $(document).ready(function () {
             });
         });
     });
+
+    function notificationNow(message) {
+        if (!window.Notification) {
+            console.log('Browser does not support notifications.');
+        } else {
+            // check if permission is already granted
+            if (Notification.permission === 'granted') {
+                // show notification here
+                var notify = new Notification('Hi there!', {
+                    body: message
+                });
+            } else {
+                // request permission from user
+                Notification.requestPermission().then(function (p) {
+                    if (p === 'granted') {
+                        // show notification here
+                        var notify = new Notification('Hi there!', {
+                            body: message
+                        });
+                    } else {
+                        console.log('User blocked notifications.');
+                    }
+                }).catch(function (err) {
+                    console.error(err);
+                });
+            }
+        }
+    }
 
     window.setInterval(() => {
         $("#btnRefresh").trigger("click");
