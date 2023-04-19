@@ -343,7 +343,7 @@ $(document).ready(function () {
                     var stopLossForShort = ((data.lastPrice - data.highPrice) * 1000 / data.lastPrice).toFixed(2);
                     if (stopLossForShort >= -50 && data.priceChangePercent > 20) {
                         $(row).addClass("table-danger");
-                        notificationNow(`Good entry for short: ${data.symbol}`);
+                        notificationNow(`Good entry for short: ${data.symbol} at ${data.lastPrice}`);
                     }
                 },
                 select: true
