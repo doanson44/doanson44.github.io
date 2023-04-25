@@ -1,15 +1,22 @@
 $(document).ready(function () {
     var symbols = [];
-    var followingSymbols = {};
+    var cryptocurrencies = {};
+    var stocks = {};
+
+    function Record(cryptocurrencies, stocks) {
+        this.cryptocurrencies = cryptocurrencies;
+        this.stocks = stocks;
+    }
 
     function Symbol(symbol, entry, amount, type) {
         this.symbol = symbol;
         this.entry = entry;
         this.amount = amount;
         this.type = type;
+        this.dateTime = new Date();
     }
 
-    function FollowingSymbol(name, type, entry, current, amount, profitLossPercent, profitLossValue) {
+    function FollowingSymbol(name, type, entry, current, amount, profitLossPercent, profitLossValue, dateTime) {
         this.name = name;
         this.type = type;
         this.entry = entry;
@@ -17,9 +24,10 @@ $(document).ready(function () {
         this.amount = amount;
         this.profitLossPercent = profitLossPercent;
         this.profitLossValue = profitLossValue;
+        this.dateTime = dateTime;
     }
 
-    function updateFollowingTable(init = true) {
+    function updateCryptocurrenciesTable(init = true) {
         $("#refreshTimeFollowing").text(new Date().toLocaleString());
 
         var settingsTickerPrices = {
@@ -33,8 +41,8 @@ $(document).ready(function () {
 
         $.ajax(settingsTickerPrices).done(function (response) {
             var followingSymbolsTable = [];
-            for (var index in followingSymbols) {
-                var item = followingSymbols[index];
+            for (var index in cryptocurrencies) {
+                var item = cryptocurrencies[index];
                 var dataSymbol = response.find(x => x.symbol === item.symbol);
 
                 if (dataSymbol) {
@@ -48,7 +56,7 @@ $(document).ready(function () {
                         profitLossPercent = (item.entry - current) / item.entry * 1000;
                         profitLossValue = profitLossPercent * item.amount / 100;
                     }
-                    followingSymbolsTable.push(new FollowingSymbol(item.symbol, item.type, item.entry, current, item.amount, profitLossPercent.toFixed(2), profitLossValue.toFixed(2)));
+                    followingSymbolsTable.push(new FollowingSymbol(item.symbol, item.type, item.entry, current, item.amount, profitLossPercent.toFixed(2), profitLossValue.toFixed(2), item.dateTime));
                 }
             }
 
@@ -64,11 +72,12 @@ $(document).ready(function () {
                             { data: 'current' },
                             { data: 'amount' },
                             { data: 'profitLossPercent' },
-                            { data: 'profitLossValue' }
+                            { data: 'profitLossValue' },
+                            { data: 'dateTime' }
                         ],
                         columnDefs: [
                             {
-                                targets: 7,
+                                targets: 8,
                                 data: null,
                                 defaultContent: '<button class="btn btn-sm btn-danger">Remove</button>',
                             },
@@ -81,7 +90,7 @@ $(document).ready(function () {
                                 $(row).addClass("table-danger");
                             }
                         },
-                        order: [[1, 'asc']]
+                        order: [[0, 'asc']]
                     });
                 } else {
                     table = $("#dataTableFollowing").DataTable();
@@ -93,7 +102,7 @@ $(document).ready(function () {
                 $('#dataTableFollowing tbody').on('click', 'button', function () {
                     var data = table.row(this).data();
                     if (data) {
-                        followingSymbols = followingSymbols.filter(x => x.symbol !== data.name);
+                        cryptocurrencies = cryptocurrencies.filter(x => x.symbol !== data.name);
                         updateFollowingSymbols();
                     }
                 });
@@ -129,12 +138,14 @@ $(document).ready(function () {
                 return;
             }
 
-            followingSymbols = responseFollowings.record;
-            updateFollowingTable();
+            cryptocurrencies = responseFollowings.record.cryptocurrencies;
+            stocks = responseFollowings.record.stocks;
+            updateCryptocurrenciesTable();
         });
     }
 
     function updateFollowingSymbols() {
+        var data = new Record(cryptocurrencies, stocks);
         var settingUpdateFollowingSymbol = {
             "url": "https://api.jsonbin.io/v3/b/64270f93ebd26539d0a1b9af",
             "method": "PUT",
@@ -143,51 +154,33 @@ $(document).ready(function () {
                 "X-ACCESS-KEY": "$2b$10$NR1UvucZPPEZiijI5Cnv0eXaiaT2dkk9fxfev2uLRI10nJ/Z.20IG",
                 "Content-Type": "application/json"
             },
-            "data": JSON.stringify(followingSymbols),
+            "data": JSON.stringify(data),
         };
 
         $.ajax(settingUpdateFollowingSymbol).done(function (response) {
-            followingSymbols = response.record;
-            updateFollowingTable(false);
+            cryptocurrencies = response.record.cryptocurrencies;
+            stocks = response.record.stocks;
+            setTimeout(updateCryptocurrenciesTable(false), 500);
         });
     }
 
     $("#btnSaveChanges").on("click", function () {
-        if (!followingSymbols) {
-            followingSymbols = {};
+        if (!cryptocurrencies) {
+            cryptocurrencies = {};
         }
         var symbol = $("#txtSelectedSymbolToAdd").val();
         var entry = parseFloat($("#txtEntry").val());
         var amount = parseFloat($("#txtAmount").val());
         var type = $("#selectType :selected").val();
         var item = new Symbol(symbol, entry, amount, type);
-        var oldItemIndex = followingSymbols.findIndex(x => x.symbol === symbol);
-        if (oldItemIndex >= 0) {
-            var oldItem = followingSymbols[oldItemIndex];
-
-            if (type === oldItem.type) {
-                var newAmount = amount + oldItem.amount;
-                var newEntry = (entry * amount + oldItem.entry * oldItem.amount) / (amount + oldItem.amount);
-                followingSymbols[oldItemIndex] = new Symbol(symbol, newEntry.toFixed(2), newAmount, type);
-            }
-            else {
-                var newAmount = Math.abs(amount - oldItem.amount);
-                var newEntry = Math.abs(entry * amount - oldItem.entry * oldItem.amount) / Math.abs(amount - oldItem.amount);
-                followingSymbols[oldItemIndex] = new Symbol(symbol, newEntry.toFixed(2), newAmount, type);
-            }
-        }
-        else {
-            followingSymbols.push(item);
-        }
-        setTimeout(() => {
-            updateFollowingSymbols();
-        }, 500);
+        cryptocurrencies.push(item);
+        updateFollowingSymbols();
         $('#followModal').modal('hide');
     });
 
     $("#btnRefreshFollowing").on("click", function () {
         setTimeout(() => {
-            updateFollowingTable(false);
+            updateCryptocurrenciesTable(false);
         }, 500);
     });
 
