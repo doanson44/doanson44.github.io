@@ -399,7 +399,6 @@ $(document).ready(function () {
     }
 
     function InitView() {
-
         getFollowingSymbols();
     }
 
