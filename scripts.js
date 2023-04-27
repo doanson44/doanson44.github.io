@@ -184,7 +184,6 @@ $(document).ready(function () {
         }, 500);
     });
 
-    getFollowingSymbols();
     $("#btnFollow").prop('disabled', true);
     $("#txtInput").on("input", function (event, isFromOther) {
         var inputTxt = $("#txtInput").val();
@@ -370,9 +369,11 @@ $(document).ready(function () {
     });
 
     function notificationNow(message) {
+        var isEnableNotification = $('#btnEnableNotification').is(":checked");
+
         if (!window.Notification) {
             console.log('Browser does not support notifications.');
-        } else {
+        } else if (isEnableNotification) {
             // check if permission is already granted
             if (Notification.permission === 'granted') {
                 // show notification here
@@ -397,6 +398,12 @@ $(document).ready(function () {
         }
     }
 
+    function InitView() {
+
+        getFollowingSymbols();
+    }
+
+    InitView();
     window.setInterval(() => {
         $("#btnRefresh").trigger("click");
         $("#btnRefreshFollowing").trigger("click");
