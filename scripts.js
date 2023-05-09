@@ -2,6 +2,8 @@ $(document).ready(function () {
     var symbols = [];
     var cryptocurrencies = {};
     var stocks = {};
+    var longSymbols = [];
+    var shortSymbols = [];
 
     function Record(cryptocurrencies, stocks) {
         this.cryptocurrencies = cryptocurrencies;
@@ -329,13 +331,20 @@ $(document).ready(function () {
                 order: [[1, 'desc']],
                 "createdRow": function (row, data, index) {
                     var stopLossForLong = ((data.lowPrice - data.lastPrice) * 1000 / data.lastPrice).toFixed(2);
-                    if (stopLossForLong >= -30 && data.priceChangePercent < 10) {
+                    if (stopLossForLong >= -30 && data.priceChangePercent <= -20) {
                         $(row).addClass("table-success");
+                        if (!longSymbols.includes(data.symbol)) {
+                            notificationNow(`Good entry to long: ${data.symbol} at ${data.lastPrice}`);
+                            longSymbols.push(data.symbol);
+                        }
                     }
                     var stopLossForShort = ((data.lastPrice - data.highPrice) * 1000 / data.lastPrice).toFixed(2);
-                    if (stopLossForShort >= -50 && data.priceChangePercent > 20) {
+                    if (stopLossForShort >= -50 && data.priceChangePercent >= 20) {
                         $(row).addClass("table-danger");
-                        notificationNow(`Good entry for short: ${data.symbol} at ${data.lastPrice}`);
+                        if (!shortSymbols.includes(data.symbol)) {
+                            notificationNow(`Good entry to short: ${data.symbol} at ${data.lastPrice}`);
+                            shortSymbols.push(data.symbol);
+                        }
                     }
                 },
                 select: true
