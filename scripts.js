@@ -331,7 +331,7 @@ $(document).ready(function () {
                 order: [[1, 'desc']],
                 "createdRow": function (row, data, index) {
                     var stopLossForLong = ((data.lowPrice - data.lastPrice) * 1000 / data.lastPrice).toFixed(2);
-                    if (stopLossForLong >= -30 && data.priceChangePercent <= -20) {
+                    if (stopLossForLong >= -30 && data.priceChangePercent <= -10) {
                         $(row).addClass("table-success");
                         if (!longSymbols.includes(data.symbol)) {
                             notificationNow(`Good entry to long: ${data.symbol} at ${data.lastPrice}`);
