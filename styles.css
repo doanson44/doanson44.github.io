@@ -1,9 +1,0 @@
-#dataTable tbody tr {
-  cursor: pointer;
-}
-
-.focusedRow {
-  font-weight: bold;
-  text-shadow: 1px 1px 0px #eee;
-  color: #111;
-}

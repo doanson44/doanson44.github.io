@@ -1,276 +1,33 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.3/css/jquery.dataTables.min.css">
-  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css">
-  <link rel="stylesheet" href="dataTable.styles.css" />
-  <link rel="stylesheet" href="styles.css" />
-  <title>Tools</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StdApp.WebApp</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="StdApp.WebApp.styles.css" rel="stylesheet" />
 </head>
 
-<body
-  class="dark-mode sidebar-mini layout-fixed layout-navbar-fixed layout-footer-fixed sidebar-collapse sidebar-closed">
-  <div class="container-fluid mt-2">
-    <div class="content">
-      <div class="row">
-        <div class="col-md-12">
-          <div class="card">
-            <div class="card-header text-danger">
-              Quy tắc phải tuân thủ
-            </div>
-            <div class="card-body text-danger">
-              <ol>
-                <li>Chỉ đặt lệnh thỏa điều kiện đã đề ra (Lớn hơn 20% cho Short, nhỏ hơn -10% cho Long)</li>
-                <li>Take profit ở 3%</li>
-                <li>Khối lượng cho một lệnh là 5$</li>
-                <li>Tuyệt đối không nhồi lệnh khi chưa đạt điểm bán/mua được đề ra</li>
-              </ol> 
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="row mt-2">
-        <div class="col-md-12">
-          <div class="card card-primary">
-            <div class="card-header">
-              <h3 class="card-title">Calculator</h3>
-            </div>
-            <!-- /.card-header -->
-            <!-- form start -->
-            <form>
-              <div class="card-body">
-                <div class="input-group">
-                  <input type="text" class="form-control" id="txtSelectedSymbol" list="datalistOptions"
-                    placeholder="Selected symbol" />
-                  <button class="btn btn-primary" type="button" id="btnFollow" data-bs-toggle="modal"
-                    data-bs-target="#followModal">Follow</button>
-                  <datalist id="datalistOptions">
-                  </datalist>
-                </div>
-                <span class="badge bg-info mt-3">Change Percent: <i id="selectedSymbolPercent"></i>%</span>
-                <span class="badge bg-danger mt-3">Lowest value in 100 days: <i id="selectedSymbolLowest"></i></span>
-                <span class="badge bg-success mt-3">Highest value in 100 days: <i id="selectedSymbolHighest"></i></span>
-                <div class="input-group mt-3">
-                  <input type="text" class="form-control" id="txtInput" aria-label="Dollar amount"
-                    placeholder="Current value">
-                  <button class="btn btn-success" type="button" id="btnClear">Clear</button>
-                </div>
-                <span class="badge bg-danger mt-3">Short</span>
-                <span class="badge bg-success mt-3" id="txtRecommededShortItem"></span>
-                <div class="form-group">
-                  <label for="txtOutputMinus3">TP +30%</label>
-                  <input type="text" class="form-control" id="txtOutputMinus3" placeholder="TP +30%" disabled />
-                </div>
-                <div class="form-group">
-                  <label for="txtOutputMinus5">TP +50%</label>
-                  <input type="text" class="form-control" id="txtOutputMinus5" placeholder="TP +50%" disabled />
-                </div>
-                <div class="form-group">
-                  <label for="txtOutputMinus10">TP +100%</label>
-                  <input type="text" class="form-control" id="txtOutputMinus10" placeholder="TP +100%" disabled />
-                </div>
-                <div class="form-group">
-                  <label for="txtStopLossForShort">Stop loss value (Loss: <span
-                      id="txtStopLossForShortPercent"></span>%)</label>
-                  <input type="text" class="form-control" id="txtStopLossForShort" placeholder="Stop loss value"
-                    disabled />
-                </div>
-                <span class="badge bg-success mt-3">Long</span>
-                <span class="badge bg-success mt-3" id="txtRecommededLongItem"></span>
-                <div class="form-group">
-                  <label for="txtOutputPlus3">TP +30%</label>
-                  <input type="text" class="form-control" id="txtOutputPlus3" placeholder="TP +30%" disabled />
-                </div>
-                <div class="form-group">
-                  <label for="txtOutputPlus5">TP +50%</label>
-                  <input type="text" class="form-control" id="txtOutputPlus5" placeholder="TP +50%" disabled />
-                </div>
-                <div class="form-group">
-                  <label for="txtOutputPlus10">TP +100%</label>
-                  <input type="text" class="form-control" id="txtOutputPlus10" placeholder="TP +100%" disabled />
-                </div>
-                <div class="form-group">
-                  <label for="txtStopLossForLong">Stop loss value (Loss: <span
-                      id="txtStopLossForLongPercent"></span>%)</label>
-                  <input type="text" class="form-control" id="txtStopLossForLong" placeholder="Stop loss value"
-                    disabled />
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <div class="row mt-2">
-        <div class="col-md-12">
-          <div class="card card-primary">
-            <div class="card-header d-flex justify-content-between">
-              <h4 class="card-title m-0">Following</h4>
-              <div>
-                <button class="h4 btn btn-success" style="margin-top:8px;" id="btnRefreshFollowing">
-                  Refresh
-                </button>
-              </div>
-            </div>
-            <!-- /.card-header -->
-            <!-- form start -->
-            <div class="alert alert-success mb-0 border-0 rounded-0" role="alert">
-              <label>Refresh time: <span id="refreshTimeFollowing"></span></label>
-            </div>
-            <div class="alert mb-0 border-0 rounded-0" role="alert" id="txtProfitLossTotalClass">
-              <label>Total Profit/Loss: <span id="txtProfitLossTotal"></span></label>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table id="dataTableFollowing" class="display responsive nowrap table hover dataTable"
-                  style="width:100%">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Entry</th>
-                      <th>Current</th>
-                      <th>Amount</th>
-                      <th>Profit/Loss Percent (%)</th>
-                      <th>Profit/Loss ($)</th>
-                      <th>Date</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tfoot>
-                    <tr>
-                      <th>Name</th>
-                      <th>Type</th>
-                      <th>Entry</th>
-                      <th>Current</th>
-                      <th>Amount</th>
-                      <th>Profit/Loss Percent</th>
-                      <th>Profit/Loss</th>
-                      <th>Date</th>
-                      <th>Action</th>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row mt-2">
-        <div class="col-md-12">
-          <div class="card card-primary">
-            <div class="card-header d-flex justify-content-between">
-              <h4 class="card-title m-0">Futures</h4>
-              <div>
-                <div class="form-check form-check-inline">
-                  <input type="checkbox" class="form-check-input" id="btnEnableNotification" autocomplete="off">
-                  <label class="form-check-label" for="btnEnableNotification">Notification</label>
-                </div>
-                <button class="h4 btn btn-success" style="margin-top:8px;" id="btnRefresh">
-                  Refresh
-                </button>
-              </div>
-            </div>
-            <!-- /.card-header -->
-            <!-- form start -->
-            <div class="alert alert-success mb-0 border-0 rounded-0" role="alert">
-              <label>Refresh time: <span id="refreshTime"></span></label>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table id="dataTable" class="display responsive nowrap table hover dataTable" style="width:100%">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Price Change Percent</th>
-                      <th>Current Price</th>
-                      <th>High Price</th>
-                      <th>Volume</th>
-                    </tr>
-                  </thead>
-                  <tfoot>
-                    <tr>
-                      <th>Name</th>
-                      <th>Price Change Percent</th>
-                      <th>Current Price</th>
-                      <th>High Price</th>
-                      <th>Volume</th>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
     </div>
-  </div>
 
-  <!-- Modal -->
-  <div class="modal fade" id="followModal" tabindex="-1" aria-labelledby="followModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="followModalLabel">Follow Item</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form>
-            <div class="mb-3">
-              <label for="txtSelectedSymbolToAdd" class="form-label">Symbol</label>
-              <input disabled type="email" class="form-control" id="txtSelectedSymbolToAdd"
-                aria-describedby="txtSelectedSymbolToAddHelp">
-              <div id="txtSelectedSymbolToAddHelp" class="form-text">We will store this symbol to your local storage.
-              </div>
-            </div>
-            <div class="mb-3">
-              <label for="selectType" class="form-label">Type</label>
-              <select id="selectType" class="form-select">
-                <option selected value="Long">Long</option>
-                <option value="Short">Short</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label for="txtEntry" class="form-label">Entry</label>
-              <input type="text" class="form-control" id="txtEntry">
-            </div>
-            <div class="mb-3">
-              <label for="txtAmount" class="form-label">Amount</label>
-              <div class="input-group">
-                <input id="txtAmount" type="text" class="form-control" aria-label="Amount (to the nearest dollar)">
-                <span class="input-group-text">$</span>
-              </div>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary" id="btnSaveChanges">Add</button>
-        </div>
-      </div>
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
     </div>
-  </div>
-
-  <script src="https://code.jquery.com/jquery-3.6.4.min.js"
-    integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
-    integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3"
-    crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
-    crossorigin="anonymous"></script>
-  <script src="https://cdn.datatables.net/1.13.3/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/select/1.6.2/js/dataTables.select.min.js"></script>
-  <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
-  <script src="scripts.js"></script>
+    <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
+    <script src="_framework/blazor.webassembly.js"></script>
 </body>
 
 </html>
