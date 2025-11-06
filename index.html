@@ -3,55 +3,30 @@
 
 <head>
         <meta charset="UTF-8">
-        <title>Price Checker</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sonthai Investing</title>
+        <style>
+                * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                }
+                
+                html, body {
+                        height: 100%;
+                        overflow: hidden;
+                }
+                
+                iframe {
+                        width: 100%;
+                        height: 100%;
+                        border: none;
+                }
+        </style>
 </head>
 
 <body>
-        <h3>Price Checker</h3>
-
-        <p id="price"></p>
-
-        <script>
-                window.addEventListener('DOMContentLoaded', async function() {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const type = urlParams.get('type');
-                        const symbolParam = urlParams.get('symbol');
-
-                        if (type === 'coin' && symbolParam) {
-                                const symbol = symbolParam.toUpperCase() + 'USDT';
-                                const targetUrl = `https://api.mexc.com/api/v3/ticker/price?symbol=${symbol}`;
-                                const proxyUrl = `https://sonthai-investing-rho.vercel.app/api/raw?url=${encodeURIComponent(targetUrl)}`;
-
-                                try {
-                                        const response = await fetch(proxyUrl);
-                                        if (!response.ok) throw new Error('Network error');
-                                        const data = await response.json();
-                                        document.getElementById('price').textContent = data.price;
-                                } catch (err) {
-                                        document.getElementById('price').textContent = `Error: ${err.message}`;
-                                }
-                        } else if (type === 'stock' && symbolParam) {
-                                const symbol = symbolParam.toUpperCase();
-                                const targetUrl = `https://msh-appdata.cafef.vn/rest-api/api/v1/Watchlists/${symbol}/price`;
-                                const proxyUrl = `https://sonthai-investing-rho.vercel.app/api/raw?url=${encodeURIComponent(targetUrl)}`;
-
-                                try {
-                                        const response = await fetch(proxyUrl);
-                                        if (!response.ok) throw new Error('Network error');
-                                        const data = await response.json();
-                                        if (data.succeeded) {
-                                                document.getElementById('price').textContent = data.data.value.price;
-                                        } else {
-                                                document.getElementById('price').textContent = 'API error';
-                                        }
-                                } catch (err) {
-                                        document.getElementById('price').textContent = `Error: ${err.message}`;
-                                }
-                        } else {
-                                document.getElementById('price').textContent = 'Invalid parameters. Use ?type=coin&symbol=xrp or ?type=stock&symbol=VNM';
-                        }
-                });
-        </script>
+        <iframe src="https://sonthai-investing-rho.vercel.app/" title="Sonthai Investing"></iframe>
 </body>
 
 </html>
