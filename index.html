@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+        <meta charset="UTF-8">
+        <title>Price Checker</title>
+</head>
+
+<body>
+        <h3>Price Checker</h3>
+
+        <p id="price"></p>
+
+        <script>
+                window.addEventListener('DOMContentLoaded', async function() {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const type = urlParams.get('type');
+                        const symbolParam = urlParams.get('symbol');
+
+                        if (type === 'coin' && symbolParam) {
+                                const symbol = symbolParam.toUpperCase() + 'USDT';
+                                const targetUrl = `https://api.mexc.com/api/v3/ticker/price?symbol=${symbol}`;
+                                const proxyUrl = `https://sonthai-investing-rho.vercel.app/api/raw?url=${encodeURIComponent(targetUrl)}`;
+
+                                try {
+                                        const response = await fetch(proxyUrl);
+                                        if (!response.ok) throw new Error('Network error');
+                                        const data = await response.json();
+                                        document.getElementById('price').textContent = data.price;
+                                } catch (err) {
+                                        document.getElementById('price').textContent = `Error: ${err.message}`;
+                                }
+                        } else if (type === 'stock' && symbolParam) {
+                                const symbol = symbolParam.toUpperCase();
+                                const targetUrl = `https://msh-appdata.cafef.vn/rest-api/api/v1/Watchlists/${symbol}/price`;
+                                const proxyUrl = `https://sonthai-investing-rho.vercel.app/api/raw?url=${encodeURIComponent(targetUrl)}`;
+
+                                try {
+                                        const response = await fetch(proxyUrl);
+                                        if (!response.ok) throw new Error('Network error');
+                                        const data = await response.json();
+                                        if (data.succeeded) {
+                                                document.getElementById('price').textContent = data.data.value.price;
+                                        } else {
+                                                document.getElementById('price').textContent = 'API error';
+                                        }
+                                } catch (err) {
+                                        document.getElementById('price').textContent = `Error: ${err.message}`;
+                                }
+                        } else {
+                                document.getElementById('price').textContent = 'Invalid parameters. Use ?type=coin&symbol=xrp or ?type=stock&symbol=VNM';
+                        }
+                });
+        </script>
+</body>
+
+</html>
