@@ -9,14 +9,13 @@
 @inject IMediator Mediator
 @inject NavigationManager Navigation
 @inject NotificationService NotificationService
-@inject LocalizationService Localizer
 
 <PageTitle>@pageTitle</PageTitle>
 
 <div class="fade-in">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>@pageTitle</h1>
-        <RadzenButton Text="@Localizer["BackToList"]" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click="@(() => Navigation.NavigateTo("/todos"))" />
+        <RadzenButton Text="Back to List" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click="@(() => Navigation.NavigateTo("/todos"))" />
     </div>
 
     <div class="row justify-content-center">
@@ -26,7 +25,7 @@
                 {
                     <div class="text-center py-5">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">@Localizer["Loading"]</span>
+                            <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
                 }
@@ -41,38 +40,38 @@
                     <RadzenTemplateForm TItem="CreateTodoCommand" Data="@command" Submit="@HandleSubmit">
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <RadzenLabel Text="@Localizer["Title"]" Component="Title" class="form-label" />
-                                <RadzenTextBox @bind-Value="@command.Title" Name="Title" class="w-100" Placeholder="@Localizer["EnterTodoTitle"]" />
-                                <RadzenRequiredValidator Component="Title" Text="@Localizer["TitleRequired"]" />
-                                <RadzenLengthValidator Component="Title" Max="100" Text="@Localizer["TitleMaxLength"]" />
+                                <RadzenLabel Text="Title" Component="Title" class="form-label" />
+                                <RadzenTextBox @bind-Value="@command.Title" Name="Title" class="w-100" Placeholder="Enter todo title" />
+                                <RadzenRequiredValidator Component="Title" Text="Title is required" />
+                                <RadzenLengthValidator Component="Title" Max="100" Text="Title cannot exceed 100 characters" />
                             </div>
 
                             <div class="col-12 mb-3">
-                                <RadzenLabel Text="@Localizer["Description"]" Component="Description" class="form-label" />
-                                <RadzenTextArea @bind-Value="@command.Description" Name="Description" class="w-100" Rows="4" Placeholder="@Localizer["EnterDescription"]" />
-                                <RadzenLengthValidator Component="Description" Max="500" Text="@Localizer["DescriptionMaxLength"]" />
+                                <RadzenLabel Text="Description" Component="Description" class="form-label" />
+                                <RadzenTextArea @bind-Value="@command.Description" Name="Description" class="w-100" Rows="4" Placeholder="Enter description (optional)" />
+                                <RadzenLengthValidator Component="Description" Max="500" Text="Description cannot exceed 500 characters" />
                             </div>
 
                             <div class="col-12 mb-4">
-                                <RadzenLabel Text="@Localizer["Priority"]" Component="Priority" class="form-label" />
+                                <RadzenLabel Text="Priority" Component="Priority" class="form-label" />
                                 <RadzenDropDown @bind-Value="@command.Priority" 
                                                 Data="@priorities" 
                                                 Name="Priority" 
                                                 class="w-100" 
-                                                Placeholder="@Localizer["SelectPriority"]" />
-                                <RadzenRequiredValidator Component="Priority" Text="@Localizer["PriorityRequired"]" />
+                                                Placeholder="Select priority" />
+                                <RadzenRequiredValidator Component="Priority" Text="Priority is required" />
                             </div>
 
                             <div class="col-12">
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                     <RadzenButton ButtonType="ButtonType.Button" 
-                                                  Text="@Localizer["Cancel"]" 
+                                                  Text="Cancel" 
                                                   Icon="cancel" 
                                                   ButtonStyle="ButtonStyle.Light" 
                                                   Click="@(() => Navigation.NavigateTo("/todos"))" 
                                                   class="me-md-2" />
                                     <RadzenButton ButtonType="ButtonType.Submit" 
-                                                  Text="@(isEditMode ? Localizer["Update"] : Localizer["Create"])" 
+                                                  Text="@(isEditMode ? "Update" : "Create")" 
                                                   Icon="@(isEditMode ? "save" : "add_circle")" 
                                                   ButtonStyle="ButtonStyle.Primary" 
                                                   Disabled="@isSubmitting" />
@@ -85,13 +84,13 @@
 
             <!-- Info Card -->
             <RadzenCard class="mt-4">
-                <h5 class="mb-3">@Localizer["FormFeatures"]</h5>
+                <h5 class="mb-3">Form Features</h5>
                 <ul class="mb-0">
-                    <li><strong>CQRS:</strong> @Localizer["CQRSDocumentation"]</li>
-                    <li><strong>Validation:</strong> @Localizer["ValidationDocumentation"]</li>
-                    <li><strong>AutoMapper:</strong> @Localizer["AutoMapperDocumentation"]</li>
-                    <li><strong>Cache:</strong> @Localizer["CacheDocumentation"]</li>
-                    <li><strong>Responsive:</strong> @Localizer["ResponsiveDocumentation"]</li>
+                    <li><strong>CQRS:</strong> Form submits CreateTodoCommand or UpdateTodoCommand</li>
+                    <li><strong>Validation:</strong> DataAnnotations with Radzen validators</li>
+                    <li><strong>AutoMapper:</strong> Command → Entity mapping in handler</li>
+                    <li><strong>Cache:</strong> Cache invalidated after successful save</li>
+                    <li><strong>Responsive:</strong> Touch-friendly on mobile devices</li>
                 </ul>
             </RadzenCard>
         </div>
@@ -107,15 +106,15 @@
     private bool isEditMode = false;
     private bool isLoading = true;
     private bool isSubmitting = false;
-    private string pageTitle;
+    private string pageTitle = "Add New Todo";
 
     protected override async Task OnInitializedAsync()
     {
         isEditMode = Id.HasValue;
-        pageTitle = isEditMode ? Localizer["EditTodo"] : Localizer["AddNewTodo"];
+        pageTitle = isEditMode ? "Edit Todo" : "Add New Todo";
 
         // Initialize priorities with localized strings
-        priorities = new List<string> { Localizer["Low"], Localizer["Medium"], Localizer["High"] };
+        priorities = new List<string> { "Low", "Medium", "High" };
 
         if (isEditMode && Id.HasValue)
         {
@@ -123,7 +122,7 @@
         }
         else
         {
-            command.Priority = Localizer["Medium"]; // Default priority
+            command.Priority = "Medium"; // Default priority
             isLoading = false;
         }
     }
@@ -150,7 +149,7 @@
             }
             else
             {
-                NotificationService.NotifyError("Not Found", Localizer["TodoNotFound"], 3000);
+                NotificationService.NotifyError("Not Found", "Todo not found", 3000);
                 Navigation.NavigateTo("/todos");
             }
         }
@@ -187,7 +186,7 @@
 
                 await Mediator.SendAsync(updateCommand);
 
-                NotificationService.NotifySuccess("Success", Localizer["TodoUpdatedSuccessfully"], 3000);
+                NotificationService.NotifySuccess("Success", "Todo updated successfully", 3000);
             }
             else
             {
@@ -195,7 +194,7 @@
                 // Command handler will use AutoMapper to map CreateTodoCommand → TodoItem
                 await Mediator.SendAsync(command);
 
-                NotificationService.NotifySuccess("Success", Localizer["TodoCreatedSuccessfully"], 3000);
+                NotificationService.NotifySuccess("Success", "Todo created successfully", 3000);
             }
 
             // Navigate back to list with refresh trigger
@@ -203,7 +202,7 @@
         }
         catch (Exception ex)
         {
-            NotificationService.NotifyError("Error", Localizer.GetString("FailedToSaveTodo", ex.Message), 5000);
+            NotificationService.NotifyError("Error", $"Failed to save todo: {ex.Message}", 5000);
         }
         finally
         {

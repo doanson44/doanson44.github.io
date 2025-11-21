@@ -4,34 +4,33 @@
 @using Client.Models
 @using Client.Services
 @inject IMediator Mediator
-@inject LocalizationService Localizer
 
-<PageTitle>@Localizer["Dashboard"]</PageTitle>
+<PageTitle>Dashboard</PageTitle>
 
 <div class="fade-in">
-    <h1 class="mb-4">@Localizer["Dashboard"]</h1>
+    <h1 class="mb-4">Dashboard</h1>
 
     <!-- Dashboard Cards Grid -->
     <!-- Responsive: 1 column on mobile, 2 on tablet, 3 on desktop, 4 on xl screens -->
     <div class="dashboard-grid mb-4">
         <div class="dashboard-card card-primary">
             <h3>@totalTodos</h3>
-            <p>@Localizer["TotalTasks"]</p>
+            <p>Total Tasks</p>
         </div>
 
         <div class="dashboard-card card-success">
             <h3>@completedTodos</h3>
-            <p>@Localizer["Completed"]</p>
+            <p>Completed</p>
         </div>
 
         <div class="dashboard-card card-warning">
             <h3>@pendingTodos</h3>
-            <p>@Localizer["Pending"]</p>
+            <p>Pending</p>
         </div>
 
         <div class="dashboard-card card-info">
             <h3>@completionRate%</h3>
-            <p>@Localizer["CompletionRate"]</p>
+            <p>Completion Rate</p>
         </div>
     </div>
 
@@ -39,12 +38,12 @@
     <div class="row">
         <div class="col-12">
             <RadzenCard class="mb-4">
-                <h3 class="mb-3">@Localizer["RecentActivity"]</h3>
+                <h3 class="mb-3">Recent Activity</h3>
                 @if (isLoading)
                 {
                     <div class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">@Localizer["Loading"]</span>
+                            <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
                 }
@@ -75,7 +74,7 @@
                 else
                 {
                     <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> @Localizer["NoRecentActivity"]
+                        <i class="bi bi-info-circle"></i> No recent activity. Start by creating a new todo!
                     </div>
                 }
             </RadzenCard>
@@ -86,22 +85,22 @@
     <div class="row">
         <div class="col-12 col-md-6 mb-3">
             <RadzenCard>
-                <h4 class="mb-3">@Localizer["QuickActions"]</h4>
+                <h4 class="mb-3">Quick Actions</h4>
                 <div class="d-grid gap-2">
-                    <RadzenButton Text="@Localizer["AddNewTodo"]" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" Click="@(() => NavigateToNewTodo())" />
-                    <RadzenButton Text="@Localizer["ViewAllTodos"]" Icon="list" ButtonStyle="ButtonStyle.Secondary" Click="@(() => NavigateToTodos())" />
+                    <RadzenButton Text="Add New Todo" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" Click="@(() => NavigateToNewTodo())" />
+                    <RadzenButton Text="View All Todos" Icon="list" ButtonStyle="ButtonStyle.Secondary" Click="@(() => NavigateToTodos())" />
                 </div>
             </RadzenCard>
         </div>
 
         <div class="col-12 col-md-6 mb-3">
             <RadzenCard>
-                <h4 class="mb-3">@Localizer["AboutThisApp"]</h4>
-                <p class="mb-2"><strong>@Localizer["Architecture"]</strong></p>
-                <p class="mb-2"><strong>@Localizer["Caching"]</strong></p>
-                <p class="mb-2"><strong>@Localizer["Mapping"]</strong></p>
-                <p class="mb-2"><strong>@Localizer["UI"]</strong></p>
-                <p class="mb-0"><strong>@Localizer["Framework"]</strong></p>
+                <h4 class="mb-3">About This App</h4>
+                <p class="mb-2"><strong>Architecture: CQRS Pattern</strong></p>
+                <p class="mb-2"><strong>Caching: In-Memory Cache (5 min TTL)</strong></p>
+                <p class="mb-2"><strong>Mapping: AutoMapper</strong></p>
+                <p class="mb-2"><strong>UI: Bootstrap 5.3.8 + Radzen</strong></p>
+                <p class="mb-0"><strong>Framework: .NET 10 Blazor WebAssembly</strong></p>
             </RadzenCard>
         </div>
     </div>
@@ -163,10 +162,10 @@
     {
         var diff = DateTime.UtcNow - date;
 
-        if (diff.TotalMinutes < 1) return Localizer["JustNow"];
-        if (diff.TotalMinutes < 60) return string.Format(Localizer["MinutesAgo"], (int)diff.TotalMinutes);
-        if (diff.TotalHours < 24) return string.Format(Localizer["HoursAgo"], (int)diff.TotalHours);
-        if (diff.TotalDays < 7) return string.Format(Localizer["DaysAgo"], (int)diff.TotalDays);
+        if (diff.TotalMinutes < 1) return "just now";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} min ago";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} hours ago";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} days ago";
 
         return date.ToString("MMM dd, yyyy");
     }

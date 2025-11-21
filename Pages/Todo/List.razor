@@ -10,23 +10,22 @@
 @inject NavigationManager Navigation
 @inject DialogService DialogService
 @inject NotificationService NotificationService
-@inject LocalizationService Localizer
 
-<PageTitle>@Localizer["TodoList"]</PageTitle>
+<PageTitle>Todo List</PageTitle>
 
 <div class="fade-in">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>@Localizer["TodoList"]</h1>
-        <RadzenButton Text="@Localizer["AddNewTodo"]" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" Click="@(() => Navigation.NavigateTo("/todos/new"))" />
+        <h1>Todo List</h1>
+        <RadzenButton Text="Add New Todo" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" Click="@(() => Navigation.NavigateTo("/todos/new"))" />
     </div>
 
     @if (isLoading)
     {
         <div class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">@Localizer["Loading"]</span>
+                <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-3 text-muted">@Localizer["LoadingTodos"]</p>
+            <p class="mt-3 text-muted">Loading todos...</p>
         </div>
     }
     else
@@ -48,9 +47,9 @@
                         FilterMode="FilterMode.Advanced"
                         class="shadow-sm">
             <Columns>
-                <RadzenDataGridColumn TItem="TodoDto" Property="Id" Title="@Localizer["ID"]" Width="80px" TextAlign="TextAlign.Center" />
+                <RadzenDataGridColumn TItem="TodoDto" Property="Id" Title="ID" Width="80px" TextAlign="TextAlign.Center" />
                 
-                <RadzenDataGridColumn TItem="TodoDto" Property="Title" Title="@Localizer["Title"]" Width="200px">
+                <RadzenDataGridColumn TItem="TodoDto" Property="Title" Title="Title" Width="200px">
                     <Template Context="todo">
                         @if (todo.IsCompleted)
                         {
@@ -63,13 +62,13 @@
                     </Template>
                 </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn TItem="TodoDto" Property="Description" Title="@Localizer["Description"]">
+                <RadzenDataGridColumn TItem="TodoDto" Property="Description" Title="Description">
                     <Template Context="todo">
                         <span class="text-truncate-2">@todo.Description</span>
                     </Template>
                 </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn TItem="TodoDto" Property="Priority" Title="@Localizer["Priority"]" Width="120px">
+                <RadzenDataGridColumn TItem="TodoDto" Property="Priority" Title="Priority" Width="120px">
                     <Template Context="todo">
                         <span class="badge @GetPriorityBadgeClass(todo.Priority)">
                             @todo.Priority
@@ -77,36 +76,36 @@
                     </Template>
                 </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn TItem="TodoDto" Property="IsCompleted" Title="@Localizer["Status"]" Width="120px">
+                <RadzenDataGridColumn TItem="TodoDto" Property="IsCompleted" Title="Status" Width="120px">
                     <Template Context="todo">
                         @if (todo.IsCompleted)
                         {
-                            <span class="badge bg-success">@Localizer["Completed"]</span>
+                            <span class="badge bg-success">Completed</span>
                         }
                         else
                         {
-                            <span class="badge bg-warning text-dark">@Localizer["Pending"]</span>
+                            <span class="badge bg-warning text-dark">Pending</span>
                         }
                     </Template>
                 </RadzenDataGridColumn>
 
-                <RadzenDataGridColumn TItem="TodoDto" Property="CreatedAt" Title="@Localizer["Created"]" Width="130px" FormatString="{0:MMM dd, yyyy}" />
+                <RadzenDataGridColumn TItem="TodoDto" Property="CreatedAt" Title="Created" Width="130px" FormatString="{0:MMM dd, yyyy}" />
 
-                <RadzenDataGridColumn TItem="TodoDto" Title="@Localizer["Actions"]" Width="180px" Sortable="false" Filterable="false">
+                <RadzenDataGridColumn TItem="TodoDto" Title="Actions" Width="180px" Sortable="false" Filterable="false">
                     <Template Context="todo">
                         <div class="btn-group btn-group-sm" role="group">
                             @if (!todo.IsCompleted)
                             {
                                 <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" 
                                               Click="@(() => MarkAsComplete(todo))" 
-                                              title="@Localizer["MarkAsComplete"]" />
+                                              title="Mark as Complete" />
                             }
                             <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
                                           Click="@(() => EditTodo(todo))" 
-                                          title="@Localizer["Edit"]" />
+                                          title="Edit" />
                             <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
                                           Click="@(() => DeleteTodo(todo))" 
-                                          title="@Localizer["Delete"]" />
+                                          title="Delete" />
                         </div>
                     </Template>
                 </RadzenDataGridColumn>
@@ -116,7 +115,7 @@
         @if (!todos.Any())
         {
             <div class="alert alert-info mt-4">
-                <i class="bi bi-info-circle"></i> @Localizer["NoTodosFound"]
+                <i class="bi bi-info-circle"></i> No todos found. Click "Add New" to create your first todo!
             </div>
         }
     }
@@ -182,13 +181,13 @@
 
             await Mediator.SendAsync(command);
 
-            NotificationService.NotifySuccess(Localizer["Success"], Localizer["TodoMarkedAsComplete"]);
+            NotificationService.NotifySuccess("Success", "Todo marked as complete");
 
             await LoadTodos();
         }
         catch (Exception ex)
         {
-            NotificationService.NotifyError(Localizer["Error"], string.Format(Localizer["FailedToUpdateTodo"], ex.Message));
+            NotificationService.NotifyError("Error", $"Failed to update todo: {ex.Message}");
         }
     }
 
@@ -203,9 +202,9 @@
     private async Task DeleteTodo(TodoDto todo)
     {
         var confirmed = await DialogService.Confirm(
-            string.Format(Localizer["DeleteConfirmationMessage"], todo.Title),
-            Localizer["ConfirmDelete"],
-            new ConfirmOptions { OkButtonText = Localizer["YesDelete"], CancelButtonText = Localizer["Cancel"] }
+            $"Are you sure you want to delete '{todo.Title}'?",
+            "Confirm Delete",
+            new ConfirmOptions { OkButtonText = "Yes, Delete", CancelButtonText = "Cancel" }
         );
 
         if (confirmed == true)
@@ -216,13 +215,13 @@
                 var command = new DeleteTodoCommand(todo.Id);
                 await Mediator.SendAsync(command);
 
-                NotificationService.NotifySuccess(Localizer["Deleted"], Localizer["TodoDeletedSuccessfully"]);
+                NotificationService.NotifySuccess("Deleted", "Todo deleted successfully");
 
                 await LoadTodos();
             }
             catch (Exception ex)
             {
-                NotificationService.NotifyError(Localizer["Error"], string.Format(Localizer["FailedToDeleteTodo"], ex.Message));
+                NotificationService.NotifyError("Error", $"Failed to delete todo: {ex.Message}");
             }
         }
     }

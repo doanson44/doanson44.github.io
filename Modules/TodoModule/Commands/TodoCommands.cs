@@ -1,4 +1,3 @@
-using Client.Common.Caching;
 using Client.Common.CQRS;
 using System.ComponentModel.DataAnnotations;
 
@@ -6,9 +5,8 @@ namespace Client.Modules.TodoModule.Commands;
 
 /// <summary>
 /// Command to create a new Todo
-/// Invalidates: todos:all:* (all todo lists), todos:stats (statistics)
 /// </summary>
-public class CreateTodoCommand : ICommand, IInvalidateCacheCommand
+public class CreateTodoCommand : ICommand
 {
     [Required(ErrorMessage = "Title is required")]
     [StringLength(100, ErrorMessage = "Title cannot exceed 100 characters")]
@@ -21,23 +19,12 @@ public class CreateTodoCommand : ICommand, IInvalidateCacheCommand
     public string Priority { get; set; } = "Medium";
 
     public bool IsCompleted { get; set; } = false;
-
-    /// <summary>
-    /// Cache keys to invalidate after creating a todo
-    /// </summary>
-    public IEnumerable<string> CacheKeysToInvalidate => new[]
-    {
-        "todos:all:true:all",    // All todos list
-        "todos:all:false:all",   // Pending todos only
-        "todos:stats"            // Statistics
-    };
 }
 
 /// <summary>
 /// Command to update Todo
-/// Invalidates: todos:all:* (all todo lists), todos:{Id} (specific item), todos:stats (statistics)
 /// </summary>
-public class UpdateTodoCommand : ICommand, IInvalidateCacheCommand
+public class UpdateTodoCommand : ICommand
 {
     public Guid Id { get; set; }
 
@@ -52,24 +39,12 @@ public class UpdateTodoCommand : ICommand, IInvalidateCacheCommand
     public string Priority { get; set; } = "Medium";
 
     public bool IsCompleted { get; set; }
-
-    /// <summary>
-    /// Cache keys to invalidate after updating a todo
-    /// </summary>
-    public IEnumerable<string> CacheKeysToInvalidate => new[]
-    {
-        "todos:all:true:all",        // All todos list
-        "todos:all:false:all",       // Pending todos only
-        $"todos:{Id}",               // Specific todo item
-        "todos:stats"                // Statistics
-    };
 }
 
 /// <summary>
 /// Command to delete Todo
-/// Invalidates: todos:all:* (all todo lists), todos:{Id} (specific item), todos:stats (statistics)
 /// </summary>
-public class DeleteTodoCommand : ICommand, IInvalidateCacheCommand
+public class DeleteTodoCommand : ICommand
 {
     public Guid Id { get; set; }
 
@@ -77,24 +52,12 @@ public class DeleteTodoCommand : ICommand, IInvalidateCacheCommand
     {
         Id = id;
     }
-
-    /// <summary>
-    /// Cache keys to invalidate after deleting a todo
-    /// </summary>
-    public IEnumerable<string> CacheKeysToInvalidate => new[]
-    {
-        "todos:all:true:all",        // All todos list
-        "todos:all:false:all",       // Pending todos only
-        $"todos:{Id}",               // Specific todo item
-        "todos:stats"                // Statistics
-    };
 }
 
 /// <summary>
 /// Command to mark Todo as completed
-/// Invalidates: todos:all:* (all todo lists), todos:{Id} (specific item), todos:stats (statistics)
 /// </summary>
-public class MarkTodoCompletedCommand : ICommand, IInvalidateCacheCommand
+public class MarkTodoCompletedCommand : ICommand
 {
     public Guid Id { get; set; }
 
@@ -102,15 +65,4 @@ public class MarkTodoCompletedCommand : ICommand, IInvalidateCacheCommand
     {
         Id = id;
     }
-
-    /// <summary>
-    /// Cache keys to invalidate after marking todo as completed
-    /// </summary>
-    public IEnumerable<string> CacheKeysToInvalidate => new[]
-    {
-        "todos:all:true:all",        // All todos list
-        "todos:all:false:all",       // Pending todos only
-        $"todos:{Id}",               // Specific todo item
-        "todos:stats"                // Statistics
-    };
 }

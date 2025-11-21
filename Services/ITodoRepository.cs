@@ -9,8 +9,8 @@ namespace Client.Services;
 public interface ITodoRepository
 {
     Task<List<TodoItem>> GetAllAsync();
-    Task<TodoItem?> GetByIdAsync(int id);
+    Task<TodoItem?> GetByIdAsync(Guid id);
     Task<TodoItem> AddAsync(TodoItem item);
     Task<TodoItem> UpdateAsync(TodoItem item);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> DeleteAsync(Guid id);
 }

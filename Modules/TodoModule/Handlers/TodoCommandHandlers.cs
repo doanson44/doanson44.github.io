@@ -8,15 +8,13 @@ namespace Client.Modules.TodoModule.Handlers;
 
 /// <summary>
 /// Handler for CreateTodoCommand
-/// Cache invalidation is handled by CommandCachingBehavior pipeline behavior.
-/// Sync to server is handled by CommandSyncBehavior pipeline behavior.
 /// </summary>
 public class CreateTodoCommandHandler : ICommandHandler<CreateTodoCommand>
 {
-    private readonly ILocalRepository<TodoItem> _repository;
+    private readonly ITodoRepository _repository;
     private readonly IMapper _mapper;
 
-    public CreateTodoCommandHandler(ILocalRepository<TodoItem> repository, IMapper mapper)
+    public CreateTodoCommandHandler(ITodoRepository repository, IMapper mapper)
     {
         _repository = repository;
         _mapper = mapper;
@@ -28,22 +26,20 @@ public class CreateTodoCommandHandler : ICommandHandler<CreateTodoCommand>
         var todoItem = _mapper.Map<TodoItem>(command);
         todoItem.CreatedAt = DateTime.UtcNow;
 
-        // Save to local repository
-        await _repository.AddAsync(todoItem, cancellationToken);
+        // Save to repository
+        await _repository.AddAsync(todoItem);
     }
 }
 
 /// <summary>
 /// Handler for UpdateTodoCommand
-/// Cache invalidation is handled by CommandCachingBehavior pipeline behavior.
-/// Sync to server is handled by CommandSyncBehavior pipeline behavior.
 /// </summary>
 public class UpdateTodoCommandHandler : ICommandHandler<UpdateTodoCommand>
 {
-    private readonly ILocalRepository<TodoItem> _repository;
+    private readonly ITodoRepository _repository;
     private readonly IMapper _mapper;
 
-    public UpdateTodoCommandHandler(ILocalRepository<TodoItem> repository, IMapper mapper)
+    public UpdateTodoCommandHandler(ITodoRepository repository, IMapper mapper)
     {
         _repository = repository;
         _mapper = mapper;
@@ -54,54 +50,50 @@ public class UpdateTodoCommandHandler : ICommandHandler<UpdateTodoCommand>
         // Map command to entity
         var todoItem = _mapper.Map<TodoItem>(command);
 
-        // Update in local repository
-        await _repository.UpdateAsync(todoItem, cancellationToken);
+        // Update in repository
+        await _repository.UpdateAsync(todoItem);
     }
 }
 
 /// <summary>
 /// Handler for DeleteTodoCommand
-/// Cache invalidation is handled by CommandCachingBehavior pipeline behavior.
-/// Sync to server is handled by CommandSyncBehavior pipeline behavior.
 /// </summary>
 public class DeleteTodoCommandHandler : ICommandHandler<DeleteTodoCommand>
 {
-    private readonly ILocalRepository<TodoItem> _repository;
+    private readonly ITodoRepository _repository;
 
-    public DeleteTodoCommandHandler(ILocalRepository<TodoItem> repository)
+    public DeleteTodoCommandHandler(ITodoRepository repository)
     {
         _repository = repository;
     }
 
     public async Task HandleAsync(DeleteTodoCommand command, CancellationToken cancellationToken = default)
     {
-        // Delete from local repository
-        await _repository.DeleteAsync(command.Id, cancellationToken);
+        // Delete from repository
+        await _repository.DeleteAsync(command.Id);
     }
 }
 
 /// <summary>
 /// Handler for MarkTodoCompletedCommand
-/// Cache invalidation is handled by CommandCachingBehavior pipeline behavior.
-/// Sync to server is handled by CommandSyncBehavior pipeline behavior.
 /// </summary>
 public class MarkTodoCompletedCommandHandler : ICommandHandler<MarkTodoCompletedCommand>
 {
-    private readonly ILocalRepository<TodoItem> _repository;
+    private readonly ITodoRepository _repository;
 
-    public MarkTodoCompletedCommandHandler(ILocalRepository<TodoItem> repository)
+    public MarkTodoCompletedCommandHandler(ITodoRepository repository)
     {
         _repository = repository;
     }
 
     public async Task HandleAsync(MarkTodoCompletedCommand command, CancellationToken cancellationToken = default)
     {
-        var todo = await _repository.GetByIdAsync(command.Id, cancellationToken);
+        var todo = await _repository.GetByIdAsync(command.Id);
         if (todo != null)
         {
             todo.IsCompleted = true;
             todo.CompletedAt = DateTime.UtcNow;
-            await _repository.UpdateAsync(todo, cancellationToken);
+            await _repository.UpdateAsync(todo);
         }
     }
 }

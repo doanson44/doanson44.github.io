@@ -8,14 +8,13 @@ namespace Client.Modules.TodoModule.Handlers;
 
 /// <summary>
 /// Handler for GetAllTodosQuery
-/// Caching is handled by QueryCachingBehavior pipeline behavior.
 /// </summary>
 public class GetAllTodosQueryHandler : IQueryHandler<GetAllTodosQuery, List<TodoDto>>
 {
-    private readonly ILocalRepository<TodoItem> _repository;
+    private readonly ITodoRepository _repository;
     private readonly IMapper _mapper;
 
-    public GetAllTodosQueryHandler(ILocalRepository<TodoItem> repository, IMapper mapper)
+    public GetAllTodosQueryHandler(ITodoRepository repository, IMapper mapper)
     {
         _repository = repository;
         _mapper = mapper;
@@ -23,7 +22,7 @@ public class GetAllTodosQueryHandler : IQueryHandler<GetAllTodosQuery, List<Todo
 
     public async Task<List<TodoDto>> HandleAsync(GetAllTodosQuery query, CancellationToken cancellationToken = default)
     {
-        var items = await _repository.GetAllAsync(cancellationToken);
+        var items = await _repository.GetAllAsync();
 
         // Apply filters
         var filteredItems = items.AsEnumerable();
@@ -44,14 +43,13 @@ public class GetAllTodosQueryHandler : IQueryHandler<GetAllTodosQuery, List<Todo
 
 /// <summary>
 /// Handler for GetTodoByIdQuery
-/// Caching is handled by QueryCachingBehavior pipeline behavior.
 /// </summary>
 public class GetTodoByIdQueryHandler : IQueryHandler<GetTodoByIdQuery, TodoDto?>
 {
-    private readonly ILocalRepository<TodoItem> _repository;
+    private readonly ITodoRepository _repository;
     private readonly IMapper _mapper;
 
-    public GetTodoByIdQueryHandler(ILocalRepository<TodoItem> repository, IMapper mapper)
+    public GetTodoByIdQueryHandler(ITodoRepository repository, IMapper mapper)
     {
         _repository = repository;
         _mapper = mapper;
@@ -59,21 +57,20 @@ public class GetTodoByIdQueryHandler : IQueryHandler<GetTodoByIdQuery, TodoDto?>
 
     public async Task<TodoDto?> HandleAsync(GetTodoByIdQuery query, CancellationToken cancellationToken = default)
     {
-        var item = await _repository.GetByIdAsync(query.Id, cancellationToken);
+        var item = await _repository.GetByIdAsync(query.Id);
         return item != null ? _mapper.Map<TodoDto>(item) : null;
     }
 }
 
 /// <summary>
 /// Handler for GetTodosByPriorityQuery
-/// Caching is handled by QueryCachingBehavior pipeline behavior.
 /// </summary>
 public class GetTodosByPriorityQueryHandler : IQueryHandler<GetTodosByPriorityQuery, List<TodoDto>>
 {
-    private readonly ILocalRepository<TodoItem> _repository;
+    private readonly ITodoRepository _repository;
     private readonly IMapper _mapper;
 
-    public GetTodosByPriorityQueryHandler(ILocalRepository<TodoItem> repository, IMapper mapper)
+    public GetTodosByPriorityQueryHandler(ITodoRepository repository, IMapper mapper)
     {
         _repository = repository;
         _mapper = mapper;
@@ -81,7 +78,7 @@ public class GetTodosByPriorityQueryHandler : IQueryHandler<GetTodosByPriorityQu
 
     public async Task<List<TodoDto>> HandleAsync(GetTodosByPriorityQuery query, CancellationToken cancellationToken = default)
     {
-        var items = await _repository.GetAllAsync(cancellationToken);
+        var items = await _repository.GetAllAsync();
         var filteredItems = items.Where(t => t.Priority == query.Priority).ToList();
         return _mapper.Map<List<TodoDto>>(filteredItems);
     }
@@ -89,20 +86,19 @@ public class GetTodosByPriorityQueryHandler : IQueryHandler<GetTodosByPriorityQu
 
 /// <summary>
 /// Handler for GetTodoStatisticsQuery
-/// Caching is handled by QueryCachingBehavior pipeline behavior.
 /// </summary>
 public class GetTodoStatisticsQueryHandler : IQueryHandler<GetTodoStatisticsQuery, TodoStatisticsDto>
 {
-    private readonly ILocalRepository<TodoItem> _repository;
+    private readonly ITodoRepository _repository;
 
-    public GetTodoStatisticsQueryHandler(ILocalRepository<TodoItem> repository)
+    public GetTodoStatisticsQueryHandler(ITodoRepository repository)
     {
         _repository = repository;
     }
 
     public async Task<TodoStatisticsDto> HandleAsync(GetTodoStatisticsQuery query, CancellationToken cancellationToken = default)
     {
-        var allTodos = await _repository.GetAllAsync(cancellationToken);
+        var allTodos = await _repository.GetAllAsync();
 
         var stats = new TodoStatisticsDto
         {
