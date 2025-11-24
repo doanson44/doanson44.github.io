@@ -2,7 +2,9 @@
 @using Client.Common.CQRS
 @using System.ComponentModel.DataAnnotations
 @using Client.Modules.JsonSimplifierModule.Queries
+@using Microsoft.JSInterop
 @inject IMediator Mediator
+@inject IJSRuntime JSRuntime
 
 <PageTitle>JSON Simplifier</PageTitle>
 
@@ -32,8 +34,13 @@
 @if (!string.IsNullOrEmpty(simplifiedJson))
 {
     <div class="mt-4">
-        <h3>Simplified JSON</h3>
-        <pre class="bg-light p-3 rounded">@simplifiedJson</pre>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h3 class="mb-0">Simplified JSON</h3>
+            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="CopyToClipboard">
+                <i class="bi bi-clipboard"></i> Copy
+            </button>
+        </div>
+        <pre class="bg-dark text-white p-3 rounded">@simplifiedJson</pre>
     </div>
 }
 
@@ -62,6 +69,14 @@
         finally
         {
             isProcessing = false;
+        }
+    }
+
+    private async Task CopyToClipboard()
+    {
+        if (!string.IsNullOrEmpty(simplifiedJson))
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", simplifiedJson);
         }
     }
 
