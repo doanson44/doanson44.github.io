@@ -89,6 +89,7 @@
                 <div class="d-grid gap-2">
                     <RadzenButton Text="Add New Todo" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" Click="@(() => NavigateToNewTodo())" />
                     <RadzenButton Text="View All Todos" Icon="list" ButtonStyle="ButtonStyle.Secondary" Click="@(() => NavigateToTodos())" />
+                    <RadzenButton Text="JSON Simplifier" Icon="code" ButtonStyle="ButtonStyle.Info" Click="@(() => NavigateToJsonSimplifier())" />
                 </div>
             </RadzenCard>
         </div>
@@ -178,6 +179,11 @@
     private void NavigateToTodos()
     {
         Navigation.NavigateTo("/todos");
+    }
+
+    private void NavigateToJsonSimplifier()
+    {
+        Navigation.NavigateTo("/json-simplifier");
     }
 
     [Inject]

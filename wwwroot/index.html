@@ -15,6 +15,11 @@
                     window.location.origin + '/#' + path + window.location.search + window.location.hash
                 );
             }
+            // Handle reload with hash
+            if (window.location.hash && window.location.hash.startsWith('#/')) {
+                var hashPath = window.location.hash.substring(1);
+                history.replaceState(null, '', hashPath);
+            }
         })();
     </script>
     

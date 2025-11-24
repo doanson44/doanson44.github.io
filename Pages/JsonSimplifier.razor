@@ -1,0 +1,77 @@
+@page "/json-simplifier"
+@using Client.Common.CQRS
+@using System.ComponentModel.DataAnnotations
+@using Client.Modules.JsonSimplifierModule.Queries
+@inject IMediator Mediator
+
+<PageTitle>JSON Simplifier</PageTitle>
+
+<h1>JSON Simplifier</h1>
+
+<p>Enter a JSON string and the maximum number of items to keep in arrays.</p>
+
+<EditForm Model="@model" OnValidSubmit="SimplizeJson">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="jsonString" class="form-label">JSON String</label>
+        <InputTextArea id="jsonString" @bind-Value="model.JsonString" class="form-control" rows="10" placeholder="Enter JSON here..." />
+    </div>
+
+    <div class="mb-3">
+        <label for="maxItems" class="form-label">Max Items in Arrays</label>
+        <InputNumber id="maxItems" @bind-Value="model.MaxItems" class="form-control" min="1" />
+    </div>
+
+    <button type="submit" class="btn btn-primary" disabled="@isProcessing">
+        @(isProcessing ? "Processing..." : "Simplize JSON")
+    </button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(simplifiedJson))
+{
+    <div class="mt-4">
+        <h3>Simplified JSON</h3>
+        <pre class="bg-light p-3 rounded">@simplifiedJson</pre>
+    </div>
+}
+
+@code {
+    private JsonSimplifierModel model = new();
+    private string simplifiedJson = string.Empty;
+    private bool isProcessing = false;
+
+    private async Task SimplizeJson()
+    {
+        isProcessing = true;
+        try
+        {
+            var query = new GetSimplifiedJsonQuery
+            {
+                JsonString = model.JsonString,
+                MaxItems = model.MaxItems
+            };
+
+            simplifiedJson = await Mediator.QueryAsync<GetSimplifiedJsonQuery, string>(query);
+        }
+        catch (Exception ex)
+        {
+            simplifiedJson = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    public class JsonSimplifierModel
+    {
+        [Required(ErrorMessage = "JSON String is required")]
+        public string JsonString { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Max Items is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Max Items must be greater than 0")]
+        public int MaxItems { get; set; } = 5;
+    }
+}
