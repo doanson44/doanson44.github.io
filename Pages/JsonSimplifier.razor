@@ -36,7 +36,7 @@
     <div class="mt-4">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h3 class="mb-0">Simplified JSON</h3>
-            <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="CopyToClipboard">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="copyBtn" @onclick="CopyToClipboard">
                 <i class="bi bi-clipboard"></i> Copy
             </button>
         </div>
@@ -77,6 +77,7 @@
         if (!string.IsNullOrEmpty(simplifiedJson))
         {
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", simplifiedJson);
+            await JSRuntime.InvokeVoidAsync("showCopyTooltip", "copyBtn");
         }
     }
 
@@ -90,3 +91,18 @@
         public int MaxItems { get; set; } = 5;
     }
 }
+
+<script>
+    function showCopyTooltip(id) {
+        var element = document.getElementById(id);
+        var tooltip = new bootstrap.Tooltip(element, {
+            title: 'Copy successful',
+            placement: 'top',
+            trigger: 'manual'
+        });
+        tooltip.show();
+        setTimeout(function() {
+            tooltip.hide();
+        }, 2000);
+    }
+</script>
