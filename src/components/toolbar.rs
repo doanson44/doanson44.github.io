@@ -151,9 +151,9 @@ fn insert_markdown(
     default_text: &str,
     _block: bool,
 ) {
-    let Some(textarea) = crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(
-        textarea_id,
-    ) else {
+    let Some(textarea) =
+        crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(textarea_id)
+    else {
         return;
     };
 
@@ -168,7 +168,14 @@ fn insert_markdown(
         selected
     };
 
-    let new_text = format!("{}{}{}{}{}", &value[..start], prefix, insert_text, suffix, &value[end..]);
+    let new_text = format!(
+        "{}{}{}{}{}",
+        &value[..start],
+        prefix,
+        insert_text,
+        suffix,
+        &value[end..]
+    );
 
     let new_cursor = start + prefix.len() + insert_text.len();
 

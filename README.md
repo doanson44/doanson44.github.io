@@ -8,6 +8,7 @@ A **Rust-first, client-side Markdown editor** with live preview and Mermaid diag
 
 - 📝 **Live Markdown Editor** — Write Markdown with instant preview
 - 📊 **Mermaid Diagrams** — Flowcharts, sequence diagrams, and more
+- 📋 **One-Click Copy** — Instantly copy raw code, table data, and export Mermaid diagrams as PNG images
 - 🦀 **Rust-Powered** — Core logic written in Rust, compiled to WebAssembly
 - 🔒 **100% Client-Side** — No data ever leaves your browser
 - 🎨 **Dark Theme** — Beautiful dark UI with Bootstrap 5

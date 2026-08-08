@@ -441,6 +441,34 @@ html, body {
     font-size: 0.875rem;
 }
 
+/* ---------- Copy Buttons ---------- */
+.copy-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    opacity: 0;
+    transition: opacity var(--ms-transition-fast), background-color var(--ms-transition-fast);
+    z-index: 10;
+}
+
+.markdown-body pre, 
+.markdown-body table,
+.mermaid-container {
+    position: relative;
+}
+
+.markdown-body pre:hover .copy-btn,
+.markdown-body table:hover .copy-btn,
+.mermaid-container:hover .copy-btn {
+    opacity: 1;
+}
+
+.copy-btn.copied {
+    color: var(--ms-accent-green);
+    border-color: var(--ms-accent-green);
+    opacity: 1;
+}
+
 /* ---------- Footer ---------- */
 .app-footer {
     background-color: var(--ms-bg-secondary);

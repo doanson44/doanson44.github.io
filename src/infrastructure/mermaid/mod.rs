@@ -52,9 +52,7 @@ pub async fn render_mermaid(id: &str, code: &str) -> MermaidResult {
             match serde_json::from_str::<MermaidResponse>(&json_str) {
                 Ok(response) => {
                     if response.ok {
-                        MermaidResult::Success(
-                            response.svg.unwrap_or_default(),
-                        )
+                        MermaidResult::Success(response.svg.unwrap_or_default())
                     } else {
                         MermaidResult::Error(
                             response

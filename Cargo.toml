@@ -28,10 +28,15 @@ features = [
     "HtmlElement",
     "HtmlTextAreaElement",
     "HtmlDivElement",
+    "HtmlButtonElement",
     "Node",
+    "NodeList",
+    "DomTokenList",
     "Window",
     "Selection",
     "CssStyleDeclaration",
+    "Clipboard",
+    "Navigator",
 ]
 
 [profile.release]

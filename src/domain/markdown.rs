@@ -112,10 +112,7 @@ pub fn render_markdown(input: &str) -> RenderedMarkdown {
             }
             _ => {
                 // Render non-mermaid events to HTML
-                pulldown_cmark::html::push_html(
-                    &mut current_html,
-                    std::iter::once(event),
-                );
+                pulldown_cmark::html::push_html(&mut current_html, std::iter::once(event));
             }
         }
     }
