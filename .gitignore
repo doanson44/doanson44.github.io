@@ -1,0 +1,16 @@
+# Build artifacts
+/target/
+/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Trunk
+/.trunk/

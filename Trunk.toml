@@ -1,0 +1,6 @@
+[build]
+# For user site (username.github.io), base path is "/"
+# For project sites, change to "/repo-name/"
+public_url = "/"
+# Output directory
+dist = "dist"
