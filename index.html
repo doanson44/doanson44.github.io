@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -24,102 +24,119 @@
 
     <!-- Trunk configuration for Leptos -->
     <link data-trunk rel="rust" data-bin="markdown-studio" data-wasm-opt="0" />
+
+    <!-- Theme Initialization (must run before page render to avoid FOUC) -->
+    <script>
+        (function() {
+            const saved = localStorage.getItem('ms-theme');
+            const theme = saved || 'dark';
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
+    </script>
 </head>
 <body>
-    <!-- Mermaid.js Interop -->
+    <!-- Mermaid interop + copy + theme toggle -->
     <script>
         window.__mermaid_render_counter = 0;
-        
-        // Global render function callable from WASM immediately
+
         window.__mermaid_render = async function(id, code) {
-            console.log("Mermaid render called:", id);
             try {
-                // Wait for mermaid to be loaded by the module script
                 let retries = 0;
                 while (!window.__mermaid && retries < 50) {
                     await new Promise(r => setTimeout(r, 100));
                     retries++;
                 }
-                
-                if (!window.__mermaid) {
-                    throw new Error("Mermaid library failed to load");
-                }
+                if (!window.__mermaid) throw new Error("Mermaid library failed to load");
 
                 window.__mermaid_render_counter += 1;
                 const uniqueId = 'mermaid-svg-' + id + '-' + window.__mermaid_render_counter;
-                
-                // Mermaid 11.x render returns { svg, bindFunctions }
                 const { svg } = await window.__mermaid.render(uniqueId, code);
-                console.log("Mermaid render success");
                 return JSON.stringify({ ok: true, svg: svg });
             } catch (e) {
-                console.error("Mermaid render error:", e);
                 return JSON.stringify({ ok: false, error: e.message || String(e) });
             }
         };
 
-        // Global function to copy an SVG as a PNG image to the clipboard
         window.__copy_svg_as_png = async function(svgElementId) {
             try {
                 const svgElement = document.getElementById(svgElementId);
                 if (!svgElement) throw new Error("SVG element not found");
-                
+
                 const clone = svgElement.cloneNode(true);
                 clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
                 clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-                
-                // Set explicit dimensions and dark background
+
                 const rect = svgElement.getBoundingClientRect();
                 clone.setAttribute("width", rect.width);
                 clone.setAttribute("height", rect.height);
-                clone.style.backgroundColor = "#161b22";
-                
+
+                const bgColor = (document.documentElement.getAttribute('data-bs-theme') || 'dark') === 'light' ? '#ffffff' : '#161b22';
+                clone.style.backgroundColor = bgColor;
+
                 const serializer = new XMLSerializer();
                 const svgString = serializer.serializeToString(clone);
-                
-                // Encode to Base64 Data URI to prevent Tainted Canvas issues
                 const b64 = btoa(unescape(encodeURIComponent(svgString)));
-                const url = `data:image/svg+xml;base64,${b64}`;
-                
+                const url = 'data:image/svg+xml;base64,' + b64;
+
                 const img = new Image();
-                img.crossOrigin = "anonymous"; // Helps prevent tainting in some browsers
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = reject;
-                    img.src = url;
-                });
-                
+                img.crossOrigin = "anonymous";
+                await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = url; });
+
                 const canvas = document.createElement("canvas");
                 canvas.width = rect.width;
                 canvas.height = rect.height;
                 const ctx = canvas.getContext("2d");
-                
-                ctx.fillStyle = '#161b22';
+                ctx.fillStyle = bgColor;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0, rect.width, rect.height);
-                
+
                 const pngBlob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
                 const item = new ClipboardItem({ "image/png": pngBlob });
                 await navigator.clipboard.write([item]);
-                
                 return JSON.stringify({ ok: true });
             } catch (e) {
-                console.error("Copy SVG error:", e);
                 return JSON.stringify({ ok: false, error: e.message || String(e) });
             }
         };
+
+        window.__toggle_theme = function() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-bs-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', next);
+            localStorage.setItem('ms-theme', next);
+
+            // Update Mermaid theme + re-render all existing diagrams
+            if (window.__mermaid) {
+                window.__mermaid.initialize({ theme: next === 'light' ? 'default' : 'dark' });
+                // Re-render all mermaid diagrams in the DOM
+                document.querySelectorAll('[data-mermaid-code]').forEach(function(el) {
+                    const code = el.getAttribute('data-mermaid-code');
+                    if (code) {
+                        const uniqueId = 'mermaid-rerender-' + Math.random().toString(36).slice(2, 8);
+                        window.__mermaid.render(uniqueId, code).then(function(result) {
+                            var diagram = el.querySelector('.mermaid-diagram');
+                            if (diagram) diagram.innerHTML = result.svg;
+                        }).catch(function() {});
+                    }
+                });
+            }
+            return next;
+        };
     </script>
+
+    <!-- Mermaid.js ES module init -->
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({
-            startOnLoad: false,
-            theme: 'dark',
-            securityLevel: 'strict',
-            logLevel: 'error',
-            fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
-        });
-        // Expose mermaid to global scope for the render function
+        const theme = (document.documentElement.getAttribute('data-bs-theme') || 'dark') === 'light' ? 'default' : 'dark';
+        mermaid.initialize({ startOnLoad: false, theme: theme, securityLevel: 'strict', logLevel: 'error', fontFamily: '"Inter", system-ui, -apple-system, sans-serif' });
         window.__mermaid = mermaid;
     </script>
+
+    <!-- Bootstrap 5 JS (required for navbar toggler, dropdowns, etc.) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            crossorigin="anonymous"></script>
 </body>
+</html>
 </html>

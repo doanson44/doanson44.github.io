@@ -196,10 +196,12 @@ fn insert_markdown(
 /// # Props
 /// * `source` - The reactive Markdown source signal to modify
 /// * `textarea_id` - The DOM ID of the textarea element
+/// * `toggle_preview` - Callback to toggle preview-only mode
 #[component]
 pub fn Toolbar(
     source: RwSignal<String>,
     #[prop(default = "markdown-editor")] textarea_id: &'static str,
+    #[prop(optional)] toggle_preview: Option<Callback<()>>,
 ) -> impl IntoView {
     let buttons: Vec<_> = TOOLBAR_BUTTONS
         .iter()
@@ -246,6 +248,22 @@ pub fn Toolbar(
         <div class="toolbar d-flex flex-wrap align-items-center gap-1 p-2 border-bottom border-secondary" id="editor-toolbar">
             {buttons}
             <div class="ms-auto d-flex gap-1">
+                // Preview-only toggle
+                {if let Some(toggle) = toggle_preview {
+                    view! {
+                        <button
+                            type="button"
+                            class="btn btn-outline-success btn-sm"
+                            title="Preview only (hide editor)"
+                            on:click=move |_| toggle.run(())
+                        >
+                            <i class="bi bi-eye-fill"></i>
+                            <span class="d-none d-lg-inline ms-1">"Preview"</span>
+                        </button>
+                    }.into_any()
+                } else {
+                    ().into_any()
+                }}
                 <button
                     type="button"
                     class="btn btn-outline-danger btn-sm"

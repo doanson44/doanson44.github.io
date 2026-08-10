@@ -1,48 +1,87 @@
 use leptos::prelude::*;
+use wasm_bindgen::JsCast;
+use web_sys::window;
 
-use crate::components::editor::Editor;
+use crate::components::footer::Footer;
 use crate::components::navbar::Navbar;
-use crate::components::preview::Preview;
-use crate::components::toolbar::Toolbar;
-use crate::features::markdown::state::MarkdownState;
+use crate::features::cv::page::CvPage;
+use crate::features::games::page::GamesPage;
+use crate::features::home::page::HomePage;
+use crate::features::socket::page::SocketPage;
+use crate::features::tools::markdown::page::MarkdownPage;
+use crate::features::tools::page::ToolsPage;
 
-/// Root application component.
+/// Platform shell with hash-based routing for GitHub Pages compatibility.
 ///
-/// Creates the Markdown state and composes the UI from Navbar,
-/// Toolbar, Editor, and Preview components.
-///
-/// Layout uses Bootstrap's grid system for a responsive split-pane design.
+/// Uses `window.location.hash` to determine the current route.
+/// Navigation is done via `<a href="#/path">` links.
+/// No `leptos_router` dependency needed — simple, zero-cost routing.
 #[component]
 pub fn App() -> impl IntoView {
-    let state = MarkdownState::new();
+    let current_hash = create_hash_signal();
 
     view! {
         <div class="app-container d-flex flex-column vh-100" id="app">
             <Navbar />
-            <Toolbar source=state.source />
-            <div class="editor-preview-container flex-grow-1 d-flex overflow-hidden">
-                <div class="editor-pane">
-                    <Editor source=state.source />
-                </div>
-                <div class="divider"></div>
-                <div class="preview-pane">
-                    <Preview rendered=state.rendered />
-                </div>
-            </div>
-            <footer class="app-footer d-flex align-items-center justify-content-between px-3 py-1 border-top border-secondary">
-                <span class="text-body-secondary small">
-                    "Markdown Studio · Powered by "
-                    <a href="https://www.rust-lang.org/" target="_blank" rel="noopener" class="text-decoration-none">"Rust"</a>
-                    " + "
-                    <a href="https://leptos.dev/" target="_blank" rel="noopener" class="text-decoration-none">"Leptos"</a>
-                    " + "
-                    <a href="https://webassembly.org/" target="_blank" rel="noopener" class="text-decoration-none">"WebAssembly"</a>
-                </span>
-                <span class="text-body-secondary small">
-                    <i class="bi bi-shield-lock me-1"></i>
-                    "100% client-side · No data leaves your browser"
-                </span>
-            </footer>
+            <main class="flex-grow-1 d-flex overflow-hidden" style="min-height: 0;">
+                {move || render_page(current_hash.get())}
+            </main>
+            <Footer />
         </div>
+    }
+}
+
+/// Create a reactive signal that tracks `window.location.hash`.
+fn create_hash_signal() -> RwSignal<String> {
+    let initial = window()
+        .and_then(|w| w.location().hash().ok())
+        .unwrap_or_default()
+        .trim_start_matches('#')
+        .to_string();
+
+    let hash = RwSignal::new(if initial.is_empty() {
+        "/".into()
+    } else {
+        initial
+    });
+
+    // Listen for hash changes
+    let hash_clone = hash;
+    let closure = wasm_bindgen::closure::Closure::wrap(Box::new(move || {
+        if let Some(win) = window() {
+            if let Ok(loc) = win.location().hash() {
+                let h = loc.trim_start_matches('#').to_string();
+                hash_clone.set(if h.is_empty() { "/".into() } else { h });
+            }
+        }
+    }) as Box<dyn FnMut()>);
+
+    if let Some(win) = window() {
+        let _ =
+            win.add_event_listener_with_callback("hashchange", closure.as_ref().unchecked_ref());
+    }
+    // Leak the closure to keep it alive for the lifetime of the app
+    closure.forget();
+
+    hash
+}
+
+/// Render the appropriate page component based on the current route.
+fn render_page(route: String) -> leptos::prelude::AnyView {
+    match route.as_str() {
+        "/" => view! { <HomePage /> }.into_any(),
+        "/tools" => view! { <ToolsPage /> }.into_any(),
+        "/tools/markdown" => view! { <MarkdownPage /> }.into_any(),
+        "/games" => view! { <GamesPage /> }.into_any(),
+        "/cv" => view! { <CvPage /> }.into_any(),
+        "/socket" => view! { <SocketPage /> }.into_any(),
+        _ => view! {
+            <div class="container py-5 text-center flex-grow-1">
+                <h3 class="text-body-secondary">"404"</h3>
+                <p class="text-body-tertiary">"Page not found."</p>
+                <a href="#/" class="btn btn-outline-secondary btn-sm">"Go Home"</a>
+            </div>
+        }
+        .into_any(),
     }
 }

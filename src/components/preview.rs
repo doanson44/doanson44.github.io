@@ -159,6 +159,8 @@ fn MermaidDiagram(id: String, code: String, #[prop(optional)] _key: usize) -> im
     let container_ref = NodeRef::<Div>::new();
     let id_clone = id.clone();
 
+    let code_for_data = code.clone();
+
     let mermaid_result = LocalResource::new(move || {
         let id = id_clone.clone();
         let code = code.clone();
@@ -166,7 +168,7 @@ fn MermaidDiagram(id: String, code: String, #[prop(optional)] _key: usize) -> im
     });
 
     view! {
-        <div class="mermaid-container my-3" node_ref=container_ref>
+        <div class="mermaid-container my-3" node_ref=container_ref data-mermaid-code=code_for_data>
             <Suspense fallback=move || view! {
                 <div class="mermaid-loading d-flex align-items-center justify-content-center p-4">
                     <div class="spinner-border spinner-border-sm text-primary me-2" role="status">

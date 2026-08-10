@@ -4,7 +4,7 @@ fn main() {
     // Initialize console logging for WASM
     console_log::init_with_level(log::Level::Debug).expect("error initializing logger");
 
-    log::info!("🦀 Markdown Studio starting...");
+    log::info!("🦀 doanson44.github.io platform starting...");
 
     leptos::mount::mount_to_body(App);
 }

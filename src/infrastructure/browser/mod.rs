@@ -23,6 +23,10 @@ pub fn get_document() -> web_sys::Document {
 extern "C" {
     #[wasm_bindgen(js_name = "__copy_svg_as_png", catch)]
     async fn copy_svg_as_png_js(svg_id: &str) -> Result<JsValue, JsValue>;
+
+    /// Toggle between dark and light theme. Returns the new theme name.
+    #[wasm_bindgen(js_name = "__toggle_theme")]
+    pub fn toggle_theme_js() -> String;
 }
 
 /// Copy text to the system clipboard.
