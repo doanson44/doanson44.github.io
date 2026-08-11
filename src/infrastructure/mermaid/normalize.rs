@@ -46,7 +46,11 @@ pub fn normalize_mermaid_source(code: &str) -> String {
         append_normalized_line(&code[line_start..], &mut output, &mut changed);
     }
 
-    if changed { output } else { code.to_owned() }
+    if changed {
+        output
+    } else {
+        code.to_owned()
+    }
 }
 
 fn append_normalized_line(line: &str, output: &mut String, changed: &mut bool) {
@@ -77,7 +81,10 @@ fn is_keyword_token(s: &str, keyword: &str) -> bool {
     if !s.starts_with(keyword) {
         return false;
     }
-    matches!(s.as_bytes().get(keyword.len()), None | Some(&b' ') | Some(&b'\t'))
+    matches!(
+        s.as_bytes().get(keyword.len()),
+        None | Some(&b' ') | Some(&b'\t')
+    )
 }
 
 fn normalize_line(line: &str) -> Cow<'_, str> {
@@ -221,12 +228,18 @@ mod tests {
 
     #[test]
     fn quotes_slash_prefix_label() {
-        assert_eq!(normalize_line("  B[/harness-write-goal]"), "  B[\"/harness-write-goal\"]");
+        assert_eq!(
+            normalize_line("  B[/harness-write-goal]"),
+            "  B[\"/harness-write-goal\"]"
+        );
     }
 
     #[test]
     fn quotes_slash_prefix_label_with_space() {
-        assert_eq!(normalize_line("  F[/harness-goal slug]"), "  F[\"/harness-goal slug\"]");
+        assert_eq!(
+            normalize_line("  F[/harness-goal slug]"),
+            "  F[\"/harness-goal slug\"]"
+        );
     }
 
     #[test]
@@ -314,7 +327,10 @@ mod tests {
     #[test]
     fn leaves_quoted_with_slash_bracket_unchanged_alongside_real_node() {
         let line = r#"  A["desc [/harness] x"] --> B[/real-node]"#;
-        assert_eq!(normalize_line(line), r#"  A["desc [/harness] x"] --> B["/real-node"]"#);
+        assert_eq!(
+            normalize_line(line),
+            r#"  A["desc [/harness] x"] --> B["/real-node"]"#
+        );
     }
 
     #[test]
