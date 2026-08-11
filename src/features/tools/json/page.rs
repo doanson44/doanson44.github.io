@@ -54,6 +54,15 @@ pub fn JsonPage() -> impl IntoView {
                 </button>
                 <button
                     type="button"
+                    class="btn btn-outline-secondary btn-sm toolbar-btn"
+                    title="Reset to sample JSON"
+                    on:click=move |_| state.reset()
+                >
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    <span class="d-none d-lg-inline ms-1">"Reset"</span>
+                </button>
+                <button
+                    type="button"
                     class="btn btn-outline-danger btn-sm toolbar-btn"
                     title="Clear JSON"
                     on:click=move |_| state.clear()
