@@ -32,60 +32,52 @@ pub fn JsonPage() -> impl IntoView {
     };
 
     view! {
-        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-            <div class="container-fluid py-3 flex-grow-1 d-flex flex-column overflow-hidden">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-                    <div>
-                        <h2 class="mb-1">
-                            <i class="bi bi-braces text-primary me-2"></i>
-                            "JSON Formatter"
-                        </h2>
-                        <p class="text-body-secondary small mb-0">
-                            "Validate, format, and minify JSON entirely in your browser."
-                        </p>
-                    </div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <button
-                            type="button"
-                            class="btn btn-primary"
-                            on:click=move |_| state.format()
-                            title="Format JSON"
-                        >
-                            <i class="bi bi-text-indent-left me-1"></i>
-                            "Format"
-                        </button>
-                        <button
-                            type="button"
-                            class="btn btn-outline-primary"
-                            on:click=move |_| state.minify()
-                            title="Minify JSON"
-                        >
-                            <i class="bi bi-arrows-collapse me-1"></i>
-                            "Minify"
-                        </button>
-                        <button
-                            type="button"
-                            class="btn btn-outline-secondary"
-                            on:click=move |_| state.clear()
-                            title="Clear JSON"
-                        >
-                            <i class="bi bi-x-lg me-1"></i>
-                            "Clear"
-                        </button>
-                    </div>
+        <div class="d-flex flex-column flex-grow-1" style="min-height: 0;">
+            <div class="toolbar d-flex flex-wrap align-items-center gap-1 p-2 border-bottom border-secondary" id="json-toolbar">
+                <button
+                    type="button"
+                    class="btn btn-outline-primary btn-sm toolbar-btn"
+                    title="Format JSON"
+                    on:click=move |_| state.format()
+                >
+                    <i class="bi bi-text-indent-left"></i>
+                    <span class="d-none d-lg-inline ms-1">"Format"</span>
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm toolbar-btn"
+                    title="Minify JSON"
+                    on:click=move |_| state.minify()
+                >
+                    <i class="bi bi-arrows-collapse"></i>
+                    <span class="d-none d-lg-inline ms-1">"Minify"</span>
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm toolbar-btn"
+                    title="Clear JSON"
+                    on:click=move |_| state.clear()
+                >
+                    <i class="bi bi-trash3"></i>
+                    <span class="d-none d-lg-inline ms-1">"Clear"</span>
+                </button>
+            </div>
+
+            {move || state.error.get().map(|error| view! {
+                <div class="alert alert-danger rounded-0 border-0 border-bottom d-flex align-items-start gap-2 mb-0" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>{error}</span>
                 </div>
+            })}
 
-                {move || state.error.get().map(|error| view! {
-                    <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <span>{error}</span>
-                    </div>
-                })}
-
-                <div class="row g-3 flex-grow-1 overflow-hidden">
-                    <div class="col-12 col-lg-6 d-flex flex-column">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <label for="json-input" class="form-label fw-semibold mb-0">"Input"</label>
+            <div class="editor-preview-container flex-grow-1 d-flex overflow-hidden">
+                <div class="editor-pane">
+                    <div class="editor-panel d-flex flex-column h-100" id="json-editor-panel">
+                        <div class="panel-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary">
+                            <span class="panel-title">
+                                <i class="bi bi-pencil-square me-2 text-primary"></i>
+                                "Input"
+                            </span>
                             <span class="text-body-secondary small" aria-live="polite">
                                 {move || format!("{} lines", line_count(&state.source.get()))}
                             </span>
@@ -120,29 +112,50 @@ pub fn JsonPage() -> impl IntoView {
                             ></textarea>
                         </div>
                     </div>
+                </div>
 
-                    <div class="col-12 col-lg-6 d-flex flex-column">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <label for="json-output" class="form-label fw-semibold mb-0">"Output"</label>
+                <div class="divider" aria-hidden="true"></div>
+
+                <div class="preview-pane">
+                    <div class="preview-panel d-flex flex-column h-100" id="json-preview-panel">
+                        <div class="panel-header d-flex align-items-center px-3 py-2 border-bottom border-secondary">
+                            <span class="panel-title">
+                                <i class="bi bi-eye me-2 text-success"></i>
+                                "Preview"
+                            </span>
                             <button
                                 type="button"
-                                class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                class="btn btn-outline-primary btn-sm ms-auto"
                                 disabled=move || state.output.get().is_empty()
                                 on:click=on_copy
                                 title="Copy formatted JSON"
+                                aria-label="Copy formatted JSON"
                             >
-                                <i class="bi bi-clipboard" aria-hidden="true"></i>
-                                <span class="visually-hidden">"Copy formatted JSON"</span>
-                                {move || if state.copied.get() { "Copied" } else { "Copy" }}
+                                <i class="bi bi-clipboard"></i>
+                                <span class="d-none d-md-inline ms-1" aria-live="polite">
+                                    {move || if state.copied.get() { "Copied" } else { "Copy" }}
+                                </span>
                             </button>
                         </div>
-                        <textarea
-                            id="json-output"
-                            class="form-control font-monospace flex-grow-1"
-                            readonly=true
-                            aria-label="Formatted JSON output"
-                            prop:value=move || state.output.get()
-                        ></textarea>
+                        <div class="preview-content flex-grow-1 p-3 overflow-auto" id="json-preview-content">
+                            {move || {
+                                let output = state.output.get();
+                                if output.is_empty() {
+                                    view! {
+                                        <div class="h-100 d-flex align-items-center justify-content-center text-body-secondary">
+                                            <div class="text-center">
+                                                <i class="bi bi-braces display-6 d-block mb-2"></i>
+                                                <span>"Format or minify JSON to see the result."</span>
+                                            </div>
+                                        </div>
+                                    }.into_any()
+                                } else {
+                                    view! {
+                                        <pre class="mb-0"><code class="font-monospace">{output}</code></pre>
+                                    }.into_any()
+                                }
+                            }}
+                        </div>
                     </div>
                 </div>
             </div>
