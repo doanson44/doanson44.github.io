@@ -82,11 +82,17 @@ impl JsonState {
         }
     }
 
+    /// Clear the editor and persist the empty state.
     pub fn clear(&self) {
-        Self::save_content("");
-        self.source.set(String::new());
+        self.set_content(String::new());
         self.output.set(String::new());
         self.error.set(None);
-        self.copied.set(false);
+    }
+
+    /// Restore the default sample JSON and clear the current result.
+    pub fn reset(&self) {
+        self.set_content(SAMPLE_JSON.to_string());
+        self.output.set(String::new());
+        self.error.set(None);
     }
 }
