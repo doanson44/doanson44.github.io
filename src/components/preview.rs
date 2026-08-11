@@ -4,9 +4,7 @@ use leptos::wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlElement};
 
 use crate::domain::markdown::{RenderSegment, RenderedMarkdown};
-use crate::infrastructure::browser::{
-    copy_preview_as_html, copy_svg_as_png, copy_to_clipboard,
-};
+use crate::infrastructure::browser::{copy_preview_as_html, copy_svg_as_png, copy_to_clipboard};
 use crate::infrastructure::mermaid::{render_mermaid, MermaidResult};
 
 /// Markdown preview component.
@@ -132,7 +130,10 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
 
         copy_status.set("Copying...");
         leptos::task::spawn_local(async move {
-            if copy_preview_as_html("markdown-preview-content").await.is_ok() {
+            if copy_preview_as_html("markdown-preview-content")
+                .await
+                .is_ok()
+            {
                 copy_status.set("Copied");
             } else {
                 copy_status.set("Copy failed");

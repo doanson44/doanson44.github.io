@@ -27,17 +27,19 @@ pub fn ToolsPage() -> impl IntoView {
                         </a>
                     </div>
                     <div class="col-12 col-sm-6 col-lg-4">
-                        <div class="card bg-body-tertiary border-secondary h-100 opacity-50">
-                            <div class="card-body p-3">
-                                <h6 class="card-title mb-1">
-                                    <i class="bi bi-braces me-2"></i>
-                                    "JSON Formatter"
-                                </h6>
-                                <p class="card-text text-body-secondary small mb-0">
-                                    <span class="badge bg-secondary">"Coming soon"</span>
-                                </p>
+                        <a href="#/tools/json" class="text-decoration-none">
+                            <div class="card bg-body-tertiary border-secondary h-100">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title mb-1">
+                                        <i class="bi bi-braces text-primary me-2"></i>
+                                        "JSON Formatter"
+                                    </h6>
+                                    <p class="card-text text-body-secondary small mb-0">
+                                        "Validate, format, and minify JSON in your browser."
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                     <div class="col-12 col-sm-6 col-lg-4">
                         <div class="card bg-body-tertiary border-secondary h-100 opacity-50">
