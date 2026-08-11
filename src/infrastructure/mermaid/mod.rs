@@ -1,3 +1,6 @@
+mod normalize;
+pub use normalize::normalize_mermaid_source;
+
 use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 
@@ -42,7 +45,11 @@ struct MermaidResponse {
 /// Invalid Mermaid syntax produces an error result without panicking,
 /// ensuring the rest of the preview remains functional.
 pub async fn render_mermaid(id: &str, code: &str) -> MermaidResult {
-    match mermaid_render_js(id, code).await {
+    // Normalize the source before passing to Mermaid.js.
+    // The original `code` is never mutated; `normalized` is a local value used
+    // only for rendering. Copy/export functionality continues to use `code`.
+    let normalized = normalize_mermaid_source(code);
+    match mermaid_render_js(id, &normalized).await {
         Ok(js_value) => {
             let json_str = match js_value.as_string() {
                 Some(s) => s,
