@@ -75,7 +75,7 @@ pub fn JsonPage() -> impl IntoView {
                 })}
 
                 <div class="row g-3 flex-grow-1 overflow-hidden">
-                    <div class="col-12 col-lg-6 d-flex flex-column min-vh-0">
+                    <div class="col-12 col-lg-6 d-flex flex-column">
                         <label for="json-input" class="form-label fw-semibold">"Input"</label>
                         <textarea
                             id="json-input"
@@ -87,7 +87,7 @@ pub fn JsonPage() -> impl IntoView {
                         ></textarea>
                     </div>
 
-                    <div class="col-12 col-lg-6 d-flex flex-column min-vh-0">
+                    <div class="col-12 col-lg-6 d-flex flex-column">
                         <div class="d-flex align-items-center justify-content-between mb-2">
                             <label for="json-output" class="form-label fw-semibold mb-0">"Output"</label>
                             <button
