@@ -79,42 +79,44 @@ pub fn JsonPage() -> impl IntoView {
     view! {
         <div class="d-flex flex-column flex-grow-1" style="min-height: 0;">
             <div class="toolbar d-flex flex-wrap align-items-center gap-1 p-2 border-bottom border-secondary" id="json-toolbar">
-                <button
-                    type="button"
-                    class="btn btn-outline-primary btn-sm toolbar-btn"
-                    title="Format JSON"
-                    on:click=move |_| state.format()
-                >
-                    <i class="bi bi-text-indent-left"></i>
-                    <span class="d-none d-lg-inline ms-1">"Format"</span>
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-outline-secondary btn-sm toolbar-btn"
-                    title="Minify JSON"
-                    on:click=move |_| state.minify()
-                >
-                    <i class="bi bi-arrows-collapse"></i>
-                    <span class="d-none d-lg-inline ms-1">"Minify"</span>
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-outline-secondary btn-sm toolbar-btn"
-                    title="Reset to sample JSON"
-                    on:click=move |_| state.reset()
-                >
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                    <span class="d-none d-lg-inline ms-1">"Reset"</span>
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-outline-danger btn-sm toolbar-btn"
-                    title="Clear JSON"
-                    on:click=move |_| state.clear()
-                >
-                    <i class="bi bi-trash3"></i>
-                    <span class="d-none d-lg-inline ms-1">"Clear"</span>
-                </button>
+                <div class="ms-auto d-flex flex-wrap gap-1">
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary btn-sm toolbar-btn"
+                        title="Format JSON"
+                        on:click=move |_| state.format()
+                    >
+                        <i class="bi bi-text-indent-left"></i>
+                        <span class="d-none d-lg-inline ms-1">"Format"</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm toolbar-btn"
+                        title="Minify JSON"
+                        on:click=move |_| state.minify()
+                    >
+                        <i class="bi bi-arrows-collapse"></i>
+                        <span class="d-none d-lg-inline ms-1">"Minify"</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm toolbar-btn"
+                        title="Reset to sample JSON"
+                        on:click=move |_| state.reset()
+                    >
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        <span class="d-none d-lg-inline ms-1">"Reset"</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm toolbar-btn"
+                        title="Clear JSON"
+                        on:click=move |_| state.clear()
+                    >
+                        <i class="bi bi-trash3"></i>
+                        <span class="d-none d-lg-inline ms-1">"Clear"</span>
+                    </button>
+                </div>
             </div>
 
             {move || state.error.get().map(|error| view! {
