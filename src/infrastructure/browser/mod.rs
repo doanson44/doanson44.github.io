@@ -24,6 +24,9 @@ extern "C" {
     #[wasm_bindgen(js_name = "__copy_svg_as_png", catch)]
     async fn copy_svg_as_png_js(svg_id: &str) -> Result<JsValue, JsValue>;
 
+    #[wasm_bindgen(js_name = "__copy_preview_as_html", catch)]
+    async fn copy_preview_as_html_js(element_id: &str) -> Result<JsValue, JsValue>;
+
     /// Toggle between dark and light theme. Returns the new theme name.
     #[wasm_bindgen(js_name = "__toggle_theme")]
     pub fn toggle_theme_js() -> String;
@@ -34,7 +37,6 @@ pub async fn copy_to_clipboard(text: &str) -> Result<(), String> {
     let navigator = get_window().navigator();
     let clipboard = navigator.clipboard();
 
-    // We can use web_sys::Clipboard if available
     let promise = clipboard.write_text(text);
     let _ = wasm_bindgen_futures::JsFuture::from(promise)
         .await
@@ -44,6 +46,23 @@ pub async fn copy_to_clipboard(text: &str) -> Result<(), String> {
         })?;
 
     Ok(())
+}
+
+/// Copy the rendered preview as rich HTML with a plain-text fallback.
+pub async fn copy_preview_as_html(element_id: &str) -> Result<(), String> {
+    match copy_preview_as_html_js(element_id).await {
+        Ok(res) => {
+            let json = res.as_string().unwrap_or_default();
+            if json.contains("\"ok\":true") {
+                Ok(())
+            } else {
+                Err("Failed to copy preview as rich HTML".to_string())
+            }
+        }
+        Err(e) => Err(e
+            .as_string()
+            .unwrap_or_else(|| "Failed to copy preview".into())),
+    }
 }
 
 /// Copy an SVG element as a PNG image to the clipboard using the global JS interop function.

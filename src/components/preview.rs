@@ -4,13 +4,16 @@ use leptos::wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlElement};
 
 use crate::domain::markdown::{RenderSegment, RenderedMarkdown};
-use crate::infrastructure::browser::{copy_svg_as_png, copy_to_clipboard};
+use crate::infrastructure::browser::{
+    copy_preview_as_html, copy_svg_as_png, copy_to_clipboard,
+};
 use crate::infrastructure::mermaid::{render_mermaid, MermaidResult};
 
 /// Markdown preview component.
 #[component]
 pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
     let container_ref = NodeRef::<Div>::new();
+    let copy_status = RwSignal::new("Copy for Word");
 
     // Effect to inject copy buttons into raw HTML blocks after render
     Effect::new(move |_| {
@@ -122,6 +125,30 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
         }
     };
 
+    let on_copy_for_word = move |_| {
+        if copy_status.get_untracked() == "Copying..." {
+            return;
+        }
+
+        copy_status.set("Copying...");
+        leptos::task::spawn_local(async move {
+            if copy_preview_as_html("markdown-preview-content").await.is_ok() {
+                copy_status.set("Copied");
+            } else {
+                copy_status.set("Copy failed");
+            }
+
+            let promise = js_sys::Promise::new(&mut |resolve, _| {
+                let window = web_sys::window().unwrap();
+                window
+                    .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, 2000)
+                    .unwrap();
+            });
+            let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+            copy_status.set("Copy for Word");
+        });
+    };
+
     view! {
         <div class="preview-panel d-flex flex-column h-100" id="preview-panel">
             <div class="panel-header d-flex align-items-center px-3 py-2 border-bottom border-secondary">
@@ -129,8 +156,25 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
                     <i class="bi bi-eye me-2 text-success"></i>
                     "Preview"
                 </span>
+                <button
+                    type="button"
+                    class="btn btn-outline-primary btn-sm ms-auto"
+                    title="Copy preview for Word"
+                    aria-label="Copy preview for Word"
+                    on:click=on_copy_for_word
+                >
+                    <i class="bi bi-clipboard"></i>
+                    <span class="d-none d-md-inline ms-1" aria-live="polite">
+                        {move || copy_status.get()}
+                    </span>
+                </button>
             </div>
-            <div class="preview-content flex-grow-1 p-3 overflow-auto custom-scrollbar" node_ref=container_ref on:click=on_click>
+            <div
+                class="preview-content flex-grow-1 p-3 overflow-auto custom-scrollbar"
+                id="markdown-preview-content"
+                node_ref=container_ref
+                on:click=on_click
+            >
                 {move || {
                     let rendered = rendered.get();
                     rendered.segments.into_iter().enumerate().map(|(idx, segment)| {
