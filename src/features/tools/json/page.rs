@@ -76,15 +76,30 @@ pub fn JsonPage() -> impl IntoView {
 
                 <div class="row g-3 flex-grow-1 overflow-hidden">
                     <div class="col-12 col-lg-6 d-flex flex-column">
-                        <label for="json-input" class="form-label fw-semibold">"Input"</label>
-                        <textarea
-                            id="json-input"
-                            class="form-control font-monospace flex-grow-1"
-                            placeholder="Paste JSON here..."
-                            aria-label="JSON input"
-                            prop:value=move || state.source.get()
-                            on:input=move |ev| state.source.set(event_target_value(&ev))
-                        ></textarea>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label for="json-input" class="form-label fw-semibold mb-0">"Input"</label>
+                            <span class="text-body-secondary small" aria-live="polite">
+                                {move || format!("{} lines", line_count(&state.source.get()))}
+                            </span>
+                        </div>
+                        <div class="json-editor flex-grow-1 d-flex overflow-hidden">
+                            <div class="json-line-numbers text-body-secondary font-monospace" aria-hidden="true">
+                                {move || {
+                                    let count = line_count(&state.source.get()).max(1);
+                                    (1..=count)
+                                        .map(|line| view! { <div>{line}</div> })
+                                        .collect_view()
+                                }}
+                            </div>
+                            <textarea
+                                id="json-input"
+                                class="form-control font-monospace flex-grow-1"
+                                placeholder="Paste JSON here..."
+                                aria-label="JSON input"
+                                prop:value=move || state.source.get()
+                                on:input=move |ev| state.source.set(event_target_value(&ev))
+                            ></textarea>
+                        </div>
                     </div>
 
                     <div class="col-12 col-lg-6 d-flex flex-column">
@@ -92,12 +107,13 @@ pub fn JsonPage() -> impl IntoView {
                             <label for="json-output" class="form-label fw-semibold mb-0">"Output"</label>
                             <button
                                 type="button"
-                                class="btn btn-sm btn-outline-secondary"
+                                class="btn btn-sm btn-outline-secondary py-0 px-2"
                                 disabled=move || state.output.get().is_empty()
                                 on:click=on_copy
                                 title="Copy formatted JSON"
                             >
-                                <i class="bi bi-clipboard me-1"></i>
+                                <i class="bi bi-clipboard" aria-hidden="true"></i>
+                                <span class="visually-hidden">"Copy formatted JSON"</span>
                                 {move || if state.copied.get() { "Copied" } else { "Copy" }}
                             </button>
                         </div>
@@ -112,5 +128,13 @@ pub fn JsonPage() -> impl IntoView {
                 </div>
             </div>
         </div>
+    }
+}
+
+fn line_count(content: &str) -> usize {
+    if content.is_empty() {
+        0
+    } else {
+        content.lines().count()
     }
 }
