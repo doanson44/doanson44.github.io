@@ -27,6 +27,9 @@ mod tests {
 
     #[test]
     fn service_minifies_json() {
-        assert_eq!(JsonService::minify("{ \"ok\": true }").unwrap(), "{\"ok\":true}");
+        assert_eq!(
+            JsonService::minify("{ \"ok\": true }").unwrap(),
+            "{\"ok\":true}"
+        );
     }
 }

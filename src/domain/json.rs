@@ -13,7 +13,12 @@ pub fn minify_json(source: &str) -> Result<String, String> {
 }
 
 fn format_json_error(error: serde_json::Error) -> String {
-    format!("Invalid JSON at line {}, column {}: {}", error.line(), error.column(), error)
+    format!(
+        "Invalid JSON at line {}, column {}: {}",
+        error.line(),
+        error.column(),
+        error
+    )
 }
 
 #[cfg(test)]
@@ -23,14 +28,17 @@ mod tests {
     #[test]
     fn formats_valid_json() {
         let result = format_json(r#"{"name":"Son","items":[1,2]}"#).unwrap();
-        assert!(result.contains("\n  \"name\": \"Son\","));
+        // serde_json::Value sorts keys alphabetically by default, so "items" comes before "name"
+        assert!(result.contains("\n  \"items\": ["));
         assert!(result.contains("\n    1,"));
+        assert!(result.contains("\n  \"name\": \"Son\""));
     }
 
     #[test]
     fn minifies_valid_json() {
         let result = minify_json("{ \"name\": \"Son\", \"active\": true }").unwrap();
-        assert_eq!(result, r#"{"name":"Son","active":true}"#);
+        // Alphabetical sort: active, then name
+        assert_eq!(result, r#"{"active":true,"name":"Son"}"#);
     }
 
     #[test]

@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::application::services::JsonService;
+use crate::application::services::json::JsonService;
 
 /// Reactive state for the JSON Formatter feature.
 #[derive(Clone, Copy)]
