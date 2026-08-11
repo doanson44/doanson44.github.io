@@ -59,6 +59,12 @@ pub fn Navbar() -> impl IntoView {
                                         "Markdown Studio"
                                     </a>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/json">
+                                        <i class="bi bi-braces me-2 text-primary"></i>
+                                        "JSON Formatter"
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li class="nav-item">

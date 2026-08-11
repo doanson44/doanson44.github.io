@@ -8,14 +8,11 @@ use crate::features::cv::page::CvPage;
 use crate::features::games::page::GamesPage;
 use crate::features::home::page::HomePage;
 use crate::features::socket::page::SocketPage;
+use crate::features::tools::json::page::JsonPage;
 use crate::features::tools::markdown::page::MarkdownPage;
 use crate::features::tools::page::ToolsPage;
 
 /// Platform shell with hash-based routing for GitHub Pages compatibility.
-///
-/// Uses `window.location.hash` to determine the current route.
-/// Navigation is done via `<a href="#/path">` links.
-/// No `leptos_router` dependency needed — simple, zero-cost routing.
 #[component]
 pub fn App() -> impl IntoView {
     let current_hash = create_hash_signal();
@@ -45,7 +42,6 @@ fn create_hash_signal() -> RwSignal<String> {
         initial
     });
 
-    // Listen for hash changes
     let hash_clone = hash;
     let closure = wasm_bindgen::closure::Closure::wrap(Box::new(move || {
         if let Some(win) = window() {
@@ -60,7 +56,6 @@ fn create_hash_signal() -> RwSignal<String> {
         let _ =
             win.add_event_listener_with_callback("hashchange", closure.as_ref().unchecked_ref());
     }
-    // Leak the closure to keep it alive for the lifetime of the app
     closure.forget();
 
     hash
@@ -72,6 +67,7 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/" => view! { <HomePage /> }.into_any(),
         "/tools" => view! { <ToolsPage /> }.into_any(),
         "/tools/markdown" => view! { <MarkdownPage /> }.into_any(),
+        "/tools/json" => view! { <JsonPage /> }.into_any(),
         "/games" => view! { <GamesPage /> }.into_any(),
         "/cv" => view! { <CvPage /> }.into_any(),
         "/socket" => view! { <SocketPage /> }.into_any(),

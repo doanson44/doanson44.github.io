@@ -1,3 +1,5 @@
+pub mod json;
+
 use crate::domain::markdown::{render_markdown, RenderedMarkdown};
 
 /// Application service coordinating Markdown use cases.
