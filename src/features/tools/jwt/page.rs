@@ -16,33 +16,20 @@ pub fn JwtPage() -> impl IntoView {
     let on_divider_down = move |ev: leptos::ev::MouseEvent| {
         ev.prevent_default();
         dragging.set(true);
-        let Some(document) = window().and_then(|window| window.document()) else {
-            return;
-        };
-        let Some(body) = document.body() else {
-            return;
-        };
+        let Some(document) = window().and_then(|window| window.document()) else { return; };
+        let Some(body) = document.body() else { return; };
 
         let on_move = move |ev: web_sys::MouseEvent| {
-            if !dragging.get_untracked() {
-                return;
-            }
+            if !dragging.get_untracked() { return; }
             let width = window()
                 .and_then(|window| window.inner_width().ok())
                 .and_then(|value| value.as_f64())
                 .unwrap_or(1.0);
-            let new_pct = ((ev.client_x() as f64 / width) * 100.0).clamp(25.0, 65.0) as u32;
-            split_pct.set(new_pct);
+            split_pct.set(((ev.client_x() as f64 / width) * 100.0).clamp(25.0, 65.0) as u32);
         };
-
         let on_up = move |_: web_sys::MouseEvent| dragging.set(false);
-        let on_move_cb = wasm_bindgen::closure::Closure::wrap(
-            Box::new(on_move) as Box<dyn FnMut(web_sys::MouseEvent)>,
-        );
-        let on_up_cb = wasm_bindgen::closure::Closure::wrap(
-            Box::new(on_up) as Box<dyn FnMut(web_sys::MouseEvent)>,
-        );
-
+        let on_move_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_move) as Box<dyn FnMut(web_sys::MouseEvent)>);
+        let on_up_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_up) as Box<dyn FnMut(web_sys::MouseEvent)>);
         let _ = body.add_event_listener_with_callback("mousemove", on_move_cb.as_ref().unchecked_ref());
         let _ = body.add_event_listener_with_callback("mouseup", on_up_cb.as_ref().unchecked_ref());
         on_move_cb.forget();
@@ -59,18 +46,9 @@ pub fn JwtPage() -> impl IntoView {
         <div class="d-flex flex-column flex-grow-1 jwt-page">
             <div class="toolbar d-flex flex-wrap align-items-center gap-1 p-2 border-bottom border-secondary" id="jwt-toolbar">
                 <div class="ms-auto d-flex flex-wrap gap-1">
-                    <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title="Decode JWT" on:click=move |_| state.decode()>
-                        <i class="bi bi-unlock"></i>
-                        <span class="d-none d-lg-inline ms-1">"Decode"</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm toolbar-btn" title="Reset to sample JWT" on:click=move |_| state.reset()>
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                        <span class="d-none d-lg-inline ms-1">"Reset"</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm toolbar-btn" title="Clear JWT" on:click=move |_| state.clear()>
-                        <i class="bi bi-trash3"></i>
-                        <span class="d-none d-lg-inline ms-1">"Clear"</span>
-                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title="Decode JWT" on:click=move |_| state.decode()><i class="bi bi-unlock"></i><span class="d-none d-lg-inline ms-1">"Decode"</span></button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm toolbar-btn" title="Reset to sample JWT" on:click=move |_| state.reset()><i class="bi bi-arrow-counterclockwise"></i><span class="d-none d-lg-inline ms-1">"Reset"</span></button>
+                    <button type="button" class="btn btn-outline-danger btn-sm toolbar-btn" title="Clear JWT" on:click=move |_| state.clear()><i class="bi bi-trash3"></i><span class="d-none d-lg-inline ms-1">"Clear"</span></button>
                 </div>
             </div>
 
@@ -81,13 +59,12 @@ pub fn JwtPage() -> impl IntoView {
 
             {move || state.error.get().map(|error| view! {
                 <div class="alert alert-danger rounded-0 border-0 border-bottom d-flex align-items-start gap-2 mb-0" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    <span>{error}</span>
+                    <i class="bi bi-exclamation-triangle-fill"></i><span>{error}</span>
                 </div>
             })}
 
             <div class="editor-preview-container flex-grow-1 d-flex overflow-hidden">
-                <div class="editor-pane jwt-split-left" data-split=move || split_pct.get().to_string()>
+                <div class="editor-pane" style=move || format!("flex: 0 0 {}%; max-width: calc({}% - 1.5px);", split_pct.get(), split_pct.get())>
                     <div class="editor-panel d-flex flex-column h-100" id="jwt-editor-panel">
                         <div class="panel-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary">
                             <span class="panel-title"><i class="bi bi-key me-2 text-primary"></i>"Encoded JWT"</span>
@@ -100,46 +77,27 @@ pub fn JwtPage() -> impl IntoView {
                                     (1..=count).map(|number| view! { <span class="line-number">{number}</span> }).collect_view()
                                 }}
                             </div>
-                            <textarea
-                                id="jwt-input"
-                                class="editor-textarea form-control flex-grow-1"
-                                placeholder="Paste a JWT here..."
-                                spellcheck="false"
-                                aria-label="Encoded JWT input"
-                                prop:value=move || state.source.get()
-                                on:input=move |ev| state.set_content(event_target_value(&ev))
-                                on:scroll=on_input_scroll
-                                node_ref=input_ref
-                            ></textarea>
+                            <textarea id="jwt-input" class="editor-textarea form-control flex-grow-1" placeholder="Paste a JWT here..." spellcheck="false" aria-label="Encoded JWT input" prop:value=move || state.source.get() on:input=move |ev| state.set_content(event_target_value(&ev)) on:scroll=on_input_scroll node_ref=input_ref></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div class="divider" on:mousedown=on_divider_down title="Drag to resize panels" role="separator" aria-label="Resize JWT input and decoded output"></div>
 
-                <div class="preview-pane jwt-split-right" data-split=move || split_pct.get().to_string()>
+                <div class="preview-pane" style=move || format!("flex: 0 0 {}%; max-width: calc({}% - 1.5px);", 100 - split_pct.get(), 100 - split_pct.get())>
                     <div class="preview-panel d-flex flex-column h-100" id="jwt-preview-panel">
-                        <div class="panel-header d-flex align-items-center px-3 py-2 border-bottom border-secondary">
-                            <span class="panel-title"><i class="bi bi-braces me-2 text-success"></i>"Decoded JWT"</span>
-                        </div>
+                        <div class="panel-header d-flex align-items-center px-3 py-2 border-bottom border-secondary"><span class="panel-title"><i class="bi bi-braces me-2 text-success"></i>"Decoded JWT"</span></div>
                         <div class="preview-content flex-grow-1 p-3 overflow-auto d-flex flex-column gap-3">
                             <JwtJsonPanel title="Header" icon="bi-file-earmark-code" value=state.header />
                             <JwtJsonPanel title="Payload" icon="bi-file-earmark-text" value=state.payload />
                             <div class="jwt-result-panel border rounded">
                                 <div class="d-flex align-items-center px-3 py-2 border-bottom">
                                     <span class="panel-title"><i class="bi bi-fingerprint me-2 text-warning"></i>"Signature"</span>
-                                    <button
-                                        type="button"
-                                        class="btn btn-outline-secondary btn-sm ms-auto"
-                                        title="Copy signature"
-                                        aria-label="Copy signature"
-                                        disabled=move || state.signature.get().is_none()
-                                        on:click=move |_| {
-                                            if let Some(value) = state.signature.get_untracked() {
-                                                wasm_bindgen_futures::spawn_local(async move { let _ = copy_to_clipboard(&value).await; });
-                                            }
+                                    <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" title="Copy signature" aria-label="Copy signature" disabled=move || state.signature.get().is_none() on:click=move |_| {
+                                        if let Some(value) = state.signature.get_untracked() {
+                                            wasm_bindgen_futures::spawn_local(async move { let _ = copy_to_clipboard(&value).await; });
                                         }
-                                    ><i class="bi bi-clipboard"></i></button>
+                                    }><i class="bi bi-clipboard"></i></button>
                                 </div>
                                 <pre class="mb-0 p-3 overflow-auto"><code class="font-monospace">{move || state.signature.get().unwrap_or_else(|| "No decoded signature".into())}</code></pre>
                             </div>
@@ -152,29 +110,18 @@ pub fn JwtPage() -> impl IntoView {
 }
 
 #[component]
-fn JwtJsonPanel(
-    title: &'static str,
-    icon: &'static str,
-    value: RwSignal<Option<serde_json::Value>>,
-) -> impl IntoView {
+fn JwtJsonPanel(title: &'static str, icon: &'static str, value: RwSignal<Option<serde_json::Value>>) -> impl IntoView {
     view! {
         <div class="jwt-result-panel border rounded">
             <div class="d-flex align-items-center px-3 py-2 border-bottom">
                 <span class="panel-title"><i class=format!("bi {icon} me-2 text-primary")></i>{title}</span>
-                <button
-                    type="button"
-                    class="btn btn-outline-secondary btn-sm ms-auto"
-                    title=format!("Copy {title}")
-                    aria-label=format!("Copy {title}")
-                    disabled=move || value.get().is_none()
-                    on:click=move |_| {
-                        if let Some(json) = value.get_untracked() {
-                            if let Ok(text) = serde_json::to_string_pretty(&json) {
-                                wasm_bindgen_futures::spawn_local(async move { let _ = copy_to_clipboard(&text).await; });
-                            }
+                <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" title=format!("Copy {title}") aria-label=format!("Copy {title}") disabled=move || value.get().is_none() on:click=move |_| {
+                    if let Some(json) = value.get_untracked() {
+                        if let Ok(text) = serde_json::to_string_pretty(&json) {
+                            wasm_bindgen_futures::spawn_local(async move { let _ = copy_to_clipboard(&text).await; });
                         }
                     }
-                ><i class="bi bi-clipboard"></i></button>
+                }><i class="bi bi-clipboard"></i></button>
             </div>
             <pre class="mb-0 p-3 overflow-auto"><code class="font-monospace">{move || value.get().and_then(|json| serde_json::to_string_pretty(&json).ok()).unwrap_or_else(|| "No decoded data".into())}</code></pre>
         </div>
