@@ -7,6 +7,14 @@ use crate::infrastructure::browser::copy_to_clipboard;
 #[component]
 pub fn JsonPage() -> impl IntoView {
     let state = JsonState::new();
+    let input_ref = NodeRef::<leptos::html::Textarea>::new();
+    let line_numbers_ref = NodeRef::<leptos::html::Div>::new();
+
+    let on_input_scroll = move |_| {
+        if let (Some(input), Some(line_numbers)) = (input_ref.get(), line_numbers_ref.get()) {
+            line_numbers.set_scroll_top(input.scroll_top());
+        }
+    };
 
     let on_copy = move |_| {
         let output = state.output.get_untracked();
@@ -82,22 +90,33 @@ pub fn JsonPage() -> impl IntoView {
                                 {move || format!("{} lines", line_count(&state.source.get()))}
                             </span>
                         </div>
-                        <div class="json-editor flex-grow-1 d-flex overflow-hidden">
-                            <div class="json-line-numbers text-body-secondary font-monospace" aria-hidden="true">
+                        <div class="editor-body d-flex flex-grow-1 overflow-hidden">
+                            <div
+                                class="line-numbers d-flex flex-column align-items-end pe-2"
+                                node_ref=line_numbers_ref
+                                aria-hidden="true"
+                            >
                                 {move || {
-                                    let count = line_count(&state.source.get()).max(1);
-                                    (1..=count)
-                                        .map(|line| view! { <div>{line}</div> })
-                                        .collect_view()
+                                    let lines: Vec<_> = state.source.get().lines().enumerate().map(|(i, _)| {
+                                        view! { <span class="line-number">{i + 1}</span> }
+                                    }).collect();
+                                    if lines.is_empty() {
+                                        view! { <span class="line-number">"1"</span> }.into_any()
+                                    } else {
+                                        lines.into_iter().map(|line| line.into_any()).collect::<Vec<_>>().into_any()
+                                    }
                                 }}
                             </div>
                             <textarea
                                 id="json-input"
-                                class="form-control font-monospace flex-grow-1"
+                                class="editor-textarea form-control flex-grow-1"
                                 placeholder="Paste JSON here..."
+                                spellcheck="false"
                                 aria-label="JSON input"
                                 prop:value=move || state.source.get()
                                 on:input=move |ev| state.source.set(event_target_value(&ev))
+                                on:scroll=on_input_scroll
+                                node_ref=input_ref
                             ></textarea>
                         </div>
                     </div>
