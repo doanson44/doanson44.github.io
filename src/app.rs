@@ -9,6 +9,7 @@ use crate::features::games::page::GamesPage;
 use crate::features::home::page::HomePage;
 use crate::features::socket::page::SocketPage;
 use crate::features::tools::json::page::JsonPage;
+use crate::features::tools::jwt::page::JwtPage;
 use crate::features::tools::markdown::page::MarkdownPage;
 use crate::features::tools::page::ToolsPage;
 
@@ -68,6 +69,7 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools" => view! { <ToolsPage /> }.into_any(),
         "/tools/markdown" => view! { <MarkdownPage /> }.into_any(),
         "/tools/json" => view! { <JsonPage /> }.into_any(),
+        "/tools/jwt" => view! { <JwtPage /> }.into_any(),
         "/games" => view! { <GamesPage /> }.into_any(),
         "/cv" => view! { <CvPage /> }.into_any(),
         "/socket" => view! { <SocketPage /> }.into_any(),
