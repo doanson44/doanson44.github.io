@@ -20,7 +20,6 @@ pub fn Navbar() -> impl IntoView {
                     <span class="fw-bold">"doanson44"</span>
                 </a>
 
-                // Mobile toggle
                 <button
                     class="navbar-toggler"
                     type="button"
@@ -71,6 +70,12 @@ pub fn Navbar() -> impl IntoView {
                                         "JWT Decoder"
                                     </a>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/base64">
+                                        <i class="bi bi-file-binary me-2 text-primary"></i>
+                                        "Base64 Encoder / Decoder"
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li class="nav-item">
@@ -94,7 +99,6 @@ pub fn Navbar() -> impl IntoView {
                     </ul>
 
                     <div class="d-flex align-items-center gap-3">
-                        // Theme toggle button
                         <button
                             class="btn btn-outline-secondary btn-sm theme-toggle-btn"
                             title="Toggle dark/light mode"

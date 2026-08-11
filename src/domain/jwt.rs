@@ -14,8 +14,14 @@ pub fn decode_jwt(source: &str) -> Result<DecodedJwt, String> {
     let payload_part = parts.next().unwrap_or_default();
     let signature = parts.next().unwrap_or_default();
 
-    if header_part.is_empty() || payload_part.is_empty() || signature.is_empty() || parts.next().is_some() {
-        return Err("A JWT must contain exactly three non-empty segments separated by dots.".into());
+    if header_part.is_empty()
+        || payload_part.is_empty()
+        || signature.is_empty()
+        || parts.next().is_some()
+    {
+        return Err(
+            "A JWT must contain exactly three non-empty segments separated by dots.".into(),
+        );
     }
 
     let header = decode_json_segment(header_part, "header")?;
@@ -36,12 +42,17 @@ pub fn decode_jwt(source: &str) -> Result<DecodedJwt, String> {
 }
 
 fn decode_json_segment(segment: &str, name: &str) -> Result<Value, String> {
-    let bytes = decode_base64url(segment).map_err(|error| format!("Invalid JWT {name}: {error}"))?;
+    let bytes =
+        decode_base64url(segment).map_err(|error| format!("Invalid JWT {name}: {error}"))?;
     serde_json::from_slice(&bytes).map_err(|error| format!("JWT {name} is not valid JSON: {error}"))
 }
 
 fn decode_base64url(input: &str) -> Result<Vec<u8>, String> {
-    if input.contains('=') || input.chars().any(|c| !c.is_ascii_alphanumeric() && c != '-' && c != '_') {
+    if input.contains('=')
+        || input
+            .chars()
+            .any(|c| !c.is_ascii_alphanumeric() && c != '-' && c != '_')
+    {
         return Err("segment contains invalid Base64URL characters".into());
     }
 
