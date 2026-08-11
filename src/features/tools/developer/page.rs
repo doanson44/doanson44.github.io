@@ -19,9 +19,7 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
     let on_divider_down = move |ev: leptos::ev::MouseEvent| {
         ev.prevent_default();
         dragging.set(true);
-        let doc = window().and_then(|w| w.document());
-        let Some(doc) = doc else { return; };
-        let Some(body) = doc.body() else { return; };
+        let Some(body) = window().and_then(|w| w.document()).and_then(|d| d.body()) else { return; };
         let on_move = move |ev: web_sys::MouseEvent| {
             if !dragging.get_untracked() { return; }
             let width = window().and_then(|w| w.inner_width().ok()).and_then(|v| v.as_f64()).unwrap_or(1.0);
@@ -37,9 +35,7 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
     };
 
     let on_input_scroll = move |_| {
-        if let (Some(input), Some(lines)) = (input_ref.get(), line_numbers_ref.get()) {
-            lines.set_scroll_top(input.scroll_top());
-        }
+        if let (Some(input), Some(lines)) = (input_ref.get(), line_numbers_ref.get()) { lines.set_scroll_top(input.scroll_top()); }
     };
 
     let run = move || {
@@ -52,34 +48,26 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
         if output.is_empty() { return; }
         state.copied.set(false);
         let copied = state.copied;
-        wasm_bindgen_futures::spawn_local(async move {
-            if copy_to_clipboard(&output).await.is_ok() { copied.set(true); }
-        });
+        wasm_bindgen_futures::spawn_local(async move { if copy_to_clipboard(&output).await.is_ok() { copied.set(true); } });
     };
 
-    let secondary_visible = matches!(kind, ToolKind::Regex);
+    let secondary_visible = kind == ToolKind::Regex;
     let output_is_svg = kind == ToolKind::Qr;
     let title = kind.title();
     let description = kind.description();
 
     view! {
-        <div class="d-flex flex-column flex-grow-1 min-h-0">
+        <div class="d-flex flex-column flex-grow-1">
             <div class="toolbar d-flex flex-wrap align-items-center gap-1 p-2 border-bottom border-secondary">
                 <div class="ms-auto d-flex flex-wrap gap-1">
-                    {if kind == ToolKind::Url {
-                        view! {
-                            <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title="Encode URL" on:click=move |_| { mode.set("encode"); run(); }><i class="bi bi-lock"></i><span class="d-none d-lg-inline ms-1">"Encode"</span></button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm toolbar-btn" title="Decode URL" on:click=move |_| { mode.set("decode"); run(); }><i class="bi bi-unlock"></i><span class="d-none d-lg-inline ms-1">"Decode"</span></button>
-                        }.into_any()
-                    } else if kind == ToolKind::Uuid {
-                        view! {
-                            <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title="Generate UUID" on:click=move |_| run()><i class="bi bi-arrow-repeat"></i><span class="d-none d-lg-inline ms-1">"Generate"</span></button>
-                        }.into_any()
-                    } else {
-                        view! {
-                            <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title="Run tool" on:click=move |_| run()><i class="bi bi-play"></i><span class="d-none d-lg-inline ms-1">"Run"</span></button>
-                        }.into_any()
-                    }}
+                    {if kind == ToolKind::Url { view! {
+                        <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title="Encode URL" on:click=move |_| { mode.set("encode"); run(); }><i class="bi bi-lock"></i><span class="d-none d-lg-inline ms-1">"Encode"</span></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm toolbar-btn" title="Decode URL" on:click=move |_| { mode.set("decode"); run(); }><i class="bi bi-unlock"></i><span class="d-none d-lg-inline ms-1">"Decode"</span></button>
+                    }.into_any() } else if kind == ToolKind::Uuid { view! {
+                        <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title="Generate UUID" on:click=move |_| run()><i class="bi bi-arrow-repeat"></i><span class="d-none d-lg-inline ms-1">"Generate"</span></button>
+                    }.into_any() } else { view! {
+                        <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title="Run tool" on:click=move |_| run()><i class="bi bi-play"></i><span class="d-none d-lg-inline ms-1">"Run"</span></button>
+                    }.into_any() }}
                     <button type="button" class="btn btn-outline-secondary btn-sm toolbar-btn" title="Reset sample" on:click=move |_| state.reset(kind)><i class="bi bi-arrow-counterclockwise"></i><span class="d-none d-lg-inline ms-1">"Reset"</span></button>
                     <button type="button" class="btn btn-outline-danger btn-sm toolbar-btn" title="Clear input" on:click=move |_| state.clear(kind)><i class="bi bi-trash3"></i><span class="d-none d-lg-inline ms-1">"Clear"</span></button>
                 </div>
@@ -90,12 +78,10 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
                 <div class="small text-body-secondary">{description}</div>
             </div>
 
-            {move || state.error.get().map(|error| view! {
-                <div class="alert alert-danger rounded-0 border-0 border-bottom d-flex align-items-start gap-2 mb-0" role="alert"><i class="bi bi-exclamation-triangle-fill"></i><span>{error}</span></div>
-            })}
+            {move || state.error.get().map(|error| view! { <div class="alert alert-danger rounded-0 border-0 border-bottom d-flex align-items-start gap-2 mb-0" role="alert"><i class="bi bi-exclamation-triangle-fill"></i><span>{error}</span></div> })}
 
             <div class="editor-preview-container flex-grow-1 d-flex overflow-hidden">
-                <div class=move || format!("editor-pane split-width-{}", split_bucket(split_pct.get()))>
+                <div class=move || format!("editor-pane flex-grow-0 flex-shrink-0 {}", split_class(split_pct.get()))>
                     <div class="editor-panel d-flex flex-column h-100">
                         <div class="panel-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary">
                             <span class="panel-title"><i class="bi bi-pencil-square me-2 text-primary"></i>{if kind == ToolKind::Regex { "Pattern" } else { "Input" }}</span>
@@ -107,15 +93,15 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
                             </div>
                             <textarea class="editor-textarea form-control flex-grow-1" placeholder="Enter input..." spellcheck="false" aria-label=format!("{} input", title) prop:value=move || state.source.get() on:input=move |ev| state.set_source(kind, event_target_value(&ev)) on:scroll=on_input_scroll node_ref=input_ref></textarea>
                         </div>
-                        {if secondary_visible {
-                            view! { <div class="border-top border-secondary p-2"><label class="form-label small text-body-secondary mb-1" for="regex-test-input">"Test String"</label><textarea id="regex-test-input" class="form-control form-control-sm font-monospace" rows="4" prop:value=move || state.secondary.get() on:input=move |ev| state.set_secondary(event_target_value(&ev)) node_ref=secondary_ref></textarea></div> }.into_any()
-                        } else { view! { <span class="d-none"></span> }.into_any() }}
+                        {if secondary_visible { view! {
+                            <div class="border-top border-secondary p-2"><label class="form-label small text-body-secondary mb-1" for="regex-test-input">"Test String"</label><textarea id="regex-test-input" class="form-control form-control-sm font-monospace" rows="4" prop:value=move || state.secondary.get() on:input=move |ev| state.set_secondary(event_target_value(&ev)) node_ref=secondary_ref></textarea></div>
+                        }.into_any() } else { view! { <span class="d-none"></span> }.into_any() }}
                     </div>
                 </div>
 
                 <div class="divider" on:mousedown=on_divider_down title="Drag to resize panels" role="separator" aria-label="Resize editor and result panels"></div>
 
-                <div class=move || format!("preview-pane split-width-{}", split_bucket(100 - split_pct.get()))>
+                <div class=move || format!("preview-pane flex-grow-0 flex-shrink-0 {}", split_class(100 - split_pct.get()))>
                     <div class="preview-panel d-flex flex-column h-100">
                         <div class="panel-header d-flex align-items-center px-3 py-2 border-bottom border-secondary">
                             <span class="panel-title"><i class="bi bi-eye me-2 text-success"></i>"Result"</span>
@@ -132,4 +118,4 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
 }
 
 fn line_count(content: &str) -> usize { if content.is_empty() { 0 } else { content.lines().count() } }
-fn split_bucket(value: u32) -> u32 { ((value + 5) / 10 * 10).clamp(20, 80) }
+fn split_class(value: u32) -> &'static str { if value < 38 { "w-25" } else if value < 63 { "w-50" } else { "w-75" } }
