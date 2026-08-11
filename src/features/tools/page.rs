@@ -56,6 +56,21 @@ pub fn ToolsPage() -> impl IntoView {
                             </div>
                         </a>
                     </div>
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <a href="#/tools/base64" class="text-decoration-none">
+                            <div class="card bg-body-tertiary border-secondary h-100">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title mb-1">
+                                        <i class="bi bi-file-binary text-primary me-2"></i>
+                                        "Base64 Encoder / Decoder"
+                                    </h6>
+                                    <p class="card-text text-body-secondary small mb-0">
+                                        "Encode and decode UTF-8 text as standard Base64 locally."
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

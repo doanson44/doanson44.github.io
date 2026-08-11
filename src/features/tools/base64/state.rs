@@ -1,42 +1,39 @@
 use leptos::prelude::*;
-use serde_json::Value;
 
-use crate::application::services::jwt::JwtService;
+use crate::application::services::base64::Base64Service;
 
-const STORAGE_KEY: &str = "jwt-content";
-const SAMPLE_JWT: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+const STORAGE_KEY: &str = "base64-content";
+const SAMPLE_TEXT: &str = "Hello, world!\nXin chào, Son!";
 
+/// Reactive state for the Base64 tool.
 #[derive(Clone, Copy)]
-pub struct JwtState {
+pub struct Base64State {
     pub source: RwSignal<String>,
-    pub header: RwSignal<Option<Value>>,
-    pub payload: RwSignal<Option<Value>>,
-    pub signature: RwSignal<Option<String>>,
+    pub output: RwSignal<String>,
     pub error: RwSignal<Option<String>>,
 }
 
-impl Default for JwtState {
+impl Default for Base64State {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl JwtState {
+impl Base64State {
+    /// Create state from localStorage or the default sample.
     pub fn new() -> Self {
         let storage = web_sys::window().and_then(|window| window.local_storage().ok().flatten());
         let initial_content = storage
             .as_ref()
             .and_then(|storage| storage.get_item(STORAGE_KEY).ok().flatten())
-            .unwrap_or_else(|| SAMPLE_JWT.to_string());
+            .unwrap_or_else(|| SAMPLE_TEXT.to_string());
 
         let state = Self {
             source: RwSignal::new(initial_content),
-            header: RwSignal::new(None),
-            payload: RwSignal::new(None),
-            signature: RwSignal::new(None),
+            output: RwSignal::new(String::new()),
             error: RwSignal::new(None),
         };
-        state.decode();
+        state.encode();
         state
     }
 
@@ -48,34 +45,43 @@ impl JwtState {
         }
     }
 
+    /// Update the source text and persist it locally.
     pub fn set_content(&self, content: String) {
         Self::save_content(&content);
         self.source.set(content);
-        self.decode();
+        self.encode();
     }
 
+    /// Encode the current source as Base64.
+    pub fn encode(&self) {
+        self.output
+            .set(Base64Service::encode(&self.source.get_untracked()));
+        self.error.set(None);
+    }
+
+    /// Decode the current source from Base64.
     pub fn decode(&self) {
-        match JwtService::decode(&self.source.get_untracked()) {
-            Ok(decoded) => {
-                self.header.set(Some(decoded.header));
-                self.payload.set(Some(decoded.payload));
-                self.signature.set(Some(decoded.signature));
+        match Base64Service::decode(&self.source.get_untracked()) {
+            Ok(output) => {
+                self.output.set(output);
                 self.error.set(None);
             }
             Err(error) => {
-                self.header.set(None);
-                self.payload.set(None);
-                self.signature.set(None);
+                self.output.set(String::new());
                 self.error.set(Some(error));
             }
         }
     }
 
+    /// Clear the source and output.
     pub fn clear(&self) {
         self.set_content(String::new());
+        self.output.set(String::new());
+        self.error.set(None);
     }
 
+    /// Restore the default sample and encode it.
     pub fn reset(&self) {
-        self.set_content(SAMPLE_JWT.to_string());
+        self.set_content(SAMPLE_TEXT.to_string());
     }
 }
