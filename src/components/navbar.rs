@@ -65,6 +65,12 @@ pub fn Navbar() -> impl IntoView {
                                         "JSON Formatter"
                                     </a>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/jwt">
+                                        <i class="bi bi-key me-2 text-primary"></i>
+                                        "JWT Decoder"
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li class="nav-item">

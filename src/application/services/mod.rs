@@ -1,4 +1,5 @@
 pub mod json;
+pub mod jwt;
 
 use crate::domain::markdown::{render_markdown, RenderedMarkdown};
 
