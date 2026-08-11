@@ -117,12 +117,13 @@ fn normalize_line(line: &str) -> Cow<'_, str> {
     let mut out = String::new();
     let mut i = 0usize;
     let mut in_quotes = false; // Fix 1: are we inside a `"…"` quoted span?
+    let mut in_edge_label = false; // Fix 5: are we inside an `|…|` edge label?
 
     // We need at least two bytes for `[/`.
     while i + 1 < len {
-        // Handle escape sequences in both states: `\` skips the next byte,
-        // preventing `\"` from incorrectly toggling quote state.
-        if bytes[i] == b'\\' {
+        // Fix 4: Handle escape sequences ONLY in quoted state.
+        // `\` outside quotes is treated as an ordinary character.
+        if in_quotes && bytes[i] == b'\\' {
             i += 2; // skip `\` and the escaped character
             continue;
         }
@@ -134,8 +135,15 @@ fn normalize_line(line: &str) -> Cow<'_, str> {
             continue;
         }
 
-        // While inside a quoted span, advance without triggering normalization.
-        if in_quotes {
+        // Fix 5: track entry/exit of edge labels (only when not in quotes).
+        if !in_quotes && bytes[i] == b'|' {
+            in_edge_label = !in_edge_label;
+            i += 1;
+            continue;
+        }
+
+        // While inside a quoted span or an edge label, advance without triggering normalization.
+        if in_quotes || in_edge_label {
             i += 1;
             continue;
         }
@@ -628,12 +636,20 @@ mod tests {
         assert_eq!(normalize_line(line), line);
     }
 
-    /// A `\` outside a quoted span skips the next byte.
-    /// `\[/foo]` is therefore never treated as a `[/` trigger.
+    // -----------------------------------------------------------------------
+    // Edge-label tracking (Fix 5)
+    // -----------------------------------------------------------------------
+
+    /// `|...|` edge labels must not trigger normalization.
     #[test]
-    fn escaped_char_outside_quotes_skips_next_byte() {
-        // `\` at position of `[` causes the scanner to skip `[`, so no normalization fires.
-        let line = "  A\\[/foo]";
+    fn leaves_edge_label_with_slash_bracket_unchanged() {
+        let line = r#"  A -->|[/harness-goal]| B[Normal]"#;
         assert_eq!(normalize_line(line), line);
+    }
+
+    #[test]
+    fn preserves_slash_bracket_inside_edge_label() {
+        let src = "flowchart TD\n  A -->|[/harness-goal]| B[Normal]\n";
+        assert_eq!(normalize_mermaid_source(src), src);
     }
 }

@@ -1,4 +1,4 @@
-﻿---
+---
 description: "Always-on coding conventions for doanson44.github.io — a Rust/Leptos/WASM multi-feature web platform (Tools, Games, CV, Socket) with Clean Architecture, deployed to GitHub Pages. Apply to Rust, TOML, HTML, and CSS files."
 applyTo: "**/*.rs,**/*.toml,**/*.html,**/*.css"
 ---
@@ -85,6 +85,7 @@ src/
 Prefer reactive state over manual DOM manipulation.
 
 ## Code Style
+- **Code Comments**: Only add comments to the code when it is absolutely necessary (e.g., explaining complex logic, non-obvious design decisions, or working around compiler/framework quirks). Avoid redundant comments that simply repeat what the code does.
 - All pub items: `///` docs. Domain types: `#[derive(Debug, Clone, PartialEq)]`
 - Each dir has `mod.rs` re-exporting children. `lib.rs` declares top-level modules only
 - Tests in `#[cfg(test)] mod tests`. Prefer `impl Trait` for abstractions, concrete types for signals
