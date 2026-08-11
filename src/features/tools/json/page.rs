@@ -106,7 +106,7 @@ pub fn JsonPage() -> impl IntoView {
                                 spellcheck="false"
                                 aria-label="JSON input"
                                 prop:value=move || state.source.get()
-                                on:input=move |ev| state.source.set(event_target_value(&ev))
+                                on:input=move |ev| state.set_content(event_target_value(&ev))
                                 on:scroll=on_input_scroll
                                 node_ref=input_ref
                             ></textarea>
