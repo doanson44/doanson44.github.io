@@ -130,6 +130,7 @@ Release: `opt-level = "z"`, `lto = true`, `codegen-units = 1`, `strip = true`, `
 - Unnecessary `pub`, missing `mod.rs`, speculative abstractions
 - Modifying unrelated features during a focused task
 - Claiming tests/build passed without actually running them
+- Tuyệt đối không tự ý commit (Absolutely do not commit on your own)
 
 ## Core Rule
 Treat `doanson44.github.io` as a **Rust/Leptos/WASM multi-feature web platform deployed to GitHub Pages** — with Tools, Games, CV, and Socket as separate features — not as a single Markdown editor and not as a backend application.
