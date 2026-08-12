@@ -23,10 +23,17 @@ impl TimeTab {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClockEntry {
+    pub city: String,
+    pub timezone: String,
+}
+
 #[derive(Clone, Copy)]
 pub struct TimeState {
     pub tab: RwSignal<TimeTab>,
     pub tick: RwSignal<f64>,
+    pub clocks: RwSignal<Vec<ClockEntry>>,
     pub countdown: RwSignal<Countdown>,
     pub timer_hours: RwSignal<String>,
     pub timer_minutes: RwSignal<String>,
@@ -52,6 +59,12 @@ impl TimeState {
         Self {
             tab: RwSignal::new(TimeTab::WorldClock),
             tick: RwSignal::new(0.0),
+            clocks: RwSignal::new(vec![
+                ClockEntry { city: "Ho Chi Minh".into(), timezone: "Asia/Ho_Chi_Minh".into() },
+                ClockEntry { city: "Tokyo".into(), timezone: "Asia/Tokyo".into() },
+                ClockEntry { city: "London".into(), timezone: "Europe/London".into() },
+                ClockEntry { city: "New York".into(), timezone: "America/New_York".into() },
+            ]),
             countdown: RwSignal::new(Countdown::new(std::time::Duration::from_secs(25 * 60))),
             timer_hours: RwSignal::new("00".into()),
             timer_minutes: RwSignal::new("25".into()),
