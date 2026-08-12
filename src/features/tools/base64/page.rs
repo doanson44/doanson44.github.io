@@ -17,11 +17,17 @@ pub fn Base64Page() -> impl IntoView {
     let on_divider_down = move |ev: leptos::ev::MouseEvent| {
         ev.prevent_default();
         dragging.set(true);
-        let Some(document) = window().and_then(|window| window.document()) else { return; };
-        let Some(body) = document.body() else { return; };
+        let Some(document) = window().and_then(|window| window.document()) else {
+            return;
+        };
+        let Some(body) = document.body() else {
+            return;
+        };
 
         let on_move = move |ev: web_sys::MouseEvent| {
-            if !dragging.get_untracked() { return; }
+            if !dragging.get_untracked() {
+                return;
+            }
             let width = window()
                 .and_then(|window| window.inner_width().ok())
                 .and_then(|value| value.as_f64())
@@ -29,9 +35,14 @@ pub fn Base64Page() -> impl IntoView {
             split_pct.set(((ev.client_x() as f64 / width) * 100.0).clamp(25.0, 65.0) as u32);
         };
         let on_up = move |_: web_sys::MouseEvent| dragging.set(false);
-        let on_move_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_move) as Box<dyn FnMut(web_sys::MouseEvent)>);
-        let on_up_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_up) as Box<dyn FnMut(web_sys::MouseEvent)>);
-        let _ = body.add_event_listener_with_callback("mousemove", on_move_cb.as_ref().unchecked_ref());
+        let on_move_cb = wasm_bindgen::closure::Closure::wrap(
+            Box::new(on_move) as Box<dyn FnMut(web_sys::MouseEvent)>
+        );
+        let on_up_cb = wasm_bindgen::closure::Closure::wrap(
+            Box::new(on_up) as Box<dyn FnMut(web_sys::MouseEvent)>
+        );
+        let _ =
+            body.add_event_listener_with_callback("mousemove", on_move_cb.as_ref().unchecked_ref());
         let _ = body.add_event_listener_with_callback("mouseup", on_up_cb.as_ref().unchecked_ref());
         on_move_cb.forget();
         on_up_cb.forget();
@@ -45,7 +56,9 @@ pub fn Base64Page() -> impl IntoView {
 
     let copy_output = move |_| {
         let output = state.output.get_untracked();
-        if output.is_empty() { return; }
+        if output.is_empty() {
+            return;
+        }
         wasm_bindgen_futures::spawn_local(async move {
             let _ = copy_to_clipboard(&output).await;
         });
@@ -132,5 +145,9 @@ pub fn Base64Page() -> impl IntoView {
 }
 
 fn line_count(content: &str) -> usize {
-    if content.is_empty() { 0 } else { content.lines().count() }
+    if content.is_empty() {
+        0
+    } else {
+        content.lines().count()
+    }
 }

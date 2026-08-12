@@ -41,7 +41,9 @@ impl JwtState {
     }
 
     fn save_content(content: &str) {
-        if let Some(storage) = web_sys::window().and_then(|window| window.local_storage().ok().flatten()) {
+        if let Some(storage) =
+            web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+        {
             let _ = storage.set_item(STORAGE_KEY, content);
         }
     }

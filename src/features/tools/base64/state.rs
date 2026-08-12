@@ -38,7 +38,9 @@ impl Base64State {
     }
 
     fn save_content(content: &str) {
-        if let Some(storage) = web_sys::window().and_then(|window| window.local_storage().ok().flatten()) {
+        if let Some(storage) =
+            web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+        {
             let _ = storage.set_item(STORAGE_KEY, content);
         }
     }
@@ -52,7 +54,8 @@ impl Base64State {
 
     /// Encode the current source as Base64.
     pub fn encode(&self) {
-        self.output.set(Base64Service::encode(&self.source.get_untracked()));
+        self.output
+            .set(Base64Service::encode(&self.source.get_untracked()));
         self.error.set(None);
     }
 
