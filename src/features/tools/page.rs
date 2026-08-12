@@ -183,65 +183,68 @@ fn SearchResults(
     selected_info: RwSignal<Option<ToolInfo>>,
 ) -> impl IntoView {
     let query = query.trim().to_lowercase();
-    let matches = move || {
-        let mut results: Vec<View> = Vec::new();
-        let general = [
-            ("#/tools/markdown", "bi-markdown-fill", "Markdown Studio", "Live Markdown editor with Mermaid diagram support."),
-            ("#/tools/json", "bi-braces", "JSON Formatter", "Validate, format, and minify JSON in your browser."),
-            ("#/tools/jwt", "bi-key", "JWT Decoder", "Decode JWT header, payload, and signature locally."),
-            ("#/tools/base64", "bi-file-binary", "Base64 Encoder / Decoder", "Encode and decode UTF-8 text as standard Base64 locally."),
-            ("#/tools/time", "bi-clock-history", "Time & Utilities", "World clock, countdown, stopwatch, ruler, and timestamp conversion."),
-        ];
+    let mut results: Vec<AnyView> = Vec::new();
+    let general = [
+        ("#/tools/markdown", "bi-markdown-fill", "Markdown Studio", "Live Markdown editor with Mermaid diagram support."),
+        ("#/tools/json", "bi-braces", "JSON Formatter", "Validate, format, and minify JSON in your browser."),
+        ("#/tools/jwt", "bi-key", "JWT Decoder", "Decode JWT header, payload, and signature locally."),
+        ("#/tools/base64", "bi-file-binary", "Base64 Encoder / Decoder", "Encode and decode UTF-8 text as standard Base64 locally."),
+        ("#/tools/time", "bi-clock-history", "Time & Utilities", "World clock, countdown, stopwatch, ruler, and timestamp conversion."),
+    ];
 
-        for (href, icon, title, description) in general {
-            if title.to_lowercase().contains(&query) || description.to_lowercase().contains(&query) {
-                results.push(view! {
-                    <ToolCard selected_info href=href icon=icon title=title description=description category="General Tools" />
-                }.into_view());
+    for (href, icon, title, description) in general {
+        if title.to_lowercase().contains(&query) || description.to_lowercase().contains(&query) {
+            results.push(view! {
+                <ToolCard selected_info href=href icon=icon title=title description=description category="General Tools" />
+            }.into_any());
+        }
+    }
+
+    for kind in developer_tools {
+        if kind.title().to_lowercase().contains(&query) || kind.description().to_lowercase().contains(&query) {
+            results.push(view! {
+                <ToolCard selected_info href=format!("#/tools/{}", kind.route()) icon="bi-wrench-adjustable" title=kind.title() description=kind.description() category="Developer Tools" />
+            }.into_any());
+        }
+    }
+
+    let finance_tools = [
+        CORE_FINANCE_TOOLS,
+        PERSONAL_FINANCE_TOOLS,
+        INVESTMENT_TOOLS,
+        BUSINESS_FINANCE_TOOLS,
+        VALUATION_TOOLS,
+        TRADING_TOOLS,
+        CURRENCY_TOOLS,
+    ];
+    for tools in finance_tools {
+        for tool in tools.iter().copied() {
+            if tool.title().to_lowercase().contains(&query) || tool.category().to_lowercase().contains(&query) {
+                results.push(view! { <FinanceToolCard selected_info tool /> }.into_any());
             }
         }
+    }
 
-        for kind in developer_tools {
-            if kind.title().to_lowercase().contains(&query) || kind.description().to_lowercase().contains(&query) {
-                results.push(view! {
-                    <ToolCard selected_info href=format!("#/tools/{}", kind.route()) icon="bi-wrench-adjustable" title=kind.title() description=kind.description() category="Developer Tools" />
-                }.into_view());
-            }
-        }
-
-        let finance_tools = [
-            CORE_FINANCE_TOOLS,
-            PERSONAL_FINANCE_TOOLS,
-            INVESTMENT_TOOLS,
-            BUSINESS_FINANCE_TOOLS,
-            VALUATION_TOOLS,
-            TRADING_TOOLS,
-            CURRENCY_TOOLS,
-        ];
-        for tools in finance_tools {
-            for tool in tools.iter().copied() {
-                if tool.title().to_lowercase().contains(&query) || tool.category().to_lowercase().contains(&query) {
-                    results.push(view! { <FinanceToolCard selected_info tool /> }.into_view());
-                }
-            }
-        }
-        results
-    };
+    let len = results.len();
+    let is_empty = results.is_empty();
 
     view! {
         <section aria-live="polite">
-            <div class="mb-3 text-body-secondary small">{move || format!("{} result(s)", matches().len())}</div>
-            <Show
-                when=move || !matches().is_empty()
-                fallback=|| view! {
-                    <div class="alert alert-secondary" role="status">
-                        <i class="bi bi-search me-2" aria-hidden="true"></i>
-                        "No tools found. Try another search term."
-                    </div>
+            <div class="mb-3 text-body-secondary small">{format!("{} result(s)", len)}</div>
+            {
+                if is_empty {
+                    view! {
+                        <div class="alert alert-secondary" role="status">
+                            <i class="bi bi-search me-2" aria-hidden="true"></i>
+                            "No tools found. Try another search term."
+                        </div>
+                    }.into_any()
+                } else {
+                    view! {
+                        <div class="row g-3">{results}</div>
+                    }.into_any()
                 }
-            >
-                <div class="row g-3">{move || matches()}</div>
-            </Show>
+            }
         </section>
     }
 }
@@ -396,7 +399,16 @@ fn ToolInfoModal(selected_info: RwSignal<Option<ToolInfo>>) -> impl IntoView {
                     <div class="modal-footer">
                         <Show when=move || selected_info.get().is_some()>
                             {move || selected_info.get().map(|info| view! {
-                                <a class="btn btn-primary" href=info.href data-bs-dismiss="modal">"Open Tool"</a>
+                                <button
+                                    type="button"
+                                    class="btn btn-primary"
+                                    data-bs-dismiss="modal"
+                                    on:click=move |_| {
+                                        let _ = leptos::prelude::window().location().assign(&info.href);
+                                    }
+                                >
+                                    "Open Tool"
+                                </button>
                             })}
                         </Show>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">"Close"</button>
