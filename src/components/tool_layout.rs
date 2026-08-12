@@ -96,7 +96,7 @@ pub fn ToolDivider() -> impl IntoView {
             return;
         };
 
-        let element = container.unchecked_ref::<web_sys::HtmlElement>();
+        let element = container.unchecked_ref::<web_sys::Element>();
         let rect = element.get_bounding_client_rect();
         let is_vertical = web_sys::window()
             .and_then(|window| window.inner_width().ok())
