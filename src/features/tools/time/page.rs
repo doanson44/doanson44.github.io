@@ -16,8 +16,12 @@ pub fn TimePage() -> impl IntoView {
     state.tick.set(provider.now_ms());
     let tick = state.tick;
     let interval_id = window().and_then(|win| {
-        let callback = Closure::wrap(Box::new(move || tick.set(provider.now_ms())) as Box<dyn FnMut()>);
-        let result = win.set_interval_with_callback_and_timeout_and_arguments_0(callback.as_ref().unchecked_ref(), 100);
+        let callback =
+            Closure::wrap(Box::new(move || tick.set(provider.now_ms())) as Box<dyn FnMut()>);
+        let result = win.set_interval_with_callback_and_timeout_and_arguments_0(
+            callback.as_ref().unchecked_ref(),
+            100,
+        );
         callback.forget();
         result.ok()
     });
@@ -139,7 +143,9 @@ fn Timer(state: TimeState) -> impl IntoView {
     let start = move || match state.set_timer_from_inputs() {
         Ok(()) => {
             error.set(None);
-            state.countdown.update(|timer| timer.start(state.tick.get_untracked()));
+            state
+                .countdown
+                .update(|timer| timer.start(state.tick.get_untracked()));
         }
         Err(message) => error.set(Some(message)),
     };
@@ -262,10 +268,24 @@ fn Timestamp(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView {
         let direction = state.timestamp_direction.get();
         let unit = state.timestamp_unit.get();
         let timezone = state.timestamp_timezone.get();
-        let zone = if timezone == "Local" { local_timezone() } else { timezone };
+        let zone = if timezone == "Local" {
+            local_timezone()
+        } else {
+            timezone
+        };
         match direction {
-            TimestampDirection::TimestampToDateTime => TimeService::timestamp_to_datetime(&provider, &state.timestamp_input.get(), unit, &zone),
-            TimestampDirection::DateTimeToTimestamp => TimeService::datetime_to_timestamp(&provider, &state.timestamp_input.get(), unit, &zone),
+            TimestampDirection::TimestampToDateTime => TimeService::timestamp_to_datetime(
+                &provider,
+                &state.timestamp_input.get(),
+                unit,
+                &zone,
+            ),
+            TimestampDirection::DateTimeToTimestamp => TimeService::datetime_to_timestamp(
+                &provider,
+                &state.timestamp_input.get(),
+                unit,
+                &zone,
+            ),
         }
     };
     view! {

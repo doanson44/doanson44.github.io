@@ -60,10 +60,22 @@ impl TimeState {
             tab: RwSignal::new(TimeTab::WorldClock),
             tick: RwSignal::new(0.0),
             clocks: RwSignal::new(vec![
-                ClockEntry { city: "Ho Chi Minh".into(), timezone: "Asia/Ho_Chi_Minh".into() },
-                ClockEntry { city: "Tokyo".into(), timezone: "Asia/Tokyo".into() },
-                ClockEntry { city: "London".into(), timezone: "Europe/London".into() },
-                ClockEntry { city: "New York".into(), timezone: "America/New_York".into() },
+                ClockEntry {
+                    city: "Ho Chi Minh".into(),
+                    timezone: "Asia/Ho_Chi_Minh".into(),
+                },
+                ClockEntry {
+                    city: "Tokyo".into(),
+                    timezone: "Asia/Tokyo".into(),
+                },
+                ClockEntry {
+                    city: "London".into(),
+                    timezone: "Europe/London".into(),
+                },
+                ClockEntry {
+                    city: "New York".into(),
+                    timezone: "America/New_York".into(),
+                },
             ]),
             countdown: RwSignal::new(Countdown::new(std::time::Duration::from_secs(25 * 60))),
             timer_hours: RwSignal::new("00".into()),
@@ -91,11 +103,15 @@ impl TimeState {
             .saturating_mul(3_600)
             .saturating_add(minutes.saturating_mul(60))
             .saturating_add(seconds);
-        self.countdown.set(Countdown::new(std::time::Duration::from_secs(total)));
+        self.countdown
+            .set(Countdown::new(std::time::Duration::from_secs(total)));
         Ok(())
     }
 }
 
 fn parse_component(value: &str, label: &str) -> Result<u64, String> {
-    value.trim().parse::<u64>().map_err(|_| format!("Enter a valid {label} value."))
+    value
+        .trim()
+        .parse::<u64>()
+        .map_err(|_| format!("Enter a valid {label} value."))
 }

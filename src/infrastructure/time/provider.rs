@@ -13,11 +13,21 @@ impl TimeProvider for BrowserTimeProvider {
         super::format_clock(millis, timezone)
     }
 
-    fn timestamp_to_datetime(&self, value: &str, unit: TimestampUnit, timezone: &str) -> Result<String, String> {
+    fn timestamp_to_datetime(
+        &self,
+        value: &str,
+        unit: TimestampUnit,
+        timezone: &str,
+    ) -> Result<String, String> {
         super::timestamp_to_datetime(value, unit, timezone)
     }
 
-    fn datetime_to_timestamp(&self, value: &str, unit: TimestampUnit, timezone: &str) -> Result<String, String> {
+    fn datetime_to_timestamp(
+        &self,
+        value: &str,
+        unit: TimestampUnit,
+        timezone: &str,
+    ) -> Result<String, String> {
         super::datetime_to_timestamp(value, unit, timezone)
     }
 }

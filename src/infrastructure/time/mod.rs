@@ -41,7 +41,11 @@ pub fn local_timezone() -> String {
         .unwrap_or_else(|| "UTC".into())
 }
 
-pub fn timestamp_to_datetime(value: &str, unit: TimestampUnit, timezone: &str) -> Result<String, String> {
+pub fn timestamp_to_datetime(
+    value: &str,
+    unit: TimestampUnit,
+    timezone: &str,
+) -> Result<String, String> {
     let millis = timestamp_to_millis(value, unit)?;
     let date = Date::new(&JsValue::from_f64(millis));
     if !millis.is_finite() || date.get_time().is_nan() {
@@ -50,7 +54,11 @@ pub fn timestamp_to_datetime(value: &str, unit: TimestampUnit, timezone: &str) -
     format_date(&date, timezone)
 }
 
-pub fn datetime_to_timestamp(value: &str, unit: TimestampUnit, timezone: &str) -> Result<String, String> {
+pub fn datetime_to_timestamp(
+    value: &str,
+    unit: TimestampUnit,
+    timezone: &str,
+) -> Result<String, String> {
     let date = parse_datetime(value, timezone)?;
     Ok(millis_to_timestamp(date.get_time(), unit))
 }
@@ -80,7 +88,11 @@ fn parse_datetime(value: &str, timezone: &str) -> Result<Date, String> {
     }
     if timezone == "UTC" {
         let normalized = trimmed.replace(' ', "T");
-        let iso = if normalized.ends_with('Z') { normalized } else { format!("{normalized}Z") };
+        let iso = if normalized.ends_with('Z') {
+            normalized
+        } else {
+            format!("{normalized}Z")
+        };
         let date = Date::new(&JsValue::from_str(&iso));
         if date.get_time().is_nan() {
             return Err("Enter a valid date and time.".into());

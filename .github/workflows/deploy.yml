@@ -49,6 +49,19 @@ jobs:
       - name: Build release
         run: trunk build --release
 
+      - name: Copy static assets to Pages output
+        run: |
+          cp public/favicon.svg dist/favicon.svg
+          mkdir -p dist/vendor
+          cp -R public/vendor/. dist/vendor/
+
+      - name: Verify static assets
+        run: |
+          test -f dist/favicon.svg
+          test -f dist/vendor/bootstrap/bootstrap.min.css
+          test -f dist/vendor/bootstrap/bootstrap.bundle.min.js
+          test -f dist/vendor/bootstrap-icons/bootstrap-icons.min.css
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
