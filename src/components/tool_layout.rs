@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlElement, PointerEvent};
+use web_sys::PointerEvent;
 
 /// Identifies which side of a responsive tool split a panel occupies.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -13,6 +13,7 @@ pub enum ToolPanelSide {
 struct ToolSplitContext {
     container_ref: NodeRef<leptos::html::Div>,
     ratio: RwSignal<u32>,
+    dragging: RwSignal<bool>,
 }
 
 /// Reusable responsive workspace for two tool panels and a draggable divider.
@@ -27,10 +28,12 @@ pub fn ToolSplit(
 ) -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
     let ratio = RwSignal::new(initial_ratio.clamp(20, 80));
+    let dragging = RwSignal::new(false);
 
     provide_context(ToolSplitContext {
         container_ref,
         ratio,
+        dragging,
     });
 
     Effect::new(move |_| {
@@ -76,69 +79,52 @@ pub fn ToolDivider() -> impl IntoView {
 
     let on_pointer_down = move |ev: PointerEvent| {
         ev.prevent_default();
-        let Some(target) = ev.current_target() else {
+        context.dragging.set(true);
+
+        if let Some(target) = ev
+            .current_target()
+            .and_then(|target| target.dyn_into::<web_sys::HtmlElement>().ok())
+        {
+            let _ = target.set_pointer_capture(ev.pointer_id());
+        }
+    };
+
+    let on_pointer_move = move |ev: PointerEvent| {
+        if !context.dragging.get_untracked() {
             return;
-        };
-        let Ok(target) = target.dyn_into::<HtmlElement>() else {
-            return;
-        };
-        let Some(document) = web_sys::window().and_then(|window| window.document()) else {
-            return;
-        };
-        let Some(body) = document.body() else {
+        }
+
+        let Some(container) = context.container_ref.get() else {
             return;
         };
 
-        let ratio = context.ratio;
-        let container_ref = context.container_ref;
+        let rect = container.get_bounding_client_rect();
         let is_vertical = web_sys::window()
             .and_then(|window| window.match_media("(max-width: 767.98px)").ok())
             .map(|media| media.matches())
             .unwrap_or(false);
 
-        let on_move = move |move_ev: PointerEvent| {
-            let Some(container) = container_ref.get() else {
-                return;
-            };
-            let rect = container.get_bounding_client_rect();
-            let (offset, size) = if is_vertical {
-                (
-                    move_ev.client_y() as f64 - rect.top(),
-                    rect.height(),
-                )
-            } else {
-                (
-                    move_ev.client_x() as f64 - rect.left(),
-                    rect.width(),
-                )
-            };
-
-            if size > 0.0 {
-                ratio.set(((offset / size) * 100.0).clamp(20.0, 80.0) as u32);
-            }
+        let (offset, size) = if is_vertical {
+            (ev.client_y() as f64 - rect.top(), rect.height())
+        } else {
+            (ev.client_x() as f64 - rect.left(), rect.width())
         };
 
-        let on_up = move |_: PointerEvent| {};
+        if size > 0.0 {
+            context
+                .ratio
+                .set(((offset / size) * 100.0).clamp(20.0, 80.0) as u32);
+        }
+    };
 
-        let on_move_cb = wasm_bindgen::closure::Closure::wrap(
-            Box::new(on_move) as Box<dyn FnMut(PointerEvent)>
-        );
-        let on_up_cb = wasm_bindgen::closure::Closure::wrap(
-            Box::new(on_up) as Box<dyn FnMut(PointerEvent)>
-        );
-
-        let _ = body.add_event_listener_with_callback(
-            "pointermove",
-            on_move_cb.as_ref().unchecked_ref(),
-        );
-        let _ = body.add_event_listener_with_callback(
-            "pointerup",
-            on_up_cb.as_ref().unchecked_ref(),
-        );
-
-        let _ = target.set_pointer_capture(ev.pointer_id());
-        on_move_cb.forget();
-        on_up_cb.forget();
+    let on_pointer_up = move |ev: PointerEvent| {
+        context.dragging.set(false);
+        if let Some(target) = ev
+            .current_target()
+            .and_then(|target| target.dyn_into::<web_sys::HtmlElement>().ok())
+        {
+            let _ = target.release_pointer_capture(ev.pointer_id());
+        }
     };
 
     view! {
@@ -148,6 +134,9 @@ pub fn ToolDivider() -> impl IntoView {
             aria-label="Resize tool panels"
             tabindex="0"
             on:pointerdown=on_pointer_down
+            on:pointermove=on_pointer_move
+            on:pointerup=on_pointer_up
+            on:pointercancel=move |_| context.dragging.set(false)
         ></div>
     }
 }
