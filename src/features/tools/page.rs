@@ -1,6 +1,52 @@
 use leptos::prelude::*;
 
 use crate::domain::developer_tools::ToolKind;
+use crate::domain::finance::FinanceTool;
+
+const FINANCE_TOOLS: &[FinanceTool] = &[
+    FinanceTool::CompoundInterest,
+    FinanceTool::Loan,
+    FinanceTool::Mortgage,
+    FinanceTool::InvestmentReturn,
+    FinanceTool::PresentFutureValue,
+    FinanceTool::Roi,
+    FinanceTool::Cagr,
+    FinanceTool::BreakEven,
+    FinanceTool::Budget,
+    FinanceTool::SavingsGoal,
+    FinanceTool::EmergencyFund,
+    FinanceTool::DebtPayoff,
+    FinanceTool::NetWorth,
+    FinanceTool::Budget503020,
+    FinanceTool::Dca,
+    FinanceTool::StockReturn,
+    FinanceTool::Dividend,
+    FinanceTool::PortfolioAllocation,
+    FinanceTool::PositionSize,
+    FinanceTool::RealReturn,
+    FinanceTool::ProfitMargin,
+    FinanceTool::MarkupMargin,
+    FinanceTool::Ebitda,
+    FinanceTool::CashFlow,
+    FinanceTool::BurnRate,
+    FinanceTool::Runway,
+    FinanceTool::CacLtv,
+    FinanceTool::Dcf,
+    FinanceTool::Npv,
+    FinanceTool::Irr,
+    FinanceTool::BondYtm,
+    FinanceTool::FuturesPnl,
+    FinanceTool::OptionsPnl,
+    FinanceTool::RiskReward,
+    FinanceTool::LeverageLiquidation,
+    FinanceTool::CurrencyConverter,
+    FinanceTool::Inflation,
+    FinanceTool::PurchasingPower,
+    FinanceTool::CurrencyChange,
+    FinanceTool::Discount,
+    FinanceTool::TaxPrice,
+    FinanceTool::PercentageChange,
+];
 
 #[component]
 pub fn ToolsPage() -> impl IntoView {
@@ -30,8 +76,8 @@ pub fn ToolsPage() -> impl IntoView {
                 <ToolCard href="#/tools/jwt" icon="bi-key" title="JWT Decoder" description="Decode JWT header, payload, and signature locally." />
                 <ToolCard href="#/tools/base64" icon="bi-file-binary" title="Base64 Encoder / Decoder" description="Encode and decode UTF-8 text as standard Base64 locally." />
                 <ToolCard href="#/tools/time" icon="bi-clock-history" title="Time & Utilities" description="World clock, countdown, stopwatch, ruler, and timestamp conversion." />
-                <ToolCard href="#/tools/finance" icon="bi-cash-coin" title="Finance Toolkit" description="Financial calculators for savings, loans, investing, valuation, trading, and more." />
                 {developer_tools.into_iter().map(|kind| view! { <ToolCard href=format!("#/tools/{}", kind.route()) icon="bi-wrench-adjustable" title=kind.title() description=kind.description() /> }).collect_view()}
+                {FINANCE_TOOLS.iter().copied().map(|tool| view! { <FinanceToolCard tool /> }).collect_view()}
             </div>
         </div></div>
     }
@@ -45,4 +91,23 @@ fn ToolCard(
     description: &'static str,
 ) -> impl IntoView {
     view! { <div class="col-12 col-sm-6 col-lg-4"><a href=href class="text-decoration-none"><div class="card bg-body-tertiary border-secondary h-100"><div class="card-body p-3"><h6 class="card-title mb-1"><i class=format!("bi {} text-primary me-2", icon)></i>{title}</h6><p class="card-text text-body-secondary small mb-0">{description}</p></div></div></a></div> }
+}
+
+#[component]
+fn FinanceToolCard(tool: FinanceTool) -> impl IntoView {
+    view! {
+        <div class="col-12 col-sm-6 col-lg-4">
+            <a href=format!("#/tools/finance/{}", tool.route()) class="text-decoration-none">
+                <div class="card bg-body-tertiary border-secondary h-100">
+                    <div class="card-body p-3">
+                        <h6 class="card-title mb-1">
+                            <i class="bi bi-cash-coin text-primary me-2"></i>
+                            {tool.title()}
+                        </h6>
+                        <p class="card-text text-body-secondary small mb-0">{tool.category()}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    }
 }
