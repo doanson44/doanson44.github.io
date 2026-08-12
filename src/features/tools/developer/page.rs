@@ -11,11 +11,7 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
     let state = DeveloperToolsState::new(kind);
     let split_pct = RwSignal::new(50u32);
     let dragging = RwSignal::new(false);
-    let mode = RwSignal::new(if kind == ToolKind::Url {
-        "decode"
-    } else {
-        "run"
-    });
+    let mode = RwSignal::new(if kind == ToolKind::Url { "decode" } else { "run" });
     let input_ref = NodeRef::<leptos::html::Textarea>::new();
     let line_numbers_ref = NodeRef::<leptos::html::Div>::new();
     let secondary_ref = NodeRef::<leptos::html::Textarea>::new();
@@ -34,13 +30,13 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
                 .and_then(|w| w.inner_width().ok())
                 .and_then(|v| v.as_f64())
                 .unwrap_or(1.0);
-            split_pct.set(((ev.client_x() as f64 / width) * 100.0).clamp(20.0, 80.0) as u32);
+            let x = ev.client_x() as f64;
+            split_pct.set(((x / width) * 100.0).clamp(20.0, 80.0) as u32);
         };
         let on_up = move |_: web_sys::MouseEvent| dragging.set(false);
         let move_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_move) as Box<dyn FnMut(_)>);
         let up_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_up) as Box<dyn FnMut(_)>);
-        let _ =
-            body.add_event_listener_with_callback("mousemove", move_cb.as_ref().unchecked_ref());
+        let _ = body.add_event_listener_with_callback("mousemove", move_cb.as_ref().unchecked_ref());
         let _ = body.add_event_listener_with_callback("mouseup", up_cb.as_ref().unchecked_ref());
         move_cb.forget();
         up_cb.forget();
@@ -64,7 +60,6 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
         if output.is_empty() {
             return;
         }
-        state.copied.set(false);
         let copied = state.copied;
         wasm_bindgen_futures::spawn_local(async move {
             if copy_to_clipboard(&output).await.is_ok() {
@@ -79,7 +74,7 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
     let description = kind.description();
 
     view! {
-        <div class="d-flex flex-column flex-grow-1">
+        <div class="d-flex flex-column flex-grow-1" style="min-height: 0;">
             <div class="toolbar d-flex flex-wrap align-items-center gap-1 p-2 border-bottom border-secondary">
                 <div class="ms-auto d-flex flex-wrap gap-1">
                     {if kind == ToolKind::Url { view! {
@@ -95,7 +90,7 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
                 </div>
             </div>
 
-            <div class="px-3 py-2 border-bottom border-secondary bg-body-tertiary">
+            <div class="px-3 py-2 border-bottom border-secondary bg-body-tertiary flex-shrink-0">
                 <div class="d-flex align-items-center gap-2"><i class="bi bi-tools text-primary"></i><strong>{title}</strong></div>
                 <div class="small text-body-secondary">{description}</div>
             </div>
@@ -103,7 +98,7 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
             {move || state.error.get().map(|error| view! { <div class="alert alert-danger rounded-0 border-0 border-bottom d-flex align-items-start gap-2 mb-0" role="alert"><i class="bi bi-exclamation-triangle-fill"></i><span>{error}</span></div> })}
 
             <div class="editor-preview-container flex-grow-1 d-flex overflow-hidden">
-                <div class=move || format!("editor-pane flex-grow-0 flex-shrink-0 {}", split_class(split_pct.get()))>
+                <div class=move || format!("developer-editor-pane d-flex flex-column flex-grow-0 flex-shrink-0 {}", split_class(split_pct.get()))>
                     <div class="editor-panel d-flex flex-column h-100">
                         <div class="panel-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary">
                             <span class="panel-title"><i class="bi bi-pencil-square me-2 text-primary"></i>{if kind == ToolKind::Regex { "Pattern" } else { "Input" }}</span>
@@ -116,14 +111,14 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
                             <textarea class="editor-textarea form-control flex-grow-1" placeholder="Enter input..." spellcheck="false" aria-label=format!("{} input", title) prop:value=move || state.source.get() on:input=move |ev| state.set_source(kind, event_target_value(&ev)) on:scroll=on_input_scroll node_ref=input_ref></textarea>
                         </div>
                         {if secondary_visible { view! {
-                            <div class="border-top border-secondary p-2"><label class="form-label small text-body-secondary mb-1" for="regex-test-input">"Test String"</label><textarea id="regex-test-input" class="form-control form-control-sm font-monospace" rows="4" prop:value=move || state.secondary.get() on:input=move |ev| state.set_secondary(event_target_value(&ev)) node_ref=secondary_ref></textarea></div>
+                            <div class="border-top border-secondary p-2 flex-shrink-0"><label class="form-label small text-body-secondary mb-1" for="regex-test-input">"Test String"</label><textarea id="regex-test-input" class="form-control form-control-sm font-monospace" rows="4" prop:value=move || state.secondary.get() on:input=move |ev| state.set_secondary(event_target_value(&ev)) node_ref=secondary_ref></textarea></div>
                         }.into_any() } else { view! { <span class="d-none"></span> }.into_any() }}
                     </div>
                 </div>
 
                 <div class="divider" on:mousedown=on_divider_down title="Drag to resize panels" role="separator" aria-label="Resize editor and result panels"></div>
 
-                <div class=move || format!("preview-pane flex-grow-0 flex-shrink-0 {}", split_class(100 - split_pct.get()))>
+                <div class=move || format!("developer-preview-pane d-flex flex-column flex-grow-0 flex-shrink-0 {}", split_class(100 - split_pct.get()))>
                     <div class="preview-panel d-flex flex-column h-100">
                         <div class="panel-header d-flex align-items-center px-3 py-2 border-bottom border-secondary">
                             <span class="panel-title"><i class="bi bi-eye me-2 text-success"></i>"Result"</span>
@@ -146,6 +141,7 @@ fn line_count(content: &str) -> usize {
         content.lines().count()
     }
 }
+
 fn split_class(value: u32) -> &'static str {
     if value < 38 {
         "w-25"
