@@ -5,14 +5,13 @@ use crate::infrastructure::browser::toggle_theme_js;
 /// Platform navigation bar with hash-based routing for GitHub Pages.
 #[component]
 pub fn Navbar() -> impl IntoView {
-    let on_toggle_theme = move |_| { toggle_theme_js(); };
-
+    let on_toggle_theme = move |_| {
+        toggle_theme_js();
+    };
     view! {
         <nav class="navbar navbar-expand-md border-bottom border-secondary" id="main-navbar">
             <div class="container-fluid">
-                <a class="navbar-brand d-flex align-items-center gap-2" href="#/">
-                    <i class="bi bi-code-slash fs-3 text-primary"></i><span class="fw-bold">"doanson44"</span>
-                </a>
+                <a class="navbar-brand d-flex align-items-center gap-2" href="#/"><i class="bi bi-code-slash fs-3 text-primary"></i><span class="fw-bold">"doanson44"</span></a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#platform-nav" aria-controls="platform-nav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                 <div class="collapse navbar-collapse" id="platform-nav">
                     <ul class="navbar-nav me-auto">
@@ -25,6 +24,7 @@ pub fn Navbar() -> impl IntoView {
                                 <li><a class="dropdown-item" href="#/tools/jwt"><i class="bi bi-key me-2 text-primary"></i>"JWT Decoder"</a></li>
                                 <li><a class="dropdown-item" href="#/tools/base64"><i class="bi bi-file-binary me-2 text-primary"></i>"Base64 Encoder / Decoder"</a></li>
                                 <li><a class="dropdown-item" href="#/tools/time"><i class="bi bi-clock-history me-2 text-primary"></i>"Time & Utilities"</a></li>
+                                <li><a class="dropdown-item" href="#/tools/finance"><i class="bi bi-cash-coin me-2 text-primary"></i>"Finance Toolkit"</a></li>
                                 <li><hr class="dropdown-divider" /></li>
                                 <li><a class="dropdown-item" href="#/tools/xml"><i class="bi bi-filetype-xml me-2 text-primary"></i>"XML Formatter"</a></li>
                                 <li><a class="dropdown-item" href="#/tools/yaml"><i class="bi bi-filetype-yml me-2 text-primary"></i>"YAML Formatter"</a></li>
