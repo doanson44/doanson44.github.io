@@ -41,6 +41,8 @@ features = [
     "Clipboard",
     "Navigator",
     "Storage",
+    "PointerEvent",
+    "DomRect",
 ]
 
 [profile.release]
