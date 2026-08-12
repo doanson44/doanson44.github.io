@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn ignores_whitespace() {
-        assert_eq!(decode("SGVs\nsbG8=").unwrap(), "Hello");
+        assert_eq!(decode("SGVs\nbG8=").unwrap(), "Hello");
     }
 
     #[test]
