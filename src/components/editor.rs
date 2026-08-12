@@ -39,7 +39,7 @@ pub fn Editor(
     };
 
     view! {
-        <div class="tool-panel editor-panel d-flex flex-column h-100" id="editor-panel">
+        <div class="editor-panel d-flex flex-column h-100" id="editor-panel">
             <div class="panel-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary">
                 <span class="panel-title">
                     <i class="bi bi-pencil-square me-2 text-primary"></i>
