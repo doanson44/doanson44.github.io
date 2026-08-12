@@ -28,7 +28,6 @@ pub fn Editor(
         }
     };
 
-    // Character and line count derived signals
     let char_count = move || source.get().len();
     let line_count = move || {
         let content = source.get();
@@ -51,7 +50,6 @@ pub fn Editor(
                 </span>
             </div>
             <div class="editor-body d-flex flex-grow-1 overflow-hidden">
-                // Line numbers gutter
                 <div
                     class="line-numbers d-flex flex-column align-items-end pe-2"
                     node_ref=line_numbers_ref

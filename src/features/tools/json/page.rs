@@ -1,7 +1,6 @@
 use leptos::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::window;
 
+use crate::components::tool_layout::{ToolDivider, ToolPanel, ToolPanelSide, ToolSplit};
 use crate::features::tools::json::state::JsonState;
 use crate::infrastructure::browser::copy_to_clipboard;
 
@@ -9,51 +8,8 @@ use crate::infrastructure::browser::copy_to_clipboard;
 #[component]
 pub fn JsonPage() -> impl IntoView {
     let state = JsonState::new();
-    let split_pct = RwSignal::new(50u32);
-    let dragging = RwSignal::new(false);
     let input_ref = NodeRef::<leptos::html::Textarea>::new();
     let line_numbers_ref = NodeRef::<leptos::html::Div>::new();
-
-    let on_divider_down = move |ev: leptos::ev::MouseEvent| {
-        ev.prevent_default();
-        dragging.set(true);
-        let doc = window().unwrap().document().unwrap();
-        let body = doc.body().unwrap();
-
-        let on_move = move |ev: web_sys::MouseEvent| {
-            if !dragging.get_untracked() {
-                return;
-            }
-            let width = window()
-                .unwrap()
-                .inner_width()
-                .unwrap()
-                .as_f64()
-                .unwrap_or(1.0);
-            let x = ev.client_x() as f64;
-            let new_pct = ((x / width) * 100.0).clamp(20.0, 80.0) as u32;
-            split_pct.set(new_pct);
-        };
-
-        let on_up = move |_: web_sys::MouseEvent| {
-            dragging.set(false);
-        };
-
-        let on_move_cb = wasm_bindgen::closure::Closure::wrap(
-            Box::new(on_move) as Box<dyn FnMut(web_sys::MouseEvent)>
-        );
-        let on_up_cb = wasm_bindgen::closure::Closure::wrap(
-            Box::new(on_up) as Box<dyn FnMut(web_sys::MouseEvent)>
-        );
-
-        body.add_event_listener_with_callback("mousemove", on_move_cb.as_ref().unchecked_ref())
-            .ok();
-        body.add_event_listener_with_callback("mouseup", on_up_cb.as_ref().unchecked_ref())
-            .ok();
-
-        on_move_cb.forget();
-        on_up_cb.forget();
-    };
 
     let on_input_scroll = move |_| {
         if let (Some(input), Some(line_numbers)) = (input_ref.get(), line_numbers_ref.get()) {
@@ -77,42 +33,22 @@ pub fn JsonPage() -> impl IntoView {
     };
 
     view! {
-        <div class="d-flex flex-column flex-grow-1" style="min-height: 0;">
-            <div class="toolbar d-flex flex-wrap align-items-center gap-1 p-2 border-bottom border-secondary" id="json-toolbar">
-                <div class="ms-auto d-flex flex-wrap gap-1">
-                    <button
-                        type="button"
-                        class="btn btn-outline-primary btn-sm toolbar-btn"
-                        title="Format JSON"
-                        on:click=move |_| state.format()
-                    >
+        <div class="d-flex flex-column flex-grow-1 json-tool-page">
+            <div class="toolbar d-flex flex-nowrap align-items-center gap-1 p-2 border-bottom border-secondary" id="json-toolbar">
+                <div class="ms-auto d-flex flex-nowrap gap-1">
+                    <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title="Format JSON" on:click=move |_| state.format()>
                         <i class="bi bi-text-indent-left"></i>
                         <span class="d-none d-lg-inline ms-1">"Format"</span>
                     </button>
-                    <button
-                        type="button"
-                        class="btn btn-outline-secondary btn-sm toolbar-btn"
-                        title="Minify JSON"
-                        on:click=move |_| state.minify()
-                    >
+                    <button type="button" class="btn btn-outline-secondary btn-sm toolbar-btn" title="Minify JSON" on:click=move |_| state.minify()>
                         <i class="bi bi-arrows-collapse"></i>
                         <span class="d-none d-lg-inline ms-1">"Minify"</span>
                     </button>
-                    <button
-                        type="button"
-                        class="btn btn-outline-secondary btn-sm toolbar-btn"
-                        title="Reset to sample JSON"
-                        on:click=move |_| state.reset()
-                    >
+                    <button type="button" class="btn btn-outline-secondary btn-sm toolbar-btn" title="Reset to sample JSON" on:click=move |_| state.reset()>
                         <i class="bi bi-arrow-counterclockwise"></i>
                         <span class="d-none d-lg-inline ms-1">"Reset"</span>
                     </button>
-                    <button
-                        type="button"
-                        class="btn btn-outline-danger btn-sm toolbar-btn"
-                        title="Clear JSON"
-                        on:click=move |_| state.clear()
-                    >
+                    <button type="button" class="btn btn-outline-danger btn-sm toolbar-btn" title="Clear JSON" on:click=move |_| state.clear()>
                         <i class="bi bi-trash3"></i>
                         <span class="d-none d-lg-inline ms-1">"Clear"</span>
                     </button>
@@ -126,27 +62,17 @@ pub fn JsonPage() -> impl IntoView {
                 </div>
             })}
 
-            <div class="editor-preview-container flex-grow-1 d-flex overflow-hidden">
-                <div
-                    class="editor-pane"
-                    style=move || format!("flex: 0 0 {}%; max-width: calc({}% - 1.5px);", split_pct.get(), split_pct.get())
-                >
-                    <div class="editor-panel d-flex flex-column h-100" id="json-editor-panel">
+            <ToolSplit initial_ratio=50>
+                <ToolPanel side=ToolPanelSide::First>
+                    <div class="editor-panel d-flex flex-column h-100">
                         <div class="panel-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary">
-                            <span class="panel-title">
-                                <i class="bi bi-pencil-square me-2 text-primary"></i>
-                                "Input"
-                            </span>
+                            <span class="panel-title"><i class="bi bi-pencil-square me-2 text-primary"></i>"Input"</span>
                             <span class="text-body-secondary small" aria-live="polite">
                                 {move || format!("{} lines", line_count(&state.source.get()))}
                             </span>
                         </div>
                         <div class="editor-body d-flex flex-grow-1 overflow-hidden">
-                            <div
-                                class="line-numbers d-flex flex-column align-items-end pe-2"
-                                node_ref=line_numbers_ref
-                                aria-hidden="true"
-                            >
+                            <div class="line-numbers d-flex flex-column align-items-end pe-2" node_ref=line_numbers_ref aria-hidden="true">
                                 {move || {
                                     let lines: Vec<_> = state.source.get().lines().enumerate().map(|(i, _)| {
                                         view! { <span class="line-number">{i + 1}</span> }
@@ -171,20 +97,14 @@ pub fn JsonPage() -> impl IntoView {
                             ></textarea>
                         </div>
                     </div>
-                </div>
+                </ToolPanel>
 
-                <div class="divider" on:mousedown=on_divider_down title="Drag to resize panels"></div>
+                <ToolDivider />
 
-                <div
-                    class="preview-pane"
-                    style=move || format!("flex: 0 0 {}%; max-width: calc({}% - 1.5px);", 100 - split_pct.get(), 100 - split_pct.get())
-                >
-                    <div class="preview-panel d-flex flex-column h-100" id="json-preview-panel">
+                <ToolPanel side=ToolPanelSide::Second>
+                    <div class="preview-panel d-flex flex-column h-100">
                         <div class="panel-header d-flex align-items-center px-3 py-2 border-bottom border-secondary">
-                            <span class="panel-title">
-                                <i class="bi bi-eye me-2 text-success"></i>
-                                "Preview"
-                            </span>
+                            <span class="panel-title"><i class="bi bi-eye me-2 text-success"></i>"Preview"</span>
                             <button
                                 type="button"
                                 class="btn btn-outline-primary btn-sm ms-auto"
@@ -199,7 +119,7 @@ pub fn JsonPage() -> impl IntoView {
                                 </span>
                             </button>
                         </div>
-                        <div class="preview-content flex-grow-1 p-3 overflow-auto" id="json-preview-content">
+                        <div class="preview-content flex-grow-1 p-3 overflow-auto">
                             {move || {
                                 let output = state.output.get();
                                 if output.is_empty() {
@@ -219,8 +139,8 @@ pub fn JsonPage() -> impl IntoView {
                             }}
                         </div>
                     </div>
-                </div>
-            </div>
+                </ToolPanel>
+            </ToolSplit>
         </div>
     }
 }
