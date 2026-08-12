@@ -10,7 +10,8 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
     <!-- Trunk static assets -->
-    <link data-trunk rel="copy-dir" href="public" />
+    <link data-trunk rel="copy-file" href="public/favicon.svg" />
+    <link data-trunk rel="copy-dir" href="public/vendor" />
 
     <!-- Bootstrap 5 CSS -->
     <link href="vendor/bootstrap/bootstrap.min.css" rel="stylesheet" />
@@ -200,7 +201,7 @@
 
     <!-- Mermaid.js ES module init -->
     <script type="module">
-        import mermaid from './vendor/mermaid/mermaid.esm.min.mjs';
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
         const theme = (document.documentElement.getAttribute('data-bs-theme') || 'dark') === 'light' ? 'default' : 'dark';
         mermaid.initialize({ startOnLoad: false, theme: theme, securityLevel: 'strict', logLevel: 'error', fontFamily: '"Inter", system-ui, -apple-system, sans-serif' });
         window.__mermaid = mermaid;
