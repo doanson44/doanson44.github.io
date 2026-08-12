@@ -30,8 +30,7 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
                 .and_then(|w| w.inner_width().ok())
                 .and_then(|v| v.as_f64())
                 .unwrap_or(1.0);
-            let x = ev.client_x() as f64;
-            split_pct.set(((x / width) * 100.0).clamp(20.0, 80.0) as u32);
+            split_pct.set(((ev.client_x() as f64 / width) * 100.0).clamp(20.0, 80.0) as u32);
         };
         let on_up = move |_: web_sys::MouseEvent| dragging.set(false);
         let move_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_move) as Box<dyn FnMut(_)>);
@@ -74,7 +73,7 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
     let description = kind.description();
 
     view! {
-        <div class="d-flex flex-column flex-grow-1" style="min-height: 0;">
+        <div class="d-flex flex-column flex-grow-1">
             <div class="toolbar d-flex flex-wrap align-items-center gap-1 p-2 border-bottom border-secondary">
                 <div class="ms-auto d-flex flex-wrap gap-1">
                     {if kind == ToolKind::Url { view! {
