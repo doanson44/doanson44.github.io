@@ -42,6 +42,7 @@ features = [
     "Navigator",
     "Storage",
     "PointerEvent",
+    "DomRect",
 ]
 
 [profile.release]
