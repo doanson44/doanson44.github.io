@@ -91,50 +91,122 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0, rect.width, rect.height);
 
-                return canvas.toDataURL("image/png");
+                const pngBlob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+                const item = new ClipboardItem({ "image/png": pngBlob });
+                await navigator.clipboard.write([item]);
+                return JSON.stringify({ ok: true });
             } catch (e) {
                 return JSON.stringify({ ok: false, error: e.message || String(e) });
             }
         };
 
-        window.__set_theme = function(theme) {
-            const root = document.documentElement;
-            const oldTheme = root.getAttribute('data-bs-theme') || 'dark';
+        window.__copy_preview_as_html = async function(elementId) {
+            try {
+                const source = document.getElementById(elementId);
+                if (!source) throw new Error("Preview element not found");
 
-            if (oldTheme === theme) return;
+                const clone = source.cloneNode(true);
+                clone.querySelectorAll('.copy-btn, button').forEach(function(el) {
+                    el.remove();
+                });
 
-            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const overlay = document.createElement('div');
-            overlay.className = 'theme-transition-overlay';
-            overlay.setAttribute('aria-hidden', 'true');
+                clone.querySelectorAll('script, iframe, object, embed').forEach(function(el) {
+                    el.remove();
+                });
 
-            if (prefersReducedMotion) {
-                root.setAttribute('data-bs-theme', theme);
-                return;
+                clone.querySelectorAll('table').forEach(function(table) {
+                    table.style.borderCollapse = 'collapse';
+                    table.style.width = '100%';
+                });
+
+                clone.querySelectorAll('th, td').forEach(function(cell) {
+                    cell.style.border = '1px solid #adb5bd';
+                    cell.style.padding = '6px 8px';
+                    cell.style.verticalAlign = 'top';
+                });
+
+                clone.querySelectorAll('pre').forEach(function(pre) {
+                    pre.style.whiteSpace = 'pre-wrap';
+                    pre.style.fontFamily = 'Consolas, "Courier New", monospace';
+                    pre.style.padding = '10px';
+                });
+
+                clone.querySelectorAll('blockquote').forEach(function(blockquote) {
+                    blockquote.style.borderLeft = '4px solid #adb5bd';
+                    blockquote.style.paddingLeft = '12px';
+                    blockquote.style.marginLeft = '0';
+                });
+
+                const html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><!--StartFragment-->'
+                    + clone.innerHTML
+                    + '<!--EndFragment--></body></html>';
+                const plainText = clone.innerText || clone.textContent || '';
+
+                const item = new ClipboardItem({
+                    "text/html": new Blob([html], { type: "text/html" }),
+                    "text/plain": new Blob([plainText], { type: "text/plain" })
+                });
+                await navigator.clipboard.write([item]);
+                return JSON.stringify({ ok: true });
+            } catch (e) {
+                return JSON.stringify({ ok: false, error: e.message || String(e) });
+            }
+        };
+
+        window.__toggle_theme = function() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-bs-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            const bodyBackground = getComputedStyle(document.body).backgroundColor;
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            if (!reducedMotion) {
+                html.style.setProperty('--theme-transition-color', bodyBackground);
+                html.setAttribute('data-theme-transition', 'active');
             }
 
-            document.body.appendChild(overlay);
-            root.setAttribute('data-bs-theme', theme);
+            html.setAttribute('data-bs-theme', next);
+            localStorage.setItem('ms-theme', next);
 
-            requestAnimationFrame(() => {
-                overlay.classList.add('theme-transition-overlay--hidden');
-            });
+            if (!reducedMotion) {
+                requestAnimationFrame(function() {
+                    html.setAttribute('data-theme-transition', 'fade');
+                });
 
-            window.setTimeout(() => overlay.remove(), 320);
+                window.setTimeout(function() {
+                    html.removeAttribute('data-theme-transition');
+                    html.style.removeProperty('--theme-transition-color');
+                }, 320);
+            }
+
+            // Update Mermaid theme + re-render all existing diagrams
+            if (window.__mermaid) {
+                window.__mermaid.initialize({ theme: next === 'light' ? 'default' : 'dark' });
+                // Re-render all mermaid diagrams in the DOM
+                document.querySelectorAll('[data-mermaid-code]').forEach(function(el) {
+                    const code = el.getAttribute('data-mermaid-code');
+                    if (code) {
+                        const uniqueId = 'mermaid-rerender-' + Math.random().toString(36).slice(2, 8);
+                        window.__mermaid.render(uniqueId, code).then(function(result) {
+                            var diagram = el.querySelector('.mermaid-diagram');
+                            if (diagram) diagram.innerHTML = result.svg;
+                        }).catch(function() {});
+                    }
+                });
+            }
+            return next;
         };
     </script>
 
+    <!-- Mermaid.js ES module init -->
     <script type="module">
         import mermaid from './vendor/mermaid/mermaid.esm.min.mjs';
-
-        mermaid.initialize({
-            startOnLoad: false,
-            securityLevel: 'strict',
-            theme: 'default',
-            fontFamily: '"Inter", system-ui, -apple-system, sans-serif'
-        });
-
+        const theme = (document.documentElement.getAttribute('data-bs-theme') || 'dark') === 'light' ? 'default' : 'dark';
+        mermaid.initialize({ startOnLoad: false, theme: theme, securityLevel: 'strict', logLevel: 'error', fontFamily: '"Inter", system-ui, -apple-system, sans-serif' });
         window.__mermaid = mermaid;
     </script>
+
+    <!-- Bootstrap 5 JS (required for navbar toggler, dropdowns, etc.) -->
+    <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
 </body>
 </html>
