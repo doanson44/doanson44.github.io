@@ -202,7 +202,7 @@ fn Stopwatch(state: TimeState) -> impl IntoView {
                 } else {
                     view! { <button type="button" class="btn btn-primary" on:click=move |_| state.stopwatch.update(|watch| watch.start(state.tick.get_untracked()))>"Start / Resume"</button> }.into_any()
                 }}
-                <button type="button" class="btn btn-outline-primary" disabled=move || state.stopwatch.get().state() != StopwatchState::Running on:click=move |_| state.stopwatch.update(|watch| watch.lap(state.tick.get_untracked()))>"Lap"</button>
+                <button type="button" class="btn btn-outline-primary" disabled=move || state.stopwatch.get().state() != StopwatchState::Running on:click=move |_| state.stopwatch.update(|watch| { watch.lap(state.tick.get_untracked()); })>"Lap"</button>
                 <button type="button" class="btn btn-outline-secondary" on:click=move |_| state.stopwatch.update(|watch| watch.reset())>"Reset"</button>
             </div>
             <div class="table-responsive mx-auto time-laps-table">
