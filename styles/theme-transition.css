@@ -1,0 +1,23 @@
+/* ---------- Theme Transition Overlay ---------- */
+html[data-theme-transition="active"]::before,
+html[data-theme-transition="fade"]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    pointer-events: none;
+    background-color: var(--theme-transition-color, var(--bs-body-bg));
+    opacity: 1;
+    transition: opacity 300ms ease-in-out;
+}
+
+html[data-theme-transition="fade"]::before {
+    opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-theme-transition="active"]::before,
+    html[data-theme-transition="fade"]::before {
+        transition-duration: 0ms;
+    }
+}
