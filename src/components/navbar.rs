@@ -76,6 +76,103 @@ pub fn Navbar() -> impl IntoView {
                                         "Base64 Encoder / Decoder"
                                     </a>
                                 </li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/xml">
+                                        <i class="bi bi-filetype-xml me-2 text-primary"></i>
+                                        "XML Formatter"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/yaml">
+                                        <i class="bi bi-filetype-yml me-2 text-primary"></i>
+                                        "YAML Formatter"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/sql">
+                                        <i class="bi bi-database me-2 text-primary"></i>
+                                        "SQL Formatter"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/html">
+                                        <i class="bi bi-filetype-html me-2 text-primary"></i>
+                                        "HTML Formatter"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/css">
+                                        <i class="bi bi-filetype-css me-2 text-primary"></i>
+                                        "CSS Formatter"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/javascript">
+                                        <i class="bi bi-filetype-js me-2 text-primary"></i>
+                                        "JavaScript Formatter"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/regex">
+                                        <i class="bi bi-regex me-2 text-primary"></i>
+                                        "Regex Tester"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/url">
+                                        <i class="bi bi-link-45deg me-2 text-primary"></i>
+                                        "URL Encoder / Decoder"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/hash">
+                                        <i class="bi bi-hash me-2 text-primary"></i>
+                                        "Hash Generator"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/uuid">
+                                        <i class="bi bi-fingerprint me-2 text-primary"></i>
+                                        "UUID Generator"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/timestamp">
+                                        <i class="bi bi-clock-history me-2 text-primary"></i>
+                                        "Timestamp Converter"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/color">
+                                        <i class="bi bi-palette me-2 text-primary"></i>
+                                        "Color Converter"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/cron">
+                                        <i class="bi bi-calendar3 me-2 text-primary"></i>
+                                        "Cron Expression Generator"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/http-status">
+                                        <i class="bi bi-globe2 me-2 text-primary"></i>
+                                        "HTTP Status Lookup"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/subnet">
+                                        <i class="bi bi-diagram-3 me-2 text-primary"></i>
+                                        "IP / Subnet Calculator"
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#/tools/qr">
+                                        <i class="bi bi-qr-code me-2 text-primary"></i>
+                                        "QR Code Generator"
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li class="nav-item">

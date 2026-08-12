@@ -5,8 +5,54 @@
    Bootstrap handles the vast majority of layout and theming.
    ============================================================ */
 
-/* ---------- Import Google Font ---------- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+/* ---------- Local Fonts ---------- */
+@font-face {
+    font-family: 'Inter';
+    src: url('../vendor/fonts/inter/Inter-Regular.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../vendor/fonts/inter/Inter-Medium.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../vendor/fonts/inter/Inter-SemiBold.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('../vendor/fonts/inter/Inter-Bold.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('../vendor/fonts/jetbrains-mono/JetBrainsMono-Regular.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('../vendor/fonts/jetbrains-mono/JetBrainsMono-Medium.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+}
 
 /* ---------- CSS Custom Properties (Theme-Agnostic) ---------- */
 :root {
