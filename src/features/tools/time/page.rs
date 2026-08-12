@@ -17,7 +17,10 @@ pub fn TimePage() -> impl IntoView {
     let tick = state.tick;
     let interval_id = window().and_then(|win| {
         let callback = Closure::wrap(Box::new(move || tick.set(provider.now_ms())) as Box<dyn FnMut()>);
-        let result = win.set_interval_with_callback_and_timeout_and_arguments_0(callback.as_ref().unchecked_ref(), 100);
+        let result = win.set_interval_with_callback_and_timeout_and_arguments_0(
+            callback.as_ref().unchecked_ref(),
+            100,
+        );
         callback.forget();
         result.ok()
     });
@@ -26,8 +29,6 @@ pub fn TimePage() -> impl IntoView {
             win.clear_interval_with_handle(id);
         }
     });
-    let tab = state.tab;
-    let error = RwSignal::new(None::<String>);
 
     view! {
         <div class="d-flex flex-column flex-grow-1 overflow-hidden">
@@ -36,22 +37,11 @@ pub fn TimePage() -> impl IntoView {
                 <div class="small text-body-secondary">"World clock, countdown, stopwatch, ruler, and timestamp conversion."</div>
             </div>
             <div class="d-flex flex-column flex-lg-row flex-grow-1 overflow-hidden">
-                <nav class="time-tool-nav flex-shrink-0" aria-label="Time utilities">
-                    <div class="d-flex flex-row flex-lg-column gap-1 overflow-auto p-2">
-                        {[TimeTab::WorldClock, TimeTab::Timer, TimeTab::Stopwatch, TimeTab::Ruler, TimeTab::Timestamp]
-                            .into_iter()
-                            .map(|item| view! {
-                                <button type="button" class=move || if tab.get() == item { "btn btn-primary time-tool-tab" } else { "btn btn-outline-secondary time-tool-tab" } on:click=move |_| tab.set(item) aria-pressed=move || (tab.get() == item).to_string()>
-                                    {item.label()}
-                                </button>
-                            })
-                            .collect_view()}
-                    </div>
-                </nav>
+                <TimeNavigation state=state />
                 <main class="flex-grow-1 overflow-auto p-3 p-lg-4">
-                    {move || match tab.get() {
+                    {move || match state.tab.get() {
                         TimeTab::WorldClock => view! { <WorldClock state=state provider=provider /> }.into_any(),
-                        TimeTab::Timer => view! { <Timer state=state error=error /> }.into_any(),
+                        TimeTab::Timer => view! { <Timer state=state /> }.into_any(),
                         TimeTab::Stopwatch => view! { <Stopwatch state=state /> }.into_any(),
                         TimeTab::Ruler => view! { <Ruler state=state /> }.into_any(),
                         TimeTab::Timestamp => view! { <Timestamp state=state provider=provider /> }.into_any(),
@@ -59,6 +49,33 @@ pub fn TimePage() -> impl IntoView {
                 </main>
             </div>
         </div>
+    }
+}
+
+#[component]
+fn TimeNavigation(state: TimeState) -> impl IntoView {
+    view! {
+        <nav class="flex-shrink-0" aria-label="Time utilities">
+            <div class="d-flex flex-row flex-lg-column gap-1 overflow-auto p-2">
+                {[TimeTab::WorldClock, TimeTab::Timer, TimeTab::Stopwatch, TimeTab::Ruler, TimeTab::Timestamp]
+                    .into_iter()
+                    .map(|item| view! {
+                        <button
+                            type="button"
+                            class=move || if state.tab.get() == item {
+                                "btn btn-primary"
+                            } else {
+                                "btn btn-outline-secondary"
+                            }
+                            on:click=move |_| state.tab.set(item)
+                            aria-pressed=move || (state.tab.get() == item).to_string()
+                        >
+                            {item.label()}
+                        </button>
+                    })
+                    .collect_view()}
+            </div>
+        </nav>
     }
 }
 
@@ -73,17 +90,25 @@ fn WorldClock(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView 
         ("Seoul", "Asia/Seoul"),
     ];
     let selected = RwSignal::new("Asia/Singapore".to_string());
+
     view! {
-        <section class="time-section">
+        <section>
             <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
-                <div><h2 class="h4 mb-1">"World Clock"</h2><p class="text-body-secondary mb-0">"Track multiple cities with IANA timezone data."</p></div>
+                <div>
+                    <h2 class="h4 mb-1">"World Clock"</h2>
+                    <p class="text-body-secondary mb-0">"Track multiple cities with IANA timezone data."</p>
+                </div>
                 <div class="d-flex gap-2">
                     <select class="form-select form-select-sm" aria-label="Timezone to add" prop:value=move || selected.get() on:change=move |ev| selected.set(event_target_value(&ev))>
                         {choices.into_iter().map(|(city, zone)| view! { <option value=zone>{city}</option> }).collect_view()}
                     </select>
                     <button type="button" class="btn btn-primary btn-sm" on:click=move |_| {
                         if let Some((city, zone)) = choices.into_iter().find(|(_, zone)| *zone == selected.get_untracked()) {
-                            state.clocks.update(|clocks| if !clocks.iter().any(|item| item.timezone == zone) { clocks.push(ClockEntry { city: city.into(), timezone: zone.into() }); });
+                            state.clocks.update(|clocks| {
+                                if !clocks.iter().any(|item| item.timezone == zone) {
+                                    clocks.push(ClockEntry { city: city.into(), timezone: zone.into() });
+                                }
+                            });
                         }
                     }><i class="bi bi-plus-lg me-1"></i>"Add"</button>
                 </div>
@@ -91,12 +116,19 @@ fn WorldClock(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView 
             <div class="row g-3">
                 {move || state.clocks.get().into_iter().enumerate().map(|(index, clock)| {
                     let timezone = clock.timezone.clone();
+                    let city = clock.city.clone();
                     view! {
-                        <div class="col-12 col-md-6"><div class="card bg-body-tertiary border-secondary h-100"><div class="card-body">
-                            <div class="d-flex justify-content-between"><div><h3 class="h6 mb-1">{clock.city.clone()}</h3><span class="small text-body-secondary">{timezone.clone()}</span></div>
-                            <button type="button" class="btn btn-outline-danger btn-sm" title="Remove clock" aria-label=format!("Remove {}", clock.city) on:click=move |_| state.clocks.update(|clocks| if clocks.len() > 1 { clocks.remove(index); })><i class="bi bi-x-lg"></i></button></div>
-                            <div class="fs-4 font-monospace mt-3" aria-live="polite">{move || provider.format_datetime(state.tick.get(), &timezone).unwrap_or_else(|_| "Unavailable".into())}</div>
-                        </div></div></div>
+                        <div class="col-12 col-md-6">
+                            <div class="card bg-body-tertiary border-secondary h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between gap-2">
+                                        <div><h3 class="h6 mb-1">{city.clone()}</h3><span class="small text-body-secondary">{timezone.clone()}</span></div>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" title="Remove clock" aria-label=format!("Remove {city}") on:click=move |_| state.clocks.update(|clocks| if clocks.len() > 1 { clocks.remove(index); })><i class="bi bi-x-lg"></i></button>
+                                    </div>
+                                    <div class="fs-4 font-monospace mt-3" aria-live="polite">{move || provider.format_datetime(state.tick.get(), &timezone).unwrap_or_else(|_| "Unavailable".into())}</div>
+                                </div>
+                            </div>
+                        </div>
                     }
                 }).collect_view()}
             </div>
@@ -105,32 +137,54 @@ fn WorldClock(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView 
 }
 
 #[component]
-fn Timer(state: TimeState, error: RwSignal<Option<String>>) -> impl IntoView {
-    let configure = move || match state.set_timer_from_inputs() { Ok(()) => error.set(None), Err(message) => error.set(Some(message)) };
+fn Timer(state: TimeState) -> impl IntoView {
+    let error = RwSignal::new(None::<String>);
     let remaining = move || {
-        let mut timer = state.countdown.get();
+        let mut timer = state.countdown.get_untracked();
+        let before = timer.state();
         let value = timer.remaining_ms(state.tick.get());
-        state.countdown.set(timer);
+        if timer.state() != before {
+            state.countdown.set(timer);
+        }
         value
     };
+    let start = move || match state.set_timer_from_inputs() {
+        Ok(()) => {
+            error.set(None);
+            state.countdown.update(|timer| timer.start(state.tick.get_untracked()));
+        }
+        Err(message) => error.set(Some(message)),
+    };
+
     view! {
-        <section class="time-section time-centered-section">
+        <section class="text-center">
             <h2 class="h4">"Countdown"</h2>
             <p class="text-body-secondary">"Uses timestamps as the source of truth."</p>
-            {move || error.get().map(|message| view! { <div class="alert alert-danger" role="alert">{message}</div> })}
-            <div class="time-display font-monospace" aria-live="polite">{move || format_duration(remaining())}</div>
-            <div class="d-flex justify-content-center gap-2 mb-3">
+            {move || error.get().map(|message| view! { <div class="alert alert-danger text-start" role="alert">{message}</div> })}
+            <div class="display-3 font-monospace my-4" aria-live="polite">{move || format_duration(remaining())}</div>
+            <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
                 {move || match state.countdown.get().state() {
                     CountdownState::Running => view! { <button type="button" class="btn btn-primary" on:click=move |_| state.countdown.update(|timer| timer.pause(state.tick.get_untracked()))>"Pause"</button> }.into_any(),
                     CountdownState::Paused => view! { <button type="button" class="btn btn-primary" on:click=move |_| state.countdown.update(|timer| timer.resume(state.tick.get_untracked()))>"Resume"</button> }.into_any(),
-                    _ => view! { <button type="button" class="btn btn-primary" on:click=move |_| { configure(); state.countdown.update(|timer| timer.start(state.tick.get_untracked())); }>"Start"</button> }.into_any(),
+                    _ => view! { <button type="button" class="btn btn-primary" on:click=move |_| start()>"Start"</button> }.into_any(),
                 }}
                 <button type="button" class="btn btn-outline-secondary" on:click=move |_| state.countdown.update(|timer| timer.reset())>"Reset"</button>
             </div>
             <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                {[1u64, 5, 10, 25].into_iter().map(|minutes| view! { <button type="button" class="btn btn-outline-secondary" on:click=move |_| { state.timer_hours.set("00".into()); state.timer_minutes.set(format!("{minutes:02}")); state.timer_seconds.set("00".into()); configure(); }>{format!("{minutes} min")}</button> }).collect_view()}
+                {[1u64, 5, 10, 25].into_iter().map(|minutes| view! {
+                    <button type="button" class="btn btn-outline-secondary" on:click=move |_| {
+                        state.timer_hours.set("00".into());
+                        state.timer_minutes.set(format!("{minutes:02}"));
+                        state.timer_seconds.set("00".into());
+                        start();
+                    }>{format!("{minutes} min")}</button>
+                }).collect_view()}
             </div>
-            <div class="row g-2 mx-auto time-input-row"><TimeInput label="Hours" value=state.timer_hours /><TimeInput label="Minutes" value=state.timer_minutes /><TimeInput label="Seconds" value=state.timer_seconds /></div>
+            <div class="row g-2 mx-auto" style="max-width: 420px">
+                <TimeInput label="Hours" value=state.timer_hours />
+                <TimeInput label="Minutes" value=state.timer_minutes />
+                <TimeInput label="Seconds" value=state.timer_seconds />
+            </div>
         </section>
     }
 }
@@ -138,23 +192,39 @@ fn Timer(state: TimeState, error: RwSignal<Option<String>>) -> impl IntoView {
 #[component]
 fn TimeInput(label: &'static str, value: RwSignal<String>) -> impl IntoView {
     let id = format!("time-{}", label.to_ascii_lowercase());
-    view! { <div class="col-4"><label class="form-label small text-body-secondary" for=id.clone()>{label}</label><input id=id type="number" min="0" max=if label == "Hours" { "99" } else { "59" } class="form-control text-center font-monospace" prop:value=move || value.get() on:input=move |ev| value.set(event_target_value(&ev)) /></div> }
+    view! {
+        <div class="col-4">
+            <label class="form-label small text-body-secondary" for=id.clone()>{label}</label>
+            <input id=id type="number" min="0" max=if label == "Hours" { "99" } else { "59" } class="form-control text-center font-monospace" prop:value=move || value.get() on:input=move |ev| value.set(event_target_value(&ev)) />
+        </div>
+    }
 }
 
 #[component]
 fn Stopwatch(state: TimeState) -> impl IntoView {
     let elapsed = move || state.stopwatch.get().elapsed(state.tick.get()).as_millis() as u64;
     view! {
-        <section class="time-section time-centered-section"><h2 class="h4">"Stopwatch"</h2><p class="text-body-secondary">"Measure elapsed time with lap splits."</p>
-            <div class="time-display font-monospace" aria-live="polite">{move || format_stopwatch(elapsed())}</div>
-            <div class="d-flex justify-content-center gap-2 mb-4">
-                {move || if state.stopwatch.get().state() == StopwatchState::Running { view! { <button type="button" class="btn btn-primary" on:click=move |_| state.stopwatch.update(|watch| watch.pause(state.tick.get_untracked()))>"Pause"</button> }.into_any() } else { view! { <button type="button" class="btn btn-primary" on:click=move |_| state.stopwatch.update(|watch| watch.start(state.tick.get_untracked()))>"Start / Resume"</button> }.into_any() }}
-                <button type="button" class="btn btn-outline-primary" disabled=move || state.stopwatch.get().state() != StopwatchState::Running on:click=move |_| state.stopwatch.update(|watch| { watch.lap(state.tick.get_untracked()); })>"Lap"</button>
+        <section class="text-center">
+            <h2 class="h4">"Stopwatch"</h2>
+            <p class="text-body-secondary">"Measure elapsed time with lap splits."</p>
+            <div class="display-3 font-monospace my-4" aria-live="polite">{move || format_stopwatch(elapsed())}</div>
+            <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+                {move || if state.stopwatch.get().state() == StopwatchState::Running {
+                    view! { <button type="button" class="btn btn-primary" on:click=move |_| state.stopwatch.update(|watch| watch.pause(state.tick.get_untracked()))>"Pause"</button> }.into_any()
+                } else {
+                    view! { <button type="button" class="btn btn-primary" on:click=move |_| state.stopwatch.update(|watch| watch.start(state.tick.get_untracked()))>"Start / Resume"</button> }.into_any()
+                }}
+                <button type="button" class="btn btn-outline-primary" disabled=move || state.stopwatch.get().state() != StopwatchState::Running on:click=move |_| state.stopwatch.update(|watch| watch.lap(state.tick.get_untracked()))>"Lap"</button>
                 <button type="button" class="btn btn-outline-secondary" on:click=move |_| state.stopwatch.update(|watch| watch.reset())>"Reset"</button>
             </div>
-            <div class="table-responsive mx-auto time-laps-table"><table class="table table-sm"><thead><tr><th scope="col">"Lap"</th><th scope="col">"Split"</th><th scope="col">"Total"</th></tr></thead><tbody>
-                {move || state.stopwatch.get().laps().iter().enumerate().map(|(index, total)| { let previous = if index == 0 { 0 } else { state.stopwatch.get().laps()[index - 1] }; view! { <tr><th scope="row">{index + 1}</th><td class="font-monospace">{format_stopwatch(total.saturating_sub(previous))}</td><td class="font-monospace">{format_stopwatch(*total)}</td></tr> } }).collect_view()}
-            </tbody></table></div>
+            <div class="table-responsive mx-auto" style="max-width: 640px">
+                <table class="table table-sm"><thead><tr><th scope="col">"Lap"</th><th scope="col">"Split"</th><th scope="col">"Total"</th></tr></thead><tbody>
+                    {move || state.stopwatch.get().laps().iter().enumerate().map(|(index, total)| {
+                        let previous = if index == 0 { 0 } else { state.stopwatch.get().laps()[index - 1] };
+                        view! { <tr><th scope="row">{index + 1}</th><td class="font-monospace">{format_stopwatch(total.saturating_sub(previous))}</td><td class="font-monospace">{format_stopwatch(*total)}</td></tr> }
+                    }).collect_view()}
+                </tbody></table>
+            </div>
         </section>
     }
 }
@@ -162,10 +232,19 @@ fn Stopwatch(state: TimeState) -> impl IntoView {
 #[component]
 fn Ruler(state: TimeState) -> impl IntoView {
     view! {
-        <section class="time-section"><div class="d-flex flex-wrap justify-content-between gap-3 mb-4"><div><h2 class="h4">"Screen Ruler"</h2><p class="text-body-secondary">"CSS-pixel ruler. Physical units are approximate until calibrated."</p></div>
-            <div class="d-flex gap-2"><select class="form-select form-select-sm" aria-label="Ruler unit" prop:value=move || state.ruler_unit.get() on:change=move |ev| state.ruler_unit.set(event_target_value(&ev))><option value="px">"px"</option><option value="cm">"cm"</option><option value="inch">"inch"</option></select><select class="form-select form-select-sm" aria-label="Ruler orientation" prop:value=move || state.ruler_orientation.get() on:change=move |ev| state.ruler_orientation.set(event_target_value(&ev))><option value="horizontal">"Horizontal"</option><option value="vertical">"Vertical"</option></select></div>
-        </div><div class=move || if state.ruler_orientation.get() == "vertical" { "screen-ruler screen-ruler-vertical" } else { "screen-ruler" } role="img" aria-label="Screen ruler">{(0..=10).map(|value| view! { <div class="ruler-mark"><span>{value}</span></div> }).collect_view()}</div>
-        <div class="d-flex justify-content-between gap-2 mt-3"><span class="small text-body-secondary">{move || if state.ruler_calibrated.get() { "Calibrated scale" } else { "Screen scale" }}</span><button type="button" class="btn btn-outline-secondary btn-sm" on:click=move |_| state.ruler_calibrated.update(|value| *value = !*value)>{move || if state.ruler_calibrated.get() { "Clear calibration" } else { "Calibrate" }}</button></div></section>
+        <section>
+            <div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
+                <div><h2 class="h4">"Screen Ruler"</h2><p class="text-body-secondary">"CSS-pixel ruler. Physical units are approximate until calibrated."</p></div>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" aria-label="Ruler unit" prop:value=move || state.ruler_unit.get() on:change=move |ev| state.ruler_unit.set(event_target_value(&ev))><option value="px">"px"</option><option value="cm">"cm"</option><option value="inch">"inch"</option></select>
+                    <select class="form-select form-select-sm" aria-label="Ruler orientation" prop:value=move || state.ruler_orientation.get() on:change=move |ev| state.ruler_orientation.set(event_target_value(&ev))><option value="horizontal">"Horizontal"</option><option value="vertical">"Vertical"</option></select>
+                </div>
+            </div>
+            <div class="border border-secondary rounded p-3 d-flex gap-3" role="img" aria-label="Screen ruler">
+                {(0..=10).map(|value| view! { <div class="d-flex flex-column align-items-center"><span class="border-start border-secondary" style="height: 32px"></span><span class="small">{value}</span></div> }).collect_view()}
+            </div>
+            <div class="d-flex justify-content-between gap-2 mt-3"><span class="small text-body-secondary">{move || if state.ruler_calibrated.get() { "Calibrated scale" } else { "Screen scale" }}</span><button type="button" class="btn btn-outline-secondary btn-sm" on:click=move |_| state.ruler_calibrated.update(|value| *value = !*value)>{move || if state.ruler_calibrated.get() { "Clear calibration" } else { "Calibrate" }}</button></div>
+        </section>
     }
 }
 
@@ -182,21 +261,33 @@ fn Timestamp(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView {
         }
     };
     view! {
-        <section class="time-section"><h2 class="h4">"Timestamp Converter"</h2><p class="text-body-secondary">"Select the conversion direction, unit, and timezone."</p>
-            <div class="row g-3"><div class="col-12 col-lg-4"><label class="form-label" for="timestamp-direction">"Conversion"</label><select id="timestamp-direction" class="form-select" prop:value=move || if state.timestamp_direction.get() == TimestampDirection::TimestampToDateTime { "to-date" } else { "to-timestamp" } on:change=move |ev| state.timestamp_direction.set(if event_target_value(&ev) == "to-date" { TimestampDirection::TimestampToDateTime } else { TimestampDirection::DateTimeToTimestamp })><option value="to-date">"Unix Timestamp → Date/Time"</option><option value="to-timestamp">"Date/Time → Unix Timestamp"</option></select></div>
-            <div class="col-12 col-sm-6 col-lg-4"><label class="form-label" for="timestamp-unit">"Unit"</label><select id="timestamp-unit" class="form-select" prop:value=move || if state.timestamp_unit.get() == TimestampUnit::Seconds { "seconds" } else { "milliseconds" } on:change=move |ev| state.timestamp_unit.set(if event_target_value(&ev) == "seconds" { TimestampUnit::Seconds } else { TimestampUnit::Milliseconds })><option value="seconds">"Seconds"</option><option value="milliseconds">"Milliseconds"</option></select></div>
-            <div class="col-12 col-sm-6 col-lg-4"><label class="form-label" for="timestamp-timezone">"Timezone"</label><select id="timestamp-timezone" class="form-select" prop:value=move || state.timestamp_timezone.get() on:change=move |ev| state.timestamp_timezone.set(event_target_value(&ev))><option value="Local">"Local"</option><option value="UTC">"UTC"</option></select></div>
-            <div class="col-12"><label class="form-label" for="timestamp-input">{move || if state.timestamp_direction.get() == TimestampDirection::TimestampToDateTime { "Timestamp" } else { "Date / Time" }}</label><input id="timestamp-input" class="form-control font-monospace" type="text" placeholder=move || if state.timestamp_direction.get() == TimestampDirection::TimestampToDateTime { "1786546112" } else { "2026-08-12T21:48:32" } prop:value=move || state.timestamp_input.get() on:input=move |ev| state.timestamp_input.set(event_target_value(&ev)) /></div></div>
-            <div class="card bg-body-tertiary border-secondary mt-4"><div class="card-body"><div class="small text-body-secondary mb-1">"Result"</div><div class="font-monospace fs-5" aria-live="polite">{move || result().unwrap_or_else(|message| message)}</div></div></div>
+        <section>
+            <h2 class="h4">"Timestamp Converter"</h2>
+            <p class="text-body-secondary">"Select the conversion direction, unit, and timezone."</p>
+            <div class="row g-3">
+                <div class="col-12 col-lg-4"><label class="form-label" for="timestamp-direction">"Conversion"</label><select id="timestamp-direction" class="form-select" prop:value=move || if state.timestamp_direction.get() == TimestampDirection::TimestampToDateTime { "to-date" } else { "to-timestamp" } on:change=move |ev| state.timestamp_direction.set(if event_target_value(&ev) == "to-date" { TimestampDirection::TimestampToDateTime } else { TimestampDirection::DateTimeToTimestamp })><option value="to-date">"Unix Timestamp → Date/Time"</option><option value="to-timestamp">"Date/Time → Unix Timestamp"</option></select></div>
+                <div class="col-12 col-sm-6 col-lg-4"><label class="form-label" for="timestamp-unit">"Unit"</label><select id="timestamp-unit" class="form-select" prop:value=move || if state.timestamp_unit.get() == TimestampUnit::Seconds { "seconds" } else { "milliseconds" } on:change=move |ev| state.timestamp_unit.set(if event_target_value(&ev) == "seconds" { TimestampUnit::Seconds } else { TimestampUnit::Milliseconds })><option value="seconds">"Seconds"</option><option value="milliseconds">"Milliseconds"</option></select></div>
+                <div class="col-12 col-sm-6 col-lg-4"><label class="form-label" for="timestamp-timezone">"Timezone"</label><select id="timestamp-timezone" class="form-select" prop:value=move || state.timestamp_timezone.get() on:change=move |ev| state.timestamp_timezone.set(event_target_value(&ev))><option value="Local">"Local"</option><option value="UTC">"UTC"</option></select></div>
+                <div class="col-12"><label class="form-label" for="timestamp-input">"Value"</label><input id="timestamp-input" class="form-control font-monospace" prop:value=move || state.timestamp_input.get() on:input=move |ev| state.timestamp_input.set(event_target_value(&ev)) /></div>
+            </div>
+            <div class="card bg-body-tertiary border-secondary mt-4"><div class="card-body"><h3 class="h6">"Result"</h3><div class="font-monospace text-break">{move || match result() { Ok(value) => value, Err(message) => message }}</div></div></div>
         </section>
     }
 }
 
-fn format_duration(ms: u64) -> String {
-    let seconds = ms / 1_000;
-    format!("{:02}:{:02}:{:02}", seconds / 3_600, (seconds % 3_600) / 60, seconds % 60)
+fn format_duration(milliseconds: u64) -> String {
+    let total_seconds = milliseconds / 1_000;
+    let hours = total_seconds / 3_600;
+    let minutes = (total_seconds % 3_600) / 60;
+    let seconds = total_seconds % 60;
+    format!("{hours:02}:{minutes:02}:{seconds:02}")
 }
 
-fn format_stopwatch(ms: u64) -> String {
-    format!("{:02}:{:02}.{:03}", ms / 60_000, (ms % 60_000) / 1_000, ms % 1_000)
+fn format_stopwatch(milliseconds: u64) -> String {
+    let total_seconds = milliseconds / 1_000;
+    let hours = total_seconds / 3_600;
+    let minutes = (total_seconds % 3_600) / 60;
+    let seconds = total_seconds % 60;
+    let millis = milliseconds % 1_000;
+    format!("{hours:02}:{minutes:02}:{seconds:02}.{millis:03}")
 }
