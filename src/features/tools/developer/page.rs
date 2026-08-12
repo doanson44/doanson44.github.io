@@ -11,7 +11,11 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
     let state = DeveloperToolsState::new(kind);
     let split_pct = RwSignal::new(50u32);
     let dragging = RwSignal::new(false);
-    let mode = RwSignal::new(if kind == ToolKind::Url { "decode" } else { "run" });
+    let mode = RwSignal::new(if kind == ToolKind::Url {
+        "decode"
+    } else {
+        "run"
+    });
     let input_ref = NodeRef::<leptos::html::Textarea>::new();
     let line_numbers_ref = NodeRef::<leptos::html::Div>::new();
     let secondary_ref = NodeRef::<leptos::html::Textarea>::new();
@@ -35,7 +39,8 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
         let on_up = move |_: web_sys::MouseEvent| dragging.set(false);
         let move_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_move) as Box<dyn FnMut(_)>);
         let up_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_up) as Box<dyn FnMut(_)>);
-        let _ = body.add_event_listener_with_callback("mousemove", move_cb.as_ref().unchecked_ref());
+        let _ =
+            body.add_event_listener_with_callback("mousemove", move_cb.as_ref().unchecked_ref());
         let _ = body.add_event_listener_with_callback("mouseup", up_cb.as_ref().unchecked_ref());
         move_cb.forget();
         up_cb.forget();
