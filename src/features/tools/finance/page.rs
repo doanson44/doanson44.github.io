@@ -5,23 +5,70 @@ use crate::domain::finance::FinanceTool;
 use crate::features::tools::finance::state::FinanceState;
 
 const ALL_TOOLS: &[FinanceTool] = &[
-    FinanceTool::CompoundInterest, FinanceTool::Loan, FinanceTool::Mortgage, FinanceTool::InvestmentReturn, FinanceTool::PresentFutureValue, FinanceTool::Roi, FinanceTool::Cagr, FinanceTool::BreakEven,
-    FinanceTool::Budget, FinanceTool::SavingsGoal, FinanceTool::EmergencyFund, FinanceTool::DebtPayoff, FinanceTool::NetWorth, FinanceTool::Budget503020,
-    FinanceTool::Dca, FinanceTool::StockReturn, FinanceTool::Dividend, FinanceTool::PortfolioAllocation, FinanceTool::PositionSize, FinanceTool::RealReturn,
-    FinanceTool::ProfitMargin, FinanceTool::MarkupMargin, FinanceTool::Ebitda, FinanceTool::CashFlow, FinanceTool::BurnRate, FinanceTool::Runway, FinanceTool::CacLtv,
-    FinanceTool::Dcf, FinanceTool::Npv, FinanceTool::Irr, FinanceTool::BondYtm, FinanceTool::FuturesPnl, FinanceTool::OptionsPnl, FinanceTool::RiskReward, FinanceTool::LeverageLiquidation,
-    FinanceTool::CurrencyConverter, FinanceTool::Inflation, FinanceTool::PurchasingPower, FinanceTool::CurrencyChange, FinanceTool::Discount, FinanceTool::TaxPrice, FinanceTool::PercentageChange,
+    FinanceTool::CompoundInterest,
+    FinanceTool::Loan,
+    FinanceTool::Mortgage,
+    FinanceTool::InvestmentReturn,
+    FinanceTool::PresentFutureValue,
+    FinanceTool::Roi,
+    FinanceTool::Cagr,
+    FinanceTool::BreakEven,
+    FinanceTool::Budget,
+    FinanceTool::SavingsGoal,
+    FinanceTool::EmergencyFund,
+    FinanceTool::DebtPayoff,
+    FinanceTool::NetWorth,
+    FinanceTool::Budget503020,
+    FinanceTool::Dca,
+    FinanceTool::StockReturn,
+    FinanceTool::Dividend,
+    FinanceTool::PortfolioAllocation,
+    FinanceTool::PositionSize,
+    FinanceTool::RealReturn,
+    FinanceTool::ProfitMargin,
+    FinanceTool::MarkupMargin,
+    FinanceTool::Ebitda,
+    FinanceTool::CashFlow,
+    FinanceTool::BurnRate,
+    FinanceTool::Runway,
+    FinanceTool::CacLtv,
+    FinanceTool::Dcf,
+    FinanceTool::Npv,
+    FinanceTool::Irr,
+    FinanceTool::BondYtm,
+    FinanceTool::FuturesPnl,
+    FinanceTool::OptionsPnl,
+    FinanceTool::RiskReward,
+    FinanceTool::LeverageLiquidation,
+    FinanceTool::CurrencyConverter,
+    FinanceTool::Inflation,
+    FinanceTool::PurchasingPower,
+    FinanceTool::CurrencyChange,
+    FinanceTool::Discount,
+    FinanceTool::TaxPrice,
+    FinanceTool::PercentageChange,
 ];
 
 /// Finance toolkit landing page and calculator page.
 #[component]
 pub fn FinancePage(#[prop(optional)] tool: Option<FinanceTool>) -> impl IntoView {
-    match tool { Some(tool) => view! { <Calculator tool /> }.into_any(), None => view! { <FinanceIndex /> }.into_any() }
+    match tool {
+        Some(tool) => view! { <Calculator tool /> }.into_any(),
+        None => view! { <FinanceIndex /> }.into_any(),
+    }
 }
 
 #[component]
 fn FinanceIndex() -> impl IntoView {
-    let categories = ["Core Finance", "Personal Finance", "Investment", "Business Finance", "Valuation", "Trading", "Currency & Utilities"];
+    let categories = [
+        "Core Finance",
+        "Personal Finance",
+        "Investment",
+        "Business Finance",
+        "Valuation",
+        "Trading",
+        "Currency & Utilities",
+    ];
     view! {
         <div class="container-fluid py-4 overflow-auto finance-page">
             <div class="container">
@@ -50,14 +97,50 @@ fn Calculator(tool: FinanceTool) -> impl IntoView {
 
     let calculate = move |_| {
         let raw = inputs.get();
-        let parsed = raw.iter().map(|value| value.trim().parse::<f64>().map_err(|_| "Every input must contain a valid number.".to_string())).collect::<Result<Vec<_>, _>>();
-        let cashflows = series.get().split(|c: char| c == ',' || c == '\n' || c == ';').filter(|s| !s.trim().is_empty()).map(|s| s.trim().parse::<f64>().map_err(|_| "Cash flows must be comma- or line-separated numbers.".to_string())).collect::<Result<Vec<_>, _>>();
+        let parsed = raw
+            .iter()
+            .map(|value| {
+                value
+                    .trim()
+                    .parse::<f64>()
+                    .map_err(|_| "Every input must contain a valid number.".to_string())
+            })
+            .collect::<Result<Vec<_>, _>>();
+        let cashflows = series
+            .get()
+            .split(|c: char| c == ',' || c == '\n' || c == ';')
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| {
+                s.trim()
+                    .parse::<f64>()
+                    .map_err(|_| "Cash flows must be comma- or line-separated numbers.".to_string())
+            })
+            .collect::<Result<Vec<_>, _>>();
         match (parsed, cashflows) {
-            (Ok(values), Ok(cashflows)) => match FinanceService::calculate(tool, &values, &cashflows) { Ok(value) => { result.set(Some(value)); error.set(None); }, Err(message) => { result.set(None); error.set(Some(message)); } },
-            (Err(message), _) | (_, Err(message)) => { result.set(None); error.set(Some(message)); }
+            (Ok(values), Ok(cashflows)) => {
+                match FinanceService::calculate(tool, &values, &cashflows) {
+                    Ok(value) => {
+                        result.set(Some(value));
+                        error.set(None);
+                    }
+                    Err(message) => {
+                        result.set(None);
+                        error.set(Some(message));
+                    }
+                }
+            }
+            (Err(message), _) | (_, Err(message)) => {
+                result.set(None);
+                error.set(Some(message));
+            }
         }
     };
-    let reset = move |_| { inputs.set(vec![String::new(); labels.len()]); series.set(String::new()); result.set(None); error.set(None); };
+    let reset = move |_| {
+        inputs.set(vec![String::new(); labels.len()]);
+        series.set(String::new());
+        result.set(None);
+        error.set(None);
+    };
 
     view! {
         <div class="container-fluid py-4 overflow-auto finance-page"><div class="container">
@@ -78,4 +161,10 @@ fn Calculator(tool: FinanceTool) -> impl IntoView {
     }
 }
 
-fn format_number(value: f64) -> String { if value.abs() >= 1.0 { format!("{value:.2}") } else { format!("{value:.6}") } }
+fn format_number(value: f64) -> String {
+    if value.abs() >= 1.0 {
+        format!("{value:.2}")
+    } else {
+        format!("{value:.6}")
+    }
+}

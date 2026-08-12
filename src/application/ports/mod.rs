@@ -12,6 +12,16 @@ pub trait DocumentRepository {
 pub trait TimeProvider {
     fn now_ms(&self) -> f64;
     fn format_datetime(&self, millis: f64, timezone: &str) -> Result<String, String>;
-    fn timestamp_to_datetime(&self, value: &str, unit: crate::domain::time::TimestampUnit, timezone: &str) -> Result<String, String>;
-    fn datetime_to_timestamp(&self, value: &str, unit: crate::domain::time::TimestampUnit, timezone: &str) -> Result<String, String>;
+    fn timestamp_to_datetime(
+        &self,
+        value: &str,
+        unit: crate::domain::time::TimestampUnit,
+        timezone: &str,
+    ) -> Result<String, String>;
+    fn datetime_to_timestamp(
+        &self,
+        value: &str,
+        unit: crate::domain::time::TimestampUnit,
+        timezone: &str,
+    ) -> Result<String, String>;
 }

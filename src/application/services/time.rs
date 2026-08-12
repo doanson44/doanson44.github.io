@@ -4,11 +4,21 @@ use crate::domain::time::{Countdown, Stopwatch, TimestampUnit};
 pub struct TimeService;
 
 impl TimeService {
-    pub fn timestamp_to_datetime<P: TimeProvider>(provider: &P, value: &str, unit: TimestampUnit, timezone: &str) -> Result<String, String> {
+    pub fn timestamp_to_datetime<P: TimeProvider>(
+        provider: &P,
+        value: &str,
+        unit: TimestampUnit,
+        timezone: &str,
+    ) -> Result<String, String> {
         provider.timestamp_to_datetime(value, unit, timezone)
     }
 
-    pub fn datetime_to_timestamp<P: TimeProvider>(provider: &P, value: &str, unit: TimestampUnit, timezone: &str) -> Result<String, String> {
+    pub fn datetime_to_timestamp<P: TimeProvider>(
+        provider: &P,
+        value: &str,
+        unit: TimestampUnit,
+        timezone: &str,
+    ) -> Result<String, String> {
         provider.datetime_to_timestamp(value, unit, timezone)
     }
 

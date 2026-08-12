@@ -17,6 +17,11 @@ pub struct FinanceState {
 impl FinanceState {
     /// Creates state initialized for a calculator.
     pub fn new(tool: FinanceTool) -> Self {
-        Self { inputs: RwSignal::new(vec![String::new(); tool.fields().len()]), series: RwSignal::new(String::new()), result: RwSignal::new(None), error: RwSignal::new(None) }
+        Self {
+            inputs: RwSignal::new(vec![String::new(); tool.fields().len()]),
+            series: RwSignal::new(String::new()),
+            result: RwSignal::new(None),
+            error: RwSignal::new(None),
+        }
     }
 }
