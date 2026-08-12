@@ -28,7 +28,6 @@ pub fn Editor(
         }
     };
 
-    // Character and line count derived signals
     let char_count = move || source.get().len();
     let line_count = move || {
         let content = source.get();
@@ -40,7 +39,7 @@ pub fn Editor(
     };
 
     view! {
-        <div class="editor-panel d-flex flex-column h-100" id="editor-panel">
+        <div class="tool-panel editor-panel d-flex flex-column h-100" id="editor-panel">
             <div class="panel-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary">
                 <span class="panel-title">
                     <i class="bi bi-pencil-square me-2 text-primary"></i>
@@ -51,7 +50,6 @@ pub fn Editor(
                 </span>
             </div>
             <div class="editor-body d-flex flex-grow-1 overflow-hidden">
-                // Line numbers gutter
                 <div
                     class="line-numbers d-flex flex-column align-items-end pe-2"
                     node_ref=line_numbers_ref
