@@ -12,6 +12,35 @@ pub fn now_ms() -> f64 {
     Date::now()
 }
 
+pub fn local_timezone() -> String {
+    let global = js_sys::global();
+    let Ok(intl) = Reflect::get(&global, &JsValue::from_str("Intl")) else {
+        return "UTC".into();
+    };
+    let Ok(constructor) = Reflect::get(&intl, &JsValue::from_str("DateTimeFormat")) else {
+        return "UTC".into();
+    };
+    let Ok(constructor) = constructor.dyn_into::<Function>() else {
+        return "UTC".into();
+    };
+    let Ok(formatter) = Reflect::construct(&constructor, &js_sys::Array::new()) else {
+        return "UTC".into();
+    };
+    let Ok(options) = Reflect::get(&formatter, &JsValue::from_str("resolvedOptions")) else {
+        return "UTC".into();
+    };
+    let Ok(options) = options.dyn_into::<Function>() else {
+        return "UTC".into();
+    };
+    let Ok(resolved) = options.call0(&formatter) else {
+        return "UTC".into();
+    };
+    Reflect::get(&resolved, &JsValue::from_str("timeZone"))
+        .ok()
+        .and_then(|value| value.as_string())
+        .unwrap_or_else(|| "UTC".into())
+}
+
 pub fn timestamp_to_datetime(value: &str, unit: TimestampUnit, timezone: &str) -> Result<String, String> {
     let millis = timestamp_to_millis(value, unit)?;
     let date = Date::new(&JsValue::from_f64(millis));
