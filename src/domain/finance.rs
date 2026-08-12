@@ -893,7 +893,7 @@ mod tests {
     }
     #[test]
     fn irr_finds_known_rate() {
-        let r = FinanceTool::Irr.calculate(&[-100.0, 110.0], &[]).unwrap();
+        let r = FinanceTool::Irr.calculate(&[], &[-100.0, 110.0]).unwrap();
         assert!((r.metrics[0].value - 10.0).abs() < 1e-5);
     }
 }
