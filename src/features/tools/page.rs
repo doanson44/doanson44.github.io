@@ -15,7 +15,6 @@ pub fn ToolsPage() -> impl IntoView {
         ToolKind::Url,
         ToolKind::Hash,
         ToolKind::Uuid,
-        ToolKind::Timestamp,
         ToolKind::Color,
         ToolKind::Cron,
         ToolKind::HttpStatus,
@@ -32,13 +31,9 @@ pub fn ToolsPage() -> impl IntoView {
                     <ToolCard href="#/tools/json" icon="bi-braces" title="JSON Formatter" description="Validate, format, and minify JSON in your browser." />
                     <ToolCard href="#/tools/jwt" icon="bi-key" title="JWT Decoder" description="Decode JWT header, payload, and signature locally." />
                     <ToolCard href="#/tools/base64" icon="bi-file-binary" title="Base64 Encoder / Decoder" description="Encode and decode UTF-8 text as standard Base64 locally." />
+                    <ToolCard href="#/tools/time" icon="bi-clock-history" title="Time & Utilities" description="World clock, countdown, stopwatch, ruler, and timestamp conversion." />
                     {developer_tools.into_iter().map(|kind| view! {
-                        <ToolCard
-                            href=format!("#/tools/{}", kind.route())
-                            icon="bi-wrench-adjustable"
-                            title=kind.title()
-                            description=kind.description()
-                        />
+                        <ToolCard href=format!("#/tools/{}", kind.route()) icon="bi-wrench-adjustable" title=kind.title() description=kind.description() />
                     }).collect_view()}
                 </div>
             </div>
@@ -47,12 +42,7 @@ pub fn ToolsPage() -> impl IntoView {
 }
 
 #[component]
-fn ToolCard(
-    #[prop(into)] href: String,
-    icon: &'static str,
-    title: &'static str,
-    description: &'static str,
-) -> impl IntoView {
+fn ToolCard(#[prop(into)] href: String, icon: &'static str, title: &'static str, description: &'static str) -> impl IntoView {
     view! {
         <div class="col-12 col-sm-6 col-lg-4">
             <a href=href class="text-decoration-none">

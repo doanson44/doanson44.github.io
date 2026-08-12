@@ -15,6 +15,7 @@ use crate::features::tools::json::page::JsonPage;
 use crate::features::tools::jwt::page::JwtPage;
 use crate::features::tools::markdown::page::MarkdownPage;
 use crate::features::tools::page::ToolsPage;
+use crate::features::tools::time::page::TimePage;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -36,11 +37,7 @@ fn create_hash_signal() -> RwSignal<String> {
         .unwrap_or_default()
         .trim_start_matches('#')
         .to_string();
-    let hash = RwSignal::new(if initial.is_empty() {
-        "/".into()
-    } else {
-        initial
-    });
+    let hash = RwSignal::new(if initial.is_empty() { "/".into() } else { initial });
     let hash_clone = hash;
     let closure = wasm_bindgen::closure::Closure::wrap(Box::new(move || {
         if let Some(win) = window() {
@@ -51,8 +48,7 @@ fn create_hash_signal() -> RwSignal<String> {
         }
     }) as Box<dyn FnMut()>);
     if let Some(win) = window() {
-        let _ =
-            win.add_event_listener_with_callback("hashchange", closure.as_ref().unchecked_ref());
+        let _ = win.add_event_listener_with_callback("hashchange", closure.as_ref().unchecked_ref());
     }
     closure.forget();
     hash
@@ -66,6 +62,7 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools/json" => view! { <JsonPage /> }.into_any(),
         "/tools/jwt" => view! { <JwtPage /> }.into_any(),
         "/tools/base64" => view! { <Base64Page /> }.into_any(),
+        "/tools/time" => view! { <TimePage /> }.into_any(),
         "/tools/xml" => view! { <DeveloperToolPage kind=ToolKind::Xml /> }.into_any(),
         "/tools/yaml" => view! { <DeveloperToolPage kind=ToolKind::Yaml /> }.into_any(),
         "/tools/sql" => view! { <DeveloperToolPage kind=ToolKind::Sql /> }.into_any(),

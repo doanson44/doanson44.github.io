@@ -2,6 +2,7 @@ pub mod base64;
 pub mod developer_tools;
 pub mod json;
 pub mod jwt;
+pub mod time;
 
 use crate::domain::markdown::{render_markdown, RenderedMarkdown};
 

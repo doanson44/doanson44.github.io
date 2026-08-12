@@ -23,6 +23,7 @@
     <link data-trunk rel="css" href="styles/app.css" />
     <link data-trunk rel="css" href="styles/tool-layout.css" />
     <link data-trunk rel="css" href="styles/theme-transition.css" />
+    <link data-trunk rel="css" href="styles/time.css" />
 
     <!-- Trunk configuration for Leptos -->
     <link data-trunk rel="rust" data-bin="markdown-studio" data-wasm-opt="0" />
@@ -63,27 +64,21 @@
             try {
                 const svgElement = document.getElementById(svgElementId);
                 if (!svgElement) throw new Error("SVG element not found");
-
                 const clone = svgElement.cloneNode(true);
                 clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
                 clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-
                 const rect = svgElement.getBoundingClientRect();
                 clone.setAttribute("width", rect.width);
                 clone.setAttribute("height", rect.height);
-
                 const bgColor = (document.documentElement.getAttribute('data-bs-theme') || 'dark') === 'light' ? '#ffffff' : '#161b22';
                 clone.style.backgroundColor = bgColor;
-
                 const serializer = new XMLSerializer();
                 const svgString = serializer.serializeToString(clone);
                 const b64 = btoa(unescape(encodeURIComponent(svgString)));
                 const url = 'data:image/svg+xml;base64,' + b64;
-
                 const img = new Image();
                 img.crossOrigin = "anonymous";
                 await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = url; });
-
                 const canvas = document.createElement("canvas");
                 canvas.width = rect.width;
                 canvas.height = rect.height;
@@ -91,7 +86,6 @@
                 ctx.fillStyle = bgColor;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0, rect.width, rect.height);
-
                 const pngBlob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
                 const item = new ClipboardItem({ "image/png": pngBlob });
                 await navigator.clipboard.write([item]);
@@ -105,48 +99,16 @@
             try {
                 const source = document.getElementById(elementId);
                 if (!source) throw new Error("Preview element not found");
-
                 const clone = source.cloneNode(true);
-                clone.querySelectorAll('.copy-btn, button').forEach(function(el) {
-                    el.remove();
-                });
-
-                clone.querySelectorAll('script, iframe, object, embed').forEach(function(el) {
-                    el.remove();
-                });
-
-                clone.querySelectorAll('table').forEach(function(table) {
-                    table.style.borderCollapse = 'collapse';
-                    table.style.width = '100%';
-                });
-
-                clone.querySelectorAll('th, td').forEach(function(cell) {
-                    cell.style.border = '1px solid #adb5bd';
-                    cell.style.padding = '6px 8px';
-                    cell.style.verticalAlign = 'top';
-                });
-
-                clone.querySelectorAll('pre').forEach(function(pre) {
-                    pre.style.whiteSpace = 'pre-wrap';
-                    pre.style.fontFamily = 'Consolas, "Courier New", monospace';
-                    pre.style.padding = '10px';
-                });
-
-                clone.querySelectorAll('blockquote').forEach(function(blockquote) {
-                    blockquote.style.borderLeft = '4px solid #adb5bd';
-                    blockquote.style.paddingLeft = '12px';
-                    blockquote.style.marginLeft = '0';
-                });
-
-                const html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><!--StartFragment-->'
-                    + clone.innerHTML
-                    + '<!--EndFragment--></body></html>';
+                clone.querySelectorAll('.copy-btn, button').forEach(function(el) { el.remove(); });
+                clone.querySelectorAll('script, iframe, object, embed').forEach(function(el) { el.remove(); });
+                clone.querySelectorAll('table').forEach(function(table) { table.style.borderCollapse = 'collapse'; table.style.width = '100%'; });
+                clone.querySelectorAll('th, td').forEach(function(cell) { cell.style.border = '1px solid #adb5bd'; cell.style.padding = '6px 8px'; cell.style.verticalAlign = 'top'; });
+                clone.querySelectorAll('pre').forEach(function(pre) { pre.style.whiteSpace = 'pre-wrap'; pre.style.fontFamily = 'Consolas, "Courier New", monospace'; pre.style.padding = '10px'; });
+                clone.querySelectorAll('blockquote').forEach(function(blockquote) { blockquote.style.borderLeft = '4px solid #adb5bd'; blockquote.style.paddingLeft = '12px'; blockquote.style.marginLeft = '0'; });
+                const html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><!--StartFragment-->' + clone.innerHTML + '<!--EndFragment--></body></html>';
                 const plainText = clone.innerText || clone.textContent || '';
-
-                const item = new ClipboardItem({
-                    "text/html": new Blob([html], { type: "text/html" }),
-                    "text/plain": new Blob([plainText], { type: "text/plain" })
-                });
+                const item = new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([plainText], { type: "text/plain" }) });
                 await navigator.clipboard.write([item]);
                 return JSON.stringify({ ok: true });
             } catch (e) {
@@ -160,30 +122,18 @@
             const next = current === 'dark' ? 'light' : 'dark';
             const bodyBackground = getComputedStyle(document.body).backgroundColor;
             const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
             if (!reducedMotion) {
                 html.style.setProperty('--theme-transition-color', bodyBackground);
                 html.setAttribute('data-theme-transition', 'active');
             }
-
             html.setAttribute('data-bs-theme', next);
             localStorage.setItem('ms-theme', next);
-
             if (!reducedMotion) {
-                requestAnimationFrame(function() {
-                    html.setAttribute('data-theme-transition', 'fade');
-                });
-
-                window.setTimeout(function() {
-                    html.removeAttribute('data-theme-transition');
-                    html.style.removeProperty('--theme-transition-color');
-                }, 320);
+                requestAnimationFrame(function() { html.setAttribute('data-theme-transition', 'fade'); });
+                window.setTimeout(function() { html.removeAttribute('data-theme-transition'); html.style.removeProperty('--theme-transition-color'); }, 320);
             }
-
-            // Update Mermaid theme + re-render all existing diagrams
             if (window.__mermaid) {
                 window.__mermaid.initialize({ theme: next === 'light' ? 'default' : 'dark' });
-                // Re-render all mermaid diagrams in the DOM
                 document.querySelectorAll('[data-mermaid-code]').forEach(function(el) {
                     const code = el.getAttribute('data-mermaid-code');
                     if (code) {
