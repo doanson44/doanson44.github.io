@@ -100,7 +100,7 @@ pub fn ToolDivider() -> impl IntoView {
 
         let rect = container.get_bounding_client_rect();
         let is_vertical = web_sys::window()
-            .and_then(|window| window.match_media("(max-width: 767.98px)").ok())
+            .and_then(|window| window.match_media("(max-width: 767.98px").ok())
             .map(|media| media.matches())
             .unwrap_or(false);
 
@@ -127,6 +127,27 @@ pub fn ToolDivider() -> impl IntoView {
         }
     };
 
+    let on_key_down = move |ev: leptos::ev::KeyboardEvent| {
+        let is_vertical = web_sys::window()
+            .and_then(|window| window.match_media("(max-width: 767.98px)").ok())
+            .map(|media| media.matches())
+            .unwrap_or(false);
+
+        let delta = match (is_vertical, ev.key().as_str()) {
+            (false, "ArrowLeft") => Some(-5i32),
+            (false, "ArrowRight") => Some(5i32),
+            (true, "ArrowUp") => Some(-5i32),
+            (true, "ArrowDown") => Some(5i32),
+            _ => None,
+        };
+
+        if let Some(delta) = delta {
+            ev.prevent_default();
+            let next = (context.ratio.get_untracked() as i32 + delta).clamp(20, 80) as u32;
+            context.ratio.set(next);
+        }
+    };
+
     view! {
         <div
             class="tool-divider"
@@ -137,6 +158,7 @@ pub fn ToolDivider() -> impl IntoView {
             on:pointermove=on_pointer_move
             on:pointerup=on_pointer_up
             on:pointercancel=move |_| context.dragging.set(false)
+            on:keydown=on_key_down
         ></div>
     }
 }
