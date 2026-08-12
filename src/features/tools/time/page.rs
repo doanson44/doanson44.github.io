@@ -17,10 +17,7 @@ pub fn TimePage() -> impl IntoView {
     let tick = state.tick;
     let interval_id = window().and_then(|win| {
         let callback = Closure::wrap(Box::new(move || tick.set(provider.now_ms())) as Box<dyn FnMut()>);
-        let result = win.set_interval_with_callback_and_timeout_and_arguments_0(
-            callback.as_ref().unchecked_ref(),
-            100,
-        );
+        let result = win.set_interval_with_callback_and_timeout_and_arguments_0(callback.as_ref().unchecked_ref(), 100);
         callback.forget();
         result.ok()
     });
@@ -60,16 +57,7 @@ fn TimeNavigation(state: TimeState) -> impl IntoView {
                 {[TimeTab::WorldClock, TimeTab::Timer, TimeTab::Stopwatch, TimeTab::Ruler, TimeTab::Timestamp]
                     .into_iter()
                     .map(|item| view! {
-                        <button
-                            type="button"
-                            class=move || if state.tab.get() == item {
-                                "btn btn-primary"
-                            } else {
-                                "btn btn-outline-secondary"
-                            }
-                            on:click=move |_| state.tab.set(item)
-                            aria-pressed=move || (state.tab.get() == item).to_string()
-                        >
+                        <button type="button" class=move || if state.tab.get() == item { "btn btn-primary" } else { "btn btn-outline-secondary" } on:click=move |_| state.tab.set(item) aria-pressed=move || (state.tab.get() == item).to_string()>
                             {item.label()}
                         </button>
                     })
@@ -180,7 +168,7 @@ fn Timer(state: TimeState) -> impl IntoView {
                     }>{format!("{minutes} min")}</button>
                 }).collect_view()}
             </div>
-            <div class="row g-2 mx-auto" style="max-width: 420px">
+            <div class="row g-2 mx-auto time-input-row">
                 <TimeInput label="Hours" value=state.timer_hours />
                 <TimeInput label="Minutes" value=state.timer_minutes />
                 <TimeInput label="Seconds" value=state.timer_seconds />
@@ -217,7 +205,7 @@ fn Stopwatch(state: TimeState) -> impl IntoView {
                 <button type="button" class="btn btn-outline-primary" disabled=move || state.stopwatch.get().state() != StopwatchState::Running on:click=move |_| state.stopwatch.update(|watch| watch.lap(state.tick.get_untracked()))>"Lap"</button>
                 <button type="button" class="btn btn-outline-secondary" on:click=move |_| state.stopwatch.update(|watch| watch.reset())>"Reset"</button>
             </div>
-            <div class="table-responsive mx-auto" style="max-width: 640px">
+            <div class="table-responsive mx-auto time-laps-table">
                 <table class="table table-sm"><thead><tr><th scope="col">"Lap"</th><th scope="col">"Split"</th><th scope="col">"Total"</th></tr></thead><tbody>
                     {move || state.stopwatch.get().laps().iter().enumerate().map(|(index, total)| {
                         let previous = if index == 0 { 0 } else { state.stopwatch.get().laps()[index - 1] };
@@ -241,7 +229,7 @@ fn Ruler(state: TimeState) -> impl IntoView {
                 </div>
             </div>
             <div class="border border-secondary rounded p-3 d-flex gap-3" role="img" aria-label="Screen ruler">
-                {(0..=10).map(|value| view! { <div class="d-flex flex-column align-items-center"><span class="border-start border-secondary" style="height: 32px"></span><span class="small">{value}</span></div> }).collect_view()}
+                {(0..=10).map(|value| view! { <div class="d-flex flex-column align-items-center"><div class="vr" aria-hidden="true"></div><span class="small">{value}</span></div> }).collect_view()}
             </div>
             <div class="d-flex justify-content-between gap-2 mt-3"><span class="small text-body-secondary">{move || if state.ruler_calibrated.get() { "Calibrated scale" } else { "Screen scale" }}</span><button type="button" class="btn btn-outline-secondary btn-sm" on:click=move |_| state.ruler_calibrated.update(|value| *value = !*value)>{move || if state.ruler_calibrated.get() { "Clear calibration" } else { "Calibrate" }}</button></div>
         </section>
