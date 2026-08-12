@@ -92,6 +92,20 @@
     left: -2rem;
 }
 
+/* The horizontal ruler should use the entire available tool viewport. */
+main > section > div.border.border-secondary.rounded {
+    width: 100%;
+    min-height: 140px;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    overflow: hidden;
+}
+
+main > section > div.border.border-secondary.rounded > div {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
 @media (min-width: 992px) {
     .time-tool-nav {
         width: 180px;
@@ -110,6 +124,10 @@
     }
 
     .screen-ruler {
+        min-height: 120px;
+    }
+
+    main > section > div.border.border-secondary.rounded {
         min-height: 120px;
     }
 }
