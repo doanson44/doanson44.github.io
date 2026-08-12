@@ -100,7 +100,7 @@ pub fn ToolDivider() -> impl IntoView {
 
         let rect = container.get_bounding_client_rect();
         let is_vertical = web_sys::window()
-            .and_then(|window| window.match_media("(max-width: 767.98px").ok())
+            .and_then(|window| window.match_media("(max-width: 767.98px)").ok())
             .map(|media| media.matches())
             .unwrap_or(false);
 
