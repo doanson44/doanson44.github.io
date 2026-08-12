@@ -38,10 +38,14 @@ pub fn ToolSplit(#[prop(default = 50)] initial_ratio: u32, children: Children) -
             return;
         };
 
+        let element = container.unchecked_ref::<web_sys::HtmlElement>();
         let ratio = ratio.get();
-        let style = container.style();
-        let _ = style.set_property("--tool-first-size", &format!("{}%", ratio));
-        let _ = style.set_property("--tool-second-size", &format!("{}%", 100 - ratio));
+        let _ = element
+            .style()
+            .set_property("--tool-first-size", &format!("{}%", ratio));
+        let _ = element
+            .style()
+            .set_property("--tool-second-size", &format!("{}%", 100 - ratio));
     });
 
     view! {
@@ -92,10 +96,12 @@ pub fn ToolDivider() -> impl IntoView {
             return;
         };
 
-        let rect = container.get_bounding_client_rect();
+        let element = container.unchecked_ref::<web_sys::HtmlElement>();
+        let rect = element.get_bounding_client_rect();
         let is_vertical = web_sys::window()
-            .and_then(|window| window.match_media("(max-width: 767.98px)").ok())
-            .map(|media| media.matches())
+            .and_then(|window| window.inner_width().ok())
+            .and_then(|width| width.as_f64())
+            .map(|width| width <= 767.98)
             .unwrap_or(false);
 
         let (offset, size) = if is_vertical {
@@ -123,8 +129,9 @@ pub fn ToolDivider() -> impl IntoView {
 
     let on_key_down = move |ev: leptos::ev::KeyboardEvent| {
         let is_vertical = web_sys::window()
-            .and_then(|window| window.match_media("(max-width: 767.98px)").ok())
-            .map(|media| media.matches())
+            .and_then(|window| window.inner_width().ok())
+            .and_then(|width| width.as_f64())
+            .map(|width| width <= 767.98)
             .unwrap_or(false);
 
         let delta = match (is_vertical, ev.key().as_str()) {
