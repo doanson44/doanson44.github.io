@@ -11,7 +11,11 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
     let state = DeveloperToolsState::new(kind);
     let split_pct = RwSignal::new(50u32);
     let dragging = RwSignal::new(false);
-    let mode = RwSignal::new(if kind == ToolKind::Url { "decode" } else { "run" });
+    let mode = RwSignal::new(if kind == ToolKind::Url {
+        "decode"
+    } else {
+        "run"
+    });
     let input_ref = NodeRef::<leptos::html::Textarea>::new();
     let line_numbers_ref = NodeRef::<leptos::html::Div>::new();
     let secondary_ref = NodeRef::<leptos::html::Textarea>::new();
@@ -19,36 +23,54 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
     let on_divider_down = move |ev: leptos::ev::MouseEvent| {
         ev.prevent_default();
         dragging.set(true);
-        let Some(body) = window().and_then(|w| w.document()).and_then(|d| d.body()) else { return; };
+        let Some(body) = window().and_then(|w| w.document()).and_then(|d| d.body()) else {
+            return;
+        };
         let on_move = move |ev: web_sys::MouseEvent| {
-            if !dragging.get_untracked() { return; }
-            let width = window().and_then(|w| w.inner_width().ok()).and_then(|v| v.as_f64()).unwrap_or(1.0);
+            if !dragging.get_untracked() {
+                return;
+            }
+            let width = window()
+                .and_then(|w| w.inner_width().ok())
+                .and_then(|v| v.as_f64())
+                .unwrap_or(1.0);
             split_pct.set(((ev.client_x() as f64 / width) * 100.0).clamp(20.0, 80.0) as u32);
         };
         let on_up = move |_: web_sys::MouseEvent| dragging.set(false);
         let move_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_move) as Box<dyn FnMut(_)>);
         let up_cb = wasm_bindgen::closure::Closure::wrap(Box::new(on_up) as Box<dyn FnMut(_)>);
-        let _ = body.add_event_listener_with_callback("mousemove", move_cb.as_ref().unchecked_ref());
+        let _ =
+            body.add_event_listener_with_callback("mousemove", move_cb.as_ref().unchecked_ref());
         let _ = body.add_event_listener_with_callback("mouseup", up_cb.as_ref().unchecked_ref());
         move_cb.forget();
         up_cb.forget();
     };
 
     let on_input_scroll = move |_| {
-        if let (Some(input), Some(lines)) = (input_ref.get(), line_numbers_ref.get()) { lines.set_scroll_top(input.scroll_top()); }
+        if let (Some(input), Some(lines)) = (input_ref.get(), line_numbers_ref.get()) {
+            lines.set_scroll_top(input.scroll_top());
+        }
     };
 
     let run = move || {
-        if kind == ToolKind::Url { state.set_secondary(mode.get_untracked().to_string()); }
+        if kind == ToolKind::Url {
+            state.set_secondary(mode.get_untracked().to_string());
+        }
         state.run(kind);
     };
 
     let on_copy = move |_| {
         let output = state.output.get_untracked();
-        if output.is_empty() { return; }
+        if output.is_empty() {
+            return;
+        }
         state.copied.set(false);
         let copied = state.copied;
-        wasm_bindgen_futures::spawn_local(async move { if copy_to_clipboard(&output).await.is_ok() { copied.set(true); } });
+        wasm_bindgen_futures::spawn_local(async move {
+            if copy_to_clipboard(&output).await.is_ok() {
+                copied.set(true);
+            }
+        });
     };
 
     let secondary_visible = kind == ToolKind::Regex;
@@ -117,5 +139,19 @@ pub fn DeveloperToolPage(kind: ToolKind) -> impl IntoView {
     }
 }
 
-fn line_count(content: &str) -> usize { if content.is_empty() { 0 } else { content.lines().count() } }
-fn split_class(value: u32) -> &'static str { if value < 38 { "w-25" } else if value < 63 { "w-50" } else { "w-75" } }
+fn line_count(content: &str) -> usize {
+    if content.is_empty() {
+        0
+    } else {
+        content.lines().count()
+    }
+}
+fn split_class(value: u32) -> &'static str {
+    if value < 38 {
+        "w-25"
+    } else if value < 63 {
+        "w-50"
+    } else {
+        "w-75"
+    }
+}

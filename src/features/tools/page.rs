@@ -47,7 +47,12 @@ pub fn ToolsPage() -> impl IntoView {
 }
 
 #[component]
-fn ToolCard(href: String, icon: &'static str, title: &'static str, description: &'static str) -> impl IntoView {
+fn ToolCard(
+    #[prop(into)] href: String,
+    icon: &'static str,
+    title: &'static str,
+    description: &'static str,
+) -> impl IntoView {
     view! {
         <div class="col-12 col-sm-6 col-lg-4">
             <a href=href class="text-decoration-none">
