@@ -1,0 +1,32 @@
+name: Format Finance 2
+
+on:
+  push:
+    branches: [feature/finance-toolkit]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Fix and format
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("src/features/tools/finance/page.rs")
+          text = path.read_text()
+          text = text.replace(".split(|c: char| c == ',' || c == '\\\\n' || c == ';')", ".split([',', '\\\\n', ';'])")
+          path.write_text(text)
+          PY
+          cargo fmt
+      - name: Commit fix
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src
+          git diff --cached --quiet || git commit -m "fix: format finance clippy input parsing"
+          git push
