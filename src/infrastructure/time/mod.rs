@@ -1,7 +1,12 @@
+mod provider;
+
 use js_sys::{Date, Function, Object, Reflect};
+use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 
 use crate::domain::time::{millis_to_timestamp, timestamp_to_millis, TimestampUnit};
+
+pub use provider::BrowserTimeProvider;
 
 pub fn now_ms() -> f64 {
     Date::now()
@@ -31,10 +36,10 @@ fn format_date(date: &Date, timezone: &str) -> Result<String, String> {
     set_option(&options, "timeZone", timezone)?;
     set_option(&options, "dateStyle", "medium")?;
     set_option(&options, "timeStyle", "medium")?;
-    let formatter = intl_datetime_format(&options)?;
-    let result = Reflect::apply(&formatter, &JsValue::UNDEFINED, &js_sys::Array::of1(date))
-        .map_err(|_| "Unable to format date/time.".to_string())?;
-    result
+    let (formatter, format) = intl_datetime_format(&options)?;
+    format
+        .call1(&formatter, date)
+        .map_err(|_| "Unable to format date/time.".to_string())?
         .as_string()
         .ok_or_else(|| "Unable to format date/time.".into())
 }
@@ -60,24 +65,24 @@ fn parse_datetime(value: &str, timezone: &str) -> Result<Date, String> {
     Ok(date)
 }
 
-fn intl_datetime_format(options: &Object) -> Result<Function, String> {
+fn intl_datetime_format(options: &Object) -> Result<(Object, Function), String> {
     let global = js_sys::global();
     let intl = Reflect::get(&global, &JsValue::from_str("Intl"))
         .map_err(|_| "Intl API is unavailable in this browser.".to_string())?;
     let constructor = Reflect::get(&intl, &JsValue::from_str("DateTimeFormat"))
-        .map_err(|_| "Timezone formatting is unavailable in this browser.".to_string())?;
-    let constructor = constructor
+        .map_err(|_| "Timezone formatting is unavailable in this browser.".to_string())?
         .dyn_into::<Function>()
         .map_err(|_| "Timezone formatting is unavailable in this browser.".to_string())?;
     let args = js_sys::Array::of2(&JsValue::from_str("en-US"), options);
-    Reflect::construct(&constructor, &args)
-        .map_err(|_| "Invalid timezone or date formatting option.".to_string())
-        .and_then(|formatter| {
-            Reflect::get(&formatter, &JsValue::from_str("format"))
-                .map_err(|_| "Unable to access date formatter.".to_string())?
-                .dyn_into::<Function>()
-                .map_err(|_| "Unable to access date formatter.".to_string())
-        })
+    let formatter = Reflect::construct(&constructor, &args)
+        .map_err(|_| "Invalid timezone or date formatting option.".to_string())?
+        .dyn_into::<Object>()
+        .map_err(|_| "Unable to create date formatter.".to_string())?;
+    let format = Reflect::get(&formatter, &JsValue::from_str("format"))
+        .map_err(|_| "Unable to access date formatter.".to_string())?
+        .dyn_into::<Function>()
+        .map_err(|_| "Unable to access date formatter.".to_string())?;
+    Ok((formatter, format))
 }
 
 fn set_option(object: &Object, key: &str, value: &str) -> Result<(), String> {
