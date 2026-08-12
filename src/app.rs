@@ -4,25 +4,25 @@ use web_sys::window;
 
 use crate::components::footer::Footer;
 use crate::components::navbar::Navbar;
+use crate::domain::developer_tools::ToolKind;
 use crate::features::cv::page::CvPage;
 use crate::features::games::page::GamesPage;
 use crate::features::home::page::HomePage;
 use crate::features::socket::page::SocketPage;
 use crate::features::tools::base64::page::Base64Page;
+use crate::features::tools::developer::page::DeveloperToolPage;
 use crate::features::tools::json::page::JsonPage;
 use crate::features::tools::jwt::page::JwtPage;
 use crate::features::tools::markdown::page::MarkdownPage;
 use crate::features::tools::page::ToolsPage;
 
-/// Platform shell with hash-based routing for GitHub Pages compatibility.
 #[component]
 pub fn App() -> impl IntoView {
     let current_hash = create_hash_signal();
-
     view! {
         <div class="app-container d-flex flex-column vh-100" id="app">
             <Navbar />
-            <main class="flex-grow-1 d-flex overflow-hidden" style="min-height: 0;">
+            <main class="flex-grow-1 d-flex overflow-hidden app-main">
                 {move || render_page(current_hash.get())}
             </main>
             <Footer />
@@ -30,20 +30,17 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// Create a reactive signal that tracks `window.location.hash`.
 fn create_hash_signal() -> RwSignal<String> {
     let initial = window()
         .and_then(|w| w.location().hash().ok())
         .unwrap_or_default()
         .trim_start_matches('#')
         .to_string();
-
     let hash = RwSignal::new(if initial.is_empty() {
         "/".into()
     } else {
         initial
     });
-
     let hash_clone = hash;
     let closure = wasm_bindgen::closure::Closure::wrap(Box::new(move || {
         if let Some(win) = window() {
@@ -53,17 +50,14 @@ fn create_hash_signal() -> RwSignal<String> {
             }
         }
     }) as Box<dyn FnMut()>);
-
     if let Some(win) = window() {
         let _ =
             win.add_event_listener_with_callback("hashchange", closure.as_ref().unchecked_ref());
     }
     closure.forget();
-
     hash
 }
 
-/// Render the appropriate page component based on the current route.
 fn render_page(route: String) -> leptos::prelude::AnyView {
     match route.as_str() {
         "/" => view! { <HomePage /> }.into_any(),
@@ -72,16 +66,25 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools/json" => view! { <JsonPage /> }.into_any(),
         "/tools/jwt" => view! { <JwtPage /> }.into_any(),
         "/tools/base64" => view! { <Base64Page /> }.into_any(),
+        "/tools/xml" => view! { <DeveloperToolPage kind=ToolKind::Xml /> }.into_any(),
+        "/tools/yaml" => view! { <DeveloperToolPage kind=ToolKind::Yaml /> }.into_any(),
+        "/tools/sql" => view! { <DeveloperToolPage kind=ToolKind::Sql /> }.into_any(),
+        "/tools/html" => view! { <DeveloperToolPage kind=ToolKind::Html /> }.into_any(),
+        "/tools/css" => view! { <DeveloperToolPage kind=ToolKind::Css /> }.into_any(),
+        "/tools/javascript" => view! { <DeveloperToolPage kind=ToolKind::Javascript /> }.into_any(),
+        "/tools/regex" => view! { <DeveloperToolPage kind=ToolKind::Regex /> }.into_any(),
+        "/tools/url" => view! { <DeveloperToolPage kind=ToolKind::Url /> }.into_any(),
+        "/tools/hash" => view! { <DeveloperToolPage kind=ToolKind::Hash /> }.into_any(),
+        "/tools/uuid" => view! { <DeveloperToolPage kind=ToolKind::Uuid /> }.into_any(),
+        "/tools/timestamp" => view! { <DeveloperToolPage kind=ToolKind::Timestamp /> }.into_any(),
+        "/tools/color" => view! { <DeveloperToolPage kind=ToolKind::Color /> }.into_any(),
+        "/tools/cron" => view! { <DeveloperToolPage kind=ToolKind::Cron /> }.into_any(),
+        "/tools/http-status" => view! { <DeveloperToolPage kind=ToolKind::HttpStatus /> }.into_any(),
+        "/tools/subnet" => view! { <DeveloperToolPage kind=ToolKind::Subnet /> }.into_any(),
+        "/tools/qr" => view! { <DeveloperToolPage kind=ToolKind::Qr /> }.into_any(),
         "/games" => view! { <GamesPage /> }.into_any(),
         "/cv" => view! { <CvPage /> }.into_any(),
         "/socket" => view! { <SocketPage /> }.into_any(),
-        _ => view! {
-            <div class="container py-5 text-center flex-grow-1">
-                <h3 class="text-body-secondary">"404"</h3>
-                <p class="text-body-tertiary">"Page not found."</p>
-                <a href="#/" class="btn btn-outline-secondary btn-sm">"Go Home"</a>
-            </div>
-        }
-        .into_any(),
+        _ => view! { <div class="container py-5 text-center flex-grow-1"><h3 class="text-body-secondary">"404"</h3><p class="text-body-tertiary">"Page not found."</p><a href="#/" class="btn btn-outline-secondary btn-sm">"Go Home"</a></div> }.into_any(),
     }
 }
