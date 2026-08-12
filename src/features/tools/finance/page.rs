@@ -108,7 +108,7 @@ fn Calculator(tool: FinanceTool) -> impl IntoView {
             .collect::<Result<Vec<_>, _>>();
         let cashflows = series
             .get()
-            .split(|c: char| c == ',' || c == '\n' || c == ';')
+            .split([',', '\n', ';'])
             .filter(|s| !s.trim().is_empty())
             .map(|s| {
                 s.trim()
