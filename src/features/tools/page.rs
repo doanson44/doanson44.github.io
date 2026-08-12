@@ -66,6 +66,14 @@ const CURRENCY_TOOLS: &[FinanceTool] = &[
     FinanceTool::PercentageChange,
 ];
 
+#[derive(Clone)]
+struct ToolInfo {
+    title: String,
+    category: String,
+    description: String,
+    href: String,
+}
+
 #[component]
 pub fn ToolsPage() -> impl IntoView {
     let developer_tools = [
@@ -85,81 +93,86 @@ pub fn ToolsPage() -> impl IntoView {
         ToolKind::Subnet,
         ToolKind::Qr,
     ];
-
     let search = RwSignal::new(String::new());
+    let selected_info = RwSignal::new(None::<ToolInfo>);
 
     view! {
         <div class="d-flex flex-column flex-grow-1 overflow-auto">
             <div class="container py-4">
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-                    <h2 class="mb-0">
-                        <i class="bi bi-tools me-2 text-primary"></i>"Tools"
-                    </h2>
-                    <div class="input-group" style="max-width: 420px;">
-                        <span class="input-group-text" id="tools-search-label">
-                            <i class="bi bi-search" aria-hidden="true"></i>
-                        </span>
-                        <input
-                            type="search"
-                            class="form-control"
-                            placeholder="Search tools..."
-                            aria-label="Search tools"
-                            aria-describedby="tools-search-label"
-                            prop:value=search
-                            on:input=move |ev| search.set(event_target_value(&ev))
-                        />
-                        <Show when=move || !search.get().is_empty()>
-                            <button
-                                type="button"
-                                class="btn btn-outline-secondary"
-                                title="Clear search"
-                                aria-label="Clear search"
-                                on:click=move |_| search.set(String::new())
-                            >
-                                <i class="bi bi-x-lg" aria-hidden="true"></i>
-                            </button>
-                        </Show>
+                <div class="row align-items-center g-3 mb-4">
+                    <div class="col-12 col-md">
+                        <h2 class="mb-0">
+                            <i class="bi bi-tools me-2 text-primary"></i>"Tools"
+                        </h2>
+                    </div>
+                    <div class="col-12 col-md-5 col-lg-4">
+                        <div class="input-group w-100">
+                            <span class="input-group-text" id="tools-search-label">
+                                <i class="bi bi-search" aria-hidden="true"></i>
+                            </span>
+                            <input
+                                type="search"
+                                class="form-control"
+                                placeholder="Search tools..."
+                                aria-label="Search tools"
+                                aria-describedby="tools-search-label"
+                                prop:value=search
+                                on:input=move |ev| search.set(event_target_value(&ev))
+                            />
+                            <Show when=move || !search.get().is_empty()>
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    title="Clear search"
+                                    aria-label="Clear search"
+                                    on:click=move |_| search.set(String::new())
+                                >
+                                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                                </button>
+                            </Show>
+                        </div>
                     </div>
                 </div>
 
                 <Show
                     when=move || search.get().trim().is_empty()
                     fallback=move || view! {
-                        <SearchResults
-                            query=search.get()
-                            developer_tools=developer_tools
-                        />
+                        <SearchResults query=search.get() developer_tools=developer_tools selected_info />
                     }
                 >
                     <ToolSection title="General Tools" icon="bi-grid-3x3-gap">
-                        <ToolCard href="#/tools/markdown" icon="bi-markdown-fill" title="Markdown Studio" description="Live Markdown editor with Mermaid diagram support." />
-                        <ToolCard href="#/tools/json" icon="bi-braces" title="JSON Formatter" description="Validate, format, and minify JSON in your browser." />
-                        <ToolCard href="#/tools/jwt" icon="bi-key" title="JWT Decoder" description="Decode JWT header, payload, and signature locally." />
-                        <ToolCard href="#/tools/base64" icon="bi-file-binary" title="Base64 Encoder / Decoder" description="Encode and decode UTF-8 text as standard Base64 locally." />
-                        <ToolCard href="#/tools/time" icon="bi-clock-history" title="Time & Utilities" description="World clock, countdown, stopwatch, ruler, and timestamp conversion." />
+                        <ToolCard selected_info href="#/tools/markdown" icon="bi-markdown-fill" title="Markdown Studio" description="Live Markdown editor with Mermaid diagram support." category="General Tools" />
+                        <ToolCard selected_info href="#/tools/json" icon="bi-braces" title="JSON Formatter" description="Validate, format, and minify JSON in your browser." category="General Tools" />
+                        <ToolCard selected_info href="#/tools/jwt" icon="bi-key" title="JWT Decoder" description="Decode JWT header, payload, and signature locally." category="General Tools" />
+                        <ToolCard selected_info href="#/tools/base64" icon="bi-file-binary" title="Base64 Encoder / Decoder" description="Encode and decode UTF-8 text as standard Base64 locally." category="General Tools" />
+                        <ToolCard selected_info href="#/tools/time" icon="bi-clock-history" title="Time & Utilities" description="World clock, countdown, stopwatch, ruler, and timestamp conversion." category="General Tools" />
                     </ToolSection>
 
                     <ToolSection title="Developer Tools" icon="bi-code-slash">
                         {developer_tools.into_iter().map(|kind| view! {
                             <ToolCard
+                                selected_info
                                 href=format!("#/tools/{}", kind.route())
                                 icon="bi-wrench-adjustable"
                                 title=kind.title()
                                 description=kind.description()
+                                category="Developer Tools"
                             />
                         }).collect_view()}
                     </ToolSection>
 
-                    <FinanceSection title="Finance — Core Finance" icon="bi-cash-stack" tools=CORE_FINANCE_TOOLS />
-                    <FinanceSection title="Finance — Personal Finance" icon="bi-wallet2" tools=PERSONAL_FINANCE_TOOLS />
-                    <FinanceSection title="Finance — Investment" icon="bi-graph-up-arrow" tools=INVESTMENT_TOOLS />
-                    <FinanceSection title="Finance — Business Finance" icon="bi-building" tools=BUSINESS_FINANCE_TOOLS />
-                    <FinanceSection title="Finance — Valuation" icon="bi-bar-chart-line" tools=VALUATION_TOOLS />
-                    <FinanceSection title="Finance — Trading" icon="bi-activity" tools=TRADING_TOOLS />
-                    <FinanceSection title="Finance — Currency & Utilities" icon="bi-currency-exchange" tools=CURRENCY_TOOLS />
+                    <FinanceSection selected_info title="Finance — Core Finance" icon="bi-cash-stack" tools=CORE_FINANCE_TOOLS />
+                    <FinanceSection selected_info title="Finance — Personal Finance" icon="bi-wallet2" tools=PERSONAL_FINANCE_TOOLS />
+                    <FinanceSection selected_info title="Finance — Investment" icon="bi-graph-up-arrow" tools=INVESTMENT_TOOLS />
+                    <FinanceSection selected_info title="Finance — Business Finance" icon="bi-building" tools=BUSINESS_FINANCE_TOOLS />
+                    <FinanceSection selected_info title="Finance — Valuation" icon="bi-bar-chart-line" tools=VALUATION_TOOLS />
+                    <FinanceSection selected_info title="Finance — Trading" icon="bi-activity" tools=TRADING_TOOLS />
+                    <FinanceSection selected_info title="Finance — Currency & Utilities" icon="bi-currency-exchange" tools=CURRENCY_TOOLS />
                 </Show>
             </div>
         </div>
+
+        <ToolInfoModal selected_info />
     }
 }
 
@@ -167,6 +180,7 @@ pub fn ToolsPage() -> impl IntoView {
 fn SearchResults(
     query: String,
     developer_tools: [ToolKind; 15],
+    selected_info: RwSignal<Option<ToolInfo>>,
 ) -> impl IntoView {
     let query = query.trim().to_lowercase();
     let matches = move || {
@@ -181,14 +195,16 @@ fn SearchResults(
 
         for (href, icon, title, description) in general {
             if title.to_lowercase().contains(&query) || description.to_lowercase().contains(&query) {
-                results.push(view! { <ToolCard href=href icon=icon title=title description=description /> }.into_view());
+                results.push(view! {
+                    <ToolCard selected_info href=href icon=icon title=title description=description category="General Tools" />
+                }.into_view());
             }
         }
 
         for kind in developer_tools {
             if kind.title().to_lowercase().contains(&query) || kind.description().to_lowercase().contains(&query) {
                 results.push(view! {
-                    <ToolCard href=format!("#/tools/{}", kind.route()) icon="bi-wrench-adjustable" title=kind.title() description=kind.description() />
+                    <ToolCard selected_info href=format!("#/tools/{}", kind.route()) icon="bi-wrench-adjustable" title=kind.title() description=kind.description() category="Developer Tools" />
                 }.into_view());
             }
         }
@@ -205,7 +221,7 @@ fn SearchResults(
         for tools in finance_tools {
             for tool in tools.iter().copied() {
                 if tool.title().to_lowercase().contains(&query) || tool.category().to_lowercase().contains(&query) {
-                    results.push(view! { <FinanceToolCard tool /> }.into_view());
+                    results.push(view! { <FinanceToolCard selected_info tool /> }.into_view());
                 }
             }
         }
@@ -244,21 +260,35 @@ fn ToolSection(title: &'static str, icon: &'static str, children: Children) -> i
 }
 
 #[component]
-fn FinanceSection(title: &'static str, icon: &'static str, tools: &'static [FinanceTool]) -> impl IntoView {
+fn FinanceSection(
+    selected_info: RwSignal<Option<ToolInfo>>,
+    title: &'static str,
+    icon: &'static str,
+    tools: &'static [FinanceTool],
+) -> impl IntoView {
     view! {
         <ToolSection title=title icon=icon>
-            {tools.iter().copied().map(|tool| view! { <FinanceToolCard tool /> }).collect_view()}
+            {tools.iter().copied().map(|tool| view! { <FinanceToolCard selected_info tool /> }).collect_view()}
         </ToolSection>
     }
 }
 
 #[component]
 fn ToolCard(
+    selected_info: RwSignal<Option<ToolInfo>>,
     #[prop(into)] href: String,
     icon: &'static str,
     title: &'static str,
     description: &'static str,
+    category: &'static str,
 ) -> impl IntoView {
+    let info = ToolInfo {
+        title: title.to_string(),
+        category: category.to_string(),
+        description: description.to_string(),
+        href: href.clone(),
+    };
+
     view! {
         <div class="col-12 col-sm-6 col-lg-4">
             <div class="card bg-body-tertiary border-secondary h-100">
@@ -277,6 +307,7 @@ fn ToolCard(
                         aria-label=format!("Show information about {}", title)
                         data-bs-toggle="modal"
                         data-bs-target="#tool-info-modal"
+                        on:click=move |_| selected_info.set(Some(info.clone()))
                     >
                         <i class="bi bi-info-lg" aria-hidden="true"></i>
                     </button>
@@ -287,12 +318,19 @@ fn ToolCard(
 }
 
 #[component]
-fn FinanceToolCard(tool: FinanceTool) -> impl IntoView {
+fn FinanceToolCard(selected_info: RwSignal<Option<ToolInfo>>, tool: FinanceTool) -> impl IntoView {
+    let info = ToolInfo {
+        title: tool.title().to_string(),
+        category: tool.category().to_string(),
+        description: format!("{} calculator for {}.", tool.title(), tool.category()),
+        href: format!("#/tools/finance/{}", tool.route()),
+    };
+
     view! {
         <div class="col-12 col-sm-6 col-lg-4">
             <div class="card bg-body-tertiary border-secondary h-100">
                 <div class="card-body p-3 d-flex gap-3">
-                    <a href=format!("#/tools/finance/{}", tool.route()) class="text-decoration-none text-body flex-grow-1 min-w-0">
+                    <a href=info.href.clone() class="text-decoration-none text-body flex-grow-1 min-w-0">
                         <h6 class="card-title mb-1">
                             <i class="bi bi-cash-coin text-primary me-2" aria-hidden="true"></i>
                             {tool.title()}
@@ -306,9 +344,63 @@ fn FinanceToolCard(tool: FinanceTool) -> impl IntoView {
                         aria-label=format!("Show information about {}", tool.title())
                         data-bs-toggle="modal"
                         data-bs-target="#tool-info-modal"
+                        on:click=move |_| selected_info.set(Some(info.clone()))
                     >
                         <i class="bi bi-info-lg" aria-hidden="true"></i>
                     </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+#[component]
+fn ToolInfoModal(selected_info: RwSignal<Option<ToolInfo>>) -> impl IntoView {
+    view! {
+        <div
+            class="modal fade"
+            id="tool-info-modal"
+            tabindex="-1"
+            aria-labelledby="tool-info-modal-title"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="tool-info-modal-title">
+                            {move || selected_info.get().map(|info| info.title).unwrap_or_default()}
+                        </h2>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <Show when=move || selected_info.get().is_some()>
+                            {move || selected_info.get().map(|info| view! {
+                                <div class="d-flex flex-column gap-3">
+                                    <div>
+                                        <div class="small text-body-secondary">"Category"</div>
+                                        <div>{info.category}</div>
+                                    </div>
+                                    <div>
+                                        <div class="small text-body-secondary">"Description"</div>
+                                        <div>{info.description}</div>
+                                    </div>
+                                </div>
+                            })}
+                        </Show>
+                    </div>
+                    <div class="modal-footer">
+                        <Show when=move || selected_info.get().is_some()>
+                            {move || selected_info.get().map(|info| view! {
+                                <a class="btn btn-primary" href=info.href>"Open Tool"</a>
+                            })}
+                        </Show>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">"Close"</button>
+                    </div>
                 </div>
             </div>
         </div>
