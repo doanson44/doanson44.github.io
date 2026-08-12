@@ -1,23 +1,13 @@
 pub mod base64;
+pub mod developer_tools;
 pub mod json;
 pub mod jwt;
 
 use crate::domain::markdown::{render_markdown, RenderedMarkdown};
 
-/// Application service coordinating Markdown use cases.
-///
-/// This service sits between the presentation layer and domain logic,
-/// providing a clean API for UI components. It can be extended with
-/// repository injection for persistence use cases.
 pub struct MarkdownService;
 
 impl MarkdownService {
-    /// Render Markdown source into structured output.
-    ///
-    /// Delegates to the domain layer's `render_markdown` function.
-    /// This indirection exists so that future use cases (e.g., render
-    /// with server-side extensions, cache results) can be added here
-    /// without changing UI components.
     pub fn render(content: &str) -> RenderedMarkdown {
         render_markdown(content)
     }

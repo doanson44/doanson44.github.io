@@ -1,4 +1,4 @@
-/// Base64 encoding and decoding for UTF-8 text.
+//! Base64 encoding and decoding for UTF-8 text.
 
 const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -42,7 +42,7 @@ pub fn decode(input: &str) -> Result<String, String> {
     if compact.is_empty() {
         return Ok(String::new());
     }
-    if compact.len() % 4 != 0 {
+    if !compact.len().is_multiple_of(4) {
         return Err("Invalid Base64: length must be a multiple of 4.".into());
     }
 
@@ -78,12 +78,12 @@ pub fn decode(input: &str) -> Result<String, String> {
             return Err("Invalid Base64: non-zero padding bits.".into());
         }
 
-        bytes.push((first << 2 | second >> 4) as u8);
+        bytes.push(first << 2 | second >> 4);
         if chunk[2] != b'=' {
-            bytes.push(((second & 0x0f) << 4 | third >> 2) as u8);
+            bytes.push((second & 0x0f) << 4 | third >> 2);
         }
         if chunk[3] != b'=' {
-            bytes.push(((third & 0x03) << 6 | fourth) as u8);
+            bytes.push((third & 0x03) << 6 | fourth);
         }
     }
 
