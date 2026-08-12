@@ -87,7 +87,7 @@ pub fn ToolsPage() -> impl IntoView {
     ];
 
     view! {
-        <div class="d-flex flex-column flex-grow-1">
+        <div class="d-flex flex-column flex-grow-1 overflow-auto">
             <div class="container py-4">
                 <h2 class="mb-4">
                     <i class="bi bi-tools me-2 text-primary"></i>"Tools"
