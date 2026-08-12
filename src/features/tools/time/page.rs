@@ -219,19 +219,39 @@ fn Stopwatch(state: TimeState) -> impl IntoView {
 
 #[component]
 fn Ruler(state: TimeState) -> impl IntoView {
+    let _ = state;
     view! {
-        <section>
-            <div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
-                <div><h2 class="h4">"Screen Ruler"</h2><p class="text-body-secondary">"CSS-pixel ruler. Physical units are approximate until calibrated."</p></div>
-                <div class="d-flex gap-2">
-                    <select class="form-select form-select-sm" aria-label="Ruler unit" prop:value=move || state.ruler_unit.get() on:change=move |ev| state.ruler_unit.set(event_target_value(&ev))><option value="px">"px"</option><option value="cm">"cm"</option><option value="inch">"inch"</option></select>
-                    <select class="form-select form-select-sm" aria-label="Ruler orientation" prop:value=move || state.ruler_orientation.get() on:change=move |ev| state.ruler_orientation.set(event_target_value(&ev))><option value="horizontal">"Horizontal"</option><option value="vertical">"Vertical"</option></select>
+        <section class="w-100">
+            <div class="mb-4">
+                <h2 class="h4">"Screen Ruler"</h2>
+                <p class="text-body-secondary mb-0">"Two responsive scales rendered across the full available width."</p>
+            </div>
+
+            <div class="w-100 border border-secondary rounded overflow-hidden" role="img" aria-label="Responsive screen ruler with inches above centimeters">
+                <div class="d-flex flex-column w-100">
+                    <div class="d-flex w-100 border-bottom border-secondary" aria-label="Inches">
+                        {(0..=10).map(|value| view! {
+                            <div class="flex-fill text-center border-start border-secondary py-2">
+                                <div class="ruler-tick ruler-tick-inch mx-auto" aria-hidden="true"></div>
+                                <span class="small font-monospace">{value}</span>
+                            </div>
+                        }).collect_view()}
+                    </div>
+                    <div class="d-flex w-100" aria-label="Centimeters">
+                        {(0..=30).map(|value| view! {
+                            <div class="flex-fill text-center border-start border-secondary py-2">
+                                <div class="ruler-tick ruler-tick-cm mx-auto" aria-hidden="true"></div>
+                                <span class="small font-monospace">{value}</span>
+                            </div>
+                        }).collect_view()}
+                    </div>
                 </div>
             </div>
-            <div class="border border-secondary rounded p-3 d-flex gap-3" role="img" aria-label="Screen ruler">
-                {(0..=10).map(|value| view! { <div class="d-flex flex-column align-items-center"><div class="vr" aria-hidden="true"></div><span class="small">{value}</span></div> }).collect_view()}
+
+            <div class="d-flex justify-content-between gap-2 mt-3">
+                <span class="small text-body-secondary">"Top: inch · Bottom: cm"</span>
+                <span class="small text-body-secondary">"Screen scale"</span>
             </div>
-            <div class="d-flex justify-content-between gap-2 mt-3"><span class="small text-body-secondary">{move || if state.ruler_calibrated.get() { "Calibrated scale" } else { "Screen scale" }}</span><button type="button" class="btn btn-outline-secondary btn-sm" on:click=move |_| state.ruler_calibrated.update(|value| *value = !*value)>{move || if state.ruler_calibrated.get() { "Clear calibration" } else { "Calibrate" }}</button></div>
         </section>
     }
 }
