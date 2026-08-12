@@ -396,7 +396,7 @@ fn ToolInfoModal(selected_info: RwSignal<Option<ToolInfo>>) -> impl IntoView {
                     <div class="modal-footer">
                         <Show when=move || selected_info.get().is_some()>
                             {move || selected_info.get().map(|info| view! {
-                                <a class="btn btn-primary" href=info.href>"Open Tool"</a>
+                                <a class="btn btn-primary" href=info.href data-bs-dismiss="modal">"Open Tool"</a>
                             })}
                         </Show>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">"Close"</button>
