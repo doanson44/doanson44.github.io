@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum CountdownState {
     Idle,
     Running,
@@ -8,7 +8,7 @@ pub enum CountdownState {
     Finished,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Countdown {
     duration_ms: u64,
     state: CountdownState,

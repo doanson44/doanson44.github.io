@@ -5,7 +5,7 @@ use crate::infrastructure::browser::toggle_theme_js;
 /// Platform navigation bar with hash-based routing for GitHub Pages.
 #[component]
 pub fn Navbar() -> impl IntoView {
-    let on_toggle_theme = move |_| toggle_theme_js();
+    let on_toggle_theme = move |_| { toggle_theme_js(); };
 
     view! {
         <nav class="navbar navbar-expand-md border-bottom border-secondary" id="main-navbar">

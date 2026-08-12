@@ -1,13 +1,13 @@
 use std::time::Duration;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum StopwatchState {
     Idle,
     Running,
     Paused,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Stopwatch {
     state: StopwatchState,
     started_at_ms: Option<f64>,
