@@ -22,10 +22,7 @@ struct ToolSplitContext {
 /// workspace to a vertical layout, while the divider automatically uses the
 /// corresponding pointer axis.
 #[component]
-pub fn ToolSplit(
-    #[prop(default = 50)] initial_ratio: u32,
-    children: Children,
-) -> impl IntoView {
+pub fn ToolSplit(#[prop(default = 50)] initial_ratio: u32, children: Children) -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
     let ratio = RwSignal::new(initial_ratio.clamp(20, 80));
     let dragging = RwSignal::new(false);
@@ -56,10 +53,7 @@ pub fn ToolSplit(
 
 /// Reusable panel wrapper used inside [`ToolSplit`].
 #[component]
-pub fn ToolPanel(
-    side: ToolPanelSide,
-    children: Children,
-) -> impl IntoView {
+pub fn ToolPanel(side: ToolPanelSide, children: Children) -> impl IntoView {
     let side_class = match side {
         ToolPanelSide::First => "tool-panel-first",
         ToolPanelSide::Second => "tool-panel-second",
