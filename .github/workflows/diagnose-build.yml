@@ -1,0 +1,25 @@
+name: Temporary Compiler Diagnostics
+
+on:
+  push:
+    branches:
+      - feature/tool-platform-refactor-and-expansion
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Compile and annotate errors
+        run: |
+          set +e
+          cargo check --target wasm32-unknown-unknown > /tmp/cargo.log 2>&1
+          status=$?
+          tail -n 80 /tmp/cargo.log | while IFS= read -r line; do echo "::error::$line"; done
+          exit "$status"
