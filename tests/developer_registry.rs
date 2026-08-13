@@ -31,3 +31,11 @@ fn network_tool_adapters_accept_secondary_input() {
         .expect("HTTP status adapter should execute");
     assert!(result.contains("404 Not Found"));
 }
+
+#[test]
+fn subnet_tool_adapter_accepts_secondary_input() {
+    let result = ToolId::Subnet
+        .execute("192.168.1.0/24", "")
+        .expect("subnet adapter should execute");
+    assert!(result.contains("Network: 192.168.1.0"));
+}
