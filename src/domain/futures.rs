@@ -1,0 +1,1 @@
+/// Public Futures market state.
