@@ -1,6 +1,9 @@
 name: Deploy to GitHub Pages
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
 
 permissions:
@@ -14,6 +17,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,12 +53,6 @@ jobs:
       - name: Build release
         run: trunk build --release
 
-      - name: Copy static assets to Pages output
-        run: |
-          cp public/favicon.svg dist/favicon.svg
-          mkdir -p dist/vendor
-          cp -R public/vendor/. dist/vendor/
-
       - name: Verify static assets
         run: |
           test -f dist/favicon.svg
@@ -68,6 +66,7 @@ jobs:
           path: ./dist
 
   deploy:
+    if: github.ref == 'refs/heads/master'
     needs: build
     runs-on: ubuntu-latest
     environment:
