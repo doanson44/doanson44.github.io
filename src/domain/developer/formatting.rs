@@ -138,7 +138,7 @@ pub fn format_braced(source: &str) -> Result<String, String> {
             i += 1;
             continue;
         }
-        if (ch == '\'' || ch == '"' || ch == '`') {
+        if ch == '\'' || ch == '"' || ch == '`' {
             quote = Some(ch);
             current.push(ch);
             i += 1;

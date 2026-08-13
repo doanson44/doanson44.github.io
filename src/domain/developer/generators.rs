@@ -33,7 +33,7 @@ pub fn fake_data(input: &str) -> Result<String, String> {
         return Err("Maximum count is 1000.".into());
     }
     let mut out = String::new();
-    out.push_str("[");
+    out.push('[');
     for i in 0..count {
         if i > 0 {
             out.push(',');
@@ -56,10 +56,10 @@ pub fn fake_data(input: &str) -> Result<String, String> {
         out.push('}');
     }
     out.push(']');
-    Ok(serde_json::to_string_pretty(
+    serde_json::to_string_pretty(
         &serde_json::from_str::<Value>(&out).map_err(|e| e.to_string())?,
     )
-    .map_err(|e| e.to_string())?)
+    .map_err(|e| e.to_string())
 }
 
 pub fn mock_json(source: &str, count: &str) -> Result<String, String> {
@@ -93,7 +93,7 @@ fn mock_value(value: &Value, index: usize) -> Value {
         } else {
             format!("{} {}", s, index + 1)
         }),
-        Value::Bool(_) => Value::Bool(index % 2 == 0),
+        Value::Bool(_) => Value::Bool(index.is_multiple_of(2)),
         Value::Array(items) => Value::Array(items.iter().map(|v| mock_value(v, index)).collect()),
         Value::Object(obj) => {
             let mut out = Map::new();
