@@ -14,7 +14,9 @@ pub fn get_window() -> web_sys::Window {
 
 /// Get the browser document object.
 pub fn get_document() -> web_sys::Document {
-    get_window().document().expect("should have a document on window")
+    get_window()
+        .document()
+        .expect("should have a document on window")
 }
 
 /// Read a value from local browser storage.
@@ -30,7 +32,9 @@ pub fn storage_set(key: &str, value: &str) -> Result<(), String> {
         .local_storage()
         .map_err(|_| "Browser storage is unavailable.".to_string())?
         .ok_or_else(|| "Browser storage is unavailable.".to_string())?;
-    storage.set_item(key, value).map_err(|_| "Failed to save tool input.".to_string())
+    storage
+        .set_item(key, value)
+        .map_err(|_| "Failed to save tool input.".to_string())
 }
 
 #[wasm_bindgen]
@@ -51,30 +55,55 @@ pub async fn copy_to_clipboard(text: &str) -> Result<(), String> {
     let navigator = get_window().navigator();
     let clipboard = navigator.clipboard();
     let promise = clipboard.write_text(text);
-    let _ = wasm_bindgen_futures::JsFuture::from(promise).await.map_err(|e| e.as_string().unwrap_or_else(|| "Clipboard write failed".into()))?;
+    let _ = wasm_bindgen_futures::JsFuture::from(promise)
+        .await
+        .map_err(|e| {
+            e.as_string()
+                .unwrap_or_else(|| "Clipboard write failed".into())
+        })?;
     Ok(())
 }
 
 /// Copy the rendered preview as rich HTML with a plain-text fallback.
 pub async fn copy_preview_as_html(element_id: &str) -> Result<(), String> {
     match copy_preview_as_html_js(element_id).await {
-        Ok(res) if res.as_string().is_some_and(|json| json.contains("\"ok\":true")) => Ok(()),
+        Ok(res)
+            if res
+                .as_string()
+                .is_some_and(|json| json.contains("\"ok\":true")) =>
+        {
+            Ok(())
+        }
         Ok(_) => Err("Failed to copy preview as rich HTML".to_string()),
-        Err(e) => Err(e.as_string().unwrap_or_else(|| "Failed to copy preview".into())),
+        Err(e) => Err(e
+            .as_string()
+            .unwrap_or_else(|| "Failed to copy preview".into())),
     }
 }
 
 /// Copy an SVG element as a PNG image to the clipboard using the global JS interop function.
 pub async fn copy_svg_as_png(svg_id: &str) -> Result<(), String> {
     match copy_svg_as_png_js(svg_id).await {
-        Ok(res) if res.as_string().is_some_and(|json| json.contains("\"ok\":true")) => Ok(()),
+        Ok(res)
+            if res
+                .as_string()
+                .is_some_and(|json| json.contains("\"ok\":true")) =>
+        {
+            Ok(())
+        }
         Ok(_) => Err("JS function returned an error".to_string()),
-        Err(e) => Err(e.as_string().unwrap_or_else(|| "Failed to copy image".into())),
+        Err(e) => Err(e
+            .as_string()
+            .unwrap_or_else(|| "Failed to copy image".into())),
     }
 }
 
 /// Log a message to the browser console.
-pub fn console_log(msg: &str) { web_sys::console::log_1(&msg.into()); }
+pub fn console_log(msg: &str) {
+    web_sys::console::log_1(&msg.into());
+}
 
 /// Get an element by ID, returning a typed element.
-pub fn get_element_by_id<T: wasm_bindgen::JsCast>(id: &str) -> Option<T> { get_document().get_element_by_id(id)?.dyn_into::<T>().ok() }
+pub fn get_element_by_id<T: wasm_bindgen::JsCast>(id: &str) -> Option<T> {
+    get_document().get_element_by_id(id)?.dyn_into::<T>().ok()
+}

@@ -20,7 +20,9 @@ impl DeveloperToolsState {
         let secondary_key = format!("developer-tool-{}-secondary", tool.route());
         Self {
             source: RwSignal::new(storage_get(&source_key).unwrap_or_else(|| source.to_string())),
-            secondary: RwSignal::new(storage_get(&secondary_key).unwrap_or_else(|| secondary.to_string())),
+            secondary: RwSignal::new(
+                storage_get(&secondary_key).unwrap_or_else(|| secondary.to_string()),
+            ),
             output: RwSignal::new(String::new()),
             error: RwSignal::new(None),
             copied: RwSignal::new(false),
@@ -44,8 +46,14 @@ impl DeveloperToolsState {
     pub fn run(&self, tool: ToolId) {
         self.copied.set(false);
         match DeveloperToolsService::execute(tool, &self.source.get(), &self.secondary.get()) {
-            Ok(output) => { self.output.set(output); self.error.set(None); }
-            Err(error) => { self.output.set(String::new()); self.error.set(Some(error)); }
+            Ok(output) => {
+                self.output.set(output);
+                self.error.set(None);
+            }
+            Err(error) => {
+                self.output.set(String::new());
+                self.error.set(Some(error));
+            }
         }
     }
 
