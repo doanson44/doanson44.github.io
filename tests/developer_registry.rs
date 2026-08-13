@@ -1,0 +1,8 @@
+use markdown_studio::domain::developer::ToolId;
+
+#[test]
+fn every_registered_tool_has_route_and_title() {
+    let tools = ToolId::all().collect::<Vec<_>>();
+    assert_eq!(tools.len(), 34);
+    assert!(tools.iter().all(|tool| !tool.route().is_empty() && !tool.title().is_empty()));
+}
