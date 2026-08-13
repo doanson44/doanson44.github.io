@@ -2,6 +2,7 @@ pub mod base64;
 pub mod developer;
 pub mod document;
 pub mod finance;
+pub mod futures;
 pub mod json;
 pub mod jwt;
 pub mod markdown;
