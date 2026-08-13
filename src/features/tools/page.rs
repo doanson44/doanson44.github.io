@@ -185,11 +185,36 @@ fn SearchResults(
     let query = query.trim().to_lowercase();
     let mut results: Vec<AnyView> = Vec::new();
     let general = [
-        ("#/tools/markdown", "bi-markdown-fill", "Markdown Studio", "Live Markdown editor with Mermaid diagram support."),
-        ("#/tools/json", "bi-braces", "JSON Formatter", "Validate, format, and minify JSON in your browser."),
-        ("#/tools/jwt", "bi-key", "JWT Decoder", "Decode JWT header, payload, and signature locally."),
-        ("#/tools/base64", "bi-file-binary", "Base64 Encoder / Decoder", "Encode and decode UTF-8 text as standard Base64 locally."),
-        ("#/tools/time", "bi-clock-history", "Time & Utilities", "World clock, countdown, stopwatch, ruler, and timestamp conversion."),
+        (
+            "#/tools/markdown",
+            "bi-markdown-fill",
+            "Markdown Studio",
+            "Live Markdown editor with Mermaid diagram support.",
+        ),
+        (
+            "#/tools/json",
+            "bi-braces",
+            "JSON Formatter",
+            "Validate, format, and minify JSON in your browser.",
+        ),
+        (
+            "#/tools/jwt",
+            "bi-key",
+            "JWT Decoder",
+            "Decode JWT header, payload, and signature locally.",
+        ),
+        (
+            "#/tools/base64",
+            "bi-file-binary",
+            "Base64 Encoder / Decoder",
+            "Encode and decode UTF-8 text as standard Base64 locally.",
+        ),
+        (
+            "#/tools/time",
+            "bi-clock-history",
+            "Time & Utilities",
+            "World clock, countdown, stopwatch, ruler, and timestamp conversion.",
+        ),
     ];
 
     for (href, icon, title, description) in general {
@@ -201,7 +226,9 @@ fn SearchResults(
     }
 
     for kind in developer_tools {
-        if kind.title().to_lowercase().contains(&query) || kind.description().to_lowercase().contains(&query) {
+        if kind.title().to_lowercase().contains(&query)
+            || kind.description().to_lowercase().contains(&query)
+        {
             results.push(view! {
                 <ToolCard selected_info href=format!("#/tools/{}", kind.route()) icon="bi-wrench-adjustable" title=kind.title() description=kind.description() category="Developer Tools" />
             }.into_any());
@@ -219,7 +246,9 @@ fn SearchResults(
     ];
     for tools in finance_tools {
         for tool in tools.iter().copied() {
-            if tool.title().to_lowercase().contains(&query) || tool.category().to_lowercase().contains(&query) {
+            if tool.title().to_lowercase().contains(&query)
+                || tool.category().to_lowercase().contains(&query)
+            {
                 results.push(view! { <FinanceToolCard selected_info tool /> }.into_any());
             }
         }
