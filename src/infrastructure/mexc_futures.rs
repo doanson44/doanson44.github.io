@@ -1,13 +1,45 @@
 use std::rc::Rc;
 
+use js_sys::Reflect;
 use serde::Deserialize;
-use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
+use wasm_bindgen::{closure::Closure, prelude::wasm_bindgen, JsCast, JsValue};
+use web_sys::Window;
 
 use crate::domain::futures::FuturesTickerUpdate;
 
 const WS_ENDPOINT: &str = "wss://contract.mexc.com/edge";
 const PING_INTERVAL_MS: i32 = 15_000;
+
+#[wasm_bindgen]
+extern "C" {
+    type BrowserWebSocket;
+
+    #[wasm_bindgen(constructor, catch)]
+    fn new(url: &str) -> Result<BrowserWebSocket, JsValue>;
+
+    #[wasm_bindgen(method, setter, structural, js_name = onopen)]
+    fn set_onopen(this: &BrowserWebSocket, callback: Option<&js_sys::Function>);
+
+    #[wasm_bindgen(method, setter, structural, js_name = onmessage)]
+    fn set_onmessage(this: &BrowserWebSocket, callback: Option<&js_sys::Function>);
+
+    #[wasm_bindgen(method, setter, structural, js_name = onerror)]
+    fn set_onerror(this: &BrowserWebSocket, callback: Option<&js_sys::Function>);
+
+    #[wasm_bindgen(method, setter, structural, js_name = onclose)]
+    fn set_onclose(this: &BrowserWebSocket, callback: Option<&js_sys::Function>);
+
+    #[wasm_bindgen(method, js_name = send)]
+    fn send(this: &BrowserWebSocket, data: &str) -> Result<(), JsValue>;
+
+    #[wasm_bindgen(method, js_name = close)]
+    fn close(this: &BrowserWebSocket) -> Result<(), JsValue>;
+
+    #[wasm_bindgen(method, getter, structural, js_name = readyState)]
+    fn ready_state(this: &BrowserWebSocket) -> u16;
+}
+
+const WS_OPEN: u16 = 1;
 
 /// Connection state reported by the MEXC Futures public stream.
 #[derive(Debug, Clone, PartialEq)]
@@ -39,12 +71,12 @@ struct TickerPayload {
 
 /// Handle for a live MEXC Futures public WebSocket connection.
 pub struct MexcFuturesWsHandle {
-    socket: WebSocket,
+    socket: BrowserWebSocket,
     ping_interval: Option<i32>,
     on_open: Closure<dyn FnMut()>,
-    on_message: Closure<dyn FnMut(MessageEvent)>,
-    on_error: Closure<dyn FnMut(ErrorEvent)>,
-    on_close: Closure<dyn FnMut(CloseEvent)>,
+    on_message: Closure<dyn FnMut(JsValue)>,
+    on_error: Closure<dyn FnMut(JsValue)>,
+    on_close: Closure<dyn FnMut(JsValue)>,
     ping_callback: Option<Closure<dyn FnMut()>>,
 }
 
@@ -73,22 +105,22 @@ impl Drop for MexcFuturesWsHandle {
 
 /// Connects to the MEXC Futures public ticker stream for the complete market.
 ///
-/// The `push.tickers` channel contains all perpetual contracts and is pushed once
-/// per second by MEXC. The browser receives text JSON so the adapter can decode
-/// the batch without any compression or private authentication.
+/// MEXC documents `push.tickers` as the all-contract perpetual ticker stream,
+/// delivered once per second. The subscription explicitly disables compression
+/// so the browser receives text JSON.
 pub fn connect_tickers(
     on_batch: Rc<dyn Fn(Vec<FuturesTickerUpdate>)>,
     on_status: Rc<dyn Fn(MexcFuturesConnectionStatus)>,
 ) -> Result<MexcFuturesWsHandle, String> {
     on_status(MexcFuturesConnectionStatus::Connecting);
-    let socket = WebSocket::new(WS_ENDPOINT)
+    let socket = BrowserWebSocket::new(WS_ENDPOINT)
         .map_err(|error| format!("Failed to create MEXC WebSocket: {}", js_error(&error)))?;
 
     let subscribe_socket = socket.clone();
     let open_status = on_status.clone();
     let on_open = Closure::<dyn FnMut()>::new(move || {
         let message = r#"{"method":"sub.tickers","param":{},"gzip":false}"#;
-        match subscribe_socket.send_with_str(message) {
+        match subscribe_socket.send(message) {
             Ok(()) => open_status(MexcFuturesConnectionStatus::Connected),
             Err(error) => open_status(MexcFuturesConnectionStatus::Error(format!(
                 "Failed to subscribe to MEXC tickers: {}",
@@ -100,8 +132,17 @@ pub fn connect_tickers(
 
     let batch_callback = on_batch.clone();
     let message_status = on_status.clone();
-    let on_message = Closure::<dyn FnMut(MessageEvent)>::new(move |event| {
-        let Some(payload) = event.data().as_string() else {
+    let on_message = Closure::<dyn FnMut(JsValue)>::new(move |event| {
+        let data = match Reflect::get(&event, &JsValue::from_str("data")) {
+            Ok(value) => value,
+            Err(_) => {
+                message_status(MexcFuturesConnectionStatus::Error(
+                    "MEXC message has no data field".into(),
+                ));
+                return;
+            }
+        };
+        let Some(payload) = data.as_string() else {
             message_status(MexcFuturesConnectionStatus::Error(
                 "MEXC returned a non-text WebSocket message".into(),
             ));
@@ -118,8 +159,8 @@ pub fn connect_tickers(
             }
         };
 
-        match envelope.channel.as_str() {
-            "push.tickers" => match serde_json::from_value::<Vec<TickerPayload>>(envelope.data) {
+        if envelope.channel == "push.tickers" {
+            match serde_json::from_value::<Vec<TickerPayload>>(envelope.data) {
                 Ok(tickers) => {
                     let updates = tickers
                         .into_iter()
@@ -137,22 +178,25 @@ pub fn connect_tickers(
                 Err(error) => message_status(MexcFuturesConnectionStatus::Error(format!(
                     "Failed to decode MEXC ticker batch: {error}"
                 ))),
-            },
-            "pong" | "rs.sub.tickers" => {}
-            _ => {}
+            }
         }
     });
     socket.set_onmessage(Some(on_message.as_ref().unchecked_ref()));
 
     let error_status = on_status.clone();
-    let on_error = Closure::<dyn FnMut(ErrorEvent)>::new(move |event| {
-        error_status(MexcFuturesConnectionStatus::Error(event.message()));
+    let on_error = Closure::<dyn FnMut(JsValue)>::new(move |_| {
+        error_status(MexcFuturesConnectionStatus::Error(
+            "MEXC WebSocket reported an error".into(),
+        ));
     });
     socket.set_onerror(Some(on_error.as_ref().unchecked_ref()));
 
     let close_status = on_status.clone();
-    let on_close = Closure::<dyn FnMut(CloseEvent)>::new(move |event| {
-        let reason = event.reason();
+    let on_close = Closure::<dyn FnMut(JsValue)>::new(move |event| {
+        let reason = Reflect::get(&event, &JsValue::from_str("reason"))
+            .ok()
+            .and_then(|value| value.as_string())
+            .unwrap_or_default();
         if reason.is_empty() {
             close_status(MexcFuturesConnectionStatus::Disconnected);
         } else {
@@ -165,12 +209,13 @@ pub fn connect_tickers(
 
     let ping_socket = socket.clone();
     let ping_callback = Closure::<dyn FnMut()>::new(move || {
-        if ping_socket.ready_state() == WebSocket::OPEN {
-            let _ = ping_socket.send_with_str(r#"{"method":"ping"}"#);
+        if ping_socket.ready_state() == WS_OPEN {
+            let _ = ping_socket.send(r#"{"method":"ping"}"#);
         }
     });
 
-    let window = web_sys::window().ok_or_else(|| "Browser window is unavailable".to_string())?;
+    let window: Window =
+        web_sys::window().ok_or_else(|| "Browser window is unavailable".to_string())?;
     let ping_interval = window
         .set_interval_with_callback_and_timeout_and_arguments_0(
             ping_callback.as_ref().unchecked_ref(),
