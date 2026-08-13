@@ -18,3 +18,8 @@ fn registered_tool_routes_are_unique() {
             .all(|other| other.route() != tool.route()));
     }
 }
+
+#[test]
+fn registered_tool_routes_resolve_to_the_same_tool() {
+    assert_eq!(ToolId::from_route("regex"), Some(ToolId::Regex));
+}
