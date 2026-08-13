@@ -394,7 +394,7 @@ fn change_value(filter: ChangeFilter) -> &'static str {
         ChangeFilter::All => "all",
         ChangeFilter::Positive => "positive",
         ChangeFilter::Negative => "negative",
-        }
+    }
 }
 
 fn parse_change(value: &str) -> ChangeFilter {
