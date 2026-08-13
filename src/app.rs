@@ -60,9 +60,6 @@ fn create_hash_signal() -> RwSignal<String> {
 }
 
 fn render_page(route: String) -> leptos::prelude::AnyView {
-    if route == "/tools/finance" {
-        return view! { <FinancePage /> }.into_any();
-    }
     if let Some(slug) = route.strip_prefix("/tools/finance/") {
         if let Some(tool) = FinanceTool::from_route(slug) {
             return view! { <FinancePage tool=tool /> }.into_any();
