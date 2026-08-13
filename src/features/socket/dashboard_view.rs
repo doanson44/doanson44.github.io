@@ -13,7 +13,6 @@ pub fn SocketPage() -> impl IntoView {
             if !current_desc {
                 state.sort_descending.set(true);
             } else {
-                // Reset to default sort
                 state.sort_column.set(SortColumn::Symbol);
                 state.sort_descending.set(false);
             }
@@ -44,7 +43,7 @@ pub fn SocketPage() -> impl IntoView {
                     </div>
                 </header>
 
-                <div class="card bg-body-tertiary border-secondary mb-3">
+                <div class="card bg-body-tertiary border-secondary mb-3 flex-shrink-0">
                     <div class="card-body p-2">
                         <div class="row g-2 align-items-end">
                             <div class="col-12 col-md-5 col-lg-4">
@@ -130,12 +129,24 @@ pub fn SocketPage() -> impl IntoView {
                     </div>
                 </div>
 
-                <div class="card border-secondary flex-grow-1 overflow-hidden">
-                    <div class="table-responsive h-100">
+                <div class=move || {
+                    if state.page_size.get() <= 25 {
+                        "card border-secondary flex-grow-0 overflow-hidden"
+                    } else {
+                        "card border-secondary flex-grow-1 overflow-hidden min-height-0"
+                    }
+                }>
+                    <div class=move || {
+                        if state.page_size.get() <= 25 {
+                            "table-responsive"
+                        } else {
+                            "table-responsive h-100 overflow-auto"
+                        }
+                    }>
                         <table class="table table-hover table-sm align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 20%">
+                                    <th scope="col">
                                         <SortButton
                                             column=SortColumn::Symbol
                                             label="Symbol"
@@ -143,7 +154,7 @@ pub fn SocketPage() -> impl IntoView {
                                             set_sort=set_sort
                                         />
                                     </th>
-                                    <th scope="col" class="text-end" style="width: 20%">
+                                    <th scope="col" class="text-end">
                                         <SortButton
                                             column=SortColumn::LastPrice
                                             label="Last Price"
@@ -151,7 +162,7 @@ pub fn SocketPage() -> impl IntoView {
                                             set_sort=set_sort
                                         />
                                     </th>
-                                    <th scope="col" class="text-end" style="width: 20%">
+                                    <th scope="col" class="text-end">
                                         <SortButton
                                             column=SortColumn::Change24h
                                             label="24h Change"
@@ -159,7 +170,7 @@ pub fn SocketPage() -> impl IntoView {
                                             set_sort=set_sort
                                         />
                                     </th>
-                                    <th scope="col" class="text-end d-none d-md-table-cell" style="width: 20%">
+                                    <th scope="col" class="text-end d-none d-md-table-cell">
                                         <SortButton
                                             column=SortColumn::Volume24h
                                             label="24h Vol"
@@ -167,7 +178,7 @@ pub fn SocketPage() -> impl IntoView {
                                             set_sort=set_sort
                                         />
                                     </th>
-                                    <th scope="col" class="text-end d-none d-lg-table-cell" style="width: 20%">
+                                    <th scope="col" class="text-end d-none d-lg-table-cell">
                                         <SortButton
                                             column=SortColumn::FairPrice
                                             label="Fair Price"
@@ -200,7 +211,7 @@ pub fn SocketPage() -> impl IntoView {
                     </div>
                 </div>
 
-                <footer class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2">
+                <footer class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 flex-shrink-0">
                     <div class="small text-body-secondary">
                         {move || range_text(&state)}
                     </div>
@@ -363,7 +374,7 @@ fn change_value(filter: ChangeFilter) -> &'static str {
         ChangeFilter::All => "all",
         ChangeFilter::Positive => "positive",
         ChangeFilter::Negative => "negative",
-    }
+        }
 }
 
 fn parse_change(value: &str) -> ChangeFilter {
