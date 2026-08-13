@@ -4,3 +4,7 @@
 public_url = "/"
 # Output directory
 dist = "dist"
+
+[watch]
+# Ignore Visual Studio and other IDE metadata folders that update constantly
+ignore = [".vs"]
