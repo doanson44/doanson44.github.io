@@ -11,6 +11,9 @@ When the user triggers this skill (e.g., by typing `build`), you MUST follow the
    - Run `git pull` in the repository to ensure the local branch is up-to-date.
 
 2. **Quality Check**:
+   - Run `cargo fmt --check` to catch any formatting issues.
+   - Run `cargo check --target wasm32-unknown-unknown` to ensure compilation.
+   - Run `cargo test` to ensure unit tests pass.
    - Run `cargo clippy --target wasm32-unknown-unknown -- -D warnings` to catch linting errors before building.
 
 3. **Run Build**:
@@ -18,12 +21,13 @@ When the user triggers this skill (e.g., by typing `build`), you MUST follow the
 
 4. **Check for Errors and Auto-Fix**:
    - Wait for the commands to complete.
-   - If both the `cargo clippy` and `trunk build` succeed, notify the user.
-   - If either fails with compilation or linting errors (e.g., Rust compiler errors, missing dependencies, clippy warnings):
+   - If both the quality checks and `trunk build` succeed, notify the user.
+   - If any fail with compilation, linting, or formatting errors (e.g., Rust compiler errors, missing dependencies, clippy warnings, formatting issues):
      - Analyze the error output carefully.
-     - Use your editing tools to fix the code automatically.
+     - For formatting errors, run `cargo fmt` to automatically fix them.
+     - For other errors, use your editing tools to fix the code automatically.
      - After applying fixes, loop back to Step 2 to re-run the checks and build.
-     - Continue this process until both commands succeed.
+     - Continue this process until all commands succeed.
 
 5. **Completion**:
    - Once the build completes successfully, report back to the user that the pull, check, build, and any necessary fixes were completed successfully.

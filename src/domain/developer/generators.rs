@@ -56,10 +56,8 @@ pub fn fake_data(input: &str) -> Result<String, String> {
         out.push('}');
     }
     out.push(']');
-    serde_json::to_string_pretty(
-        &serde_json::from_str::<Value>(&out).map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())
+    serde_json::to_string_pretty(&serde_json::from_str::<Value>(&out).map_err(|e| e.to_string())?)
+        .map_err(|e| e.to_string())
 }
 
 pub fn mock_json(source: &str, count: &str) -> Result<String, String> {
