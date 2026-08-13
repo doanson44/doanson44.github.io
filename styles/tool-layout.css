@@ -22,13 +22,13 @@
 }
 
 .tool-panel-first {
-    flex: 0 0 var(--tool-first-size, 50%);
-    max-width: var(--tool-first-size, 50%);
+    flex: 0 0 calc(var(--tool-first-size, 50%) - 1.5px);
+    max-width: calc(var(--tool-first-size, 50%) - 1.5px);
 }
 
 .tool-panel-second {
-    flex: 0 0 var(--tool-second-size, 50%);
-    max-width: var(--tool-second-size, 50%);
+    flex: 0 0 calc(var(--tool-second-size, 50%) - 1.5px);
+    max-width: calc(var(--tool-second-size, 50%) - 1.5px);
 }
 
 .tool-divider {
