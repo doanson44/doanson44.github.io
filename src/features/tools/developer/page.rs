@@ -15,9 +15,15 @@ pub fn DeveloperToolPage(tool: ToolId) -> impl IntoView {
     let run = move |_| state.run(tool);
     let on_copy = move |_| {
         let output = state.output.get_untracked();
-        if output.is_empty() { return; }
+        if output.is_empty() {
+            return;
+        }
         let copied = state.copied;
-        wasm_bindgen_futures::spawn_local(async move { if copy_to_clipboard(&output).await.is_ok() { copied.set(true); } });
+        wasm_bindgen_futures::spawn_local(async move {
+            if copy_to_clipboard(&output).await.is_ok() {
+                copied.set(true);
+            }
+        });
     };
 
     view! {
@@ -46,4 +52,10 @@ pub fn DeveloperToolPage(tool: ToolId) -> impl IntoView {
     }
 }
 
-fn line_count(content: &str) -> usize { if content.is_empty() { 0 } else { content.lines().count() } }
+fn line_count(content: &str) -> usize {
+    if content.is_empty() {
+        0
+    } else {
+        content.lines().count()
+    }
+}
