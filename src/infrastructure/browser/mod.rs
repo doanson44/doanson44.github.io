@@ -19,6 +19,24 @@ pub fn get_document() -> web_sys::Document {
         .expect("should have a document on window")
 }
 
+/// Read a value from local browser storage.
+pub fn storage_get(key: &str) -> Option<String> {
+    let storage = web_sys::window()?.local_storage().ok()??;
+    storage.get_item(key).ok().flatten()
+}
+
+/// Write a value to local browser storage.
+pub fn storage_set(key: &str, value: &str) -> Result<(), String> {
+    let storage = web_sys::window()
+        .ok_or_else(|| "Browser window is unavailable.".to_string())?
+        .local_storage()
+        .map_err(|_| "Browser storage is unavailable.".to_string())?
+        .ok_or_else(|| "Browser storage is unavailable.".to_string())?;
+    storage
+        .set_item(key, value)
+        .map_err(|_| "Failed to save tool input.".to_string())
+}
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_name = "__copy_svg_as_png", catch)]
@@ -36,7 +54,6 @@ extern "C" {
 pub async fn copy_to_clipboard(text: &str) -> Result<(), String> {
     let navigator = get_window().navigator();
     let clipboard = navigator.clipboard();
-
     let promise = clipboard.write_text(text);
     let _ = wasm_bindgen_futures::JsFuture::from(promise)
         .await
@@ -44,21 +61,20 @@ pub async fn copy_to_clipboard(text: &str) -> Result<(), String> {
             e.as_string()
                 .unwrap_or_else(|| "Clipboard write failed".into())
         })?;
-
     Ok(())
 }
 
 /// Copy the rendered preview as rich HTML with a plain-text fallback.
 pub async fn copy_preview_as_html(element_id: &str) -> Result<(), String> {
     match copy_preview_as_html_js(element_id).await {
-        Ok(res) => {
-            let json = res.as_string().unwrap_or_default();
-            if json.contains("\"ok\":true") {
-                Ok(())
-            } else {
-                Err("Failed to copy preview as rich HTML".to_string())
-            }
+        Ok(res)
+            if res
+                .as_string()
+                .is_some_and(|json| json.contains("\"ok\":true")) =>
+        {
+            Ok(())
         }
+        Ok(_) => Err("Failed to copy preview as rich HTML".to_string()),
         Err(e) => Err(e
             .as_string()
             .unwrap_or_else(|| "Failed to copy preview".into())),
@@ -68,14 +84,14 @@ pub async fn copy_preview_as_html(element_id: &str) -> Result<(), String> {
 /// Copy an SVG element as a PNG image to the clipboard using the global JS interop function.
 pub async fn copy_svg_as_png(svg_id: &str) -> Result<(), String> {
     match copy_svg_as_png_js(svg_id).await {
-        Ok(res) => {
-            let json = res.as_string().unwrap_or_default();
-            if json.contains("\"ok\":true") {
-                Ok(())
-            } else {
-                Err("JS function returned an error".to_string())
-            }
+        Ok(res)
+            if res
+                .as_string()
+                .is_some_and(|json| json.contains("\"ok\":true")) =>
+        {
+            Ok(())
         }
+        Ok(_) => Err("JS function returned an error".to_string()),
         Err(e) => Err(e
             .as_string()
             .unwrap_or_else(|| "Failed to copy image".into())),

@@ -1,7 +1,8 @@
 use leptos::prelude::*;
 
-use crate::application::services::developer_tools::DeveloperToolsService;
-use crate::domain::developer_tools::{sample, ToolKind};
+use crate::application::services::developer::DeveloperToolsService;
+use crate::domain::developer::ToolId;
+use crate::infrastructure::browser::{storage_get, storage_set};
 
 #[derive(Clone, Copy)]
 pub struct DeveloperToolsState {
@@ -13,37 +14,38 @@ pub struct DeveloperToolsState {
 }
 
 impl DeveloperToolsState {
-    pub fn new(kind: ToolKind) -> Self {
-        let (source, secondary) = sample(kind);
-        let storage_key = format!("developer-tool-{}", kind.route());
-        let saved = web_sys::window()
-            .and_then(|w| w.local_storage().ok().flatten())
-            .and_then(|s| s.get_item(&storage_key).ok().flatten());
+    pub fn new(tool: ToolId) -> Self {
+        let (source, secondary) = tool.sample();
+        let source_key = format!("developer-tool-{}-source", tool.route());
+        let secondary_key = format!("developer-tool-{}-secondary", tool.route());
         Self {
-            source: RwSignal::new(saved.unwrap_or_else(|| source.to_string())),
-            secondary: RwSignal::new(secondary.to_string()),
+            source: RwSignal::new(storage_get(&source_key).unwrap_or_else(|| source.to_string())),
+            secondary: RwSignal::new(
+                storage_get(&secondary_key).unwrap_or_else(|| secondary.to_string()),
+            ),
             output: RwSignal::new(String::new()),
             error: RwSignal::new(None),
             copied: RwSignal::new(false),
         }
     }
 
-    pub fn set_source(&self, kind: ToolKind, value: String) {
-        if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
-            let _ = storage.set_item(&format!("developer-tool-{}", kind.route()), &value);
-        }
+    pub fn set_source(&self, tool: ToolId, value: String) {
+        let key = format!("developer-tool-{}-source", tool.route());
+        let _ = storage_set(&key, &value);
         self.source.set(value);
         self.copied.set(false);
     }
 
-    pub fn set_secondary(&self, value: String) {
+    pub fn set_secondary(&self, tool: ToolId, value: String) {
+        let key = format!("developer-tool-{}-secondary", tool.route());
+        let _ = storage_set(&key, &value);
         self.secondary.set(value);
         self.copied.set(false);
     }
 
-    pub fn run(&self, kind: ToolKind) {
+    pub fn run(&self, tool: ToolId) {
         self.copied.set(false);
-        match DeveloperToolsService::execute(kind, &self.source.get(), &self.secondary.get()) {
+        match DeveloperToolsService::execute(tool, &self.source.get(), &self.secondary.get()) {
             Ok(output) => {
                 self.output.set(output);
                 self.error.set(None);
@@ -55,17 +57,17 @@ impl DeveloperToolsState {
         }
     }
 
-    pub fn reset(&self, kind: ToolKind) {
-        let (source, secondary) = sample(kind);
-        self.set_source(kind, source.to_string());
-        self.secondary.set(secondary.to_string());
+    pub fn reset(&self, tool: ToolId) {
+        let (source, secondary) = tool.sample();
+        self.set_source(tool, source.to_string());
+        self.set_secondary(tool, secondary.to_string());
         self.output.set(String::new());
         self.error.set(None);
     }
 
-    pub fn clear(&self, kind: ToolKind) {
-        self.set_source(kind, String::new());
-        self.secondary.set(String::new());
+    pub fn clear(&self, tool: ToolId) {
+        self.set_source(tool, String::new());
+        self.set_secondary(tool, String::new());
         self.output.set(String::new());
         self.error.set(None);
     }
