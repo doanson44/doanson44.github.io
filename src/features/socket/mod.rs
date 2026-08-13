@@ -1,2 +1,2 @@
-/// Socket page — placeholder.
 pub mod page;
+pub mod state;
