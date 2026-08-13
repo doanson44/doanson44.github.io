@@ -41,7 +41,7 @@ pub static TOOLS: &[ToolDefinition] = &[
     definition!(Hash, "hash", "Hash Generator", "Generate common cryptographic hashes locally.", "Hello, developer tools!", "SHA-256", Some("Algorithm"), false, encoding::hash),
     definition!(Uuid, "uuid", "UUID Generator", "Generate UUID v4 values locally.", "", "", None, false, uuid),
     definition!(Timestamp, "timestamp", "Timestamp Converter", "Convert Unix timestamps and ISO dates.", "0", "", None, false, time::timestamp),
-    definition!(Color, "color", "Color Converter", "Convert HEX, RGB, and HSL color values.", "#0d6efd", "", None, false, |source, _| text::color(source)),
+    definition!(Color, "color", "Color Converter", "Convert HEX, RGB, and HSL color values.", "#0d6efd", "", None, false, color),
     definition!(Cron, "cron", "Cron Expression Studio", "Validate and explain five-field cron expressions.", "*/15 9-17 * * 1-5", "", None, false, time::cron),
     definition!(HttpStatus, "http-status", "HTTP Status Lookup", "Look up common HTTP status codes.", "404", "", None, false, network::http_status),
     definition!(Subnet, "subnet", "IP / Subnet Calculator", "Calculate IPv4 network and host ranges.", "192.168.1.0/24", "", None, false, network::subnet),
@@ -66,6 +66,7 @@ pub static TOOLS: &[ToolDefinition] = &[
 ];
 
 fn markup(source: &str, _: &str) -> Result<String, String> { formatting::format_markup(source) }
+fn color(source: &str, _: &str) -> Result<String, String> { text::color(source) }
 fn uuid(_: &str, _: &str) -> Result<String, String> { generators::uuid() }
 fn qr(source: &str, _: &str) -> Result<String, String> { generators::qr(source) }
 fn curl(source: &str, _: &str) -> Result<String, String> { network::curl(source) }
@@ -80,8 +81,8 @@ fn number_base(source: &str, secondary: &str) -> Result<String, String> { encodi
 fn html_entity(source: &str, secondary: &str) -> Result<String, String> { encoding::html_entity(source, secondary) }
 fn unicode_escape(source: &str, secondary: &str) -> Result<String, String> { encoding::unicode_escape(source, secondary) }
 
-pub fn get(id: ToolId) -> &'static ToolDefinition {
-    TOOLS.iter().find(|tool| tool.id == id).expect("developer tool registry is incomplete")
+pub fn get(id: ToolId) -> Option<&'static ToolDefinition> {
+    TOOLS.iter().find(|tool| tool.id == id)
 }
 
 pub fn find_by_route(route: &str) -> Option<ToolId> {
