@@ -39,29 +39,63 @@ pub fn ToolsPage() -> impl IntoView {
 }
 
 #[component]
-fn SearchResults(query: String, developer_tools: Vec<ToolId>, finance_tools: Vec<FinanceTool>) -> impl IntoView {
+fn SearchResults(
+    query: String,
+    developer_tools: Vec<ToolId>,
+    finance_tools: Vec<FinanceTool>,
+) -> impl IntoView {
     let query = query.trim().to_lowercase();
     let mut results: Vec<AnyView> = Vec::new();
     let general = [
-        ("#/tools/markdown", "Markdown Studio", "Live Markdown editor with Mermaid diagram support."),
-        ("#/tools/json", "JSON Formatter", "Validate, format, and minify JSON in your browser."),
-        ("#/tools/jwt", "JWT Decoder", "Decode JWT header, payload, and signature locally."),
-        ("#/tools/base64", "Base64 Encoder / Decoder", "Encode and decode UTF-8 text as standard Base64 locally."),
-        ("#/tools/time", "Time & Utilities", "World clock, countdown, stopwatch, ruler, and timestamp utilities."),
-        ("#/tools/finance", "Finance Toolkit", "Financial calculators for personal, investment, business, and valuation workflows."),
+        (
+            "#/tools/markdown",
+            "Markdown Studio",
+            "Live Markdown editor with Mermaid diagram support.",
+        ),
+        (
+            "#/tools/json",
+            "JSON Formatter",
+            "Validate, format, and minify JSON in your browser.",
+        ),
+        (
+            "#/tools/jwt",
+            "JWT Decoder",
+            "Decode JWT header, payload, and signature locally.",
+        ),
+        (
+            "#/tools/base64",
+            "Base64 Encoder / Decoder",
+            "Encode and decode UTF-8 text as standard Base64 locally.",
+        ),
+        (
+            "#/tools/time",
+            "Time & Utilities",
+            "World clock, countdown, stopwatch, ruler, and timestamp utilities.",
+        ),
+        (
+            "#/tools/finance",
+            "Finance Toolkit",
+            "Financial calculators for personal, investment, business, and valuation workflows.",
+        ),
     ];
     for (href, title, description) in general {
         if title.to_lowercase().contains(&query) || description.to_lowercase().contains(&query) {
-            results.push(view! { <ToolCard href=href title=title description=description/> }.into_any());
+            results.push(
+                view! { <ToolCard href=href title=title description=description/> }.into_any(),
+            );
         }
     }
     for tool in developer_tools {
-        if tool.title().to_lowercase().contains(&query) || tool.description().to_lowercase().contains(&query) {
+        if tool.title().to_lowercase().contains(&query)
+            || tool.description().to_lowercase().contains(&query)
+        {
             results.push(view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description()/> }.into_any());
         }
     }
     for tool in finance_tools {
-        if tool.title().to_lowercase().contains(&query) || tool.category().to_lowercase().contains(&query) {
+        if tool.title().to_lowercase().contains(&query)
+            || tool.category().to_lowercase().contains(&query)
+        {
             results.push(view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category())/> }.into_any());
         }
     }
@@ -86,22 +120,57 @@ fn ToolSection(title: &'static str, icon: &'static str, children: Children) -> i
 }
 
 #[component]
-fn ToolCard(#[prop(into)] href: String, #[prop(into)] title: String, #[prop(into)] description: String) -> impl IntoView {
+fn ToolCard(
+    #[prop(into)] href: String,
+    #[prop(into)] title: String,
+    #[prop(into)] description: String,
+) -> impl IntoView {
     view! { <div class="col-12 col-sm-6 col-lg-4"><a href=href class="card bg-body-tertiary border-secondary h-100 text-decoration-none text-body"><div class="card-body p-3"><h6 class="card-title mb-1"><i class="bi bi-wrench-adjustable text-primary me-2" aria-hidden="true"></i>{title}</h6><p class="card-text text-body-secondary small mb-0">{description}</p></div></a></div> }
 }
 
 fn finance_tools() -> Vec<FinanceTool> {
     vec![
-        FinanceTool::CompoundInterest, FinanceTool::Loan, FinanceTool::Mortgage, FinanceTool::InvestmentReturn,
-        FinanceTool::PresentFutureValue, FinanceTool::Roi, FinanceTool::Cagr, FinanceTool::BreakEven,
-        FinanceTool::Budget, FinanceTool::SavingsGoal, FinanceTool::EmergencyFund, FinanceTool::DebtPayoff,
-        FinanceTool::NetWorth, FinanceTool::Budget503020, FinanceTool::Dca, FinanceTool::StockReturn,
-        FinanceTool::Dividend, FinanceTool::PortfolioAllocation, FinanceTool::PositionSize, FinanceTool::RealReturn,
-        FinanceTool::ProfitMargin, FinanceTool::MarkupMargin, FinanceTool::Ebitda, FinanceTool::CashFlow,
-        FinanceTool::BurnRate, FinanceTool::Runway, FinanceTool::CacLtv, FinanceTool::Dcf, FinanceTool::Npv,
-        FinanceTool::Irr, FinanceTool::BondYtm, FinanceTool::FuturesPnl, FinanceTool::OptionsPnl,
-        FinanceTool::RiskReward, FinanceTool::LeverageLiquidation, FinanceTool::CurrencyConverter,
-        FinanceTool::Inflation, FinanceTool::PurchasingPower, FinanceTool::CurrencyChange, FinanceTool::Discount,
-        FinanceTool::TaxPrice, FinanceTool::PercentageChange,
+        FinanceTool::CompoundInterest,
+        FinanceTool::Loan,
+        FinanceTool::Mortgage,
+        FinanceTool::InvestmentReturn,
+        FinanceTool::PresentFutureValue,
+        FinanceTool::Roi,
+        FinanceTool::Cagr,
+        FinanceTool::BreakEven,
+        FinanceTool::Budget,
+        FinanceTool::SavingsGoal,
+        FinanceTool::EmergencyFund,
+        FinanceTool::DebtPayoff,
+        FinanceTool::NetWorth,
+        FinanceTool::Budget503020,
+        FinanceTool::Dca,
+        FinanceTool::StockReturn,
+        FinanceTool::Dividend,
+        FinanceTool::PortfolioAllocation,
+        FinanceTool::PositionSize,
+        FinanceTool::RealReturn,
+        FinanceTool::ProfitMargin,
+        FinanceTool::MarkupMargin,
+        FinanceTool::Ebitda,
+        FinanceTool::CashFlow,
+        FinanceTool::BurnRate,
+        FinanceTool::Runway,
+        FinanceTool::CacLtv,
+        FinanceTool::Dcf,
+        FinanceTool::Npv,
+        FinanceTool::Irr,
+        FinanceTool::BondYtm,
+        FinanceTool::FuturesPnl,
+        FinanceTool::OptionsPnl,
+        FinanceTool::RiskReward,
+        FinanceTool::LeverageLiquidation,
+        FinanceTool::CurrencyConverter,
+        FinanceTool::Inflation,
+        FinanceTool::PurchasingPower,
+        FinanceTool::CurrencyChange,
+        FinanceTool::Discount,
+        FinanceTool::TaxPrice,
+        FinanceTool::PercentageChange,
     ]
 }

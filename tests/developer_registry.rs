@@ -13,6 +13,8 @@ fn every_registered_tool_has_route_and_title() {
 fn registered_tool_routes_are_unique() {
     let tools = ToolId::all().collect::<Vec<_>>();
     for (index, tool) in tools.iter().enumerate() {
-        assert!(tools[..index].iter().all(|other| other.route() != tool.route()));
+        assert!(tools[..index]
+            .iter()
+            .all(|other| other.route() != tool.route()));
     }
 }
