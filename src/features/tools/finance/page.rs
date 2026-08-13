@@ -36,16 +36,18 @@ pub fn FinancePage(tool: FinanceTool) -> impl IntoView {
             })
             .collect::<Result<Vec<_>, _>>();
         match (parsed, cashflows) {
-            (Ok(values), Ok(cashflows)) => match FinanceService::calculate(tool, &values, &cashflows) {
-                Ok(value) => {
-                    result.set(Some(value));
-                    error.set(None);
+            (Ok(values), Ok(cashflows)) => {
+                match FinanceService::calculate(tool, &values, &cashflows) {
+                    Ok(value) => {
+                        result.set(Some(value));
+                        error.set(None);
+                    }
+                    Err(message) => {
+                        result.set(None);
+                        error.set(Some(message));
+                    }
                 }
-                Err(message) => {
-                    result.set(None);
-                    error.set(Some(message));
-                }
-            },
+            }
             (Err(message), _) | (_, Err(message)) => {
                 result.set(None);
                 error.set(Some(message));
