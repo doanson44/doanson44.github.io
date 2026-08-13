@@ -38,7 +38,12 @@ jobs:
         run: cargo fmt --check
 
       - name: Check compilation
-        run: cargo check --target wasm32-unknown-unknown
+        run: |
+          set -o pipefail
+          cargo check --target wasm32-unknown-unknown 2>&1 | tee /tmp/cargo-check.log
+          status=${PIPESTATUS[0]}
+          while IFS= read -r line; do echo "::error::$line"; done < /tmp/cargo-check.log
+          exit "$status"
 
       - name: Run tests
         run: cargo test
