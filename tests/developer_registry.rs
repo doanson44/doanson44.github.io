@@ -39,3 +39,11 @@ fn subnet_tool_adapter_accepts_secondary_input() {
         .expect("subnet adapter should execute");
     assert!(result.contains("Network: 192.168.1.0"));
 }
+
+#[test]
+fn timestamp_tool_adapter_accepts_secondary_input() {
+    let result = ToolId::Timestamp
+        .execute("0", "")
+        .expect("timestamp adapter should execute");
+    assert!(result.contains("1970-01-01"));
+}
