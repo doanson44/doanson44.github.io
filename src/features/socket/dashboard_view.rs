@@ -219,10 +219,20 @@ pub fn SocketPage() -> impl IntoView {
                         <button
                             class="btn btn-outline-secondary btn-sm"
                             type="button"
-                            disabled=move || state.page.get() <= 1
+                            title="First page"
+                            disabled={move || state.page.get() <= 1}
+                            on:click=move |_| state.page.set(1)
+                        >
+                            <i class="bi bi-chevron-double-left"></i>
+                        </button>
+                        <button
+                            class="btn btn-outline-secondary btn-sm"
+                            type="button"
+                            title="Previous page"
+                            disabled={move || state.page.get() <= 1}
                             on:click=move |_| state.page.update(|p| *p = p.saturating_sub(1).max(1))
                         >
-                            "Previous"
+                            <i class="bi bi-chevron-left"></i>
                         </button>
                         <span class="small text-body-secondary" aria-live="polite">
                             {move || format!(
@@ -234,13 +244,23 @@ pub fn SocketPage() -> impl IntoView {
                         <button
                             class="btn btn-outline-secondary btn-sm"
                             type="button"
-                            disabled=move || state.page.get() >= state.page_count.get()
+                            title="Next page"
+                            disabled={move || state.page.get() >= state.page_count.get()}
                             on:click=move |_| {
                                 let max = state.page_count.get_untracked();
                                 state.page.update(|p| *p = (*p + 1).min(max));
                             }
                         >
-                            "Next"
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <button
+                            class="btn btn-outline-secondary btn-sm"
+                            type="button"
+                            title="Last page"
+                            disabled={move || state.page.get() >= state.page_count.get()}
+                            on:click=move |_| state.page.set(state.page_count.get_untracked())
+                        >
+                            <i class="bi bi-chevron-double-right"></i>
                         </button>
                     </div>
                 </footer>
