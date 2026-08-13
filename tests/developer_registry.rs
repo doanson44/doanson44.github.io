@@ -47,3 +47,8 @@ fn timestamp_tool_adapter_accepts_secondary_input() {
         .expect("timestamp adapter should execute");
     assert!(result.contains("1970-01-01"));
 }
+
+#[test]
+fn openapi_tool_route_resolves() {
+    assert_eq!(ToolId::from_route("openapi"), Some(ToolId::OpenApi));
+}
