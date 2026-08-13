@@ -38,12 +38,7 @@ jobs:
         run: cargo fmt --check
 
       - name: Check compilation
-        run: |
-          set +e
-          cargo check --target wasm32-unknown-unknown > /tmp/cargo-check.log 2>&1
-          status=$?
-          tail -n 50 /tmp/cargo-check.log | while IFS= read -r line; do echo "::error::$line"; done
-          exit "$status"
+        run: cargo check --target wasm32-unknown-unknown
 
       - name: Run tests
         run: cargo test
