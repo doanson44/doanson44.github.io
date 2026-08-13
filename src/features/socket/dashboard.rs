@@ -66,12 +66,12 @@ pub fn SocketPage() -> impl IntoView {
                 <div class="card border-secondary flex-grow-1 overflow-hidden">
                     <div class="table-responsive h-100">
                         <table class="table table-hover table-sm align-middle mb-0">
-                            <thead class="table-light">
+                            <thead>
                                 <tr>
-                                    <th scope="col"><SortButton label="Contract" column=SortColumn::Symbol state=state set_sort=set_sort /></th>
-                                    <th scope="col" class="text-end"><SortButton label="Last Price" column=SortColumn::LastPrice state=state set_sort=set_sort /></th>
-                                    <th scope="col" class="text-end"><SortButton label="24h Change" column=SortColumn::Change24h state=state set_sort=set_sort /></th>
-                                    <th scope="col" class="text-end"><SortButton label="24h Volume" column=SortColumn::Volume24h state=state set_sort=set_sort /></th>
+                                    <th scope="col"><SortButton label="Contract" column=SortColumn::Symbol state=state set_sort=set_sort.clone() /></th>
+                                    <th scope="col" class="text-end"><SortButton label="Last Price" column=SortColumn::LastPrice state=state set_sort=set_sort.clone() /></th>
+                                    <th scope="col" class="text-end"><SortButton label="24h Change" column=SortColumn::Change24h state=state set_sort=set_sort.clone() /></th>
+                                    <th scope="col" class="text-end"><SortButton label="24h Volume" column=SortColumn::Volume24h state=state set_sort=set_sort.clone() /></th>
                                     <th scope="col" class="text-end"><SortButton label="Fair Price" column=SortColumn::FairPrice state=state set_sort=set_sort /></th>
                                 </tr>
                             </thead>
@@ -114,7 +114,7 @@ fn SortButton(
     set_sort: impl Fn(SortColumn) + Clone + 'static,
 ) -> impl IntoView {
     view! {
-        <button class="btn btn-link btn-sm text-body text-decoration-none p-0" type="button" on:click=move |_| set_sort(column.clone())>
+        <button class="btn btn-link btn-sm text-body text-decoration-none p-0" type="button" on:click=move |_| set_sort(column)>
             {label} " " {move || sort_indicator(state.sort_column.get(), state.sort_descending.get(), column)}
         </button>
     }
