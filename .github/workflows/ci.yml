@@ -40,9 +40,9 @@ jobs:
       - name: Check compilation
         run: |
           set +e
-          cargo check --target wasm32-unknown-unknown 2>&1 | tee /tmp/cargo-check.log
-          status=${PIPESTATUS[0]}
-          while IFS= read -r line; do echo "::error::$line"; done < /tmp/cargo-check.log
+          cargo check --target wasm32-unknown-unknown > /tmp/cargo-check.log 2>&1
+          status=$?
+          grep -E "error(\[[A-Z0-9]+\])?:|^ *--> |^ *[0-9]+ \|" /tmp/cargo-check.log | head -n 60 | while IFS= read -r line; do echo "::error::$line"; done
           exit "$status"
 
       - name: Run tests
