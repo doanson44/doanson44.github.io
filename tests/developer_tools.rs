@@ -17,7 +17,9 @@ fn toml_formatter_normalizes_valid_document() {
 #[test]
 fn openapi_viewer_accepts_yaml() {
     let source = "openapi: 3.0.3\ninfo:\n  title: Example\n  version: 1.0.0\npaths:\n  /users:\n    get:\n      summary: List users\n      responses:\n        '200':\n          description: OK\n";
-    let result = ToolId::OpenApi.execute(source, "").expect("valid OpenAPI YAML should parse");
+    let result = ToolId::OpenApi
+        .execute(source, "")
+        .expect("valid OpenAPI YAML should parse");
     assert!(result.contains("GET /users List users"));
 }
 
