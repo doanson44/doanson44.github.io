@@ -23,3 +23,11 @@ fn registered_tool_routes_are_unique() {
 fn registered_tool_routes_resolve_to_the_same_tool() {
     assert_eq!(ToolId::from_route("regex"), Some(ToolId::Regex));
 }
+
+#[test]
+fn network_tool_adapters_accept_secondary_input() {
+    let result = ToolId::HttpStatus
+        .execute("404", "")
+        .expect("HTTP status adapter should execute");
+    assert!(result.contains("404 Not Found"));
+}
