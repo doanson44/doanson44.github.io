@@ -43,7 +43,7 @@ pub fn cron(input: &str) -> Result<String, String> {
     }
     let minute = fields[0];
     let description = if minute == "*" {
-        "Every minute"
+        "Every minute".to_string()
     } else if let Some(step) = minute.strip_prefix("*/") {
         format!("Every {step} minutes")
     } else {

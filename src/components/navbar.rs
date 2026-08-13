@@ -4,7 +4,6 @@ use crate::infrastructure::browser::toggle_theme_js;
 
 #[component]
 pub fn Navbar() -> impl IntoView {
-    let on_toggle_theme = move |_| toggle_theme_js();
     view! {
         <nav class="navbar navbar-expand-md border-bottom border-secondary" id="main-navbar">
             <div class="container-fluid">
@@ -19,7 +18,7 @@ pub fn Navbar() -> impl IntoView {
                         <li class="nav-item"><a class="nav-link" href="#/socket"><i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>"Socket"</a></li>
                     </ul>
                     <div class="d-flex align-items-center gap-3">
-                        <button type="button" class="btn btn-outline-secondary btn-sm theme-toggle-btn" title="Toggle dark/light mode" aria-label="Toggle dark/light mode" on:click=on_toggle_theme><i class="bi bi-sun-fill theme-icon-light" aria-hidden="true"></i><i class="bi bi-moon-fill theme-icon-dark" aria-hidden="true"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm theme-toggle-btn" title="Toggle dark/light mode" aria-label="Toggle dark/light mode" on:click=move |_| { toggle_theme_js(); }><i class="bi bi-sun-fill theme-icon-light" aria-hidden="true"></i><i class="bi bi-moon-fill theme-icon-dark" aria-hidden="true"></i></button>
                         <span class="badge bg-primary bg-opacity-25 text-primary-emphasis border border-primary-subtle"><i class="bi bi-cpu me-1" aria-hidden="true"></i>"WASM"</span>
                         <a href="https://github.com/doanson44/doanson44.github.io" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" title="View on GitHub"><i class="bi bi-github" aria-hidden="true"></i><span class="d-none d-md-inline">"GitHub"</span></a>
                     </div>

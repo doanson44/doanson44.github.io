@@ -6,10 +6,6 @@ use crate::domain::finance::FinanceTool;
 #[component]
 pub fn ToolsPage() -> impl IntoView {
     let search = RwSignal::new(String::new());
-    let developer_tools = ToolId::all().collect::<Vec<_>>();
-    let finance_tools = finance_tools();
-    let search_developer_tools = developer_tools.clone();
-    let search_finance_tools = finance_tools.clone();
     view! {
         <div class="d-flex flex-column flex-grow-1 overflow-auto">
             <div class="container py-4">
@@ -17,7 +13,7 @@ pub fn ToolsPage() -> impl IntoView {
                     <div class="col"><h2 class="mb-0"><i class="bi bi-tools me-2 text-primary" aria-hidden="true"></i>"Tools"</h2></div>
                     <div class="col-12 col-md-5 col-lg-4"><div class="input-group"><span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span><input type="search" class="form-control" placeholder="Search tools..." aria-label="Search tools" prop:value=search on:input=move |ev| search.set(event_target_value(&ev)) /></div></div>
                 </div>
-                <Show when=move || search.get().trim().is_empty() fallback=move || view! { <SearchResults query=search.get() developer_tools=search_developer_tools.clone() finance_tools=search_finance_tools.clone() /> }>
+                <Show when=move || search.get().trim().is_empty() fallback=move || view! { <SearchResults query=search.get() developer_tools=ToolId::all().collect() finance_tools=finance_tools() /> }>
                     <ToolSection title="General Tools" icon="bi-grid-3x3-gap">
                         <ToolCard href="#/tools/markdown" title="Markdown Studio" description="Live Markdown editor with Mermaid diagram support." />
                         <ToolCard href="#/tools/json" title="JSON Formatter" description="Validate, format, and minify JSON in your browser." />
@@ -27,10 +23,10 @@ pub fn ToolsPage() -> impl IntoView {
                         <ToolCard href="#/tools/finance" title="Finance Toolkit" description="Financial calculators for personal, investment, business, and valuation workflows." />
                     </ToolSection>
                     <ToolSection title="Developer Tools" icon="bi-code-slash">
-                        {developer_tools.iter().copied().map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description() /> }).collect_view()}
+                        {ToolId::all().map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description() /> }).collect_view()}
                     </ToolSection>
                     <ToolSection title="Finance Tools" icon="bi-cash-stack">
-                        {finance_tools.iter().copied().map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category()) /> }).collect_view()}
+                        {finance_tools().into_iter().map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category()) /> }).collect_view()}
                     </ToolSection>
                 </Show>
             </div>
@@ -111,9 +107,10 @@ fn SearchResults(
 #[component]
 fn ToolSection(title: &'static str, icon: &'static str, children: Children) -> impl IntoView {
     let section_id = format!("section-{}", title.to_lowercase().replace(' ', "-"));
+    let section_id2 = section_id.clone();
     view! {
-        <section class="mb-5" aria-labelledby=section_id.clone()>
-            <div class="d-flex align-items-center gap-2 mb-3"><i class=format!("bi {} text-primary", icon) aria-hidden="true"></i><h3 class="h5 mb-0" id=section_id>{title}</h3></div>
+        <section class="mb-5" aria-labelledby=section_id>
+            <div class="d-flex align-items-center gap-2 mb-3"><i class=format!("bi {} text-primary", icon) aria-hidden="true"></i><h3 class="h5 mb-0" id=section_id2>{title}</h3></div>
             <div class="row g-3">{children()}</div>
         </section>
     }
