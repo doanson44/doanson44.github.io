@@ -83,8 +83,12 @@ impl SocketState {
                     };
                     let matches_change = match change {
                         ChangeFilter::All => true,
-                        ChangeFilter::Positive => ticker.change_24h.is_some_and(|value| value > 0.0),
-                        ChangeFilter::Negative => ticker.change_24h.is_some_and(|value| value < 0.0),
+                        ChangeFilter::Positive => {
+                            ticker.change_24h.is_some_and(|value| value > 0.0)
+                        }
+                        ChangeFilter::Negative => {
+                            ticker.change_24h.is_some_and(|value| value < 0.0)
+                        }
                     };
                     matches_search && matches_quote && matches_change
                 })
@@ -93,10 +97,18 @@ impl SocketState {
             rows.sort_unstable_by(|left, right| {
                 let ordering = match column {
                     SortColumn::Symbol => left.symbol.cmp(&right.symbol),
-                    SortColumn::LastPrice => compare_optional(left.last_price, right.last_price),
-                    SortColumn::Change24h => compare_optional(left.change_24h, right.change_24h),
-                    SortColumn::Volume24h => compare_optional(left.volume_24h, right.volume_24h),
-                    SortColumn::FairPrice => compare_optional(left.fair_price, right.fair_price),
+                    SortColumn::LastPrice => {
+                        compare_optional(left.last_price, right.last_price)
+                    }
+                    SortColumn::Change24h => {
+                        compare_optional(left.change_24h, right.change_24h)
+                    }
+                    SortColumn::Volume24h => {
+                        compare_optional(left.volume_24h, right.volume_24h)
+                    }
+                    SortColumn::FairPrice => {
+                        compare_optional(left.fair_price, right.fair_price)
+                    }
                 };
 
                 if ordering == Ordering::Equal {
@@ -138,7 +150,9 @@ impl SocketState {
 
         match connect_tickers(on_batch, on_status) {
             Ok(handle) => register_cleanup(handle),
-            Err(error) => connection_status.set(MexcFuturesConnectionStatus::Error(error)),
+            Err(error) => {
+                connection_status.set(MexcFuturesConnectionStatus::Error(error));
+            }
         }
 
         Self {
