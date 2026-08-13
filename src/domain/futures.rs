@@ -86,6 +86,10 @@ impl FuturesTickerRegistry {
     pub fn len(&self) -> usize {
         self.tickers.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.tickers.is_empty()
+    }
 }
 
 #[cfg(test)]

@@ -30,10 +30,10 @@ extern "C" {
     fn set_onclose(this: &BrowserWebSocket, callback: Option<&js_sys::Function>);
 
     #[wasm_bindgen(method, js_name = send)]
-    fn send(this: &BrowserWebSocket, data: &str) -> Result<(), JsValue>;
+    fn send(this: &BrowserWebSocket, data: &str);
 
     #[wasm_bindgen(method, js_name = close)]
-    fn close(this: &BrowserWebSocket) -> Result<(), JsValue>;
+    fn close(this: &BrowserWebSocket);
 
     #[wasm_bindgen(method, getter, structural, js_name = readyState)]
     fn ready_state(this: &BrowserWebSocket) -> u16;
@@ -70,6 +70,7 @@ struct TickerPayload {
 }
 
 /// Handle for a live MEXC Futures public WebSocket connection.
+#[allow(dead_code)]
 pub struct MexcFuturesWsHandle {
     socket: BrowserWebSocket,
     ping_interval: Option<i32>,
@@ -79,6 +80,11 @@ pub struct MexcFuturesWsHandle {
     on_close: Closure<dyn FnMut(JsValue)>,
     ping_callback: Option<Closure<dyn FnMut()>>,
 }
+
+// In a single-threaded WASM environment, it is safe to send this handle across the (non-existent) threads.
+// Leptos 0.7's `on_cleanup` requires `Send + Sync`.
+unsafe impl Send for MexcFuturesWsHandle {}
+unsafe impl Sync for MexcFuturesWsHandle {}
 
 impl MexcFuturesWsHandle {
     /// Closes the stream and releases the keepalive interval.
@@ -92,7 +98,7 @@ impl MexcFuturesWsHandle {
         self.socket.set_onmessage(None);
         self.socket.set_onerror(None);
         self.socket.set_onclose(None);
-        let _ = self.socket.close();
+        self.socket.close();
         self.ping_callback = None;
     }
 }
@@ -116,17 +122,12 @@ pub fn connect_tickers(
     let socket = BrowserWebSocket::new(WS_ENDPOINT)
         .map_err(|error| format!("Failed to create MEXC WebSocket: {}", js_error(&error)))?;
 
-    let subscribe_socket = socket.clone();
+    let subscribe_socket = socket.clone().unchecked_into::<BrowserWebSocket>();
     let open_status = on_status.clone();
     let on_open = Closure::<dyn FnMut()>::new(move || {
         let message = r#"{"method":"sub.tickers","param":{},"gzip":false}"#;
-        match subscribe_socket.send(message) {
-            Ok(()) => open_status(MexcFuturesConnectionStatus::Connected),
-            Err(error) => open_status(MexcFuturesConnectionStatus::Error(format!(
-                "Failed to subscribe to MEXC tickers: {}",
-                js_error(&error)
-            ))),
-        }
+        subscribe_socket.send(message);
+        open_status(MexcFuturesConnectionStatus::Connected);
     });
     socket.set_onopen(Some(on_open.as_ref().unchecked_ref()));
 
@@ -207,10 +208,10 @@ pub fn connect_tickers(
     });
     socket.set_onclose(Some(on_close.as_ref().unchecked_ref()));
 
-    let ping_socket = socket.clone();
+    let ping_socket = socket.clone().unchecked_into::<BrowserWebSocket>();
     let ping_callback = Closure::<dyn FnMut()>::new(move || {
         if ping_socket.ready_state() == WS_OPEN {
-            let _ = ping_socket.send(r#"{"method":"ping"}"#);
+            ping_socket.send(r#"{"method":"ping"}"#);
         }
     });
 

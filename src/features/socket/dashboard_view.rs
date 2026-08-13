@@ -21,11 +21,9 @@ pub fn SocketPage() -> impl IntoView {
             .page
             .update(|page| *page = page.saturating_sub(1).max(1));
     };
-    let next_page = move |_| {
+    let _next_page = move |_: web_sys::MouseEvent| {
         let max_page = state.page_count.get_untracked();
-        state
-            .page
-            .update(|page| *page = (*page + 1).min(max_page));
+        state.page.update(|page| *page = (*page + 1).min(max_page));
     };
 
     view! {
@@ -142,7 +140,7 @@ pub fn SocketPage() -> impl IntoView {
                                             label="Contract"
                                             column=SortColumn::Symbol
                                             state=state
-                                            set_sort=set_sort.clone()
+                                            set_sort=set_sort
                                         />
                                     </th>
                                     <th scope="col" class="text-end">
@@ -150,7 +148,7 @@ pub fn SocketPage() -> impl IntoView {
                                             label="Last Price"
                                             column=SortColumn::LastPrice
                                             state=state
-                                            set_sort=set_sort.clone()
+                                            set_sort=set_sort
                                         />
                                     </th>
                                     <th scope="col" class="text-end">
@@ -158,7 +156,7 @@ pub fn SocketPage() -> impl IntoView {
                                             label="24h Change"
                                             column=SortColumn::Change24h
                                             state=state
-                                            set_sort=set_sort.clone()
+                                            set_sort=set_sort
                                         />
                                     </th>
                                     <th scope="col" class="text-end">
@@ -166,7 +164,7 @@ pub fn SocketPage() -> impl IntoView {
                                             label="24h Volume"
                                             column=SortColumn::Volume24h
                                             state=state
-                                            set_sort=set_sort.clone()
+                                            set_sort=set_sort
                                         />
                                     </th>
                                     <th scope="col" class="text-end">
@@ -212,7 +210,7 @@ pub fn SocketPage() -> impl IntoView {
                             class="btn btn-outline-secondary btn-sm"
                             type="button"
                             disabled=move || state.page.get() >= state.page_count.get()
-                            on:click=next_page
+                            on:click=_next_page
                         >
                             "Next"
                         </button>

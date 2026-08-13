@@ -34,7 +34,7 @@ pub enum ChangeFilter {
 }
 
 /// Reactive state for the MEXC Futures market table.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct SocketState {
     pub tickers: RwSignal<Vec<FuturesTicker>>,
     pub search: RwSignal<String>,
@@ -48,6 +48,12 @@ pub struct SocketState {
     pub filtered_sorted: Memo<Vec<FuturesTicker>>,
     pub visible_rows: Memo<Vec<FuturesTicker>>,
     pub page_count: Memo<usize>,
+}
+
+impl Default for SocketState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SocketState {
@@ -73,7 +79,7 @@ impl SocketState {
             let mut rows = tickers
                 .get()
                 .into_iter()
-                .filter(|ticker| {
+                .filter(|ticker: &crate::domain::futures::FuturesTicker| {
                     let matches_search = query.is_empty()
                         || ticker.symbol.to_ascii_lowercase().contains(query.as_str());
                     let matches_quote = match quote {
@@ -97,18 +103,10 @@ impl SocketState {
             rows.sort_unstable_by(|left, right| {
                 let ordering = match column {
                     SortColumn::Symbol => left.symbol.cmp(&right.symbol),
-                    SortColumn::LastPrice => {
-                        compare_optional(left.last_price, right.last_price)
-                    }
-                    SortColumn::Change24h => {
-                        compare_optional(left.change_24h, right.change_24h)
-                    }
-                    SortColumn::Volume24h => {
-                        compare_optional(left.volume_24h, right.volume_24h)
-                    }
-                    SortColumn::FairPrice => {
-                        compare_optional(left.fair_price, right.fair_price)
-                    }
+                    SortColumn::LastPrice => compare_optional(left.last_price, right.last_price),
+                    SortColumn::Change24h => compare_optional(left.change_24h, right.change_24h),
+                    SortColumn::Volume24h => compare_optional(left.volume_24h, right.volume_24h),
+                    SortColumn::FairPrice => compare_optional(left.fair_price, right.fair_price),
                 };
 
                 if ordering == Ordering::Equal {
