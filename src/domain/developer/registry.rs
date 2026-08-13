@@ -14,7 +14,17 @@ pub struct ToolDefinition {
 
 macro_rules! definition {
     ($id:ident, $route:literal, $title:literal, $description:literal, $source:literal, $secondary:literal, $label:expr, $svg:expr, $executor:path) => {
-        ToolDefinition { id: ToolId::$id, route: $route, title: $title, description: $description, sample_source: $source, sample_secondary: $secondary, secondary_label: $label, svg_output: $svg, execute: $executor }
+        ToolDefinition {
+            id: ToolId::$id,
+            route: $route,
+            title: $title,
+            description: $description,
+            sample_source: $source,
+            sample_secondary: $secondary,
+            secondary_label: $label,
+            svg_output: $svg,
+            execute: $executor,
+        }
     };
 }
 
@@ -55,24 +65,65 @@ pub static TOOLS: &[ToolDefinition] = &[
     definition!(UnicodeEscape, "unicode-escape", "Unicode Escape / Unescape", "Escape or unescape Unicode code points.", "Hello, 世界", "escape", Some("Mode"), false, unicode_escape),
 ];
 
-fn markup(source: &str, _: &str) -> Result<String, String> { formatting::format_markup(source) }
-fn color(source: &str, _: &str) -> Result<String, String> { text::color(source) }
-fn uuid(_: &str, _: &str) -> Result<String, String> { generators::uuid() }
-fn qr(source: &str, _: &str) -> Result<String, String> { generators::qr(source) }
-fn curl(source: &str, _: &str) -> Result<String, String> { network::curl(source) }
-fn headers(source: &str, _: &str) -> Result<String, String> { network::headers(source) }
-fn http_status(source: &str, _: &str) -> Result<String, String> { network::http_status(source) }
-fn subnet(source: &str, _: &str) -> Result<String, String> { network::subnet(source) }
-fn git(source: &str, _: &str) -> Result<String, String> { text::git(source) }
-fn gitignore(source: &str, _: &str) -> Result<String, String> { text::gitignore(source) }
-fn chmod(source: &str, _: &str) -> Result<String, String> { text::chmod(source) }
-fn mime(source: &str, _: &str) -> Result<String, String> { network::mime(source) }
-fn fake_data(source: &str, _: &str) -> Result<String, String> { generators::fake_data(source) }
-fn mock_json(source: &str, secondary: &str) -> Result<String, String> { generators::mock_json(source, secondary) }
-fn number_base(source: &str, secondary: &str) -> Result<String, String> { encoding::number_base(source, secondary) }
-fn html_entity(source: &str, secondary: &str) -> Result<String, String> { encoding::html_entity(source, secondary) }
-fn unicode_escape(source: &str, secondary: &str) -> Result<String, String> { encoding::unicode_escape(source, secondary) }
+fn markup(source: &str, _: &str) -> Result<String, String> {
+    formatting::format_markup(source)
+}
+fn color(source: &str, _: &str) -> Result<String, String> {
+    text::color(source)
+}
+fn uuid(_: &str, _: &str) -> Result<String, String> {
+    generators::uuid()
+}
+fn qr(source: &str, _: &str) -> Result<String, String> {
+    generators::qr(source)
+}
+fn curl(source: &str, _: &str) -> Result<String, String> {
+    network::curl(source)
+}
+fn headers(source: &str, _: &str) -> Result<String, String> {
+    network::headers(source)
+}
+fn http_status(source: &str, _: &str) -> Result<String, String> {
+    network::http_status(source)
+}
+fn subnet(source: &str, _: &str) -> Result<String, String> {
+    network::subnet(source)
+}
+fn git(source: &str, _: &str) -> Result<String, String> {
+    text::git(source)
+}
+fn gitignore(source: &str, _: &str) -> Result<String, String> {
+    text::gitignore(source)
+}
+fn chmod(source: &str, _: &str) -> Result<String, String> {
+    text::chmod(source)
+}
+fn mime(source: &str, _: &str) -> Result<String, String> {
+    network::mime(source)
+}
+fn fake_data(source: &str, _: &str) -> Result<String, String> {
+    generators::fake_data(source)
+}
+fn mock_json(source: &str, secondary: &str) -> Result<String, String> {
+    generators::mock_json(source, secondary)
+}
+fn number_base(source: &str, secondary: &str) -> Result<String, String> {
+    encoding::number_base(source, secondary)
+}
+fn html_entity(source: &str, secondary: &str) -> Result<String, String> {
+    encoding::html_entity(source, secondary)
+}
+fn unicode_escape(source: &str, secondary: &str) -> Result<String, String> {
+    encoding::unicode_escape(source, secondary)
+}
 
-pub fn get(id: ToolId) -> Option<&'static ToolDefinition> { TOOLS.iter().find(|tool| tool.id == id) }
+pub fn get(id: ToolId) -> Option<&'static ToolDefinition> {
+    TOOLS.iter().find(|tool| tool.id == id)
+}
 
-pub fn find_by_route(route: &str) -> Option<ToolId> { TOOLS.iter().find(|tool| tool.route == route).map(|tool| tool.id) }
+pub fn find_by_route(route: &str) -> Option<ToolId> {
+    TOOLS
+        .iter()
+        .find(|tool| tool.route == route)
+        .map(|tool| tool.id)
+}
