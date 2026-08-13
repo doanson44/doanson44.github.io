@@ -24,6 +24,12 @@ fn openapi_viewer_accepts_yaml() {
 }
 
 #[test]
+fn openapi_viewer_rejects_missing_version() {
+    let result = ToolId::OpenApi.execute("info:\n  title: Example\n", "");
+    assert!(result.is_err());
+}
+
+#[test]
 fn sql_entity_parser_keeps_commas_inside_type_arguments() {
     let source = "CREATE TABLE payments (id BIGINT, amount DECIMAL(10,2), name VARCHAR(255));";
     let result = ToolId::SqlToEntity
