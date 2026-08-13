@@ -6,8 +6,17 @@ use crate::features::socket::state::{ChangeFilter, QuoteFilter, SocketState, Sor
 pub fn SocketPage() -> impl IntoView {
     let state = SocketState::new();
     let set_sort = move |column: SortColumn| {
-        if state.sort_column.get_untracked() == column {
-            state.sort_descending.update(|value| *value = !*value);
+        let current_col = state.sort_column.get_untracked();
+        let current_desc = state.sort_descending.get_untracked();
+
+        if current_col == column {
+            if !current_desc {
+                state.sort_descending.set(true);
+            } else {
+                // Reset to default sort
+                state.sort_column.set(SortColumn::Symbol);
+                state.sort_descending.set(false);
+            }
         } else {
             state.sort_column.set(column);
             state.sort_descending.set(false);
@@ -16,15 +25,6 @@ pub fn SocketPage() -> impl IntoView {
     };
 
     let reset_page = move || state.page.set(1);
-    let previous_page = move |_| {
-        state
-            .page
-            .update(|page| *page = page.saturating_sub(1).max(1));
-    };
-    let _next_page = move |_: web_sys::MouseEvent| {
-        let max_page = state.page_count.get_untracked();
-        state.page.update(|page| *page = (*page + 1).min(max_page));
-    };
 
     view! {
         <div class="d-flex flex-column flex-grow-1 overflow-hidden">
@@ -135,42 +135,42 @@ pub fn SocketPage() -> impl IntoView {
                         <table class="table table-hover table-sm align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th scope="col">
+                                    <th scope="col" style="width: 20%">
                                         <SortButton
-                                            label="Contract"
                                             column=SortColumn::Symbol
+                                            label="Symbol"
                                             state=state
                                             set_sort=set_sort
                                         />
                                     </th>
-                                    <th scope="col" class="text-end">
+                                    <th scope="col" class="text-end" style="width: 20%">
                                         <SortButton
-                                            label="Last Price"
                                             column=SortColumn::LastPrice
+                                            label="Last Price"
                                             state=state
                                             set_sort=set_sort
                                         />
                                     </th>
-                                    <th scope="col" class="text-end">
+                                    <th scope="col" class="text-end" style="width: 20%">
                                         <SortButton
-                                            label="24h Change"
                                             column=SortColumn::Change24h
+                                            label="24h Change"
                                             state=state
                                             set_sort=set_sort
                                         />
                                     </th>
-                                    <th scope="col" class="text-end">
+                                    <th scope="col" class="text-end d-none d-md-table-cell" style="width: 20%">
                                         <SortButton
-                                            label="24h Volume"
                                             column=SortColumn::Volume24h
+                                            label="24h Vol"
                                             state=state
                                             set_sort=set_sort
                                         />
                                     </th>
-                                    <th scope="col" class="text-end">
+                                    <th scope="col" class="text-end d-none d-lg-table-cell" style="width: 20%">
                                         <SortButton
-                                            label="Fair Price"
                                             column=SortColumn::FairPrice
+                                            label="Fair Price"
                                             state=state
                                             set_sort=set_sort
                                         />
@@ -178,9 +178,23 @@ pub fn SocketPage() -> impl IntoView {
                                 </tr>
                             </thead>
                             <tbody>
-                                {move || {
-                                    state.visible_rows.get().into_iter().map(row_view).collect_view()
-                                }}
+                                <For
+                                    each=move || {
+                                        state
+                                            .visible_rows
+                                            .with(|rows| rows.iter().map(|t| t.symbol.clone()).collect::<Vec<_>>())
+                                    }
+                                    key=|symbol| symbol.clone()
+                                    children=move |symbol| {
+                                        let sym = symbol.clone();
+                                        let ticker_memo = Memo::new(move |_| {
+                                            state.tickers.with(|all| {
+                                                all.iter().find(|t| t.symbol == sym).cloned()
+                                            })
+                                        });
+                                        row_view(ticker_memo)
+                                    }
+                                />
                             </tbody>
                         </table>
                     </div>
@@ -195,7 +209,7 @@ pub fn SocketPage() -> impl IntoView {
                             class="btn btn-outline-secondary btn-sm"
                             type="button"
                             disabled=move || state.page.get() <= 1
-                            on:click=previous_page
+                            on:click=move |_| state.page.update(|p| *p = p.saturating_sub(1).max(1))
                         >
                             "Previous"
                         </button>
@@ -210,7 +224,10 @@ pub fn SocketPage() -> impl IntoView {
                             class="btn btn-outline-secondary btn-sm"
                             type="button"
                             disabled=move || state.page.get() >= state.page_count.get()
-                            on:click=_next_page
+                            on:click=move |_| {
+                                let max = state.page_count.get_untracked();
+                                state.page.update(|p| *p = (*p + 1).min(max));
+                            }
                         >
                             "Next"
                         </button>
@@ -240,8 +257,8 @@ fn SortButton(
     }
 }
 
-fn row_view(ticker: crate::domain::futures::FuturesTicker) -> impl IntoView {
-    let change_class = match ticker.change_24h {
+fn row_view(ticker_memo: Memo<Option<crate::domain::futures::FuturesTicker>>) -> impl IntoView {
+    let change_class = move || match ticker_memo.get().and_then(|t| t.change_24h) {
         Some(value) if value > 0.0 => "text-success",
         Some(value) if value < 0.0 => "text-danger",
         _ => "text-body",
@@ -249,13 +266,21 @@ fn row_view(ticker: crate::domain::futures::FuturesTicker) -> impl IntoView {
 
     view! {
         <tr>
-            <th scope="row" class="font-monospace fw-normal">{ticker.symbol}</th>
-            <td class="text-end font-monospace">{format_number(ticker.last_price)}</td>
-            <td class=format!("text-end font-monospace {change_class}")>
-                {format_percent(ticker.change_24h)}
+            <th scope="row" class="font-monospace fw-normal">
+                {move || ticker_memo.get().map(|t| t.symbol).unwrap_or_default()}
+            </th>
+            <td class="text-end font-monospace">
+                {move || format_number(ticker_memo.get().and_then(|t| t.last_price))}
             </td>
-            <td class="text-end font-monospace">{format_number(ticker.volume_24h)}</td>
-            <td class="text-end font-monospace">{format_number(ticker.fair_price)}</td>
+            <td class=move || format!("text-end font-monospace {}", change_class())>
+                {move || format_percent(ticker_memo.get().and_then(|t| t.change_24h))}
+            </td>
+            <td class="text-end font-monospace">
+                {move || format_number(ticker_memo.get().and_then(|t| t.volume_24h))}
+            </td>
+            <td class="text-end font-monospace">
+                {move || format_number(ticker_memo.get().and_then(|t| t.fair_price))}
+            </td>
         </tr>
     }
 }

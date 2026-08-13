@@ -45,6 +45,10 @@ features = [
     "Storage",
     "PointerEvent",
     "DomRect",
+    "WebSocket",
+    "MessageEvent",
+    "ErrorEvent",
+    "CloseEvent",
 ]
 
 [profile.release]
