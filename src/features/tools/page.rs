@@ -20,7 +20,6 @@ pub fn ToolsPage() -> impl IntoView {
                         <ToolCard href="#/tools/jwt" title="JWT Decoder" description="Decode JWT header, payload, and signature locally." />
                         <ToolCard href="#/tools/base64" title="Base64 Encoder / Decoder" description="Encode and decode UTF-8 text as standard Base64 locally." />
                         <ToolCard href="#/tools/time" title="Time & Utilities" description="World clock, countdown, stopwatch, ruler, and timestamp utilities." />
-                        <ToolCard href="#/tools/finance" title="Finance Toolkit" description="Financial calculators for personal, investment, business, and valuation workflows." />
                     </ToolSection>
                     <ToolSection title="Developer Tools" icon="bi-code-slash">
                         {ToolId::all().map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description() /> }).collect_view()}
@@ -67,11 +66,6 @@ fn SearchResults(
             "#/tools/time",
             "Time & Utilities",
             "World clock, countdown, stopwatch, ruler, and timestamp utilities.",
-        ),
-        (
-            "#/tools/finance",
-            "Finance Toolkit",
-            "Financial calculators for personal, investment, business, and valuation workflows.",
         ),
     ];
     for (href, title, description) in general {
