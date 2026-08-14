@@ -191,15 +191,15 @@ fn TickerCard(
                     class="socket-ticker-progress mt-2"
                     max="100"
                     value=move || ticker.get().map(|item| item.momentum.progress().to_string()).unwrap_or_else(|| "0".into())
-                    aria-label="Directional progress"
+                    aria-label="Positive momentum score"
                 ></progress>
 
                 <div class="d-flex justify-content-between gap-2 mt-auto pt-2 small font-monospace">
                     <span class="text-success-emphasis">
-                        {move || ticker.get().map(|item| format!("↑ {}", item.momentum.up_ticks)).unwrap_or_else(|| "↑ 0".into())}
+                        {move || ticker.get().map(|item| format!("↑ +{:.2}%", item.momentum.up_movement_percent)).unwrap_or_else(|| "↑ +0.00%".into())}
                     </span>
                     <span class="text-danger-emphasis">
-                        {move || ticker.get().map(|item| format!("↓ {}", item.momentum.down_ticks)).unwrap_or_else(|| "↓ 0".into())}
+                        {move || ticker.get().map(|item| format!("↓ -{:.2}%", item.momentum.down_movement_percent)).unwrap_or_else(|| "↓ -0.00%".into())}
                     </span>
                 </div>
             </div>
@@ -310,12 +310,12 @@ fn view_button_class(active: bool) -> &'static str {
 
 fn card_aria_label(ticker: TrackedFuturesTicker, pinned: bool) -> String {
     format!(
-        "{}, 24 hour change {}, price {}, {} up ticks, {} down ticks, {} percent progress, {}",
+        "{}, 24 hour change {}, price {}, up movement plus {:.2} percent, down movement minus {:.2} percent, {} percent momentum, {}",
         ticker.ticker.symbol,
         format_percent(ticker.ticker.change_24h),
         format_number(ticker.ticker.last_price),
-        ticker.momentum.up_ticks,
-        ticker.momentum.down_ticks,
+        ticker.momentum.up_movement_percent,
+        ticker.momentum.down_movement_percent,
         ticker.momentum.progress(),
         if pinned { "pinned" } else { "not pinned" }
     )
