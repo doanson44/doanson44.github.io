@@ -27,7 +27,7 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
 
     view! {
         <div class="d-flex flex-column flex-grow-1 overflow-hidden socket-page">
-            <div class="container-fluid py-3 d-flex flex-column flex-grow-1 overflow-hidden">
+            <div class="container py-3 d-flex flex-column flex-grow-1 overflow-hidden">
                 <header class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 flex-shrink-0">
                     <div>
                         <h2 class="mb-1">
@@ -85,7 +85,7 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                     </div>
                 </div>
 
-                <div class="socket-grid flex-grow-1 overflow-auto pe-1" aria-live="polite">
+                <div class="socket-grid row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-2 flex-grow-1 overflow-auto pe-1" aria-live="polite">
                     <Show
                         when=move || !visible.get().is_empty()
                         fallback=move || empty_state(state.view_mode.get())
@@ -100,7 +100,9 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                     .position(|item| item.ticker.symbol == ticker.ticker.symbol)
                                     .unwrap_or(0);
                                 view! {
-                                    <TickerCard ticker=ticker index=index state=state />
+                                    <div class="col">
+                                        <TickerCard ticker=ticker index=index state=state />
+                                    </div>
                                 }
                             }
                         />
@@ -133,9 +135,9 @@ fn TickerCard(ticker: TrackedFuturesTicker, index: usize, state: SocketState) ->
         <button
             type="button"
             class=move || if is_pinned.get() {
-                "socket-ticker-card card bg-body-tertiary border-primary-subtle socket-ticker-card-pinned"
+                "socket-ticker-card card bg-body-tertiary border-primary-subtle socket-ticker-card-pinned w-100"
             } else {
-                "socket-ticker-card card bg-body-tertiary border-secondary"
+                "socket-ticker-card card bg-body-tertiary border-secondary w-100"
             }
             title=move || if is_pinned.get() { format!("Unpin {symbol}") } else { format!("Pin {symbol}") }
             aria-label=card_aria_label(ticker.clone(), is_pinned.get())
