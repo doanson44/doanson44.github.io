@@ -85,6 +85,23 @@ impl SocketState {
     pub fn limit_options() -> &'static [usize] {
         &LIMIT_OPTIONS
     }
+
+    /// Toggles a ticker pin while preserving its current rendered slot.
+    pub fn toggle_pin(&self, symbol: &str, current_index: usize) {
+        let mut slots = self.pinned_slots.get_untracked();
+        if let Some(index) = slots.iter().position(|slot| slot.as_deref() == Some(symbol)) {
+            slots[index] = None;
+            while slots.last().is_some_and(Option::is_none) {
+                slots.pop();
+            }
+        } else {
+            if slots.len() <= current_index {
+                slots.resize(current_index + 1, None);
+            }
+            slots[current_index] = Some(symbol.to_owned());
+        }
+        self.pinned_slots.set(slots);
+    }
 }
 
 fn register_cleanup(mut handle: MexcFuturesWsHandle) {
