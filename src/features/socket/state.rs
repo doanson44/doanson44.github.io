@@ -1,184 +1,146 @@
-use std::{cell::RefCell, cmp::Ordering, rc::Rc};
-
-use leptos::prelude::*;
-
-use crate::domain::futures::{FuturesTicker, FuturesTickerRegistry};
-use crate::infrastructure::mexc_futures::{
-    connect_tickers, MexcFuturesConnectionStatus, MexcFuturesWsHandle,
+use std::{
+    cell::{Cell, RefCell},
+    collections::HashMap,
+    rc::Rc,
 };
 
-/// Sortable columns in the Futures market table.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SortColumn {
-    Symbol,
-    LastPrice,
-    Change24h,
-    Volume24h,
-    FairPrice,
-}
+use leptos::prelude::*;
+use send_wrapper::SendWrapper;
+use wasm_bindgen::{closure::Closure, JsCast};
 
-/// Quote asset filter for Futures contracts.
+use crate::application::{
+    ports::{FuturesConnectionStatus, FuturesMarketStream},
+    services::FuturesMarketService,
+};
+use crate::domain::futures::TrackedFuturesTicker;
+
+const DEFAULT_LIMIT: usize = 10;
+const LIMIT_OPTIONS: [usize; 5] = [10, 20, 30, 50, 100];
+const UI_FLUSH_MS: i32 = 75;
+
+type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
+
+/// Socket ticker view mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum QuoteFilter {
+pub enum SocketViewMode {
     All,
-    Usdt,
-    Usdc,
+    PinnedOnly,
 }
 
-/// 24-hour change direction filter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ChangeFilter {
-    All,
-    Positive,
-    Negative,
-}
-
-/// Reactive state for the MEXC Futures market table.
+/// Reactive state for the realtime Futures ticker grid.
 #[derive(Clone, Copy)]
 pub struct SocketState {
-    pub tickers: RwSignal<Vec<FuturesTicker>>,
-    pub search: RwSignal<String>,
-    pub quote_filter: RwSignal<QuoteFilter>,
-    pub change_filter: RwSignal<ChangeFilter>,
-    pub sort_column: RwSignal<SortColumn>,
-    pub sort_descending: RwSignal<bool>,
-    pub page: RwSignal<usize>,
-    pub page_size: RwSignal<usize>,
-    pub connection_status: RwSignal<MexcFuturesConnectionStatus>,
-    pub filtered_sorted: Memo<Vec<FuturesTicker>>,
-    pub visible_rows: Memo<Vec<FuturesTicker>>,
-    pub page_count: Memo<usize>,
-}
-
-impl Default for SocketState {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub tickers: RwSignal<MarketSnapshot, LocalStorage>,
+    pub view_mode: RwSignal<SocketViewMode>,
+    pub ticker_limit: RwSignal<usize>,
+    pub pinned_slots: RwSignal<Vec<Option<String>>>,
+    pub connection_status: RwSignal<FuturesConnectionStatus>,
 }
 
 impl SocketState {
     /// Creates the socket feature state and starts the all-market ticker stream.
-    pub fn new() -> Self {
-        let tickers = RwSignal::new(Vec::new());
-        let search = RwSignal::new(String::new());
-        let quote_filter = RwSignal::new(QuoteFilter::All);
-        let change_filter = RwSignal::new(ChangeFilter::All);
-        let sort_column = RwSignal::new(SortColumn::Symbol);
-        let sort_descending = RwSignal::new(false);
-        let page = RwSignal::new(1_usize);
-        let page_size = RwSignal::new(25_usize);
-        let connection_status = RwSignal::new(MexcFuturesConnectionStatus::Connecting);
+    pub fn new(stream: Rc<dyn FuturesMarketStream>) -> Self {
+        let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
+        let view_mode = RwSignal::new(SocketViewMode::All);
+        let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
+        let pinned_slots = RwSignal::new(Vec::<Option<String>>::new());
+        let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
+        let service = Rc::new(RefCell::new(FuturesMarketService::new()));
+        let flush_pending = Rc::new(Cell::new(false));
 
-        let filtered_sorted = Memo::new(move |_| {
-            let query = search.get().trim().to_ascii_lowercase();
-            let quote = quote_filter.get();
-            let change = change_filter.get();
-            let column = sort_column.get();
-            let descending = sort_descending.get();
-
-            let mut rows = tickers
-                .get()
-                .into_iter()
-                .filter(|ticker: &crate::domain::futures::FuturesTicker| {
-                    let matches_search = query.is_empty()
-                        || ticker.symbol.to_ascii_lowercase().contains(query.as_str());
-                    let matches_quote = match quote {
-                        QuoteFilter::All => true,
-                        QuoteFilter::Usdt => ticker.symbol.ends_with("_USDT"),
-                        QuoteFilter::Usdc => ticker.symbol.ends_with("_USDC"),
-                    };
-                    let matches_change = match change {
-                        ChangeFilter::All => true,
-                        ChangeFilter::Positive => {
-                            ticker.change_24h.is_some_and(|value| value > 0.0)
-                        }
-                        ChangeFilter::Negative => {
-                            ticker.change_24h.is_some_and(|value| value < 0.0)
-                        }
-                    };
-                    matches_search && matches_quote && matches_change
-                })
-                .collect::<Vec<_>>();
-
-            rows.sort_unstable_by(|left, right| {
-                let ordering = match column {
-                    SortColumn::Symbol => left.symbol.cmp(&right.symbol),
-                    SortColumn::LastPrice => compare_optional(left.last_price, right.last_price),
-                    SortColumn::Change24h => compare_optional(left.change_24h, right.change_24h),
-                    SortColumn::Volume24h => compare_optional(left.volume_24h, right.volume_24h),
-                    SortColumn::FairPrice => compare_optional(left.fair_price, right.fair_price),
-                };
-
-                if ordering == Ordering::Equal {
-                    left.symbol.cmp(&right.symbol)
-                } else if descending {
-                    ordering.reverse()
-                } else {
-                    ordering
+        let schedule_flush = {
+            let service = service.clone();
+            let flush_pending = flush_pending.clone();
+            Rc::new(move || {
+                if flush_pending.replace(true) {
+                    return;
                 }
-            });
+                let service = service.clone();
+                let flush_pending_for_callback = flush_pending.clone();
+                let callback = Closure::once_aborting(move || {
+                    flush_pending_for_callback.set(false);
+                    let snapshot = service.borrow().snapshot();
+                    tickers.set(Rc::new(snapshot));
+                })
+                .into_js_value();
+                if let Some(window) = web_sys::window() {
+                    let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
+                        callback.unchecked_ref(),
+                        UI_FLUSH_MS,
+                    );
+                } else {
+                    flush_pending.set(false);
+                }
+            })
+        };
 
-            rows
-        });
-
-        let page_count = Memo::new(move |_| {
-            let count = filtered_sorted.get().len();
-            let size = page_size.get().max(1);
-            count.div_ceil(size).max(1)
-        });
-
-        let visible_rows = Memo::new(move |_| {
-            let rows = filtered_sorted.get();
-            let size = page_size.get().max(1);
-            let current_page = page.get().clamp(1, page_count.get());
-            let start = (current_page - 1) * size;
-            rows.into_iter().skip(start).take(size).collect::<Vec<_>>()
-        });
-
-        let registry = Rc::new(RefCell::new(FuturesTickerRegistry::new()));
-        let registry_for_stream = registry.clone();
-        let tickers_signal = tickers;
+        let service_for_stream = service.clone();
+        let flush_for_stream = schedule_flush.clone();
         let on_batch = Rc::new(move |updates| {
-            let snapshot = registry_for_stream.borrow_mut().apply_batch(updates);
-            tickers_signal.set(snapshot);
+            service_for_stream.borrow_mut().apply_batch(updates);
+            flush_for_stream();
         });
 
+        let service_for_status = service.clone();
+        let flush_for_status = schedule_flush.clone();
         let status_signal = connection_status;
-        let on_status = Rc::new(move |status| status_signal.set(status));
-
-        match connect_tickers(on_batch, on_status) {
-            Ok(handle) => register_cleanup(handle),
-            Err(error) => {
-                connection_status.set(MexcFuturesConnectionStatus::Error(error));
+        let on_status = Rc::new(move |status: FuturesConnectionStatus| {
+            if status == FuturesConnectionStatus::Reconnecting {
+                service_for_status.borrow_mut().rebaseline();
             }
+            status_signal.set(status);
+            flush_for_status();
+        });
+
+        match stream.connect(on_batch, on_status) {
+            Ok(handle) => {
+                let handle = SendWrapper::new(handle);
+                on_cleanup(move || {
+                    let mut handle = handle;
+                    handle.close();
+                });
+            }
+            Err(error) => connection_status.set(FuturesConnectionStatus::Error(error)),
         }
 
         Self {
             tickers,
-            search,
-            quote_filter,
-            change_filter,
-            sort_column,
-            sort_descending,
-            page,
-            page_size,
+            view_mode,
+            ticker_limit,
+            pinned_slots,
             connection_status,
-            filtered_sorted,
-            visible_rows,
-            page_count,
         }
     }
-}
 
-fn register_cleanup(mut handle: MexcFuturesWsHandle) {
-    on_cleanup(move || handle.close());
-}
+    /// Sets the number of dynamic ticker cards rendered in the All view.
+    pub fn set_ticker_limit(&self, limit: usize) {
+        if LIMIT_OPTIONS.contains(&limit) {
+            self.ticker_limit.set(limit);
+        }
+    }
 
-fn compare_optional(left: Option<f64>, right: Option<f64>) -> Ordering {
-    match (left, right) {
-        (Some(left), Some(right)) => left.partial_cmp(&right).unwrap_or(Ordering::Equal),
-        (Some(_), None) => Ordering::Greater,
-        (None, Some(_)) => Ordering::Less,
-        (None, None) => Ordering::Equal,
+    /// Returns the available dynamic ticker limit options.
+    pub fn limit_options() -> &'static [usize] {
+        &LIMIT_OPTIONS
+    }
+
+    /// Toggles a ticker pin while preserving its current rendered slot.
+    pub fn toggle_pin(&self, symbol: &str, current_index: usize) {
+        let mut slots = self.pinned_slots.get_untracked();
+        if let Some(index) = slots
+            .iter()
+            .position(|slot| slot.as_deref() == Some(symbol))
+        {
+            slots[index] = None;
+            while slots.last().is_some_and(Option::is_none) {
+                slots.pop();
+            }
+        } else {
+            if slots.len() <= current_index {
+                slots.resize(current_index + 1, None);
+            }
+            slots[current_index] = Some(symbol.to_owned());
+        }
+        self.pinned_slots.set(slots);
     }
 }

@@ -1,0 +1,109 @@
+.socket-page {
+    min-height: 0;
+}
+
+.socket-limit-select {
+    width: 5rem;
+}
+
+.socket-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    grid-auto-rows: 1fr;
+    gap: 0.5rem;
+    align-content: start;
+    min-height: 0;
+}
+
+.socket-ticker-card {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.socket-ticker-card:hover {
+    transform: translateY(-1px);
+}
+
+.socket-ticker-card:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+.socket-ticker-card-pinned {
+    box-shadow: 0 0 0 1px var(--bs-primary-border-subtle);
+}
+
+.socket-ticker-price {
+    font-size: clamp(0.9rem, 2vw, 1.15rem);
+    font-weight: 600;
+}
+
+.socket-ticker-progress {
+    display: block;
+    width: 100%;
+    height: 0.55rem;
+    border: 0;
+    border-radius: var(--bs-border-radius-pill);
+    overflow: hidden;
+    background-color: var(--bs-secondary-bg);
+}
+
+.socket-ticker-progress::-webkit-progress-bar {
+    background-color: var(--bs-secondary-bg);
+    border-radius: var(--bs-border-radius-pill);
+}
+
+.socket-ticker-progress::-webkit-progress-value {
+    background-color: var(--bs-success);
+    border-radius: var(--bs-border-radius-pill);
+    transition: width 180ms ease;
+}
+
+.socket-ticker-progress::-moz-progress-bar {
+    background-color: var(--bs-success);
+    border-radius: var(--bs-border-radius-pill);
+    transition: width 180ms ease;
+}
+
+@media (max-width: 575.98px) {
+    .socket-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .socket-ticker-card .card-body {
+        padding: 0.65rem !important;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .socket-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1399.98px) {
+    .socket-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1400px) {
+    .socket-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .socket-ticker-card,
+    .socket-ticker-progress::-webkit-progress-value,
+    .socket-ticker-progress::-moz-progress-bar {
+        transition: none;
+    }
+}
