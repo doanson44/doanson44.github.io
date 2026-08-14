@@ -1,13 +1,15 @@
+use std::{collections::HashMap, rc::Rc};
+
 use leptos::prelude::*;
 
+use crate::application::ports::{FuturesConnectionStatus, FuturesMarketStream};
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::features::socket::state::{SocketState, SocketViewMode};
-use crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus;
 
 /// Realtime MEXC Futures ticker monitor page.
 #[component]
-pub fn SocketPage() -> impl IntoView {
-    let state = SocketState::new();
+pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
+    let state = SocketState::new(stream);
     let visible = Memo::new({
         let tickers = state.tickers;
         let view_mode = state.view_mode;
@@ -64,7 +66,7 @@ pub fn SocketPage() -> impl IntoView {
                             aria-label="Number of dynamic tickers to show"
                             prop:value=move || state.ticker_limit.get().to_string()
                             on:change=move |ev| {
-                                let value = event_target_value(&ev).parse::<usize>().unwrap_or(10);
+                                let value = event_target_value(&ev).parse::<usize>().unwrap_or(DEFAULT_LIMIT);
                                 state.set_ticker_limit(value);
                             }
                         >
@@ -82,19 +84,14 @@ pub fn SocketPage() -> impl IntoView {
                         fallback=move || empty_state(state.view_mode.get())
                     >
                         <For
-                            each=move || visible.get().iter().map(|ticker| ticker.ticker.symbol.clone()).collect::<Vec<_>>()
-                            key=|symbol| symbol.clone()
-                            children=move |symbol| {
-                                let ticker = Memo::new({
-                                    let tickers = state.tickers;
-                                    let symbol = symbol.clone();
-                                    move |_| tickers.get().into_iter().find(|item| item.ticker.symbol == symbol)
-                                });
-                                let index = Memo::new({
-                                    let visible = visible;
-                                    let symbol = symbol.clone();
-                                    move |_| visible.get().iter().position(|item| item.ticker.symbol == symbol).unwrap_or(0)
-                                });
+                            each=move || visible.get()
+                            key=|ticker| ticker.ticker.symbol.clone()
+                            children=move |ticker| {
+                                let index = visible
+                                    .get_untracked()
+                                    .iter()
+                                    .position(|item| item.ticker.symbol == ticker.ticker.symbol)
+                                    .unwrap_or(0);
                                 view! {
                                     <TickerCard ticker=ticker index=index state=state />
                                 }
@@ -107,20 +104,21 @@ pub fn SocketPage() -> impl IntoView {
     }
 }
 
+const DEFAULT_LIMIT: usize = 10;
+
+type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
+
 #[component]
 fn TickerCard(
-    ticker: Memo<Option<TrackedFuturesTicker>>,
-    index: Memo<usize>,
+    ticker: TrackedFuturesTicker,
+    index: usize,
     state: SocketState,
 ) -> impl IntoView {
-    let symbol = Memo::new({
-        let ticker = ticker;
-        move |_| ticker.get().map(|item| item.ticker.symbol).unwrap_or_default()
-    });
+    let symbol = ticker.ticker.symbol.clone();
     let is_pinned = Memo::new({
-        let symbol = symbol;
         let pinned_slots = state.pinned_slots;
-        move |_| pinned_slots.get().iter().any(|slot| slot.as_deref() == Some(symbol.get().as_str()))
+        let symbol = symbol.clone();
+        move |_| pinned_slots.get().iter().any(|slot| slot.as_deref() == Some(symbol.as_str()))
     });
 
     view! {
@@ -131,39 +129,39 @@ fn TickerCard(
             } else {
                 "socket-ticker-card card bg-body-tertiary border-secondary"
             }
-            title=move || if is_pinned.get() { format!("Unpin {}", symbol.get()) } else { format!("Pin {}", symbol.get()) }
-            aria-label=move || card_aria_label(ticker.get(), is_pinned.get())
-            on:click=move |_| state.toggle_pin(&symbol.get_untracked(), index.get_untracked())
+            title=move || if is_pinned.get() { format!("Unpin {symbol}") } else { format!("Pin {symbol}") }
+            aria-label=card_aria_label(ticker.clone(), is_pinned.get())
+            on:click=move |_| state.toggle_pin(&symbol, index)
         >
             <div class="card-body p-2 d-flex flex-column min-h-0">
                 <div class="d-flex align-items-start justify-content-between gap-2">
-                    <span class="font-monospace fw-semibold text-truncate">{move || symbol.get()}</span>
+                    <span class="font-monospace fw-semibold text-truncate">{symbol.clone()}</span>
                     <i class=move || if is_pinned.get() { "bi bi-pin-angle-fill text-primary" } else { "bi bi-pin-angle text-body-tertiary" } aria-hidden="true"></i>
                 </div>
 
                 <div class="socket-ticker-price font-monospace mt-1 text-truncate">
-                    {move || format_number(ticker.get().and_then(|item| item.ticker.last_price))}
+                    {format_number(ticker.ticker.last_price)}
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center gap-2 mt-1">
-                    <span class=move || change_class(ticker.get().and_then(|item| item.ticker.change_24h))>
-                        {move || format_percent(ticker.get().and_then(|item| item.ticker.change_24h))}
+                    <span class=change_class(ticker.ticker.change_24h)>
+                        {format_percent(ticker.ticker.change_24h)}
                     </span>
                     <span class="small text-body-secondary font-monospace">
-                        {move || format!("{}%", ticker.get().map(|item| item.momentum.progress()).unwrap_or(0))}
+                        {format!("{}%", ticker.momentum.progress())}
                     </span>
                 </div>
 
                 <progress
                     class="socket-ticker-progress mt-2"
                     max="100"
-                    value=move || ticker.get().map(|item| item.momentum.progress()).unwrap_or(0).to_string()
+                    value=ticker.momentum.progress().to_string()
                     aria-label="Directional progress"
                 ></progress>
 
                 <div class="d-flex justify-content-between gap-2 mt-auto pt-2 small font-monospace">
-                    <span class="text-success-emphasis">{move || format!("↑ {}", ticker.get().map(|item| item.momentum.up_ticks).unwrap_or(0))}</span>
-                    <span class="text-danger-emphasis">{move || format!("↓ {}", ticker.get().map(|item| item.momentum.down_ticks).unwrap_or(0))}</span>
+                    <span class="text-success-emphasis">{format!("↑ {}", ticker.momentum.up_ticks)}</span>
+                    <span class="text-danger-emphasis">{format!("↓ {}", ticker.momentum.down_ticks)}</span>
                 </div>
             </div>
         </button>
@@ -171,66 +169,75 @@ fn TickerCard(
 }
 
 fn build_visible(
-    all: Vec<TrackedFuturesTicker>,
+    all: MarketSnapshot,
     mode: SocketViewMode,
     limit: usize,
     slots: Vec<Option<String>>,
 ) -> Vec<TrackedFuturesTicker> {
-    let find_ticker = |symbol: &str| all.iter().find(|item| item.ticker.symbol == symbol).cloned();
-
     if mode == SocketViewMode::PinnedOnly {
-        return slots.iter().filter_map(|slot| slot.as_deref().and_then(find_ticker)).collect();
+        return slots
+            .iter()
+            .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)).cloned())
+            .collect();
     }
 
     let pinned_symbols = slots.iter().filter_map(|slot| slot.as_deref()).collect::<Vec<_>>();
     let mut dynamic = all
-        .iter()
+        .values()
         .filter(|item| !pinned_symbols.contains(&item.ticker.symbol.as_str()))
         .cloned()
         .collect::<Vec<_>>();
-    dynamic.sort_unstable_by(|left, right| right.momentum.progress().cmp(&left.momentum.progress()));
+    dynamic.sort_unstable_by(|left, right| {
+        right
+            .momentum
+            .progress()
+            .cmp(&left.momentum.progress())
+            .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+    });
     dynamic.truncate(limit);
 
     let pinned_count = slots.iter().filter(|slot| slot.is_some()).count();
     let output_len = slots.len().max(dynamic.len() + pinned_count);
-    let mut output = vec![None; output_len];
+    let mut output = Vec::with_capacity(output_len);
     let mut dynamic_index = 0;
 
     for index in 0..output_len {
         if let Some(symbol) = slots.get(index).and_then(|slot| slot.as_deref()) {
-            output[index] = find_ticker(symbol);
+            if let Some(ticker) = all.get(symbol) {
+                output.push(ticker.clone());
+            }
         } else if let Some(ticker) = dynamic.get(dynamic_index) {
-            output[index] = Some(ticker.clone());
+            output.push(ticker.clone());
             dynamic_index += 1;
         }
     }
 
-    output.into_iter().flatten().collect()
+    output
 }
 
-fn status_badge(status: MexcFuturesConnectionStatus) -> impl IntoView {
+fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
     match status {
-        MexcFuturesConnectionStatus::Connected => view! {
+        FuturesConnectionStatus::Connected => view! {
             <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
                 <i class="bi bi-wifi me-1"></i>"Connected"
             </span>
         }.into_any(),
-        MexcFuturesConnectionStatus::Connecting => view! {
+        FuturesConnectionStatus::Connecting => view! {
             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
                 <i class="bi bi-arrow-repeat me-1"></i>"Connecting"
             </span>
         }.into_any(),
-        MexcFuturesConnectionStatus::Reconnecting => view! {
+        FuturesConnectionStatus::Reconnecting => view! {
             <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
                 <i class="bi bi-arrow-repeat me-1"></i>"Reconnecting"
             </span>
         }.into_any(),
-        MexcFuturesConnectionStatus::Disconnected => view! {
+        FuturesConnectionStatus::Disconnected => view! {
             <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">
                 "Disconnected"
             </span>
         }.into_any(),
-        MexcFuturesConnectionStatus::Error(message) => view! {
+        FuturesConnectionStatus::Error(message) => view! {
             <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle" title=message>
                 <i class="bi bi-exclamation-triangle me-1"></i>"Connection error"
             </span>
@@ -252,11 +259,14 @@ fn empty_state(mode: SocketViewMode) -> impl IntoView {
 }
 
 fn view_button_class(active: bool) -> &'static str {
-    if active { "btn btn-primary btn-sm" } else { "btn btn-outline-secondary btn-sm" }
+    if active {
+        "btn btn-primary btn-sm"
+    } else {
+        "btn btn-outline-secondary btn-sm"
+    }
 }
 
-fn card_aria_label(ticker: Option<TrackedFuturesTicker>, pinned: bool) -> String {
-    let Some(ticker) = ticker else { return "Ticker unavailable".into() };
+fn card_aria_label(ticker: TrackedFuturesTicker, pinned: bool) -> String {
     format!(
         "{}, 24 hour change {}, price {}, {} up ticks, {} down ticks, {} percent progress, {}",
         ticker.ticker.symbol,
