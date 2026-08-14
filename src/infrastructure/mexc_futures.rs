@@ -130,7 +130,7 @@ fn open_connection(
     let subscribe_socket = socket.clone();
     let open_status = on_status.clone();
     let on_open = Closure::<dyn FnMut()>::new(move || {
-        let message = r#"{"method":"sub.tickers","param":{},"gzip":false}"#;
+        let message = r#"{\"method\":\"sub.tickers\",\"param\":{},\"gzip\":false}"#;
         let _ = subscribe_socket.send_with_str(message);
         if let Some(runtime) = weak_runtime.upgrade() {
             let mut state = runtime.borrow_mut();
@@ -220,7 +220,7 @@ fn open_connection(
     let ping_socket = socket.clone();
     let ping_callback = Closure::<dyn FnMut()>::new(move || {
         if ping_socket.ready_state() == WebSocket::OPEN {
-            let _ = ping_socket.send_with_str(r#"{"method":"ping"}"#);
+            let _ = ping_socket.send_with_str(r#"{\"method\":\"ping\"}"#);
         }
     });
 
@@ -256,8 +256,7 @@ fn schedule_reconnect(
             return;
         }
         let exponent = state.retry_attempt.min(6);
-        let delay =
-            (INITIAL_RECONNECT_MS.saturating_mul(1_i32 << exponent)).min(MAX_RECONNECT_MS);
+        let delay = (INITIAL_RECONNECT_MS.saturating_mul(1_i32 << exponent)).min(MAX_RECONNECT_MS);
         state.retry_attempt = state.retry_attempt.saturating_add(1);
         (delay, Rc::downgrade(runtime))
     };
@@ -266,8 +265,7 @@ fn schedule_reconnect(
         if let Some(runtime) = weak_runtime.upgrade() {
             runtime.borrow_mut().retry_timeout = None;
             runtime.borrow_mut().retry_callback = None;
-            if let Err(error) =
-                open_connection(&runtime, on_batch.clone(), on_status.clone(), true)
+            if let Err(error) = open_connection(&runtime, on_batch.clone(), on_status.clone(), true)
             {
                 on_status(FuturesConnectionStatus::Error(error));
                 schedule_reconnect(&runtime, on_batch.clone(), on_status.clone());
