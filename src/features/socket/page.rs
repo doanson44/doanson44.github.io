@@ -146,7 +146,7 @@ fn TickerCard(
                 "socket-ticker-card card bg-body-tertiary border-secondary"
             }
             title={let symbol_title = symbol.clone(); move || if is_pinned.get() { format!("Unpin {symbol_title}") } else { format!("Pin {symbol_title}") }}
-            aria-label=move || ticker.get().map(|item| card_aria_label(item, is_pinned.get())).unwrap_or_else(|| format!("{symbol}, market data unavailable"))
+            aria-label={let symbol_aria = symbol.clone(); move || ticker.get().map(|item| card_aria_label(item, is_pinned.get())).unwrap_or_else(|| format!("{symbol_aria}, market data unavailable"))}
             on:click={
                 let symbol = symbol.clone();
                 move |_| {
@@ -179,7 +179,7 @@ fn TickerCard(
                                 </span>
                             })
                             .unwrap_or_else(|| view! {
-                                <span class="text-body-secondary">"—"</span>
+                                <span class="text-body-secondary">{"—".to_string()}</span>
                             })
                     }}
                     <span class="small text-body-secondary font-monospace">
