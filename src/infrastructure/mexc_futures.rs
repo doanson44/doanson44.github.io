@@ -173,6 +173,7 @@ fn open_connection(
             Ok(tickers) => {
                 let updates = tickers
                     .into_iter()
+                    .filter(|ticker| ticker.symbol.ends_with("_USDT"))
                     .map(|ticker| FuturesTickerUpdate {
                         symbol: ticker.symbol,
                         last_price: ticker.last_price,
