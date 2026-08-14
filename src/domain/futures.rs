@@ -288,9 +288,10 @@ mod tests {
     #[test]
     fn momentum_uses_a_rolling_window() {
         let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
-        for _ in 0..100 {
-            momentum.observe(Some(101.0));
-            momentum.observe(Some(100.0));
+        let mut price = 100.0;
+        for _ in 0..101 {
+            price -= 1.0;
+            momentum.observe(Some(price));
         }
 
         assert_eq!(momentum.movements.len(), 100);
