@@ -57,9 +57,9 @@ impl SocketState {
                     return;
                 }
                 let service = service.clone();
-                let flush_pending = flush_pending.clone();
+                let flush_pending_for_callback = flush_pending.clone();
                 let callback = Closure::once_aborting(move || {
-                    flush_pending.set(false);
+                    flush_pending_for_callback.set(false);
                     let snapshot = service.borrow().snapshot();
                     tickers.set(Rc::new(snapshot));
                 })
