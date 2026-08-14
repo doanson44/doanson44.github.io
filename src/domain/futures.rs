@@ -52,7 +52,7 @@ impl FuturesTickerMomentum {
             return;
         };
 
-        if previous_price <= 0.0 {
+        if previous_price <= 0.0 || new_price <= 0.0 {
             self.previous_price = Some(new_price);
             return;
         }
@@ -287,8 +287,8 @@ mod tests {
 
     #[test]
     fn momentum_uses_a_rolling_window() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
-        let mut price = 100.0;
+        let mut momentum = FuturesTickerMomentum::baseline(Some(200.0));
+        let mut price = 200.0;
         for _ in 0..101 {
             price -= 1.0;
             momentum.observe(Some(price));

@@ -111,20 +111,20 @@ mod tests {
         service.apply_batch(vec![update("BTC_USDT", 100.0)]);
         let snapshot = service.snapshot();
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 0);
-        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.up_movement_percent, 0.0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.down_movement_percent, 0.0);
     }
 
     #[test]
-    fn subsequent_updates_count_directional_ticks() {
+    fn subsequent_updates_accumulate_movement_percentage() {
         let mut service = FuturesMarketService::new();
         service.apply_batch(vec![update("BTC_USDT", 100.0)]);
         service.apply_batch(vec![update("BTC_USDT", 101.0)]);
         service.apply_batch(vec![update("BTC_USDT", 100.0)]);
         let snapshot = service.snapshot();
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 1);
-        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 1);
+        assert!(snapshot["BTC_USDT"].momentum.up_movement_percent > 0.0);
+        assert!(snapshot["BTC_USDT"].momentum.down_movement_percent > 0.0);
         assert_eq!(snapshot["BTC_USDT"].momentum.progress(), 0);
     }
 
@@ -137,7 +137,7 @@ mod tests {
         service.apply_batch(vec![update("BTC_USDT", 102.0)]);
         let snapshot = service.snapshot();
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 1);
-        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 0);
+        assert!(snapshot["BTC_USDT"].momentum.up_movement_percent > 0.0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.down_movement_percent, 0.0);
     }
 }
