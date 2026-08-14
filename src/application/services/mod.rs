@@ -31,11 +31,8 @@ impl FuturesMarketService {
             let momentum = self
                 .momentum
                 .entry(update.symbol.clone())
-                .or_insert_with(|| FuturesTickerMomentum::baseline(update.last_price));
-
-            if momentum.previous_price.is_some() {
-                momentum.observe(update.last_price);
-            }
+                .or_insert_with(|| FuturesTickerMomentum::baseline(None));
+            momentum.observe(update.last_price);
         }
 
         let snapshot = self.registry.apply_batch(updates);
@@ -55,7 +52,7 @@ impl FuturesMarketService {
         let snapshot = self.registry.apply_batch(Vec::new());
         for ticker in snapshot {
             if let Some(momentum) = self.momentum.get_mut(&ticker.symbol) {
-                *momentum = FuturesTickerMomentum::baseline(ticker.last_price);
+                *momentum = FuturesTickerMomentum::baseline(None);
             }
         }
     }
@@ -126,7 +123,7 @@ mod tests {
         service.rebaseline();
         let snapshot = service.apply_batch(vec![update("BTC_USDT", 102.0)]);
 
-        assert_eq!(snapshot[0].momentum.up_ticks, 2);
+        assert_eq!(snapshot[0].momentum.up_ticks, 1);
         assert_eq!(snapshot[0].momentum.down_ticks, 0);
     }
 }
