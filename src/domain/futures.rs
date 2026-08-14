@@ -1,3 +1,5 @@
+use std::collections::{HashMap, VecDeque};
+
 /// Public Futures ticker state and update primitives.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FuturesTicker {
@@ -20,12 +22,15 @@ pub struct FuturesTickerUpdate {
     pub updated_at_ms: Option<u64>,
 }
 
-/// Tracks directional price changes for one ticker during the current page session.
+const MOMENTUM_WINDOW: usize = 100;
+
+/// Tracks directional price changes over a bounded rolling tick window.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct FuturesTickerMomentum {
     pub previous_price: Option<f64>,
     pub up_ticks: u64,
     pub down_ticks: u64,
+    directions: VecDeque<i8>,
 }
 
 impl FuturesTickerMomentum {
@@ -37,7 +42,7 @@ impl FuturesTickerMomentum {
         }
     }
 
-    /// Applies a price observation.
+    /// Applies a price observation and keeps only the latest directional window.
     pub fn observe(&mut self, price: Option<f64>) {
         let Some(new_price) = price else {
             return;
@@ -47,22 +52,42 @@ impl FuturesTickerMomentum {
             return;
         };
 
-        if new_price > previous_price {
-            self.up_ticks = self.up_ticks.saturating_add(1);
+        let direction = if new_price > previous_price {
+            1
         } else if new_price < previous_price {
-            self.down_ticks = self.down_ticks.saturating_add(1);
+            -1
+        } else {
+            0
+        };
+
+        if direction != 0 {
+            self.directions.push_back(direction);
+            if direction > 0 {
+                self.up_ticks += 1;
+            } else {
+                self.down_ticks += 1;
+            }
+            if self.directions.len() > MOMENTUM_WINDOW {
+                if let Some(oldest) = self.directions.pop_front() {
+                    if oldest > 0 {
+                        self.up_ticks = self.up_ticks.saturating_sub(1);
+                    } else {
+                        self.down_ticks = self.down_ticks.saturating_sub(1);
+                    }
+                }
+            }
         }
         self.previous_price = Some(new_price);
     }
 
-    /// Returns net directional ticks, positive for upward movement.
+    /// Returns the net directional ticks in the current rolling window.
     pub fn net_ticks(&self) -> i64 {
         self.up_ticks as i64 - self.down_ticks as i64
     }
 
-    /// Returns the green fill percentage clamped to the range 0..=100.
+    /// Returns positive directional momentum as a 0..=100 fill percentage.
     pub fn progress(&self) -> u8 {
-        self.net_ticks().clamp(0, 100) as u8
+        self.net_ticks().clamp(0, MOMENTUM_WINDOW as i64) as u8
     }
 }
 
@@ -110,7 +135,7 @@ impl FuturesTicker {
 /// In-memory source of truth for the live Futures market.
 #[derive(Debug, Default)]
 pub struct FuturesTickerRegistry {
-    tickers: std::collections::HashMap<String, FuturesTicker>,
+    tickers: HashMap<String, FuturesTicker>,
 }
 
 impl FuturesTickerRegistry {
@@ -119,8 +144,8 @@ impl FuturesTickerRegistry {
         Self::default()
     }
 
-    /// Applies a batch of ticker updates and returns a stable snapshot.
-    pub fn apply_batch(&mut self, updates: Vec<FuturesTickerUpdate>) -> Vec<FuturesTicker> {
+    /// Applies incremental ticker updates without rebuilding a full snapshot.
+    pub fn apply_batch(&mut self, updates: impl IntoIterator<Item = FuturesTickerUpdate>) {
         for update in updates {
             if let Some(ticker) = self.tickers.get_mut(&update.symbol) {
                 ticker.apply(update);
@@ -129,10 +154,11 @@ impl FuturesTickerRegistry {
                 self.tickers.insert(symbol, FuturesTicker::new(update));
             }
         }
+    }
 
-        let mut snapshot = self.tickers.values().cloned().collect::<Vec<_>>();
-        snapshot.sort_unstable_by(|left, right| left.symbol.cmp(&right.symbol));
-        snapshot
+    /// Returns the current ticker collection for a UI projection.
+    pub fn snapshot(&self) -> impl Iterator<Item = (&String, &FuturesTicker)> {
+        self.tickers.iter()
     }
 
     /// Returns the number of contracts currently known by the registry.
@@ -173,7 +199,7 @@ mod tests {
             updated_at_ms: Some(1),
         }]);
 
-        let snapshot = registry.apply_batch(vec![FuturesTickerUpdate {
+        registry.apply_batch(vec![FuturesTickerUpdate {
             symbol: "BTC_USDT".into(),
             last_price: Some(102.0),
             volume_24h: None,
@@ -181,7 +207,7 @@ mod tests {
             fair_price: None,
             updated_at_ms: Some(2),
         }]);
-        let ticker = &snapshot[0];
+        let ticker = registry.snapshot().next().expect("ticker should exist").1;
 
         assert_eq!(ticker.last_price, Some(102.0));
         assert_eq!(ticker.volume_24h, Some(200.0));
@@ -193,22 +219,10 @@ mod tests {
     #[test]
     fn creates_new_ticker_when_symbol_is_unknown() {
         let mut registry = FuturesTickerRegistry::new();
-        let snapshot = registry.apply_batch(vec![update("ETH_USDT", 2000.0, 50.0)]);
+        registry.apply_batch(vec![update("ETH_USDT", 2000.0, 50.0)]);
 
         assert_eq!(registry.len(), 1);
-        assert_eq!(snapshot[0].symbol, "ETH_USDT");
-    }
-
-    #[test]
-    fn snapshot_is_stable_by_symbol() {
-        let mut registry = FuturesTickerRegistry::new();
-        let snapshot = registry.apply_batch(vec![
-            update("SOL_USDT", 10.0, 1.0),
-            update("BTC_USDT", 20.0, 2.0),
-        ]);
-
-        assert_eq!(snapshot[0].symbol, "BTC_USDT");
-        assert_eq!(snapshot[1].symbol, "SOL_USDT");
+        assert_eq!(registry.snapshot().next().map(|(_, ticker)| ticker.symbol.as_str()), Some("ETH_USDT"));
     }
 
     #[test]
@@ -236,18 +250,20 @@ mod tests {
     }
 
     #[test]
-    fn progress_is_clamped_to_zero_and_one_hundred() {
-        let mut down = FuturesTickerMomentum::baseline(Some(100.0));
-        for price in (0..105).rev() {
-            down.observe(Some(price as f64));
+    fn momentum_uses_a_rolling_window() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(0.0));
+        for price in 1..=101 {
+            momentum.observe(Some(price as f64));
         }
-        assert_eq!(down.progress(), 0);
 
-        let mut up = FuturesTickerMomentum::baseline(Some(0.0));
-        for price in 1..105 {
-            up.observe(Some(price as f64));
-        }
-        assert_eq!(up.progress(), 100);
+        assert_eq!(momentum.up_ticks, 100);
+        assert_eq!(momentum.down_ticks, 0);
+        assert_eq!(momentum.progress(), 100);
+
+        momentum.observe(Some(100.0));
+        assert_eq!(momentum.up_ticks, 99);
+        assert_eq!(momentum.down_ticks, 1);
+        assert_eq!(momentum.progress(), 98);
     }
 
     #[test]
