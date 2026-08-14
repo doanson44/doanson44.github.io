@@ -20,6 +20,59 @@ pub struct FuturesTickerUpdate {
     pub updated_at_ms: Option<u64>,
 }
 
+/// Tracks directional price changes for one ticker during the current page session.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct FuturesTickerMomentum {
+    pub previous_price: Option<f64>,
+    pub up_ticks: u64,
+    pub down_ticks: u64,
+}
+
+impl FuturesTickerMomentum {
+    /// Creates a baseline without counting the first observed price as a tick.
+    pub fn baseline(price: Option<f64>) -> Self {
+        Self {
+            previous_price: price,
+            ..Self::default()
+        }
+    }
+
+    /// Applies a price observation.
+    pub fn observe(&mut self, price: Option<f64>) {
+        let Some(new_price) = price else {
+            return;
+        };
+        let Some(previous_price) = self.previous_price else {
+            self.previous_price = Some(new_price);
+            return;
+        };
+
+        if new_price > previous_price {
+            self.up_ticks = self.up_ticks.saturating_add(1);
+        } else if new_price < previous_price {
+            self.down_ticks = self.down_ticks.saturating_add(1);
+        }
+        self.previous_price = Some(new_price);
+    }
+
+    /// Returns net directional ticks, positive for upward movement.
+    pub fn net_ticks(&self) -> i64 {
+        self.up_ticks as i64 - self.down_ticks as i64
+    }
+
+    /// Returns the green fill percentage clamped to the range 0..=100.
+    pub fn progress(&self) -> u8 {
+        self.net_ticks().clamp(0, 100) as u8
+    }
+}
+
+/// A Futures ticker together with session-local directional momentum.
+#[derive(Debug, Clone, PartialEq)]
+pub struct TrackedFuturesTicker {
+    pub ticker: FuturesTicker,
+    pub momentum: FuturesTickerMomentum,
+}
+
 impl FuturesTicker {
     fn new(update: FuturesTickerUpdate) -> Self {
         let mut ticker = Self {
@@ -54,7 +107,7 @@ impl FuturesTicker {
     }
 }
 
-/// In-memory source of truth for the live Futures market table.
+/// In-memory source of truth for the live Futures market.
 #[derive(Debug, Default)]
 pub struct FuturesTickerRegistry {
     tickers: std::collections::HashMap<String, FuturesTicker>,
@@ -87,6 +140,7 @@ impl FuturesTickerRegistry {
         self.tickers.len()
     }
 
+    /// Returns whether the registry has no known contracts.
     pub fn is_empty(&self) -> bool {
         self.tickers.is_empty()
     }
@@ -155,5 +209,53 @@ mod tests {
 
         assert_eq!(snapshot[0].symbol, "BTC_USDT");
         assert_eq!(snapshot[1].symbol, "SOL_USDT");
+    }
+
+    #[test]
+    fn first_price_is_a_baseline() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        momentum.observe(Some(100.0));
+
+        assert_eq!(momentum.up_ticks, 0);
+        assert_eq!(momentum.down_ticks, 0);
+        assert_eq!(momentum.progress(), 0);
+    }
+
+    #[test]
+    fn price_changes_update_directional_ticks() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        momentum.observe(Some(101.0));
+        momentum.observe(Some(102.0));
+        momentum.observe(Some(101.0));
+        momentum.observe(Some(101.0));
+
+        assert_eq!(momentum.up_ticks, 2);
+        assert_eq!(momentum.down_ticks, 1);
+        assert_eq!(momentum.net_ticks(), 1);
+        assert_eq!(momentum.progress(), 1);
+    }
+
+    #[test]
+    fn progress_is_clamped_to_zero_and_one_hundred() {
+        let mut down = FuturesTickerMomentum::baseline(Some(100.0));
+        for price in (0..105).rev() {
+            down.observe(Some(price as f64));
+        }
+        assert_eq!(down.progress(), 0);
+
+        let mut up = FuturesTickerMomentum::baseline(Some(0.0));
+        for price in 1..105 {
+            up.observe(Some(price as f64));
+        }
+        assert_eq!(up.progress(), 100);
+    }
+
+    #[test]
+    fn missing_price_does_not_create_a_tick() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        momentum.observe(None);
+        assert_eq!(momentum.up_ticks, 0);
+        assert_eq!(momentum.down_ticks, 0);
+        assert_eq!(momentum.previous_price, Some(100.0));
     }
 }
