@@ -4,22 +4,15 @@ use serde::Deserialize;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{CloseEvent, Event, MessageEvent, WebSocket, Window};
 
+use crate::application::ports::{
+    FuturesConnectionStatus, FuturesMarketStream, FuturesMarketStreamHandle,
+};
 use crate::domain::futures::FuturesTickerUpdate;
 
 const WS_ENDPOINT: &str = "wss://contract.mexc.com/edge";
 const PING_INTERVAL_MS: i32 = 15_000;
 const INITIAL_RECONNECT_MS: i32 = 500;
 const MAX_RECONNECT_MS: i32 = 30_000;
-
-/// Connection state reported by the MEXC Futures public stream.
-#[derive(Debug, Clone, PartialEq)]
-pub enum MexcFuturesConnectionStatus {
-    Connecting,
-    Connected,
-    Reconnecting,
-    Disconnected,
-    Error(String),
-}
 
 #[derive(Debug, Deserialize)]
 struct WsEnvelope {
@@ -40,7 +33,7 @@ struct TickerPayload {
     fair_price: Option<f64>,
 }
 
-type StatusCallback = Rc<dyn Fn(MexcFuturesConnectionStatus)>;
+type StatusCallback = Rc<dyn Fn(FuturesConnectionStatus)>;
 type BatchCallback = Rc<dyn Fn(Vec<FuturesTickerUpdate>)>;
 type Callback = Closure<dyn FnMut()>;
 type MessageCallback = Closure<dyn FnMut(MessageEvent)>;
@@ -84,14 +77,8 @@ pub struct MexcFuturesWsHandle {
     runtime: Rc<RefCell<Runtime>>,
 }
 
-// In a single-threaded WASM environment, the runtime never crosses an actual thread.
-// Leptos cleanup requires a Send + Sync handle type.
-unsafe impl Send for MexcFuturesWsHandle {}
-unsafe impl Sync for MexcFuturesWsHandle {}
-
-impl MexcFuturesWsHandle {
-    /// Closes the stream, cancels retries, and releases keepalive resources.
-    pub fn close(&mut self) {
+impl FuturesMarketStreamHandle for MexcFuturesWsHandle {
+    fn close(&mut self) {
         close_runtime(&self.runtime);
     }
 }
@@ -102,14 +89,20 @@ impl Drop for MexcFuturesWsHandle {
     }
 }
 
-/// Connects to the MEXC Futures public ticker stream for the complete market.
-pub fn connect_tickers(
-    on_batch: Rc<dyn Fn(Vec<FuturesTickerUpdate>)>,
-    on_status: Rc<dyn Fn(MexcFuturesConnectionStatus)>,
-) -> Result<MexcFuturesWsHandle, String> {
-    let runtime = Rc::new(RefCell::new(Runtime::default()));
-    open_connection(&runtime, on_batch, on_status, false)?;
-    Ok(MexcFuturesWsHandle { runtime })
+/// Browser adapter for the MEXC Futures public ticker stream.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct MexcFuturesStream;
+
+impl FuturesMarketStream for MexcFuturesStream {
+    fn connect(
+        &self,
+        on_batch: BatchCallback,
+        on_status: StatusCallback,
+    ) -> Result<Box<dyn FuturesMarketStreamHandle>, String> {
+        let runtime = Rc::new(RefCell::new(Runtime::default()));
+        open_connection(&runtime, on_batch, on_status, false)?;
+        Ok(Box::new(MexcFuturesWsHandle { runtime }))
+    }
 }
 
 fn open_connection(
@@ -125,9 +118,9 @@ fn open_connection(
     clear_active_connection(runtime);
 
     if reconnecting {
-        on_status(MexcFuturesConnectionStatus::Reconnecting);
+        on_status(FuturesConnectionStatus::Reconnecting);
     } else {
-        on_status(MexcFuturesConnectionStatus::Connecting);
+        on_status(FuturesConnectionStatus::Connecting);
     }
 
     let socket = WebSocket::new(WS_ENDPOINT)
@@ -145,17 +138,17 @@ fn open_connection(
             state.retry_timeout = None;
             state.retry_callback = None;
         }
-        open_status(MexcFuturesConnectionStatus::Connected);
+        open_status(FuturesConnectionStatus::Connected);
     });
     socket.set_onopen(Some(on_open.as_ref().unchecked_ref()));
 
     let batch_callback = on_batch.clone();
     let message_status = on_status.clone();
     let on_message = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
-        let payload: String = match event.data().as_string() {
+        let payload = match event.data().as_string() {
             Some(text) => text,
             None => {
-                message_status(MexcFuturesConnectionStatus::Error(
+                message_status(FuturesConnectionStatus::Error(
                     "MEXC returned a non-text WebSocket message".into(),
                 ));
                 return;
@@ -165,40 +158,42 @@ fn open_connection(
         let envelope = match serde_json::from_str::<WsEnvelope>(&payload) {
             Ok(value) => value,
             Err(error) => {
-                message_status(MexcFuturesConnectionStatus::Error(format!(
+                message_status(FuturesConnectionStatus::Error(format!(
                     "Failed to decode MEXC WebSocket message: {error}"
                 )));
                 return;
             }
         };
 
-        if envelope.channel == "push.tickers" {
-            match serde_json::from_value::<Vec<TickerPayload>>(envelope.data) {
-                Ok(tickers) => {
-                    let updates = tickers
-                        .into_iter()
-                        .map(|ticker| FuturesTickerUpdate {
-                            symbol: ticker.symbol,
-                            last_price: ticker.last_price,
-                            volume_24h: ticker.volume_24h,
-                            change_24h: ticker.change_24h,
-                            fair_price: ticker.fair_price,
-                            updated_at_ms: None,
-                        })
-                        .collect();
-                    batch_callback(updates);
-                }
-                Err(error) => message_status(MexcFuturesConnectionStatus::Error(format!(
-                    "Failed to decode MEXC ticker batch: {error}"
-                ))),
+        if envelope.channel != "push.tickers" {
+            return;
+        }
+
+        match serde_json::from_value::<Vec<TickerPayload>>(envelope.data) {
+            Ok(tickers) => {
+                let updates = tickers
+                    .into_iter()
+                    .map(|ticker| FuturesTickerUpdate {
+                        symbol: ticker.symbol,
+                        last_price: ticker.last_price,
+                        volume_24h: ticker.volume_24h,
+                        change_24h: ticker.change_24h,
+                        fair_price: ticker.fair_price,
+                        updated_at_ms: None,
+                    })
+                    .collect();
+                batch_callback(updates);
             }
+            Err(error) => message_status(FuturesConnectionStatus::Error(format!(
+                "Failed to decode MEXC ticker batch: {error}"
+            ))),
         }
     });
     socket.set_onmessage(Some(on_message.as_ref().unchecked_ref()));
 
     let error_status = on_status.clone();
     let on_error = Closure::<dyn FnMut(Event)>::new(move |_: Event| {
-        error_status(MexcFuturesConnectionStatus::Error(
+        error_status(FuturesConnectionStatus::Error(
             "MEXC WebSocket reported an error".into(),
         ));
     });
@@ -209,14 +204,14 @@ fn open_connection(
     let close_status = on_status.clone();
     let on_close = Closure::<dyn FnMut(CloseEvent)>::new(move |event: CloseEvent| {
         let reason = event.reason();
+        if reason.is_empty() {
+            close_status(FuturesConnectionStatus::Disconnected);
+        } else {
+            close_status(FuturesConnectionStatus::Error(format!(
+                "MEXC WebSocket closed: {reason}"
+            )));
+        }
         if let Some(runtime) = weak_runtime.upgrade() {
-            if reason.is_empty() {
-                close_status(MexcFuturesConnectionStatus::Disconnected);
-            } else {
-                close_status(MexcFuturesConnectionStatus::Error(format!(
-                    "MEXC WebSocket closed: {reason}"
-                )));
-            }
             schedule_reconnect(&runtime, close_batch.clone(), close_status.clone());
         }
     });
@@ -250,7 +245,11 @@ fn open_connection(
     Ok(())
 }
 
-fn schedule_reconnect(runtime: &Rc<RefCell<Runtime>>, on_batch: BatchCallback, on_status: StatusCallback) {
+fn schedule_reconnect(
+    runtime: &Rc<RefCell<Runtime>>,
+    on_batch: BatchCallback,
+    on_status: StatusCallback,
+) {
     let (delay, weak_runtime) = {
         let mut state = runtime.borrow_mut();
         if state.closed || state.retry_timeout.is_some() {
@@ -267,7 +266,7 @@ fn schedule_reconnect(runtime: &Rc<RefCell<Runtime>>, on_batch: BatchCallback, o
             runtime.borrow_mut().retry_timeout = None;
             runtime.borrow_mut().retry_callback = None;
             if let Err(error) = open_connection(&runtime, on_batch.clone(), on_status.clone(), true) {
-                on_status(MexcFuturesConnectionStatus::Error(error));
+                on_status(FuturesConnectionStatus::Error(error));
                 schedule_reconnect(&runtime, on_batch.clone(), on_status.clone());
             }
         }
