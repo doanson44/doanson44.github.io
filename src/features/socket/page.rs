@@ -94,13 +94,12 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                             each=move || visible.get()
                             key=|ticker| ticker.ticker.symbol.clone()
                             children=move |ticker| {
-                                let index = visible
-                                    .get_untracked()
-                                    .iter()
-                                    .position(|item| item.ticker.symbol == ticker.ticker.symbol)
-                                    .unwrap_or(0);
                                 view! {
-                                    <TickerCard ticker=ticker index=index state=state />
+                                    <TickerCard
+                                        ticker=ticker
+                                        state=state
+                                        visible=visible
+                                    />
                                 }
                             }
                         />
@@ -116,8 +115,17 @@ const DEFAULT_LIMIT: usize = 10;
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
 #[component]
-fn TickerCard(ticker: TrackedFuturesTicker, index: usize, state: SocketState) -> impl IntoView {
+fn TickerCard(
+    ticker: TrackedFuturesTicker,
+    state: SocketState,
+    visible: Memo<Vec<TrackedFuturesTicker>>,
+) -> impl IntoView {
     let symbol = ticker.ticker.symbol.clone();
+    let ticker = Memo::new({
+        let tickers = state.tickers;
+        let symbol = symbol.clone();
+        move |_| tickers.get().get(&symbol).cloned()
+    });
     let is_pinned = Memo::new({
         let pinned_slots = state.pinned_slots;
         let symbol = symbol.clone();
@@ -138,8 +146,18 @@ fn TickerCard(ticker: TrackedFuturesTicker, index: usize, state: SocketState) ->
                 "socket-ticker-card card bg-body-tertiary border-secondary"
             }
             title={let symbol_title = symbol.clone(); move || if is_pinned.get() { format!("Unpin {symbol_title}") } else { format!("Pin {symbol_title}") }}
-            aria-label=card_aria_label(ticker.clone(), is_pinned.get())
-            on:click=move |_| state.toggle_pin(&symbol, index)
+            aria-label=move || ticker.get().map(|item| card_aria_label(item, is_pinned.get())).unwrap_or_else(|| format!("{symbol}, market data unavailable"))
+            on:click={
+                let symbol = symbol.clone();
+                move |_| {
+                    let index = visible
+                        .get_untracked()
+                        .iter()
+                        .position(|item| item.ticker.symbol == symbol)
+                        .unwrap_or(0);
+                    state.toggle_pin(&symbol, index);
+                }
+            }
         >
             <div class="card-body p-2 d-flex flex-column min-h-0">
                 <div class="d-flex align-items-start justify-content-between gap-2">
@@ -148,28 +166,41 @@ fn TickerCard(ticker: TrackedFuturesTicker, index: usize, state: SocketState) ->
                 </div>
 
                 <div class="socket-ticker-price font-monospace mt-1 text-truncate">
-                    {format_number(ticker.ticker.last_price)}
+                    {move || ticker.get().map(|item| format_number(item.ticker.last_price)).unwrap_or_else(|| "—".into())}
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center gap-2 mt-1">
-                    <span class=change_class(ticker.ticker.change_24h)>
-                        {format_percent(ticker.ticker.change_24h)}
-                    </span>
+                    {move || {
+                        ticker
+                            .get()
+                            .map(|item| view! {
+                                <span class=change_class(item.ticker.change_24h)>
+                                    {format_percent(item.ticker.change_24h)}
+                                </span>
+                            })
+                            .unwrap_or_else(|| view! {
+                                <span class="text-body-secondary">"—"</span>
+                            })
+                    }}
                     <span class="small text-body-secondary font-monospace">
-                        {format!("{}%", ticker.momentum.progress())}
+                        {move || ticker.get().map(|item| format!("{}%", item.momentum.progress())).unwrap_or_else(|| "—".into())}
                     </span>
                 </div>
 
                 <progress
                     class="socket-ticker-progress mt-2"
                     max="100"
-                    value=ticker.momentum.progress().to_string()
+                    value=move || ticker.get().map(|item| item.momentum.progress().to_string()).unwrap_or_else(|| "0".into())
                     aria-label="Directional progress"
                 ></progress>
 
                 <div class="d-flex justify-content-between gap-2 mt-auto pt-2 small font-monospace">
-                    <span class="text-success-emphasis">{format!("↑ {}", ticker.momentum.up_ticks)}</span>
-                    <span class="text-danger-emphasis">{format!("↓ {}", ticker.momentum.down_ticks)}</span>
+                    <span class="text-success-emphasis">
+                        {move || ticker.get().map(|item| format!("↑ {}", item.momentum.up_ticks)).unwrap_or_else(|| "↑ 0".into())}
+                    </span>
+                    <span class="text-danger-emphasis">
+                        {move || ticker.get().map(|item| format!("↓ {}", item.momentum.down_ticks)).unwrap_or_else(|| "↓ 0".into())}
+                    </span>
                 </div>
             </div>
         </button>
