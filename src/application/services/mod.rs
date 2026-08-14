@@ -12,7 +12,7 @@ use crate::domain::futures::{
 };
 use crate::domain::markdown::{render_markdown, RenderedMarkdown};
 
-/// Application service that combines the live Futures registry with session-local momentum.
+/// Application service that owns live Futures market state and session-local momentum.
 #[derive(Debug, Default)]
 pub struct FuturesMarketService {
     registry: FuturesTickerRegistry,
@@ -25,8 +25,9 @@ impl FuturesMarketService {
         Self::default()
     }
 
-    /// Applies an incremental market batch and returns the current tracked snapshot.
-    pub fn apply_batch(&mut self, updates: Vec<FuturesTickerUpdate>) -> Vec<TrackedFuturesTicker> {
+    /// Applies market updates immediately without publishing a UI snapshot.
+    pub fn apply_batch(&mut self, updates: impl IntoIterator<Item = FuturesTickerUpdate>) {
+        let updates = updates.into_iter().collect::<Vec<_>>();
         for update in &updates {
             let momentum = self
                 .momentum
@@ -34,25 +35,35 @@ impl FuturesMarketService {
                 .or_insert_with(|| FuturesTickerMomentum::baseline(None));
             momentum.observe(update.last_price);
         }
+        self.registry.apply_batch(updates);
+    }
 
-        let snapshot = self.registry.apply_batch(updates);
-        snapshot
-            .into_iter()
-            .filter_map(|ticker| {
-                self.momentum
-                    .get(&ticker.symbol)
+    /// Creates a point-in-time projection for the UI flush cycle.
+    pub fn snapshot(&self) -> HashMap<String, TrackedFuturesTicker> {
+        self.registry
+            .snapshot()
+            .map(|(symbol, ticker)| {
+                let momentum = self
+                    .momentum
+                    .get(symbol)
                     .cloned()
-                    .map(|momentum| TrackedFuturesTicker { ticker, momentum })
+                    .unwrap_or_else(|| FuturesTickerMomentum::baseline(ticker.last_price));
+                (
+                    symbol.clone(),
+                    TrackedFuturesTicker {
+                        ticker: ticker.clone(),
+                        momentum,
+                    },
+                )
             })
             .collect()
     }
 
-    /// Re-baselines all known tickers after a reconnect without creating synthetic ticks.
+    /// Re-baselines known tickers after reconnect without creating synthetic ticks.
     pub fn rebaseline(&mut self) {
-        let snapshot = self.registry.apply_batch(Vec::new());
-        for ticker in snapshot {
-            if let Some(momentum) = self.momentum.get_mut(&ticker.symbol) {
-                *momentum = FuturesTickerMomentum::baseline(None);
+        for (symbol, ticker) in self.registry.snapshot() {
+            if let Some(momentum) = self.momentum.get_mut(symbol) {
+                *momentum = FuturesTickerMomentum::baseline(ticker.last_price);
             }
         }
     }
@@ -97,10 +108,11 @@ mod tests {
     #[test]
     fn first_update_is_a_baseline() {
         let mut service = FuturesMarketService::new();
-        let snapshot = service.apply_batch(vec![update("BTC_USDT", 100.0)]);
+        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
+        let snapshot = service.snapshot();
 
-        assert_eq!(snapshot[0].momentum.up_ticks, 0);
-        assert_eq!(snapshot[0].momentum.down_ticks, 0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 0);
     }
 
     #[test]
@@ -108,11 +120,12 @@ mod tests {
         let mut service = FuturesMarketService::new();
         service.apply_batch(vec![update("BTC_USDT", 100.0)]);
         service.apply_batch(vec![update("BTC_USDT", 101.0)]);
-        let snapshot = service.apply_batch(vec![update("BTC_USDT", 100.0)]);
+        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
+        let snapshot = service.snapshot();
 
-        assert_eq!(snapshot[0].momentum.up_ticks, 1);
-        assert_eq!(snapshot[0].momentum.down_ticks, 1);
-        assert_eq!(snapshot[0].momentum.progress(), 0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 1);
+        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 1);
+        assert_eq!(snapshot["BTC_USDT"].momentum.progress(), 0);
     }
 
     #[test]
@@ -121,9 +134,10 @@ mod tests {
         service.apply_batch(vec![update("BTC_USDT", 100.0)]);
         service.apply_batch(vec![update("BTC_USDT", 101.0)]);
         service.rebaseline();
-        let snapshot = service.apply_batch(vec![update("BTC_USDT", 102.0)]);
+        service.apply_batch(vec![update("BTC_USDT", 102.0)]);
+        let snapshot = service.snapshot();
 
-        assert_eq!(snapshot[0].momentum.up_ticks, 1);
-        assert_eq!(snapshot[0].momentum.down_ticks, 0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 1);
+        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 0);
     }
 }
