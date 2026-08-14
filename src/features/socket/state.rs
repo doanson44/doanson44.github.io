@@ -30,7 +30,7 @@ pub enum SocketViewMode {
 /// Reactive state for the realtime Futures ticker grid.
 #[derive(Clone, Copy)]
 pub struct SocketState {
-    pub tickers: RwSignal<MarketSnapshot>,
+    pub tickers: RwSignal<MarketSnapshot, LocalStorage>,
     pub view_mode: RwSignal<SocketViewMode>,
     pub ticker_limit: RwSignal<usize>,
     pub pinned_slots: RwSignal<Vec<Option<String>>>,
@@ -40,7 +40,7 @@ pub struct SocketState {
 impl SocketState {
     /// Creates the socket feature state and starts the all-market ticker stream.
     pub fn new(stream: Rc<dyn FuturesMarketStream>) -> Self {
-        let tickers = RwSignal::new(Rc::new(HashMap::new()));
+        let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
         let view_mode = RwSignal::new(SocketViewMode::All);
         let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
         let pinned_slots = RwSignal::new(Vec::<Option<String>>::new());
