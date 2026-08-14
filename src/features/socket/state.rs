@@ -15,7 +15,7 @@ use crate::application::{
 use crate::domain::futures::TrackedFuturesTicker;
 
 const DEFAULT_LIMIT: usize = 10;
-const LIMIT_OPTIONS: [usize; 5] = [10, 20, 30, 50, 100];
+const LIMIT_OPTIONS: [usize; 6] = [10, 20, 30, 50, 100, usize::MAX];
 const UI_FLUSH_MS: i32 = 75;
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
@@ -27,11 +27,19 @@ pub enum SocketViewMode {
     PinnedOnly,
 }
 
+/// Socket ticker sort mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketSortMode {
+    Momentum,
+    TotalTicks,
+}
+
 /// Reactive state for the realtime Futures ticker grid.
 #[derive(Clone, Copy)]
 pub struct SocketState {
     pub tickers: RwSignal<MarketSnapshot, LocalStorage>,
     pub view_mode: RwSignal<SocketViewMode>,
+    pub sort_mode: RwSignal<SocketSortMode>,
     pub ticker_limit: RwSignal<usize>,
     pub pinned_slots: RwSignal<Vec<Option<String>>>,
     pub connection_status: RwSignal<FuturesConnectionStatus>,
@@ -42,6 +50,7 @@ impl SocketState {
     pub fn new(stream: Rc<dyn FuturesMarketStream>) -> Self {
         let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
         let view_mode = RwSignal::new(SocketViewMode::All);
+        let sort_mode = RwSignal::new(SocketSortMode::Momentum);
         let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
         let pinned_slots = RwSignal::new(Vec::<Option<String>>::new());
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
@@ -106,6 +115,7 @@ impl SocketState {
         Self {
             tickers,
             view_mode,
+            sort_mode,
             ticker_limit,
             pinned_slots,
             connection_status,
