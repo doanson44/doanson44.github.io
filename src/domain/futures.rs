@@ -222,7 +222,13 @@ mod tests {
         registry.apply_batch(vec![update("ETH_USDT", 2000.0, 50.0)]);
 
         assert_eq!(registry.len(), 1);
-        assert_eq!(registry.snapshot().next().map(|(_, ticker)| ticker.symbol.as_str()), Some("ETH_USDT"));
+        assert_eq!(
+            registry
+                .snapshot()
+                .next()
+                .map(|(_, ticker)| ticker.symbol.as_str()),
+            Some("ETH_USDT")
+        );
     }
 
     #[test]
