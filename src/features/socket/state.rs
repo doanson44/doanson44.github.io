@@ -33,12 +33,6 @@ pub struct SocketState {
     pub connection_status: RwSignal<FuturesConnectionStatus>,
 }
 
-impl Default for SocketState {
-    fn default() -> Self {
-        Self::new(Rc::new(crate::infrastructure::mexc_futures::MexcFuturesStream))
-    }
-}
-
 impl SocketState {
     /// Creates the socket feature state and starts the all-market ticker stream.
     pub fn new(stream: Rc<dyn FuturesMarketStream>) -> Self {
@@ -70,6 +64,8 @@ impl SocketState {
                         callback.unchecked_ref(),
                         UI_FLUSH_MS,
                     );
+                } else {
+                    flush_pending.set(false);
                 }
             })
         };
