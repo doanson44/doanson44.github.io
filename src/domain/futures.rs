@@ -24,17 +24,17 @@ pub struct FuturesTickerUpdate {
 
 const MOMENTUM_WINDOW: usize = 100;
 
-/// Tracks directional price changes over a bounded rolling tick window.
+/// Tracks percentage price movement over a bounded rolling window.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct FuturesTickerMomentum {
     pub previous_price: Option<f64>,
-    pub up_ticks: u64,
-    pub down_ticks: u64,
-    directions: VecDeque<i8>,
+    pub up_movement_percent: f64,
+    pub down_movement_percent: f64,
+    movements: VecDeque<f64>,
 }
 
 impl FuturesTickerMomentum {
-    /// Creates a baseline without counting the first observed price as a tick.
+    /// Creates a baseline without counting the first observed price as movement.
     pub fn baseline(price: Option<f64>) -> Self {
         Self {
             previous_price: price,
@@ -42,7 +42,7 @@ impl FuturesTickerMomentum {
         }
     }
 
-    /// Applies a price observation and keeps only the latest directional window.
+    /// Applies a price observation and keeps only the latest non-zero movements.
     pub fn observe(&mut self, price: Option<f64>) {
         let Some(new_price) = price else {
             return;
@@ -52,48 +52,54 @@ impl FuturesTickerMomentum {
             return;
         };
 
-        let direction = if new_price > previous_price {
-            1
-        } else if new_price < previous_price {
-            -1
-        } else {
-            0
-        };
+        if previous_price <= 0.0 {
+            self.previous_price = Some(new_price);
+            return;
+        }
 
-        if direction != 0 {
-            self.directions.push_back(direction);
-            if direction > 0 {
-                self.up_ticks += 1;
-            } else {
-                self.down_ticks += 1;
-            }
-            if self.directions.len() > MOMENTUM_WINDOW {
-                if let Some(oldest) = self.directions.pop_front() {
-                    if oldest > 0 {
-                        self.up_ticks = self.up_ticks.saturating_sub(1);
-                    } else {
-                        self.down_ticks = self.down_ticks.saturating_sub(1);
-                    }
+        let movement = (new_price - previous_price) / previous_price * 100.0;
+        if movement.abs() > f64::EPSILON {
+            self.movements.push_back(movement);
+            self.add_movement(movement);
+
+            if self.movements.len() > MOMENTUM_WINDOW {
+                if let Some(oldest) = self.movements.pop_front() {
+                    self.remove_movement(oldest);
                 }
             }
         }
+
         self.previous_price = Some(new_price);
     }
 
-    /// Returns the net directional ticks in the current rolling window.
-    pub fn net_ticks(&self) -> i64 {
-        self.up_ticks as i64 - self.down_ticks as i64
+    /// Returns the net percentage movement in the current rolling window.
+    pub fn net_movement_percent(&self) -> f64 {
+        self.up_movement_percent - self.down_movement_percent
     }
 
-    /// Returns momentum as a bounded 0..=100 score.
+    /// Returns positive momentum as a bounded 0..=100 score.
     pub fn progress(&self) -> u8 {
-        self.up_ticks
-            .saturating_sub(self.down_ticks)
-            .min(MOMENTUM_WINDOW as u64) as u8
+        self.net_movement_percent().clamp(0.0, 100.0).round() as u8
+    }
+
+    fn add_movement(&mut self, movement: f64) {
+        if movement > 0.0 {
+            self.up_movement_percent += movement;
+        } else {
+            self.down_movement_percent += -movement;
+        }
+    }
+
+    fn remove_movement(&mut self, movement: f64) {
+        if movement > 0.0 {
+            self.up_movement_percent = (self.up_movement_percent - movement).max(0.0);
+        } else {
+            self.down_movement_percent = (self.down_movement_percent + movement).max(0.0);
+        }
     }
 }
 
-/// A Futures ticker together with session-local directional momentum.
+/// A Futures ticker together with session-local percentage momentum.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TrackedFuturesTicker {
     pub ticker: FuturesTicker,
@@ -238,64 +244,68 @@ mod tests {
         let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
         momentum.observe(Some(100.0));
 
-        assert_eq!(momentum.up_ticks, 0);
-        assert_eq!(momentum.down_ticks, 0);
+        assert_eq!(momentum.up_movement_percent, 0.0);
+        assert_eq!(momentum.down_movement_percent, 0.0);
         assert_eq!(momentum.progress(), 0);
     }
 
     #[test]
-    fn price_changes_update_directional_ticks() {
+    fn movement_weight_reflects_percentage_magnitude() {
         let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
         momentum.observe(Some(101.0));
-        momentum.observe(Some(102.0));
-        momentum.observe(Some(101.0));
-        momentum.observe(Some(101.0));
-
-        assert_eq!(momentum.up_ticks, 2);
-        assert_eq!(momentum.down_ticks, 1);
-        assert_eq!(momentum.net_ticks(), 1);
+        assert!((momentum.up_movement_percent - 1.0).abs() < 1e-10);
         assert_eq!(momentum.progress(), 1);
+
+        momentum.observe(Some(111.0));
+        assert!(momentum.up_movement_percent > 10.0);
+        assert!(momentum.progress() > 10);
     }
 
     #[test]
-    fn momentum_is_capped_at_100_and_drops_when_direction_reverses() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(0.0));
-        for price in 1..=101 {
-            momentum.observe(Some(price as f64));
+    fn downward_movement_reduces_positive_momentum() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        momentum.observe(Some(110.0));
+        let before_reversal = momentum.progress();
+
+        momentum.observe(Some(100.0));
+
+        assert!(momentum.progress() < before_reversal);
+        assert!(momentum.down_movement_percent > 0.0);
+    }
+
+    #[test]
+    fn momentum_is_capped_at_100() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(1.0));
+        let mut price = 1.0;
+        for _ in 0..100 {
+            price *= 2.0;
+            momentum.observe(Some(price));
         }
 
         assert_eq!(momentum.progress(), 100);
-
-        momentum.observe(Some(102.0));
-        assert_eq!(momentum.progress(), 100);
-
-        momentum.observe(Some(101.0));
-        assert_eq!(momentum.progress(), 98);
     }
 
     #[test]
     fn momentum_uses_a_rolling_window() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(0.0));
-        for price in 1..=101 {
-            momentum.observe(Some(price as f64));
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        for _ in 0..100 {
+            momentum.observe(Some(101.0));
+            momentum.observe(Some(100.0));
         }
 
-        assert_eq!(momentum.up_ticks, 100);
-        assert_eq!(momentum.down_ticks, 0);
-        assert_eq!(momentum.progress(), 100);
-
-        momentum.observe(Some(100.0));
-        assert_eq!(momentum.up_ticks, 99);
-        assert_eq!(momentum.down_ticks, 1);
-        assert_eq!(momentum.progress(), 98);
+        assert_eq!(momentum.movements.len(), 100);
+        assert!(momentum.net_movement_percent() < 0.0);
+        assert_eq!(momentum.progress(), 0);
     }
 
     #[test]
-    fn missing_price_does_not_create_a_tick() {
+    fn missing_or_invalid_price_does_not_create_movement() {
         let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
         momentum.observe(None);
-        assert_eq!(momentum.up_ticks, 0);
-        assert_eq!(momentum.down_ticks, 0);
-        assert_eq!(momentum.previous_price, Some(100.0));
+        momentum.observe(Some(0.0));
+
+        assert_eq!(momentum.up_movement_percent, 0.0);
+        assert_eq!(momentum.down_movement_percent, 0.0);
+        assert_eq!(momentum.previous_price, Some(0.0));
     }
 }
