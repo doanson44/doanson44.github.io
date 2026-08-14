@@ -54,11 +54,12 @@ impl SocketState {
                 }
                 let service = service.clone();
                 let flush_pending = flush_pending.clone();
-                let callback = Closure::once_into_js(move || {
+                let callback = Closure::once_aborting(move || {
                     flush_pending.set(false);
                     let snapshot = service.borrow().snapshot();
                     tickers.set(Rc::new(snapshot));
-                });
+                })
+                .into_js_value();
                 if let Some(window) = web_sys::window() {
                     let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
                         callback.unchecked_ref(),
