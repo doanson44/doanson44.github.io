@@ -15,7 +15,14 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
         let view_mode = state.view_mode;
         let ticker_limit = state.ticker_limit;
         let pinned_slots = state.pinned_slots;
-        move |_| build_visible(tickers.get(), view_mode.get(), ticker_limit.get(), pinned_slots.get())
+        move |_| {
+            build_visible(
+                tickers.get(),
+                view_mode.get(),
+                ticker_limit.get(),
+                pinned_slots.get(),
+            )
+        }
     });
 
     view! {
@@ -109,16 +116,17 @@ const DEFAULT_LIMIT: usize = 10;
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
 #[component]
-fn TickerCard(
-    ticker: TrackedFuturesTicker,
-    index: usize,
-    state: SocketState,
-) -> impl IntoView {
+fn TickerCard(ticker: TrackedFuturesTicker, index: usize, state: SocketState) -> impl IntoView {
     let symbol = ticker.ticker.symbol.clone();
     let is_pinned = Memo::new({
         let pinned_slots = state.pinned_slots;
         let symbol = symbol.clone();
-        move |_| pinned_slots.get().iter().any(|slot| slot.as_deref() == Some(symbol.as_str()))
+        move |_| {
+            pinned_slots
+                .get()
+                .iter()
+                .any(|slot| slot.as_deref() == Some(symbol.as_str()))
+        }
     });
 
     view! {
@@ -181,7 +189,10 @@ fn build_visible(
             .collect();
     }
 
-    let pinned_symbols = slots.iter().filter_map(|slot| slot.as_deref()).collect::<Vec<_>>();
+    let pinned_symbols = slots
+        .iter()
+        .filter_map(|slot| slot.as_deref())
+        .collect::<Vec<_>>();
     let mut dynamic = all
         .values()
         .filter(|item| !pinned_symbols.contains(&item.ticker.symbol.as_str()))
