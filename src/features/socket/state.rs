@@ -1,4 +1,8 @@
-use std::{cell::{Cell, RefCell}, collections::HashMap, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    collections::HashMap,
+    rc::Rc,
+};
 
 use leptos::prelude::*;
 use send_wrapper::SendWrapper;
@@ -124,7 +128,10 @@ impl SocketState {
     /// Toggles a ticker pin while preserving its current rendered slot.
     pub fn toggle_pin(&self, symbol: &str, current_index: usize) {
         let mut slots = self.pinned_slots.get_untracked();
-        if let Some(index) = slots.iter().position(|slot| slot.as_deref() == Some(symbol)) {
+        if let Some(index) = slots
+            .iter()
+            .position(|slot| slot.as_deref() == Some(symbol))
+        {
             slots[index] = None;
             while slots.last().is_some_and(Option::is_none) {
                 slots.pop();
