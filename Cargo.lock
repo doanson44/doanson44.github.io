@@ -924,6 +924,7 @@ dependencies = [
  "pulldown-cmark",
  "qrcode",
  "regex",
+ "send_wrapper",
  "serde",
  "serde_json",
  "serde_yaml",
