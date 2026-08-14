@@ -260,18 +260,18 @@ fn build_visible(
         .filter(|item| !pinned_symbols.contains(&item.ticker.symbol.as_str()))
         .cloned()
         .collect::<Vec<_>>();
-    dynamic.sort_unstable_by(|left, right| {
-        match sort {
-            SocketSortMode::Momentum => right
-                .momentum
-                .progress()
-                .cmp(&left.momentum.progress())
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
-            SocketSortMode::TotalTicks => {
-                let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
-                let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
-                right_total.cmp(&left_total).then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
-            }
+    dynamic.sort_unstable_by(|left, right| match sort {
+        SocketSortMode::Momentum => right
+            .momentum
+            .progress()
+            .cmp(&left.momentum.progress())
+            .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+        SocketSortMode::TotalTicks => {
+            let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
+            let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
+            right_total
+                .cmp(&left_total)
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
         }
     });
     dynamic.truncate(limit);
