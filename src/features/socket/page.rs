@@ -4,7 +4,7 @@ use leptos::prelude::*;
 
 use crate::application::ports::{FuturesConnectionStatus, FuturesMarketStream};
 use crate::domain::futures::TrackedFuturesTicker;
-use crate::features::socket::state::{SocketState, SocketViewMode};
+use crate::features::socket::state::{SocketSortMode, SocketState, SocketViewMode};
 
 /// Realtime MEXC Futures ticker monitor page.
 #[component]
@@ -13,12 +13,14 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
     let visible = Memo::new({
         let tickers = state.tickers;
         let view_mode = state.view_mode;
+        let sort_mode = state.sort_mode;
         let ticker_limit = state.ticker_limit;
         let pinned_slots = state.pinned_slots;
         move |_| {
             build_visible(
                 tickers.get(),
                 view_mode.get(),
+                sort_mode.get(),
                 ticker_limit.get(),
                 pinned_slots.get(),
             )
@@ -66,6 +68,31 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                     </div>
 
                     <div class="d-flex align-items-center gap-2">
+                        <label class="small text-body-secondary" for="socket-sort-mode">"Sort by"</label>
+                        <select
+                            id="socket-sort-mode"
+                            class="form-select form-select-sm"
+                            style="width: 130px;"
+                            aria-label="Sort tickers by"
+                            prop:value=move || match state.sort_mode.get() {
+                                SocketSortMode::Momentum => "momentum",
+                                SocketSortMode::TotalTicks => "activity",
+                            }
+                            on:change=move |ev| {
+                                let value = event_target_value(&ev);
+                                if value == "activity" {
+                                    state.sort_mode.set(SocketSortMode::TotalTicks);
+                                } else {
+                                    state.sort_mode.set(SocketSortMode::Momentum);
+                                }
+                            }
+                        >
+                            <option value="momentum">"Momentum"</option>
+                            <option value="activity">"Total Ticks"</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
                         <label class="small text-body-secondary" for="socket-ticker-limit">"Show"</label>
                         <select
                             id="socket-ticker-limit"
@@ -77,8 +104,11 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                 state.set_ticker_limit(value);
                             }
                         >
-                            {SocketState::limit_options().iter().map(|value| view! {
-                                <option value=value.to_string()>{value.to_string()}</option>
+                            {SocketState::limit_options().iter().map(|value| {
+                                let label = if *value == usize::MAX { "All".to_string() } else { value.to_string() };
+                                view! {
+                                    <option value=value.to_string()>{label}</option>
+                                }
                             }).collect_view()}
                         </select>
                         <span class="small text-body-secondary">"dynamic tickers"</span>
@@ -210,6 +240,7 @@ fn TickerCard(
 fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
+    sort: SocketSortMode,
     limit: usize,
     slots: Vec<Option<String>>,
 ) -> Vec<TrackedFuturesTicker> {
@@ -230,11 +261,18 @@ fn build_visible(
         .cloned()
         .collect::<Vec<_>>();
     dynamic.sort_unstable_by(|left, right| {
-        right
-            .momentum
-            .progress()
-            .cmp(&left.momentum.progress())
-            .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+        match sort {
+            SocketSortMode::Momentum => right
+                .momentum
+                .progress()
+                .cmp(&left.momentum.progress())
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+            SocketSortMode::TotalTicks => {
+                let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
+                let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
+                right_total.cmp(&left_total).then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
+        }
     });
     dynamic.truncate(limit);
 
