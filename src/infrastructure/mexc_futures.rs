@@ -265,7 +265,8 @@ fn schedule_reconnect(
         if let Some(runtime) = weak_runtime.upgrade() {
             runtime.borrow_mut().retry_timeout = None;
             runtime.borrow_mut().retry_callback = None;
-            if let Err(error) = open_connection(&runtime, on_batch.clone(), on_status.clone(), true) {
+            if let Err(error) = open_connection(&runtime, on_batch.clone(), on_status.clone(), true)
+            {
                 on_status(FuturesConnectionStatus::Error(error));
                 schedule_reconnect(&runtime, on_batch.clone(), on_status.clone());
             }
