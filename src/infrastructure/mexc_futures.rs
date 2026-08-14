@@ -55,8 +55,6 @@ struct Runtime {
     retry_callback: Option<Callback>,
 }
 
-
-
 /// Handle for a reconnecting MEXC Futures public WebSocket connection.
 pub struct MexcFuturesWsHandle {
     runtime: Rc<RefCell<Runtime>>,
