@@ -9,7 +9,7 @@ use crate::domain::finance::FinanceTool;
 use crate::features::cv::page::CvPage;
 use crate::features::games::page::GamesPage;
 use crate::features::home::page::HomePage;
-use crate::features::socket::dashboard::SocketPage;
+use crate::features::socket::page::SocketPage;
 use crate::features::tools::base64::page::Base64Page;
 use crate::features::tools::developer::page::DeveloperToolPage;
 use crate::features::tools::finance::page::FinancePage;
