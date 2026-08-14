@@ -137,7 +137,7 @@ fn TickerCard(ticker: TrackedFuturesTicker, index: usize, state: SocketState) ->
             } else {
                 "socket-ticker-card card bg-body-tertiary border-secondary"
             }
-            title=move || if is_pinned.get() { format!("Unpin {symbol}") } else { format!("Pin {symbol}") }
+            title={let symbol_title = symbol.clone(); move || if is_pinned.get() { format!("Unpin {symbol_title}") } else { format!("Pin {symbol_title}") }}
             aria-label=card_aria_label(ticker.clone(), is_pinned.get())
             on:click=move |_| state.toggle_pin(&symbol, index)
         >

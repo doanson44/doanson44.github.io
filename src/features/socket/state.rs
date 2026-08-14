@@ -50,7 +50,6 @@ impl SocketState {
 
         let schedule_flush = {
             let service = service.clone();
-            let tickers = tickers;
             let flush_pending = flush_pending.clone();
             Rc::new(move || {
                 if flush_pending.replace(true) {

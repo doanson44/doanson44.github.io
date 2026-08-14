@@ -40,6 +40,7 @@ type MessageCallback = Closure<dyn FnMut(MessageEvent)>;
 type ErrorCallback = Closure<dyn FnMut(Event)>;
 type CloseCallback = Closure<dyn FnMut(CloseEvent)>;
 
+#[derive(Default)]
 struct Runtime {
     socket: Option<WebSocket>,
     ping_interval: Option<i32>,
@@ -54,23 +55,7 @@ struct Runtime {
     retry_callback: Option<Callback>,
 }
 
-impl Default for Runtime {
-    fn default() -> Self {
-        Self {
-            socket: None,
-            ping_interval: None,
-            retry_timeout: None,
-            retry_attempt: 0,
-            closed: false,
-            on_open: None,
-            on_message: None,
-            on_error: None,
-            on_close: None,
-            ping_callback: None,
-            retry_callback: None,
-        }
-    }
-}
+
 
 /// Handle for a reconnecting MEXC Futures public WebSocket connection.
 pub struct MexcFuturesWsHandle {
