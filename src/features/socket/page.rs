@@ -78,7 +78,7 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                             }
                         >
                             {SocketState::limit_options().iter().map(|value| view! {
-                                <option value=value.to_string()>{value}</option>
+                                <option value=value.to_string()>{value.to_string()}</option>
                             }).collect_view()}
                         </select>
                         <span class="small text-body-secondary">"dynamic tickers"</span>
