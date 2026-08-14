@@ -295,6 +295,9 @@ fn clear_active_connection(runtime: &Rc<RefCell<Runtime>>) {
         if let Some(handle) = state.ping_interval.take() {
             window.clear_interval_with_handle(handle);
         }
+        if let Some(handle) = state.retry_timeout.take() {
+            window.clear_timeout_with_handle(handle);
+        }
     }
     if let Some(socket) = state.socket.take() {
         socket.set_onopen(None);
@@ -308,6 +311,7 @@ fn clear_active_connection(runtime: &Rc<RefCell<Runtime>>) {
     state.on_error = None;
     state.on_close = None;
     state.ping_callback = None;
+    state.retry_callback = None;
 }
 
 fn close_runtime(runtime: &Rc<RefCell<Runtime>>) {
