@@ -85,9 +85,11 @@ impl FuturesTickerMomentum {
         self.up_ticks as i64 - self.down_ticks as i64
     }
 
-    /// Returns positive directional momentum as a 0..=100 fill percentage.
+    /// Returns momentum as a bounded 0..=100 score.
     pub fn progress(&self) -> u8 {
-        self.net_ticks().clamp(0, MOMENTUM_WINDOW as i64) as u8
+        self.up_ticks
+            .saturating_sub(self.down_ticks)
+            .min(MOMENTUM_WINDOW as u64) as u8
     }
 }
 
@@ -253,6 +255,22 @@ mod tests {
         assert_eq!(momentum.down_ticks, 1);
         assert_eq!(momentum.net_ticks(), 1);
         assert_eq!(momentum.progress(), 1);
+    }
+
+    #[test]
+    fn momentum_is_capped_at_100_and_drops_when_direction_reverses() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(0.0));
+        for price in 1..=101 {
+            momentum.observe(Some(price as f64));
+        }
+
+        assert_eq!(momentum.progress(), 100);
+
+        momentum.observe(Some(102.0));
+        assert_eq!(momentum.progress(), 100);
+
+        momentum.observe(Some(101.0));
+        assert_eq!(momentum.progress(), 98);
     }
 
     #[test]
