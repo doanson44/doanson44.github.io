@@ -1,15 +1,20 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::{Cell, RefCell}, collections::HashMap, rc::Rc};
 
 use leptos::prelude::*;
+use send_wrapper::SendWrapper;
+use wasm_bindgen::{closure::Closure, JsCast};
 
-use crate::application::services::FuturesMarketService;
-use crate::domain::futures::TrackedFuturesTicker;
-use crate::infrastructure::mexc_futures::{
-    connect_tickers, MexcFuturesConnectionStatus, MexcFuturesWsHandle,
+use crate::application::{
+    ports::{FuturesConnectionStatus, FuturesMarketStream},
+    services::FuturesMarketService,
 };
+use crate::domain::futures::TrackedFuturesTicker;
 
 const DEFAULT_LIMIT: usize = 10;
 const LIMIT_OPTIONS: [usize; 5] = [10, 20, 30, 50, 100];
+const UI_FLUSH_MS: i32 = 75;
+
+type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
 /// Socket ticker view mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,48 +26,81 @@ pub enum SocketViewMode {
 /// Reactive state for the realtime Futures ticker grid.
 #[derive(Clone, Copy)]
 pub struct SocketState {
-    pub tickers: RwSignal<Vec<TrackedFuturesTicker>>,
+    pub tickers: RwSignal<MarketSnapshot>,
     pub view_mode: RwSignal<SocketViewMode>,
     pub ticker_limit: RwSignal<usize>,
     pub pinned_slots: RwSignal<Vec<Option<String>>>,
-    pub connection_status: RwSignal<MexcFuturesConnectionStatus>,
+    pub connection_status: RwSignal<FuturesConnectionStatus>,
 }
 
 impl Default for SocketState {
     fn default() -> Self {
-        Self::new()
+        Self::new(Rc::new(crate::infrastructure::mexc_futures::MexcFuturesStream))
     }
 }
 
 impl SocketState {
     /// Creates the socket feature state and starts the all-market ticker stream.
-    pub fn new() -> Self {
-        let tickers = RwSignal::new(Vec::new());
+    pub fn new(stream: Rc<dyn FuturesMarketStream>) -> Self {
+        let tickers = RwSignal::new(Rc::new(HashMap::new()));
         let view_mode = RwSignal::new(SocketViewMode::All);
         let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
         let pinned_slots = RwSignal::new(Vec::<Option<String>>::new());
-        let connection_status = RwSignal::new(MexcFuturesConnectionStatus::Connecting);
+        let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
+        let flush_pending = Rc::new(Cell::new(false));
+
+        let schedule_flush = {
+            let service = service.clone();
+            let tickers = tickers;
+            let flush_pending = flush_pending.clone();
+            Rc::new(move || {
+                if flush_pending.replace(true) {
+                    return;
+                }
+                let service = service.clone();
+                let flush_pending = flush_pending.clone();
+                let callback = Closure::once_into_js(move || {
+                    flush_pending.set(false);
+                    let snapshot = service.borrow().snapshot();
+                    tickers.set(Rc::new(snapshot));
+                });
+                if let Some(window) = web_sys::window() {
+                    let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
+                        callback.unchecked_ref(),
+                        UI_FLUSH_MS,
+                    );
+                }
+            })
+        };
 
         let service_for_stream = service.clone();
-        let tickers_signal = tickers;
+        let flush_for_stream = schedule_flush.clone();
         let on_batch = Rc::new(move |updates| {
-            let snapshot = service_for_stream.borrow_mut().apply_batch(updates);
-            tickers_signal.set(snapshot);
+            service_for_stream.borrow_mut().apply_batch(updates);
+            flush_for_stream();
         });
 
         let service_for_status = service.clone();
+        let flush_for_status = schedule_flush.clone();
         let status_signal = connection_status;
-        let on_status = Rc::new(move |status| {
-            if status == MexcFuturesConnectionStatus::Reconnecting {
+        let on_status = Rc::new(move |status: FuturesConnectionStatus| {
+            if status == FuturesConnectionStatus::Reconnecting {
                 service_for_status.borrow_mut().rebaseline();
             }
             status_signal.set(status);
+            flush_for_status();
         });
 
-        match connect_tickers(on_batch, on_status) {
-            Ok(handle) => register_cleanup(handle),
-            Err(error) => connection_status.set(MexcFuturesConnectionStatus::Error(error)),
+        match stream.connect(on_batch, on_status) {
+            Ok(handle) => {
+                let handle = SendWrapper::new(handle);
+                on_cleanup(move || {
+                    let mut handle = handle;
+                    handle.close();
+                });
+            }
+            Err(error) => connection_status.set(FuturesConnectionStatus::Error(error)),
         }
 
         Self {
@@ -102,8 +140,4 @@ impl SocketState {
         }
         self.pinned_slots.set(slots);
     }
-}
-
-fn register_cleanup(mut handle: MexcFuturesWsHandle) {
-    on_cleanup(move || handle.close());
 }
