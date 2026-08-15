@@ -1,73 +1,78 @@
-# Rust Formatting Rules
+# Rust Coding and Formatting Rules
 
 ## Purpose
 
-This document is a mandatory project rule for preventing `cargo fmt --check` failures caused by manually editing Rust formatting, especially trailing blank lines and whitespace at the end of files.
+This is a coding rule, not a substitute for CI or a requirement for an unavailable local shell environment.
+
+The goal is to write Rust source in a way that naturally remains compatible with `rustfmt` and avoids introducing formatting-only CI failures.
 
 ## Mandatory Rules
 
-1. **Never manually guess Rust formatting.** `rustfmt` is the source of truth for Rust source formatting.
-2. After modifying any `.rs` file, run:
+1. **Treat `rustfmt` as the source of truth.** Never invent a formatting convention when Rust tooling already defines it.
+2. **Do not manually manipulate whitespace to satisfy a `rustfmt` diff.** If formatting needs to change, use `cargo fmt` when a shell environment is available.
+3. **Never manually add or remove blank lines at the end of a Rust file.** In particular, do not guess whether a file needs one final newline or an additional blank line.
+4. **Do not use trailing whitespace.** Keep indentation and line breaks consistent with normal `rustfmt` output.
+5. **Keep Rust source structurally rustfmt-friendly while editing.** Prefer normal Rust formatting instead of compressed one-line expressions when the formatter would expand them.
+6. **Do not reformat unrelated code.** When implementing a feature or fix, keep the change focused. If `cargo fmt` changes unrelated formatting, review that diff before including it.
+7. **Do not claim formatting validation merely from visual inspection.** Code inspection can establish that the code is plausibly formatted, but only `cargo fmt --check` or equivalent CI output proves formatting validation.
+8. **After the final Rust edit, formatting must be considered unverified until `cargo fmt --check` or CI has actually checked it.** Never use an earlier formatting result to claim that a later edit is formatted.
 
-   ```text
-   cargo fmt --check
-   ```
+## File Ending Rule
 
-3. If `cargo fmt --check` reports a diff, do not manually patch individual whitespace changes. Run:
+Every `.rs` file must have exactly the file ending produced by `rustfmt`.
 
-   ```text
-   cargo fmt
-   ```
+Do not reason about this manually. Specifically:
 
-   Then run `cargo fmt --check` again.
-4. **Do not add or remove blank lines at the end of a Rust file by hand.** A trailing blank line and a single final newline are not interchangeable.
-5. A Rust source file must end in the exact form produced by `rustfmt`. Do not infer the required number of final newlines from a CI diff.
-6. When a CI log contains a `cargo fmt --check` diff, reproduce the formatting locally with `cargo fmt` rather than trying to interpret the diff and edit whitespace manually.
-7. **Never claim formatting validation passed unless `cargo fmt --check` was actually run and returned exit code 0.**
-8. Formatting validation must happen after the final code edit. Do not run `cargo fmt --check` before making another Rust source change and then treat the earlier result as valid.
+- Do not add an extra empty line after the final `}` just because a file appears visually cleaner that way.
+- Do not remove the final newline because a CI diff appears to show a blank line.
+- Do not attempt to fix a `cargo fmt --check` failure by guessing which newline is wrong.
+- If a formatting tool is available, let the tool make the change.
 
-## Required Workflow for Rust Changes
+## Editing Workflow
 
-Use this sequence whenever Rust code is changed:
+When a shell environment is available:
 
 ```text
-1. Edit the Rust source.
-2. Run `cargo fmt`.
-3. Run `cargo fmt --check`.
-4. If it fails, run `cargo fmt` again and repeat `cargo fmt --check`.
-5. Only continue to compilation/tests after `cargo fmt --check` passes.
+Edit → cargo fmt → cargo fmt --check
 ```
+
+When no shell environment is available:
+
+```text
+Edit carefully according to these rules → do not claim formatting validation → let CI verify it
+```
+
+The second workflow is intentional. Do not pretend that a command was executed when the environment does not provide command execution.
 
 ## CI Failure Handling
 
-If CI reports something such as:
+If CI reports a `cargo fmt --check` failure:
 
-```text
-Diff in .../src/app.rs:...
-...
-Error: Process completed with exit code 1.
-```
+1. Treat the current formatting as invalid.
+2. Do not manually interpret the final-newline diff and patch it by guesswork.
+3. If shell execution is available, run `cargo fmt`.
+4. Re-run `cargo fmt --check` after the final edit.
+5. If shell execution is unavailable, make the smallest source-level correction based on the formatter output available through CI and have CI verify it again.
+6. Do not report the formatting check as passed until a real command result or CI result confirms it.
 
-and the diff consists only of whitespace or blank-line changes:
+## Other Validation Commands
 
-- Do not manually add or remove a newline based on visual interpretation of the diff.
-- Run `cargo fmt` on the repository.
-- Run `cargo fmt --check` again.
-- Inspect the resulting diff only if the check still fails.
-- Do not make another formatting change without rerunning the check.
-
-## Important Incident: `src/app.rs`
-
-A previous fix incorrectly added an extra blank line after the final closing brace in `src/app.rs`. CI then reported that `cargo fmt --check` wanted that blank line removed. The follow-up fix removed the wrong newline manually, which caused another formatting mismatch.
-
-The lesson is definitive: **do not manually manipulate final newlines to satisfy a `rustfmt` diff. Always let `cargo fmt` make the formatting change, then verify with `cargo fmt --check`.**
-
-## Validation Standard
-
-For this project, formatting is not considered complete until the exact command below has been executed successfully:
+The following commands are **validation steps**, not coding rules:
 
 ```text
 cargo fmt --check
+cargo check --target wasm32-unknown-unknown
+cargo test
+cargo clippy --target wasm32-unknown-unknown -- -D warnings
+trunk build --release
 ```
 
-A CI failure means the formatting state must be treated as invalid until the command is rerun successfully after the final edit.
+They must not be presented as having been executed unless the execution environment or CI provides actual results.
+
+## Incident Prevention
+
+A previous change to `src/app.rs` caused repeated CI failures because the final newline was manually adjusted based on the visual appearance of a `cargo fmt --check` diff.
+
+The permanent rule is:
+
+> **Never fix Rust formatting by guessing at whitespace. Write normal Rust, use `cargo fmt` when available, and rely on actual formatter/CI output for validation.**
