@@ -89,4 +89,3 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         _ => view! { <div class="container py-5 text-center flex-grow-1"><h3 class="text-body-secondary">"404"</h3><p class="text-body-tertiary">"Page not found."</p><a href="#/" class="btn btn-outline-secondary btn-sm">"Go Home"</a></div> }.into_any(),
     }
 }
-
