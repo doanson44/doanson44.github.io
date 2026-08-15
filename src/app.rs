@@ -28,7 +28,7 @@ pub fn App() -> impl IntoView {
     view! {
         <div class="app-container d-flex flex-column vh-100" id="app">
             <Navbar />
-            <main class="flex-grow-1 d-flex overflow-hidden app-main">{move || render_page(current_hash.get())}</main>
+            <main class="flex-grow-1 d-flex overflow-auto app-main">{move || render_page(current_hash.get())}</main>
             <Footer />
         </div>
     }
