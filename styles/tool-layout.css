@@ -1,5 +1,9 @@
 /* Reusable responsive layout for tool workspaces. */
 
+.app-main {
+    min-height: 0;
+}
+
 .tool-split,
 .tool-workspace {
     min-height: 0;
