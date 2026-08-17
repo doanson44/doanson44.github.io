@@ -4,7 +4,10 @@ use leptos::prelude::*;
 
 use crate::application::ports::{FuturesConnectionStatus, FuturesMarketStream};
 use crate::domain::futures::TrackedFuturesTicker;
-use crate::features::socket::state::{SocketSortMode, SocketState, SocketViewMode};
+use crate::features::socket::state::{
+    SocketChangeFilter, SocketFairPriceFilter, SocketMomentumFilter, SocketSortMode,
+    SocketState, SocketViewMode, SocketVolumeFilter,
+};
 
 /// Realtime MEXC Futures ticker monitor page.
 #[component]
@@ -14,6 +17,10 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
         let tickers = state.tickers;
         let view_mode = state.view_mode;
         let sort_mode = state.sort_mode;
+        let change_filter = state.change_filter;
+        let momentum_filter = state.momentum_filter;
+        let fair_price_filter = state.fair_price_filter;
+        let volume_filter = state.volume_filter;
         let ticker_limit = state.ticker_limit;
         let pinned_slots = state.pinned_slots;
         move |_| {
@@ -21,11 +28,22 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                 tickers.get(),
                 view_mode.get(),
                 sort_mode.get(),
+                change_filter.get(),
+                momentum_filter.get(),
+                fair_price_filter.get(),
+                volume_filter.get(),
                 ticker_limit.get(),
                 pinned_slots.get(),
             )
         }
     });
+
+    let clear_filters = move |_| {
+        state.change_filter.set(SocketChangeFilter::All);
+        state.momentum_filter.set(SocketMomentumFilter::All);
+        state.fair_price_filter.set(SocketFairPriceFilter::All);
+        state.volume_filter.set(SocketVolumeFilter::All);
+    };
 
     view! {
         <div class="d-flex flex-column flex-grow-1 overflow-hidden socket-page">
@@ -45,80 +63,193 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                     </div>
                 </header>
 
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 flex-shrink-0">
-                    <div class="btn-group" role="group" aria-label="Ticker view">
-                        <button
-                            class=move || view_button_class(state.view_mode.get() == SocketViewMode::All)
-                            type="button"
-                            aria-pressed=move || (state.view_mode.get() == SocketViewMode::All).to_string()
-                            on:click=move |_| state.view_mode.set(SocketViewMode::All)
-                        >
-                            <i class="bi bi-grid-3x3-gap me-1"></i>
-                            "All"
-                        </button>
-                        <button
-                            class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly)
-                            type="button"
-                            aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string()
-                            on:click=move |_| state.view_mode.set(SocketViewMode::PinnedOnly)
-                        >
-                            <i class="bi bi-pin-angle me-1"></i>
-                            "Pinned only"
-                        </button>
+                <div class="d-flex flex-column gap-2 mb-3 flex-shrink-0">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="btn-group" role="group" aria-label="Ticker view">
+                            <button
+                                class=move || view_button_class(state.view_mode.get() == SocketViewMode::All)
+                                type="button"
+                                aria-pressed=move || (state.view_mode.get() == SocketViewMode::All).to_string()
+                                on:click=move |_| state.view_mode.set(SocketViewMode::All)
+                            >
+                                <i class="bi bi-grid-3x3-gap me-1"></i>
+                                "All"
+                            </button>
+                            <button
+                                class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly)
+                                type="button"
+                                aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string()
+                                on:click=move |_| state.view_mode.set(SocketViewMode::PinnedOnly)
+                            >
+                                <i class="bi bi-pin-angle me-1"></i>
+                                "Pinned only"
+                            </button>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2 ms-md-auto">
+                            <label class="small text-body-secondary" for="socket-sort-mode">"Sort by"</label>
+                            <select
+                                id="socket-sort-mode"
+                                class="form-select form-select-sm socket-sort-select"
+                                aria-label="Sort tickers by"
+                                prop:value=move || match state.sort_mode.get() {
+                                    SocketSortMode::Momentum => "momentum",
+                                    SocketSortMode::TotalTicks => "activity",
+                                }
+                                on:change=move |ev| {
+                                    if event_target_value(&ev) == "activity" {
+                                        state.sort_mode.set(SocketSortMode::TotalTicks);
+                                    } else {
+                                        state.sort_mode.set(SocketSortMode::Momentum);
+                                    }
+                                }
+                            >
+                                <option value="momentum">"Momentum"</option>
+                                <option value="activity">"Total Ticks"</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="small text-body-secondary" for="socket-ticker-limit">"Show"</label>
+                            <select
+                                id="socket-ticker-limit"
+                                class="form-select form-select-sm socket-limit-select"
+                                aria-label="Number of dynamic tickers to show"
+                                prop:value=move || state.ticker_limit.get().to_string()
+                                on:change=move |ev| {
+                                    let value = event_target_value(&ev).parse::<usize>().unwrap_or(DEFAULT_LIMIT);
+                                    state.set_ticker_limit(value);
+                                }
+                            >
+                                {SocketState::limit_options().iter().map(|value| {
+                                    let label = if *value == usize::MAX { "All".to_string() } else { value.to_string() };
+                                    view! { <option value=value.to_string()>{label}</option> }
+                                }).collect_view()}
+                            </select>
+                            <span class="small text-body-secondary">"dynamic"</span>
+                        </div>
                     </div>
 
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="small text-body-secondary" for="socket-sort-mode">"Sort by"</label>
-                        <select
-                            id="socket-sort-mode"
-                            class="form-select form-select-sm"
-                            style="width: 130px;"
-                            aria-label="Sort tickers by"
-                            prop:value=move || match state.sort_mode.get() {
-                                SocketSortMode::Momentum => "momentum",
-                                SocketSortMode::TotalTicks => "activity",
-                            }
-                            on:change=move |ev| {
-                                let value = event_target_value(&ev);
-                                if value == "activity" {
-                                    state.sort_mode.set(SocketSortMode::TotalTicks);
-                                } else {
-                                    state.sort_mode.set(SocketSortMode::Momentum);
-                                }
-                            }
-                        >
-                            <option value="momentum">"Momentum"</option>
-                            <option value="activity">"Total Ticks"</option>
-                        </select>
-                    </div>
+                    <div class="card bg-body-tertiary border-secondary">
+                        <div class="card-body p-2">
+                            <div class="d-flex flex-wrap align-items-end gap-2">
+                                <div class="small fw-semibold text-body-secondary align-self-center me-1">
+                                    <i class="bi bi-funnel me-1"></i>
+                                    "Filters"
+                                </div>
 
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="small text-body-secondary" for="socket-ticker-limit">"Show"</label>
-                        <select
-                            id="socket-ticker-limit"
-                            class="form-select form-select-sm socket-limit-select"
-                            aria-label="Number of dynamic tickers to show"
-                            prop:value=move || state.ticker_limit.get().to_string()
-                            on:change=move |ev| {
-                                let value = event_target_value(&ev).parse::<usize>().unwrap_or(DEFAULT_LIMIT);
-                                state.set_ticker_limit(value);
-                            }
-                        >
-                            {SocketState::limit_options().iter().map(|value| {
-                                let label = if *value == usize::MAX { "All".to_string() } else { value.to_string() };
-                                view! {
-                                    <option value=value.to_string()>{label}</option>
-                                }
-                            }).collect_view()}
-                        </select>
-                        <span class="small text-body-secondary">"dynamic tickers"</span>
+                                <div class="socket-filter-control">
+                                    <label class="form-label small text-body-secondary mb-1" for="socket-change-filter">"24h Change"</label>
+                                    <select
+                                        id="socket-change-filter"
+                                        class="form-select form-select-sm socket-filter-select"
+                                        aria-label="Filter by 24 hour price change"
+                                        prop:value=move || match state.change_filter.get() {
+                                            SocketChangeFilter::All => "all",
+                                            SocketChangeFilter::Positive => "positive",
+                                            SocketChangeFilter::Negative => "negative",
+                                        }
+                                        on:change=move |ev| state.change_filter.set(match event_target_value(&ev).as_str() {
+                                            "positive" => SocketChangeFilter::Positive,
+                                            "negative" => SocketChangeFilter::Negative,
+                                            _ => SocketChangeFilter::All,
+                                        })
+                                    >
+                                        <option value="all">"All"</option>
+                                        <option value="positive">"Positive"</option>
+                                        <option value="negative">"Negative"</option>
+                                    </select>
+                                </div>
+
+                                <div class="socket-filter-control">
+                                    <label class="form-label small text-body-secondary mb-1" for="socket-momentum-filter">"Momentum"</label>
+                                    <select
+                                        id="socket-momentum-filter"
+                                        class="form-select form-select-sm socket-filter-select"
+                                        aria-label="Filter by momentum direction"
+                                        prop:value=move || match state.momentum_filter.get() {
+                                            SocketMomentumFilter::All => "all",
+                                            SocketMomentumFilter::Bullish => "bullish",
+                                            SocketMomentumFilter::Bearish => "bearish",
+                                        }
+                                        on:change=move |ev| state.momentum_filter.set(match event_target_value(&ev).as_str() {
+                                            "bullish" => SocketMomentumFilter::Bullish,
+                                            "bearish" => SocketMomentumFilter::Bearish,
+                                            _ => SocketMomentumFilter::All,
+                                        })
+                                    >
+                                        <option value="all">"All"</option>
+                                        <option value="bullish">"Bullish"</option>
+                                        <option value="bearish">"Bearish"</option>
+                                    </select>
+                                </div>
+
+                                <div class="socket-filter-control">
+                                    <label class="form-label small text-body-secondary mb-1" for="socket-fair-price-filter">"Fair Price"</label>
+                                    <select
+                                        id="socket-fair-price-filter"
+                                        class="form-select form-select-sm socket-filter-select"
+                                        aria-label="Filter by last price relative to fair price"
+                                        prop:value=move || match state.fair_price_filter.get() {
+                                            SocketFairPriceFilter::All => "all",
+                                            SocketFairPriceFilter::Above => "above",
+                                            SocketFairPriceFilter::Below => "below",
+                                        }
+                                        on:change=move |ev| state.fair_price_filter.set(match event_target_value(&ev).as_str() {
+                                            "above" => SocketFairPriceFilter::Above,
+                                            "below" => SocketFairPriceFilter::Below,
+                                            _ => SocketFairPriceFilter::All,
+                                        })
+                                    >
+                                        <option value="all">"All"</option>
+                                        <option value="above">"Above fair"</option>
+                                        <option value="below">"Below fair"</option>
+                                    </select>
+                                </div>
+
+                                <div class="socket-filter-control">
+                                    <label class="form-label small text-body-secondary mb-1" for="socket-volume-filter">"24h Volume"</label>
+                                    <select
+                                        id="socket-volume-filter"
+                                        class="form-select form-select-sm socket-filter-select"
+                                        aria-label="Filter by 24 hour volume rank"
+                                        prop:value=move || match state.volume_filter.get() {
+                                            SocketVolumeFilter::All => "all",
+                                            SocketVolumeFilter::TopHalf => "top-half",
+                                            SocketVolumeFilter::TopQuarter => "top-quarter",
+                                        }
+                                        on:change=move |ev| state.volume_filter.set(match event_target_value(&ev).as_str() {
+                                            "top-half" => SocketVolumeFilter::TopHalf,
+                                            "top-quarter" => SocketVolumeFilter::TopQuarter,
+                                            _ => SocketVolumeFilter::All,
+                                        })
+                                    >
+                                        <option value="all">"All"</option>
+                                        <option value="top-half">"Top 50%"</option>
+                                        <option value="top-quarter">"Top 25%"</option>
+                                    </select>
+                                </div>
+
+                                <button
+                                    class="btn btn-outline-secondary btn-sm socket-filter-clear"
+                                    type="button"
+                                    disabled=move || filter_count(state) == 0
+                                    on:click=clear_filters
+                                >
+                                    "Clear"
+                                </button>
+                                <span class="small text-body-secondary ms-auto" aria-live="polite">
+                                    {move || format!("{} active", filter_count(state))}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="socket-grid flex-grow-1 overflow-auto pe-1" aria-live="polite">
                     <Show
                         when=move || !visible.get().is_empty()
-                        fallback=move || empty_state(state.view_mode.get())
+                        fallback=move || empty_state(state.view_mode.get(), filter_count(state) > 0)
                     >
                         <For
                             each=move || visible.get()
@@ -241,25 +372,42 @@ fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
     sort: SocketSortMode,
+    change_filter: SocketChangeFilter,
+    momentum_filter: SocketMomentumFilter,
+    fair_price_filter: SocketFairPriceFilter,
+    volume_filter: SocketVolumeFilter,
     limit: usize,
     slots: Vec<Option<String>>,
 ) -> Vec<TrackedFuturesTicker> {
-    if mode == SocketViewMode::PinnedOnly {
-        return slots
-            .iter()
-            .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)).cloned())
-            .collect();
-    }
-
+    let volume_threshold = volume_threshold(&all, volume_filter);
     let pinned_symbols = slots
         .iter()
         .filter_map(|slot| slot.as_deref())
         .collect::<Vec<_>>();
+
+    let matches_filters = |item: &TrackedFuturesTicker| {
+        matches_change(item, change_filter)
+            && matches_momentum(item, momentum_filter)
+            && matches_fair_price(item, fair_price_filter)
+            && matches_volume(item, volume_filter, volume_threshold)
+    };
+
+    if mode == SocketViewMode::PinnedOnly {
+        return slots
+            .iter()
+            .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)))
+            .filter(|item| matches_filters(item))
+            .cloned()
+            .collect();
+    }
+
     let mut dynamic = all
         .values()
         .filter(|item| !pinned_symbols.contains(&item.ticker.symbol.as_str()))
+        .filter(|item| matches_filters(item))
         .cloned()
         .collect::<Vec<_>>();
+
     dynamic.sort_unstable_by(|left, right| match sort {
         SocketSortMode::Momentum => right
             .momentum
@@ -284,7 +432,9 @@ fn build_visible(
     for index in 0..output_len {
         if let Some(symbol) = slots.get(index).and_then(|slot| slot.as_deref()) {
             if let Some(ticker) = all.get(symbol) {
-                output.push(ticker.clone());
+                if matches_filters(ticker) {
+                    output.push(ticker.clone());
+                }
             }
         } else if let Some(ticker) = dynamic.get(dynamic_index) {
             output.push(ticker.clone());
@@ -293,6 +443,83 @@ fn build_visible(
     }
 
     output
+}
+
+fn matches_change(ticker: &TrackedFuturesTicker, filter: SocketChangeFilter) -> bool {
+    match filter {
+        SocketChangeFilter::All => true,
+        SocketChangeFilter::Positive => ticker.ticker.change_24h.is_some_and(|value| value > 0.0),
+        SocketChangeFilter::Negative => ticker.ticker.change_24h.is_some_and(|value| value < 0.0),
+    }
+}
+
+fn matches_momentum(ticker: &TrackedFuturesTicker, filter: SocketMomentumFilter) -> bool {
+    match filter {
+        SocketMomentumFilter::All => true,
+        SocketMomentumFilter::Bullish => ticker.momentum.net_ticks() > 0,
+        SocketMomentumFilter::Bearish => ticker.momentum.net_ticks() < 0,
+    }
+}
+
+fn matches_fair_price(ticker: &TrackedFuturesTicker, filter: SocketFairPriceFilter) -> bool {
+    match filter {
+        SocketFairPriceFilter::All => true,
+        SocketFairPriceFilter::Above => match (ticker.ticker.last_price, ticker.ticker.fair_price) {
+            (Some(last), Some(fair)) => last > fair,
+            _ => false,
+        },
+        SocketFairPriceFilter::Below => match (ticker.ticker.last_price, ticker.ticker.fair_price) {
+            (Some(last), Some(fair)) => last < fair,
+            _ => false,
+        },
+    }
+}
+
+fn volume_threshold(
+    all: &MarketSnapshot,
+    filter: SocketVolumeFilter,
+) -> Option<f64> {
+    if filter == SocketVolumeFilter::All {
+        return None;
+    }
+
+    let mut volumes = all
+        .values()
+        .filter_map(|item| item.ticker.volume_24h)
+        .filter(|value| value.is_finite())
+        .collect::<Vec<_>>();
+    if volumes.is_empty() {
+        return None;
+    }
+
+    volumes.sort_unstable_by(f64::total_cmp);
+    let rank = match filter {
+        SocketVolumeFilter::All => return None,
+        SocketVolumeFilter::TopHalf => 0.5,
+        SocketVolumeFilter::TopQuarter => 0.75,
+    };
+    let index = ((volumes.len() - 1) as f64 * rank).floor() as usize;
+    volumes.get(index).copied()
+}
+
+fn matches_volume(
+    ticker: &TrackedFuturesTicker,
+    filter: SocketVolumeFilter,
+    threshold: Option<f64>,
+) -> bool {
+    match filter {
+        SocketVolumeFilter::All => true,
+        SocketVolumeFilter::TopHalf | SocketVolumeFilter::TopQuarter => {
+            ticker.ticker.volume_24h.zip(threshold).is_some_and(|(volume, threshold)| volume >= threshold)
+        }
+    }
+}
+
+fn filter_count(state: SocketState) -> usize {
+    usize::from(state.change_filter.get() != SocketChangeFilter::All)
+        + usize::from(state.momentum_filter.get() != SocketMomentumFilter::All)
+        + usize::from(state.fair_price_filter.get() != SocketFairPriceFilter::All)
+        + usize::from(state.volume_filter.get() != SocketVolumeFilter::All)
 }
 
 fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
@@ -325,14 +552,16 @@ fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
     }
 }
 
-fn empty_state(mode: SocketViewMode) -> impl IntoView {
-    let text = match mode {
-        SocketViewMode::All => "Waiting for market data...",
-        SocketViewMode::PinnedOnly => "No pinned tickers",
+fn empty_state(mode: SocketViewMode, filters_active: bool) -> impl IntoView {
+    let text = match (mode, filters_active) {
+        (SocketViewMode::All, true) => "No contracts match the active filters",
+        (SocketViewMode::All, false) => "Waiting for market data...",
+        (SocketViewMode::PinnedOnly, true) => "No pinned tickers match the active filters",
+        (SocketViewMode::PinnedOnly, false) => "No pinned tickers",
     };
     view! {
         <div class="d-flex flex-column align-items-center justify-content-center h-100 text-body-secondary py-5">
-            <i class="bi bi-grid-3x3-gap fs-2 mb-2" aria-hidden="true"></i>
+            <i class="bi bi-funnel fs-2 mb-2" aria-hidden="true"></i>
             <span>{text}</span>
         </div>
     }
