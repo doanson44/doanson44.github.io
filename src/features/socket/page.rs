@@ -5,8 +5,8 @@ use leptos::prelude::*;
 use crate::application::ports::{FuturesConnectionStatus, FuturesMarketStream};
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::features::socket::state::{
-    SocketChangeFilter, SocketFairPriceFilter, SocketMomentumFilter, SocketSortMode, SocketState,
-    SocketViewMode, SocketVolumeFilter,
+    SocketChangeFilter, SocketFairPriceFilter, SocketFilters, SocketMomentumFilter,
+    SocketSortMode, SocketState, SocketViewMode, SocketVolumeFilter,
 };
 
 /// Realtime MEXC Futures ticker monitor page.
@@ -17,10 +17,7 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
         let tickers = state.tickers;
         let view_mode = state.view_mode;
         let sort_mode = state.sort_mode;
-        let change_filter = state.change_filter;
-        let momentum_filter = state.momentum_filter;
-        let fair_price_filter = state.fair_price_filter;
-        let volume_filter = state.volume_filter;
+        let filters = state.filters;
         let ticker_limit = state.ticker_limit;
         let pinned_slots = state.pinned_slots;
         move |_| {
@@ -28,22 +25,14 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                 tickers.get(),
                 view_mode.get(),
                 sort_mode.get(),
-                change_filter.get(),
-                momentum_filter.get(),
-                fair_price_filter.get(),
-                volume_filter.get(),
+                filters.get(),
                 ticker_limit.get(),
                 pinned_slots.get(),
             )
         }
     });
 
-    let clear_filters = move |_| {
-        state.change_filter.set(SocketChangeFilter::All);
-        state.momentum_filter.set(SocketMomentumFilter::All);
-        state.fair_price_filter.set(SocketFairPriceFilter::All);
-        state.volume_filter.set(SocketVolumeFilter::All);
-    };
+    let clear_filters = move |_| state.filters.set(SocketFilters::default());
 
     view! {
         <div class="d-flex flex-column flex-grow-1 overflow-hidden socket-page">
@@ -150,17 +139,18 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                         id="socket-change-filter"
                                         class="form-select form-select-sm"
                                         aria-label="Filter by 24 hour price change"
-                                        prop:value=move || match state.change_filter.get() {
+                                        prop:value=move || match state.filters.get().change {
                                             SocketChangeFilter::All => "all",
                                             SocketChangeFilter::Positive => "positive",
                                             SocketChangeFilter::Negative => "negative",
                                         }
                                         on:change=move |ev| {
-                                            state.change_filter.set(match event_target_value(&ev).as_str() {
+                                            let filter = match event_target_value(&ev).as_str() {
                                                 "positive" => SocketChangeFilter::Positive,
                                                 "negative" => SocketChangeFilter::Negative,
                                                 _ => SocketChangeFilter::All,
-                                            });
+                                            };
+                                            state.filters.update(|filters| filters.change = filter);
                                         }
                                     >
                                         <option value="all">"All"</option>
@@ -175,17 +165,18 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                         id="socket-momentum-filter"
                                         class="form-select form-select-sm"
                                         aria-label="Filter by momentum direction"
-                                        prop:value=move || match state.momentum_filter.get() {
+                                        prop:value=move || match state.filters.get().momentum {
                                             SocketMomentumFilter::All => "all",
                                             SocketMomentumFilter::Bullish => "bullish",
                                             SocketMomentumFilter::Bearish => "bearish",
                                         }
                                         on:change=move |ev| {
-                                            state.momentum_filter.set(match event_target_value(&ev).as_str() {
+                                            let filter = match event_target_value(&ev).as_str() {
                                                 "bullish" => SocketMomentumFilter::Bullish,
                                                 "bearish" => SocketMomentumFilter::Bearish,
                                                 _ => SocketMomentumFilter::All,
-                                            });
+                                            };
+                                            state.filters.update(|filters| filters.momentum = filter);
                                         }
                                     >
                                         <option value="all">"All"</option>
@@ -200,17 +191,18 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                         id="socket-fair-price-filter"
                                         class="form-select form-select-sm"
                                         aria-label="Filter by last price relative to fair price"
-                                        prop:value=move || match state.fair_price_filter.get() {
+                                        prop:value=move || match state.filters.get().fair_price {
                                             SocketFairPriceFilter::All => "all",
                                             SocketFairPriceFilter::Above => "above",
                                             SocketFairPriceFilter::Below => "below",
                                         }
                                         on:change=move |ev| {
-                                            state.fair_price_filter.set(match event_target_value(&ev).as_str() {
+                                            let filter = match event_target_value(&ev).as_str() {
                                                 "above" => SocketFairPriceFilter::Above,
                                                 "below" => SocketFairPriceFilter::Below,
                                                 _ => SocketFairPriceFilter::All,
-                                            });
+                                            };
+                                            state.filters.update(|filters| filters.fair_price = filter);
                                         }
                                     >
                                         <option value="all">"All"</option>
@@ -225,17 +217,18 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                         id="socket-volume-filter"
                                         class="form-select form-select-sm"
                                         aria-label="Filter by 24 hour volume rank"
-                                        prop:value=move || match state.volume_filter.get() {
+                                        prop:value=move || match state.filters.get().volume {
                                             SocketVolumeFilter::All => "all",
                                             SocketVolumeFilter::TopHalf => "top-half",
                                             SocketVolumeFilter::TopQuarter => "top-quarter",
                                         }
                                         on:change=move |ev| {
-                                            state.volume_filter.set(match event_target_value(&ev).as_str() {
+                                            let filter = match event_target_value(&ev).as_str() {
                                                 "top-half" => SocketVolumeFilter::TopHalf,
                                                 "top-quarter" => SocketVolumeFilter::TopQuarter,
                                                 _ => SocketVolumeFilter::All,
-                                            });
+                                            };
+                                            state.filters.update(|filters| filters.volume = filter);
                                         }
                                     >
                                         <option value="all">"All"</option>
@@ -247,13 +240,13 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                 <button
                                     class="btn btn-outline-secondary btn-sm"
                                     type="button"
-                                    disabled=move || filter_count(state) == 0
+                                    disabled=move || filter_count(state.filters.get()) == 0
                                     on:click=clear_filters
                                 >
                                     "Clear"
                                 </button>
                                 <span class="small text-body-secondary ms-auto" aria-live="polite">
-                                    {move || format!("{} active", filter_count(state))}
+                                    {move || format!("{} active", filter_count(state.filters.get()))}
                                 </span>
                             </div>
                         </div>
@@ -263,7 +256,7 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                 <div class="socket-grid flex-grow-1 overflow-auto pe-1" aria-live="polite">
                     <Show
                         when=move || !visible.get().is_empty()
-                        fallback=move || empty_state(state.view_mode.get(), filter_count(state) > 0)
+                        fallback=move || empty_state(state.view_mode.get(), filter_count(state.filters.get()) > 0)
                     >
                         <For
                             each=move || visible.get()
@@ -386,24 +379,21 @@ fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
     sort: SocketSortMode,
-    change_filter: SocketChangeFilter,
-    momentum_filter: SocketMomentumFilter,
-    fair_price_filter: SocketFairPriceFilter,
-    volume_filter: SocketVolumeFilter,
+    filters: SocketFilters,
     limit: usize,
     slots: Vec<Option<String>>,
 ) -> Vec<TrackedFuturesTicker> {
-    let volume_threshold = volume_threshold(&all, volume_filter);
+    let volume_threshold = volume_threshold(&all, filters.volume);
     let pinned_symbols = slots
         .iter()
         .filter_map(|slot| slot.as_deref())
         .collect::<Vec<_>>();
 
     let matches_filters = |item: &TrackedFuturesTicker| {
-        matches_change(item, change_filter)
-            && matches_momentum(item, momentum_filter)
-            && matches_fair_price(item, fair_price_filter)
-            && matches_volume(item, volume_filter, volume_threshold)
+        matches_change(item, filters.change)
+            && matches_momentum(item, filters.momentum)
+            && matches_fair_price(item, filters.fair_price)
+            && matches_volume(item, filters.volume, volume_threshold)
     };
 
     if mode == SocketViewMode::PinnedOnly {
@@ -462,8 +452,14 @@ fn build_visible(
 fn matches_change(ticker: &TrackedFuturesTicker, filter: SocketChangeFilter) -> bool {
     match filter {
         SocketChangeFilter::All => true,
-        SocketChangeFilter::Positive => ticker.ticker.change_24h.is_some_and(|value| value > 0.0),
-        SocketChangeFilter::Negative => ticker.ticker.change_24h.is_some_and(|value| value < 0.0),
+        SocketChangeFilter::Positive => ticker
+            .ticker
+            .change_24h
+            .is_some_and(|value| value > 0.0),
+        SocketChangeFilter::Negative => ticker
+            .ticker
+            .change_24h
+            .is_some_and(|value| value < 0.0),
     }
 }
 
@@ -478,18 +474,14 @@ fn matches_momentum(ticker: &TrackedFuturesTicker, filter: SocketMomentumFilter)
 fn matches_fair_price(ticker: &TrackedFuturesTicker, filter: SocketFairPriceFilter) -> bool {
     match filter {
         SocketFairPriceFilter::All => true,
-        SocketFairPriceFilter::Above => {
-            match (ticker.ticker.last_price, ticker.ticker.fair_price) {
-                (Some(last), Some(fair)) => last > fair,
-                _ => false,
-            }
-        }
-        SocketFairPriceFilter::Below => {
-            match (ticker.ticker.last_price, ticker.ticker.fair_price) {
-                (Some(last), Some(fair)) => last < fair,
-                _ => false,
-            }
-        }
+        SocketFairPriceFilter::Above => match (ticker.ticker.last_price, ticker.ticker.fair_price) {
+            (Some(last), Some(fair)) => last > fair,
+            _ => false,
+        },
+        SocketFairPriceFilter::Below => match (ticker.ticker.last_price, ticker.ticker.fair_price) {
+            (Some(last), Some(fair)) => last < fair,
+            _ => false,
+        },
     }
 }
 
@@ -532,11 +524,11 @@ fn matches_volume(
     }
 }
 
-fn filter_count(state: SocketState) -> usize {
-    (state.change_filter.get() != SocketChangeFilter::All) as usize
-        + (state.momentum_filter.get() != SocketMomentumFilter::All) as usize
-        + (state.fair_price_filter.get() != SocketFairPriceFilter::All) as usize
-        + (state.volume_filter.get() != SocketVolumeFilter::All) as usize
+fn filter_count(filters: SocketFilters) -> usize {
+    (filters.change != SocketChangeFilter::All) as usize
+        + (filters.momentum != SocketMomentumFilter::All) as usize
+        + (filters.fair_price != SocketFairPriceFilter::All) as usize
+        + (filters.volume != SocketVolumeFilter::All) as usize
 }
 
 fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
