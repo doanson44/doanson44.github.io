@@ -117,12 +117,18 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                 aria-label="Number of dynamic tickers to show"
                                 prop:value=move || state.ticker_limit.get().to_string()
                                 on:change=move |ev| {
-                                    let value = event_target_value(&ev).parse::<usize>().unwrap_or(DEFAULT_LIMIT);
+                                    let value = event_target_value(&ev)
+                                        .parse::<usize>()
+                                        .unwrap_or(DEFAULT_LIMIT);
                                     state.set_ticker_limit(value);
                                 }
                             >
                                 {SocketState::limit_options().iter().map(|value| {
-                                    let label = if *value == usize::MAX { "All".to_string() } else { value.to_string() };
+                                    let label = if *value == usize::MAX {
+                                        "All".to_string()
+                                    } else {
+                                        value.to_string()
+                                    };
                                     view! { <option value=value.to_string()>{label}</option> }
                                 }).collect_view()}
                             </select>
@@ -149,11 +155,13 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                             SocketChangeFilter::Positive => "positive",
                                             SocketChangeFilter::Negative => "negative",
                                         }
-                                        on:change=move |ev| state.change_filter.set(match event_target_value(&ev).as_str() {
-                                            "positive" => SocketChangeFilter::Positive,
-                                            "negative" => SocketChangeFilter::Negative,
-                                            _ => SocketChangeFilter::All,
-                                        })
+                                        on:change=move |ev| {
+                                            state.change_filter.set(match event_target_value(&ev).as_str() {
+                                                "positive" => SocketChangeFilter::Positive,
+                                                "negative" => SocketChangeFilter::Negative,
+                                                _ => SocketChangeFilter::All,
+                                            });
+                                        }
                                     >
                                         <option value="all">"All"</option>
                                         <option value="positive">"Positive"</option>
@@ -172,11 +180,13 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                             SocketMomentumFilter::Bullish => "bullish",
                                             SocketMomentumFilter::Bearish => "bearish",
                                         }
-                                        on:change=move |ev| state.momentum_filter.set(match event_target_value(&ev).as_str() {
-                                            "bullish" => SocketMomentumFilter::Bullish,
-                                            "bearish" => SocketMomentumFilter::Bearish,
-                                            _ => SocketMomentumFilter::All,
-                                        })
+                                        on:change=move |ev| {
+                                            state.momentum_filter.set(match event_target_value(&ev).as_str() {
+                                                "bullish" => SocketMomentumFilter::Bullish,
+                                                "bearish" => SocketMomentumFilter::Bearish,
+                                                _ => SocketMomentumFilter::All,
+                                            });
+                                        }
                                     >
                                         <option value="all">"All"</option>
                                         <option value="bullish">"Bullish"</option>
@@ -195,11 +205,13 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                             SocketFairPriceFilter::Above => "above",
                                             SocketFairPriceFilter::Below => "below",
                                         }
-                                        on:change=move |ev| state.fair_price_filter.set(match event_target_value(&ev).as_str() {
-                                            "above" => SocketFairPriceFilter::Above,
-                                            "below" => SocketFairPriceFilter::Below,
-                                            _ => SocketFairPriceFilter::All,
-                                        })
+                                        on:change=move |ev| {
+                                            state.fair_price_filter.set(match event_target_value(&ev).as_str() {
+                                                "above" => SocketFairPriceFilter::Above,
+                                                "below" => SocketFairPriceFilter::Below,
+                                                _ => SocketFairPriceFilter::All,
+                                            });
+                                        }
                                     >
                                         <option value="all">"All"</option>
                                         <option value="above">"Above fair"</option>
@@ -218,11 +230,13 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                             SocketVolumeFilter::TopHalf => "top-half",
                                             SocketVolumeFilter::TopQuarter => "top-quarter",
                                         }
-                                        on:change=move |ev| state.volume_filter.set(match event_target_value(&ev).as_str() {
-                                            "top-half" => SocketVolumeFilter::TopHalf,
-                                            "top-quarter" => SocketVolumeFilter::TopQuarter,
-                                            _ => SocketVolumeFilter::All,
-                                        })
+                                        on:change=move |ev| {
+                                            state.volume_filter.set(match event_target_value(&ev).as_str() {
+                                                "top-half" => SocketVolumeFilter::TopHalf,
+                                                "top-quarter" => SocketVolumeFilter::TopQuarter,
+                                                _ => SocketVolumeFilter::All,
+                                            });
+                                        }
                                     >
                                         <option value="all">"All"</option>
                                         <option value="top-half">"Top 50%"</option>
@@ -448,8 +462,14 @@ fn build_visible(
 fn matches_change(ticker: &TrackedFuturesTicker, filter: SocketChangeFilter) -> bool {
     match filter {
         SocketChangeFilter::All => true,
-        SocketChangeFilter::Positive => ticker.ticker.change_24h.is_some_and(|value| value > 0.0),
-        SocketChangeFilter::Negative => ticker.ticker.change_24h.is_some_and(|value| value < 0.0),
+        SocketChangeFilter::Positive => ticker
+            .ticker
+            .change_24h
+            .is_some_and(|value| value > 0.0),
+        SocketChangeFilter::Negative => ticker
+            .ticker
+            .change_24h
+            .is_some_and(|value| value < 0.0),
     }
 }
 
