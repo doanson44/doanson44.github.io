@@ -34,12 +34,58 @@ pub enum SocketSortMode {
     TotalTicks,
 }
 
+/// 24-hour percentage change filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SocketChangeFilter {
+    #[default]
+    All,
+    Positive,
+    Negative,
+}
+
+/// Rolling directional momentum bias filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SocketMomentumFilter {
+    #[default]
+    All,
+    Bullish,
+    Bearish,
+}
+
+/// Last-price versus fair-price filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SocketFairPriceFilter {
+    #[default]
+    All,
+    Above,
+    Below,
+}
+
+/// 24-hour volume rank filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SocketVolumeFilter {
+    #[default]
+    All,
+    TopHalf,
+    TopQuarter,
+}
+
+/// Combined market data filters used by the Socket ticker projection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct SocketFilters {
+    pub change: SocketChangeFilter,
+    pub momentum: SocketMomentumFilter,
+    pub fair_price: SocketFairPriceFilter,
+    pub volume: SocketVolumeFilter,
+}
+
 /// Reactive state for the realtime Futures ticker grid.
 #[derive(Clone, Copy)]
 pub struct SocketState {
     pub tickers: RwSignal<MarketSnapshot, LocalStorage>,
     pub view_mode: RwSignal<SocketViewMode>,
     pub sort_mode: RwSignal<SocketSortMode>,
+    pub filters: RwSignal<SocketFilters>,
     pub ticker_limit: RwSignal<usize>,
     pub pinned_slots: RwSignal<Vec<Option<String>>>,
     pub connection_status: RwSignal<FuturesConnectionStatus>,
@@ -51,6 +97,7 @@ impl SocketState {
         let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
         let view_mode = RwSignal::new(SocketViewMode::All);
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
+        let filters = RwSignal::new(SocketFilters::default());
         let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
         let pinned_slots = RwSignal::new(Vec::<Option<String>>::new());
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
@@ -116,6 +163,7 @@ impl SocketState {
             tickers,
             view_mode,
             sort_mode,
+            filters,
             ticker_limit,
             pinned_slots,
             connection_status,
