@@ -35,32 +35,36 @@ pub enum SocketSortMode {
 }
 
 /// 24-hour percentage change filter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SocketChangeFilter {
+    #[default]
     All,
     Positive,
     Negative,
 }
 
 /// Rolling directional momentum bias filter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SocketMomentumFilter {
+    #[default]
     All,
     Bullish,
     Bearish,
 }
 
 /// Last-price versus fair-price filter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SocketFairPriceFilter {
+    #[default]
     All,
     Above,
     Below,
 }
 
 /// 24-hour volume rank filter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SocketVolumeFilter {
+    #[default]
     All,
     TopHalf,
     TopQuarter,
@@ -73,30 +77,6 @@ pub struct SocketFilters {
     pub momentum: SocketMomentumFilter,
     pub fair_price: SocketFairPriceFilter,
     pub volume: SocketVolumeFilter,
-}
-
-impl Default for SocketChangeFilter {
-    fn default() -> Self {
-        Self::All
-    }
-}
-
-impl Default for SocketMomentumFilter {
-    fn default() -> Self {
-        Self::All
-    }
-}
-
-impl Default for SocketFairPriceFilter {
-    fn default() -> Self {
-        Self::All
-    }
-}
-
-impl Default for SocketVolumeFilter {
-    fn default() -> Self {
-        Self::All
-    }
 }
 
 /// Reactive state for the realtime Futures ticker grid.
