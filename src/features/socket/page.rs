@@ -5,8 +5,8 @@ use leptos::prelude::*;
 use crate::application::ports::{FuturesConnectionStatus, FuturesMarketStream};
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::features::socket::state::{
-    SocketChangeFilter, SocketFairPriceFilter, SocketFilters, SocketMomentumFilter,
-    SocketSortMode, SocketState, SocketViewMode, SocketVolumeFilter,
+    SocketChangeFilter, SocketFairPriceFilter, SocketFilters, SocketMomentumFilter, SocketSortMode,
+    SocketState, SocketViewMode, SocketVolumeFilter,
 };
 
 /// Realtime MEXC Futures ticker monitor page.
@@ -452,14 +452,8 @@ fn build_visible(
 fn matches_change(ticker: &TrackedFuturesTicker, filter: SocketChangeFilter) -> bool {
     match filter {
         SocketChangeFilter::All => true,
-        SocketChangeFilter::Positive => ticker
-            .ticker
-            .change_24h
-            .is_some_and(|value| value > 0.0),
-        SocketChangeFilter::Negative => ticker
-            .ticker
-            .change_24h
-            .is_some_and(|value| value < 0.0),
+        SocketChangeFilter::Positive => ticker.ticker.change_24h.is_some_and(|value| value > 0.0),
+        SocketChangeFilter::Negative => ticker.ticker.change_24h.is_some_and(|value| value < 0.0),
     }
 }
 
@@ -474,14 +468,18 @@ fn matches_momentum(ticker: &TrackedFuturesTicker, filter: SocketMomentumFilter)
 fn matches_fair_price(ticker: &TrackedFuturesTicker, filter: SocketFairPriceFilter) -> bool {
     match filter {
         SocketFairPriceFilter::All => true,
-        SocketFairPriceFilter::Above => match (ticker.ticker.last_price, ticker.ticker.fair_price) {
-            (Some(last), Some(fair)) => last > fair,
-            _ => false,
-        },
-        SocketFairPriceFilter::Below => match (ticker.ticker.last_price, ticker.ticker.fair_price) {
-            (Some(last), Some(fair)) => last < fair,
-            _ => false,
-        },
+        SocketFairPriceFilter::Above => {
+            match (ticker.ticker.last_price, ticker.ticker.fair_price) {
+                (Some(last), Some(fair)) => last > fair,
+                _ => false,
+            }
+        }
+        SocketFairPriceFilter::Below => {
+            match (ticker.ticker.last_price, ticker.ticker.fair_price) {
+                (Some(last), Some(fair)) => last < fair,
+                _ => false,
+            }
+        }
     }
 }
 

@@ -1,3 +1,9 @@
 Formatted files:
+clippy-tail.txt
+src/features/socket/page.rs
 
 Diff summary:
+ clippy-tail.txt             | 174 ++++++++++++++++++++++----------------------
+ fmt-report.txt              |   2 +
+ src/features/socket/page.rs |  34 ++++-----
+ 3 files changed, 105 insertions(+), 105 deletions(-)
