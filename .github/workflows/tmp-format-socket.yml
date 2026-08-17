@@ -23,7 +23,9 @@ jobs:
         run: cargo fmt
       - name: Run clippy diagnostics
         run: |
-          cargo clippy --target wasm32-unknown-unknown -- -D warnings > clippy-report.txt 2>&1 || true
+          cargo clippy --target wasm32-unknown-unknown -- -D warnings > /tmp/clippy.log 2>&1 || true
+          grep -E 'warning:|error:' /tmp/clippy.log > clippy-summary.txt || true
+          tail -n 120 /tmp/clippy.log > clippy-tail.txt
       - name: Record formatter result
         run: |
           git status --short > /tmp/fmt-status.txt
@@ -37,8 +39,8 @@ jobs:
           } > fmt-report.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add fmt-report.txt clippy-report.txt src/features/socket/page.rs src/features/socket/state.rs
+          git add fmt-report.txt clippy-summary.txt clippy-tail.txt src/features/socket/page.rs src/features/socket/state.rs
           if ! git diff --cached --quiet; then
-            git commit -m "chore(socket): record formatter and clippy diagnostics"
+            git commit -m "chore(socket): record clippy diagnostics"
             git push
           fi
