@@ -34,12 +34,48 @@ pub enum SocketSortMode {
     TotalTicks,
 }
 
+/// 24-hour percentage change filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketChangeFilter {
+    All,
+    Positive,
+    Negative,
+}
+
+/// Rolling directional momentum bias filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketMomentumFilter {
+    All,
+    Bullish,
+    Bearish,
+}
+
+/// Last-price versus fair-price filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketFairPriceFilter {
+    All,
+    Above,
+    Below,
+}
+
+/// 24-hour volume rank filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketVolumeFilter {
+    All,
+    TopHalf,
+    TopQuarter,
+}
+
 /// Reactive state for the realtime Futures ticker grid.
 #[derive(Clone, Copy)]
 pub struct SocketState {
     pub tickers: RwSignal<MarketSnapshot, LocalStorage>,
     pub view_mode: RwSignal<SocketViewMode>,
     pub sort_mode: RwSignal<SocketSortMode>,
+    pub change_filter: RwSignal<SocketChangeFilter>,
+    pub momentum_filter: RwSignal<SocketMomentumFilter>,
+    pub fair_price_filter: RwSignal<SocketFairPriceFilter>,
+    pub volume_filter: RwSignal<SocketVolumeFilter>,
     pub ticker_limit: RwSignal<usize>,
     pub pinned_slots: RwSignal<Vec<Option<String>>>,
     pub connection_status: RwSignal<FuturesConnectionStatus>,
@@ -51,6 +87,10 @@ impl SocketState {
         let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
         let view_mode = RwSignal::new(SocketViewMode::All);
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
+        let change_filter = RwSignal::new(SocketChangeFilter::All);
+        let momentum_filter = RwSignal::new(SocketMomentumFilter::All);
+        let fair_price_filter = RwSignal::new(SocketFairPriceFilter::All);
+        let volume_filter = RwSignal::new(SocketVolumeFilter::All);
         let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
         let pinned_slots = RwSignal::new(Vec::<Option<String>>::new());
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
@@ -116,6 +156,10 @@ impl SocketState {
             tickers,
             view_mode,
             sort_mode,
+            change_filter,
+            momentum_filter,
+            fair_price_filter,
+            volume_filter,
             ticker_limit,
             pinned_slots,
             connection_status,
