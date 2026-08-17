@@ -138,11 +138,11 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                     "Filters"
                                 </div>
 
-                                <div class="socket-filter-control">
+                                <div>
                                     <label class="form-label small text-body-secondary mb-1" for="socket-change-filter">"24h Change"</label>
                                     <select
                                         id="socket-change-filter"
-                                        class="form-select form-select-sm socket-filter-select"
+                                        class="form-select form-select-sm"
                                         aria-label="Filter by 24 hour price change"
                                         prop:value=move || match state.change_filter.get() {
                                             SocketChangeFilter::All => "all",
@@ -161,11 +161,11 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                     </select>
                                 </div>
 
-                                <div class="socket-filter-control">
+                                <div>
                                     <label class="form-label small text-body-secondary mb-1" for="socket-momentum-filter">"Momentum"</label>
                                     <select
                                         id="socket-momentum-filter"
-                                        class="form-select form-select-sm socket-filter-select"
+                                        class="form-select form-select-sm"
                                         aria-label="Filter by momentum direction"
                                         prop:value=move || match state.momentum_filter.get() {
                                             SocketMomentumFilter::All => "all",
@@ -184,11 +184,11 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                     </select>
                                 </div>
 
-                                <div class="socket-filter-control">
+                                <div>
                                     <label class="form-label small text-body-secondary mb-1" for="socket-fair-price-filter">"Fair Price"</label>
                                     <select
                                         id="socket-fair-price-filter"
-                                        class="form-select form-select-sm socket-filter-select"
+                                        class="form-select form-select-sm"
                                         aria-label="Filter by last price relative to fair price"
                                         prop:value=move || match state.fair_price_filter.get() {
                                             SocketFairPriceFilter::All => "all",
@@ -207,11 +207,11 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                     </select>
                                 </div>
 
-                                <div class="socket-filter-control">
+                                <div>
                                     <label class="form-label small text-body-secondary mb-1" for="socket-volume-filter">"24h Volume"</label>
                                     <select
                                         id="socket-volume-filter"
-                                        class="form-select form-select-sm socket-filter-select"
+                                        class="form-select form-select-sm"
                                         aria-label="Filter by 24 hour volume rank"
                                         prop:value=move || match state.volume_filter.get() {
                                             SocketVolumeFilter::All => "all",
@@ -231,7 +231,7 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                                 </div>
 
                                 <button
-                                    class="btn btn-outline-secondary btn-sm socket-filter-clear"
+                                    class="btn btn-outline-secondary btn-sm"
                                     type="button"
                                     disabled=move || filter_count(state) == 0
                                     on:click=clear_filters
@@ -475,10 +475,7 @@ fn matches_fair_price(ticker: &TrackedFuturesTicker, filter: SocketFairPriceFilt
     }
 }
 
-fn volume_threshold(
-    all: &MarketSnapshot,
-    filter: SocketVolumeFilter,
-) -> Option<f64> {
+fn volume_threshold(all: &MarketSnapshot, filter: SocketVolumeFilter) -> Option<f64> {
     if filter == SocketVolumeFilter::All {
         return None;
     }
@@ -509,17 +506,19 @@ fn matches_volume(
 ) -> bool {
     match filter {
         SocketVolumeFilter::All => true,
-        SocketVolumeFilter::TopHalf | SocketVolumeFilter::TopQuarter => {
-            ticker.ticker.volume_24h.zip(threshold).is_some_and(|(volume, threshold)| volume >= threshold)
-        }
+        SocketVolumeFilter::TopHalf | SocketVolumeFilter::TopQuarter => ticker
+            .ticker
+            .volume_24h
+            .zip(threshold)
+            .is_some_and(|(volume, threshold)| volume >= threshold),
     }
 }
 
 fn filter_count(state: SocketState) -> usize {
-    usize::from(state.change_filter.get() != SocketChangeFilter::All)
-        + usize::from(state.momentum_filter.get() != SocketMomentumFilter::All)
-        + usize::from(state.fair_price_filter.get() != SocketFairPriceFilter::All)
-        + usize::from(state.volume_filter.get() != SocketVolumeFilter::All)
+    (state.change_filter.get() != SocketChangeFilter::All) as usize
+        + (state.momentum_filter.get() != SocketMomentumFilter::All) as usize
+        + (state.fair_price_filter.get() != SocketFairPriceFilter::All) as usize
+        + (state.volume_filter.get() != SocketVolumeFilter::All) as usize
 }
 
 fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
