@@ -18,15 +18,23 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - name: Format Socket sources
+      - name: Format Rust sources
         run: cargo fmt
-      - name: Commit formatting changes
+      - name: Record formatter result
         run: |
-          if git diff --quiet -- src/features/socket/page.rs src/features/socket/state.rs; then
-            exit 0
-          fi
+          git status --short > /tmp/fmt-status.txt
+          git diff --name-only > /tmp/fmt-files.txt
+          {
+            echo "Formatted files:"
+            cat /tmp/fmt-files.txt
+            echo
+            echo "Diff summary:"
+            git diff --stat
+          } > fmt-report.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/features/socket/page.rs src/features/socket/state.rs
-          git commit -m "style(socket): apply rustfmt"
-          git push
+          git add fmt-report.txt src/features/socket/page.rs src/features/socket/state.rs
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(socket): record rustfmt result"
+            git push
+          fi
