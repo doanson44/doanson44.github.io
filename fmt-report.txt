@@ -1,7 +1,0 @@
-Formatted files:
-clippy-tail.txt
-
-Diff summary:
- clippy-tail.txt | 180 ++++++++++++++++++++++++++++----------------------------
- fmt-report.txt  |   5 --
- 2 files changed, 90 insertions(+), 95 deletions(-)
