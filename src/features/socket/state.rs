@@ -66,16 +66,46 @@ pub enum SocketVolumeFilter {
     TopQuarter,
 }
 
+/// Combined market data filters used by the Socket ticker projection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct SocketFilters {
+    pub change: SocketChangeFilter,
+    pub momentum: SocketMomentumFilter,
+    pub fair_price: SocketFairPriceFilter,
+    pub volume: SocketVolumeFilter,
+}
+
+impl Default for SocketChangeFilter {
+    fn default() -> Self {
+        Self::All
+    }
+}
+
+impl Default for SocketMomentumFilter {
+    fn default() -> Self {
+        Self::All
+    }
+}
+
+impl Default for SocketFairPriceFilter {
+    fn default() -> Self {
+        Self::All
+    }
+}
+
+impl Default for SocketVolumeFilter {
+    fn default() -> Self {
+        Self::All
+    }
+}
+
 /// Reactive state for the realtime Futures ticker grid.
 #[derive(Clone, Copy)]
 pub struct SocketState {
     pub tickers: RwSignal<MarketSnapshot, LocalStorage>,
     pub view_mode: RwSignal<SocketViewMode>,
     pub sort_mode: RwSignal<SocketSortMode>,
-    pub change_filter: RwSignal<SocketChangeFilter>,
-    pub momentum_filter: RwSignal<SocketMomentumFilter>,
-    pub fair_price_filter: RwSignal<SocketFairPriceFilter>,
-    pub volume_filter: RwSignal<SocketVolumeFilter>,
+    pub filters: RwSignal<SocketFilters>,
     pub ticker_limit: RwSignal<usize>,
     pub pinned_slots: RwSignal<Vec<Option<String>>>,
     pub connection_status: RwSignal<FuturesConnectionStatus>,
@@ -87,10 +117,7 @@ impl SocketState {
         let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
         let view_mode = RwSignal::new(SocketViewMode::All);
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
-        let change_filter = RwSignal::new(SocketChangeFilter::All);
-        let momentum_filter = RwSignal::new(SocketMomentumFilter::All);
-        let fair_price_filter = RwSignal::new(SocketFairPriceFilter::All);
-        let volume_filter = RwSignal::new(SocketVolumeFilter::All);
+        let filters = RwSignal::new(SocketFilters::default());
         let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
         let pinned_slots = RwSignal::new(Vec::<Option<String>>::new());
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
@@ -156,10 +183,7 @@ impl SocketState {
             tickers,
             view_mode,
             sort_mode,
-            change_filter,
-            momentum_filter,
-            fair_price_filter,
-            volume_filter,
+            filters,
             ticker_limit,
             pinned_slots,
             connection_status,
