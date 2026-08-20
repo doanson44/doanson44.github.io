@@ -9,9 +9,10 @@ use send_wrapper::SendWrapper;
 use wasm_bindgen::{closure::Closure, JsCast};
 
 use crate::application::{
-    ports::{FuturesConnectionStatus, FuturesMarketStream},
+    ports::{FuturesConnectionStatus, FuturesMarketStream, FundingRateProvider},
     services::FuturesMarketService,
 };
+use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 
 const DEFAULT_LIMIT: usize = 10;
@@ -83,6 +84,7 @@ pub struct SocketFilters {
 #[derive(Clone, Copy)]
 pub struct SocketState {
     pub tickers: RwSignal<MarketSnapshot, LocalStorage>,
+    pub funding_rates: RwSignal<Option<FundingRateSnapshot>, LocalStorage>,
     pub view_mode: RwSignal<SocketViewMode>,
     pub sort_mode: RwSignal<SocketSortMode>,
     pub filters: RwSignal<SocketFilters>,
@@ -92,9 +94,13 @@ pub struct SocketState {
 }
 
 impl SocketState {
-    /// Creates the socket feature state and starts the all-market ticker stream.
-    pub fn new(stream: Rc<dyn FuturesMarketStream>) -> Self {
+    /// Creates the socket feature state and starts market/funding data loading.
+    pub fn new(
+        stream: Rc<dyn FuturesMarketStream>,
+        funding_provider: Rc<dyn FundingRateProvider>,
+    ) -> Self {
         let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
+        let funding_rates = RwSignal::new_local(None);
         let view_mode = RwSignal::new(SocketViewMode::All);
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
         let filters = RwSignal::new(SocketFilters::default());
@@ -103,6 +109,13 @@ impl SocketState {
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
         let flush_pending = Rc::new(Cell::new(false));
+
+        let funding_signal = funding_rates;
+        funding_provider.load_cached_or_fetch(Rc::new(move |result| {
+            if let Ok(snapshot) = result {
+                funding_signal.set(Some(snapshot));
+            }
+        }));
 
         let schedule_flush = {
             let service = service.clone();
@@ -161,6 +174,7 @@ impl SocketState {
 
         Self {
             tickers,
+            funding_rates,
             view_mode,
             sort_mode,
             filters,
