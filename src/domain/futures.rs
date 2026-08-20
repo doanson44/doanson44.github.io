@@ -43,6 +43,22 @@ impl FuturesTickerMomentum {
         }
     }
 
+    /// Restores directional counters without restoring a previous market price.
+    pub fn from_cached_counts(up_ticks: u64, down_ticks: u64) -> Self {
+        let up_ticks = up_ticks.min(MOMENTUM_WINDOW as u64);
+        let down_ticks = down_ticks.min(MOMENTUM_WINDOW as u64 - up_ticks);
+        let mut directions = VecDeque::with_capacity((up_ticks + down_ticks) as usize);
+        directions.extend((0..up_ticks).map(|_| 1));
+        directions.extend((0..down_ticks).map(|_| -1));
+
+        Self {
+            previous_price: None,
+            up_ticks,
+            down_ticks,
+            directions,
+        }
+    }
+
     /// Applies a price observation and keeps only the latest directional window.
     pub fn observe(&mut self, price: Option<f64>) {
         let Some(new_price) = price else {
@@ -242,6 +258,16 @@ mod tests {
         assert_eq!(momentum.up_ticks, 0);
         assert_eq!(momentum.down_ticks, 0);
         assert_eq!(momentum.progress(), 0);
+    }
+
+    #[test]
+    fn cached_counts_restore_without_a_previous_price() {
+        let mut momentum = FuturesTickerMomentum::from_cached_counts(4, 2);
+        momentum.observe(Some(100.0));
+
+        assert_eq!(momentum.up_ticks, 4);
+        assert_eq!(momentum.down_ticks, 2);
+        assert_eq!(momentum.previous_price, Some(100.0));
     }
 
     #[test]
