@@ -19,6 +19,37 @@
     width: 5rem;
 }
 
+.socket-page-with-chart {
+    min-height: 0;
+}
+
+.socket-chart-panel {
+    flex: 0 0 34rem;
+    min-height: 22rem;
+    margin: 0.75rem 0.75rem 0;
+    overflow: hidden;
+}
+
+.socket-chart-panel .card-header {
+    flex: 0 0 auto;
+}
+
+.socket-chart-body {
+    min-height: 0;
+    position: relative;
+}
+
+.socket-chart-body .tradingview-widget-container__widget,
+.socket-chart-body iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.socket-market-panel {
+    min-height: 0;
+}
+
 .socket-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
@@ -83,6 +114,12 @@
 }
 
 @media (max-width: 575.98px) {
+    .socket-chart-panel {
+        flex-basis: 28rem;
+        min-height: 20rem;
+        margin-inline: 0.5rem;
+    }
+
     .socket-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
