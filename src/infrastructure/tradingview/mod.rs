@@ -1,5 +1,3 @@
-use wasm_bindgen::prelude::*;
-
 /// Initialize a TradingView Advanced Chart widget inside the provided element.
 ///
 /// The widget owns its market data and renders an iframe backed by TradingView.
@@ -60,10 +58,4 @@ pub fn initialize_advanced_chart(
 
 fn js_error(_: wasm_bindgen::JsValue) -> String {
     "Failed to build TradingView chart DOM".to_string()
-}
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn error(message: &str);
 }
