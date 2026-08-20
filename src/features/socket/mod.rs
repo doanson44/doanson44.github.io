@@ -1,3 +1,4 @@
+pub mod chart;
 pub mod page;
 pub mod state;
 
