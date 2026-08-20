@@ -59,6 +59,11 @@ impl FuturesMarketService {
             .collect()
     }
 
+    /// Exports all session-local momentum data, including items not actively in the registry.
+    pub fn export_momentum(&self) -> impl Iterator<Item = (&String, &FuturesTickerMomentum)> {
+        self.momentum.iter()
+    }
+
     /// Restores only cached directional counters; live ticker data is not restored.
     pub fn restore_momentum(&mut self, cached: impl IntoIterator<Item = (String, u64, u64)>) {
         for (symbol, up_ticks, down_ticks) in cached {

@@ -92,6 +92,17 @@ impl SocketState {
                         .into_iter()
                         .map(|item| (item.symbol, item.up_ticks, item.down_ticks));
                     service.borrow_mut().restore_momentum(cached);
+                } else if let Ok(old_snapshot) =
+                    serde_json::from_str::<HashMap<String, TrackedFuturesTicker>>(&raw)
+                {
+                    let cached = old_snapshot.into_iter().map(|(symbol, tracked)| {
+                        (
+                            symbol,
+                            tracked.momentum.up_ticks,
+                            tracked.momentum.down_ticks,
+                        )
+                    });
+                    service.borrow_mut().restore_momentum(cached);
                 }
             }
         }
@@ -166,16 +177,17 @@ impl SocketState {
             {
                 let snapshot = save_service
                     .borrow()
-                    .snapshot()
-                    .into_values()
-                    .map(|tracked| CachedTickerMomentum {
-                        symbol: tracked.ticker.symbol,
-                        up_ticks: tracked.momentum.up_ticks,
-                        down_ticks: tracked.momentum.down_ticks,
+                    .export_momentum()
+                    .map(|(symbol, momentum)| CachedTickerMomentum {
+                        symbol: symbol.clone(),
+                        up_ticks: momentum.up_ticks,
+                        down_ticks: momentum.down_ticks,
                     })
                     .collect::<Vec<_>>();
-                if let Ok(raw) = serde_json::to_string(&snapshot) {
-                    let _ = storage.set_item(TICKER_CACHE_KEY, &raw);
+                if !snapshot.is_empty() {
+                    if let Ok(raw) = serde_json::to_string(&snapshot) {
+                        let _ = storage.set_item(TICKER_CACHE_KEY, &raw);
+                    }
                 }
             }
         }) as Box<dyn FnMut()>);
