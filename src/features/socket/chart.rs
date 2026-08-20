@@ -24,7 +24,7 @@ pub fn TradingViewChart() -> impl IntoView {
         let trading_view_theme = if theme == "light" { "light" } else { "dark" };
 
         if let Err(message) = initialize_advanced_chart(
-            container.unchecked_ref(),
+            &container,
             DEFAULT_SYMBOL,
             trading_view_theme,
         ) {
