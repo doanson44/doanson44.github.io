@@ -33,6 +33,16 @@ pub enum SocketViewMode {
 pub enum SocketSortMode {
     Momentum,
     TotalTicks,
+    Funding,
+    Change24h,
+    Volume24h,
+}
+
+/// Socket ticker sort direction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketSortDirection {
+    Ascending,
+    Descending,
 }
 
 /// Reactive state for the realtime Futures ticker grid.
@@ -42,7 +52,9 @@ pub struct SocketState {
     pub funding_rates: RwSignal<Option<FundingRateSnapshot>, LocalStorage>,
     pub view_mode: RwSignal<SocketViewMode>,
     pub sort_mode: RwSignal<SocketSortMode>,
+    pub sort_direction: RwSignal<SocketSortDirection>,
     pub ticker_limit: RwSignal<usize>,
+    pub search_query: RwSignal<String>,
     pub pinned_slots: RwSignal<Vec<Option<String>>>,
     pub connection_status: RwSignal<FuturesConnectionStatus>,
 }
@@ -57,10 +69,24 @@ impl SocketState {
         let funding_rates = RwSignal::new_local(None);
         let view_mode = RwSignal::new(SocketViewMode::All);
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
+        let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
+        let search_query = RwSignal::new(String::new());
         let pinned_slots = RwSignal::new(Vec::<Option<String>>::new());
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
+
+        if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
+            if let Some(raw) = storage.get_item("socket.tickers-cache").ok().flatten() {
+                if let Ok(snapshot) =
+                    serde_json::from_str::<HashMap<String, TrackedFuturesTicker>>(&raw)
+                {
+                    service.borrow_mut().restore_snapshot(snapshot);
+                    tickers.set(Rc::new(service.borrow().snapshot()));
+                }
+            }
+        }
+
         let flush_pending = Rc::new(Cell::new(false));
 
         let funding_signal = funding_rates;
@@ -125,12 +151,39 @@ impl SocketState {
             Err(error) => connection_status.set(FuturesConnectionStatus::Error(error)),
         }
 
+        let save_service = service.clone();
+        let save_callback = Closure::wrap(Box::new(move || {
+            if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten())
+            {
+                let snapshot = save_service.borrow().snapshot();
+                if let Ok(raw) = serde_json::to_string(&snapshot) {
+                    let _ = storage.set_item("socket.tickers-cache", &raw);
+                }
+            }
+        }) as Box<dyn FnMut()>);
+
+        if let Some(window) = web_sys::window() {
+            if let Ok(handle) = window.set_interval_with_callback_and_timeout_and_arguments_0(
+                save_callback.as_ref().unchecked_ref(),
+                5000,
+            ) {
+                on_cleanup(move || {
+                    let _ = save_callback; // take ownership to keep alive until cleanup
+                    if let Some(window) = web_sys::window() {
+                        window.clear_interval_with_handle(handle);
+                    }
+                });
+            }
+        }
+
         Self {
             tickers,
             funding_rates,
             view_mode,
             sort_mode,
+            sort_direction,
             ticker_limit,
+            search_query,
             pinned_slots,
             connection_status,
         }

@@ -5,8 +5,11 @@ use leptos::prelude::*;
 use crate::application::ports::{
     FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream,
 };
+use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
-use crate::features::socket::state::{SocketSortMode, SocketState, SocketViewMode};
+use crate::features::socket::state::{
+    SocketSortDirection, SocketSortMode, SocketState, SocketViewMode,
+};
 
 /// Realtime Futures market ticker monitor page.
 #[component]
@@ -19,15 +22,21 @@ pub fn SocketPage(
         let tickers = state.tickers;
         let view_mode = state.view_mode;
         let sort_mode = state.sort_mode;
+        let sort_direction = state.sort_direction;
         let ticker_limit = state.ticker_limit;
+        let search_query = state.search_query;
         let pinned_slots = state.pinned_slots;
+        let funding_rates = state.funding_rates;
         move |_| {
             build_visible(
                 tickers.get(),
                 view_mode.get(),
                 sort_mode.get(),
+                sort_direction.get(),
                 ticker_limit.get(),
                 pinned_slots.get(),
+                funding_rates.get(),
+                search_query.get(),
             )
         }
     });
@@ -51,6 +60,17 @@ pub fn SocketPage(
                 </header>
 
                 <div class="d-flex flex-wrap align-items-center gap-2 mb-3 flex-shrink-0">
+                    <div class="input-group input-group-sm w-auto me-md-auto">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input
+                            type="search"
+                            class="form-control"
+                            placeholder="Search symbol..."
+                            prop:value=move || state.search_query.get()
+                            on:input=move |ev| state.search_query.set(event_target_value(&ev))
+                        />
+                    </div>
+
                     <div class="btn-group" role="group" aria-label="Ticker view">
                         <button
                             class=move || view_button_class(state.view_mode.get() == SocketViewMode::All)
@@ -81,18 +101,49 @@ pub fn SocketPage(
                             prop:value=move || match state.sort_mode.get() {
                                 SocketSortMode::Momentum => "momentum",
                                 SocketSortMode::TotalTicks => "activity",
+                                SocketSortMode::Funding => "funding",
+                                SocketSortMode::Change24h => "change24h",
+                                SocketSortMode::Volume24h => "volume24h",
                             }
                             on:change=move |ev| {
-                                if event_target_value(&ev) == "activity" {
-                                    state.sort_mode.set(SocketSortMode::TotalTicks);
-                                } else {
-                                    state.sort_mode.set(SocketSortMode::Momentum);
-                                }
+                                let val = event_target_value(&ev);
+                                let mode = match val.as_str() {
+                                    "activity" => SocketSortMode::TotalTicks,
+                                    "funding" => SocketSortMode::Funding,
+                                    "change24h" => SocketSortMode::Change24h,
+                                    "volume24h" => SocketSortMode::Volume24h,
+                                    _ => SocketSortMode::Momentum,
+                                };
+                                state.sort_mode.set(mode);
                             }
                         >
                             <option value="momentum">"Momentum"</option>
                             <option value="activity">"Total Ticks"</option>
+                            <option value="funding">"Funding Rate"</option>
+                            <option value="change24h">"24h Change"</option>
+                            <option value="volume24h">"24h Volume"</option>
                         </select>
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm ms-1"
+                            title=move || match state.sort_direction.get() {
+                                SocketSortDirection::Ascending => "Sort Ascending",
+                                SocketSortDirection::Descending => "Sort Descending",
+                            }
+                            on:click=move |_| {
+                                state.sort_direction.update(|d| {
+                                    *d = match d {
+                                        SocketSortDirection::Ascending => SocketSortDirection::Descending,
+                                        SocketSortDirection::Descending => SocketSortDirection::Ascending,
+                                    }
+                                });
+                            }
+                        >
+                            <i class=move || match state.sort_direction.get() {
+                                SocketSortDirection::Ascending => "bi bi-sort-up-alt",
+                                SocketSortDirection::Descending => "bi bi-sort-down",
+                            }></i>
+                        </button>
                     </div>
 
                     <div class="d-flex align-items-center gap-2">
@@ -260,13 +311,81 @@ fn TickerCard(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
     sort: SocketSortMode,
+    direction: SocketSortDirection,
     limit: usize,
     slots: Vec<Option<String>>,
+    funding_rates: Option<FundingRateSnapshot>,
+    search_query: String,
 ) -> Vec<TrackedFuturesTicker> {
+    let query = search_query.trim().to_uppercase();
+    let is_searching = !query.is_empty();
+
+    let sort_fn = |left: &TrackedFuturesTicker, right: &TrackedFuturesTicker| {
+        let cmp = match sort {
+            SocketSortMode::Momentum => right
+                .momentum
+                .progress()
+                .cmp(&left.momentum.progress())
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+            SocketSortMode::TotalTicks => {
+                let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
+                let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
+                right_total
+                    .cmp(&left_total)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
+            SocketSortMode::Funding => {
+                let left_funding = funding_rates
+                    .as_ref()
+                    .and_then(|r| r.get(&left.ticker.symbol))
+                    .unwrap_or(0.0);
+                let right_funding = funding_rates
+                    .as_ref()
+                    .and_then(|r| r.get(&right.ticker.symbol))
+                    .unwrap_or(0.0);
+                right_funding
+                    .partial_cmp(&left_funding)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
+            SocketSortMode::Change24h => {
+                let left_change = left.ticker.change_24h.unwrap_or(0.0);
+                let right_change = right.ticker.change_24h.unwrap_or(0.0);
+                right_change
+                    .partial_cmp(&left_change)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
+            SocketSortMode::Volume24h => {
+                let left_vol = left.ticker.volume_24h.unwrap_or(0.0);
+                let right_vol = right.ticker.volume_24h.unwrap_or(0.0);
+                right_vol
+                    .partial_cmp(&left_vol)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
+        };
+        match direction {
+            SocketSortDirection::Descending => cmp,
+            SocketSortDirection::Ascending => cmp.reverse(),
+        }
+    };
+
+    if is_searching {
+        let mut results = all
+            .values()
+            .filter(|item| item.ticker.symbol.contains(&query))
+            .cloned()
+            .collect::<Vec<_>>();
+        results.sort_unstable_by(sort_fn);
+        return results;
+    }
+
     let pinned_symbols = slots
         .iter()
         .filter_map(|slot| slot.as_deref())
@@ -286,20 +405,7 @@ fn build_visible(
         .cloned()
         .collect::<Vec<_>>();
 
-    dynamic.sort_unstable_by(|left, right| match sort {
-        SocketSortMode::Momentum => right
-            .momentum
-            .progress()
-            .cmp(&left.momentum.progress())
-            .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
-        SocketSortMode::TotalTicks => {
-            let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
-            let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
-            right_total
-                .cmp(&left_total)
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
-        }
-    });
+    dynamic.sort_unstable_by(sort_fn);
     dynamic.truncate(limit);
 
     let pinned_count = slots.iter().filter(|slot| slot.is_some()).count();

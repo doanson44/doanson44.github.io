@@ -9,21 +9,15 @@ use web_sys::Storage;
 use crate::application::ports::FundingRateProvider;
 use crate::domain::funding::FundingRateSnapshot;
 
-const FUNDING_ENDPOINT: &str = "https://api.mexc.com/api/v1/contract/funding_rate";
-const CACHE_KEY: &str = "socket.funding-rate-cache.v1";
+const FUNDING_ENDPOINT: &str = "https://fapi.binance.com/fapi/v1/premiumIndex";
+const CACHE_KEY: &str = "socket.funding-rate-cache.v4";
 const CACHE_TTL_MS: f64 = 60.0 * 60.0 * 1000.0;
-
-#[derive(Debug, Deserialize)]
-struct ApiResponse {
-    success: bool,
-    data: Vec<ApiFundingRate>,
-}
 
 #[derive(Debug, Deserialize)]
 struct ApiFundingRate {
     symbol: String,
-    #[serde(rename = "fundingRate")]
-    funding_rate: f64,
+    #[serde(rename = "lastFundingRate")]
+    funding_rate: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -79,17 +73,18 @@ async fn fetch_snapshot() -> Result<FundingRateSnapshot, String> {
         .as_string()
         .ok_or_else(|| "Funding rate response was not text".to_string())?;
 
-    let payload: ApiResponse = serde_json::from_str(&text)
+    let payload: Vec<ApiFundingRate> = serde_json::from_str(&text)
         .map_err(|error| format!("Failed to decode funding rate response: {error}"))?;
-    if !payload.success {
-        return Err("Funding rate API reported an unsuccessful response".to_string());
-    }
 
     let rates = payload
-        .data
         .into_iter()
-        .filter(|item| item.symbol.ends_with("_USDT") && item.funding_rate.is_finite())
-        .map(|item| (item.symbol, item.funding_rate))
+        .filter(|item| item.symbol.ends_with("USDT"))
+        .filter_map(|item| {
+            item.funding_rate
+                .parse::<f64>()
+                .ok()
+                .map(|rate| (item.symbol.replace("USDT", "_USDT"), rate))
+        })
         .collect();
 
     Ok(FundingRateSnapshot::new(rates))

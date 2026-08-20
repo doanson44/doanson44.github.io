@@ -59,6 +59,21 @@ impl FuturesMarketService {
             .collect()
     }
 
+    /// Restores market and momentum state from a previously saved snapshot.
+    pub fn restore_snapshot(&mut self, snapshot: HashMap<String, TrackedFuturesTicker>) {
+        for (symbol, tracked) in snapshot {
+            self.registry.apply_batch(vec![FuturesTickerUpdate {
+                symbol: symbol.clone(),
+                last_price: tracked.ticker.last_price,
+                volume_24h: tracked.ticker.volume_24h,
+                change_24h: tracked.ticker.change_24h,
+                fair_price: tracked.ticker.fair_price,
+                updated_at_ms: tracked.ticker.updated_at_ms,
+            }]);
+            self.momentum.insert(symbol, tracked.momentum);
+        }
+    }
+
     /// Re-baselines known tickers after reconnect without creating synthetic ticks.
     pub fn rebaseline(&mut self) {
         for (symbol, ticker) in self.registry.snapshot() {
