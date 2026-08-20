@@ -2,37 +2,44 @@ use std::{collections::HashMap, rc::Rc};
 
 use leptos::prelude::*;
 
-use crate::application::ports::{FuturesConnectionStatus, FuturesMarketStream};
+use crate::application::ports::{
+    FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream,
+};
+use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::features::socket::state::{
-    SocketChangeFilter, SocketFairPriceFilter, SocketFilters, SocketMomentumFilter, SocketSortMode,
-    SocketState, SocketViewMode, SocketVolumeFilter,
+    SocketSortDirection, SocketSortMode, SocketState, SocketViewMode,
 };
 
-/// Realtime MEXC Futures ticker monitor page.
+/// Realtime Futures market ticker monitor page.
 #[component]
-pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
-    let state = SocketState::new(stream);
+pub fn SocketPage(
+    stream: Rc<dyn FuturesMarketStream>,
+    funding_provider: Rc<dyn FundingRateProvider>,
+) -> impl IntoView {
+    let state = SocketState::new(stream, funding_provider);
     let visible = Memo::new({
         let tickers = state.tickers;
         let view_mode = state.view_mode;
         let sort_mode = state.sort_mode;
-        let filters = state.filters;
+        let sort_direction = state.sort_direction;
         let ticker_limit = state.ticker_limit;
+        let search_query = state.search_query;
         let pinned_slots = state.pinned_slots;
+        let funding_rates = state.funding_rates;
         move |_| {
             build_visible(
                 tickers.get(),
                 view_mode.get(),
                 sort_mode.get(),
-                filters.get(),
+                sort_direction.get(),
                 ticker_limit.get(),
                 pinned_slots.get(),
+                funding_rates.get(),
+                search_query.get(),
             )
         }
     });
-
-    let clear_filters = move |_| state.filters.set(SocketFilters::default());
 
     view! {
         <div class="d-flex flex-column flex-grow-1 overflow-hidden socket-page">
@@ -41,7 +48,7 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                     <div>
                         <h2 class="mb-1">
                             <i class="bi bi-broadcast me-2 text-primary"></i>
-                            "MEXC Futures"
+                            "Futures Market"
                         </h2>
                         <div class="small text-body-secondary">
                             "Realtime market momentum from the moment this page opens"
@@ -52,211 +59,124 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                     </div>
                 </header>
 
-                <div class="d-flex flex-column gap-2 mb-3 flex-shrink-0">
-                    <div class="d-flex flex-wrap align-items-center gap-2">
-                        <div class="btn-group" role="group" aria-label="Ticker view">
-                            <button
-                                class=move || view_button_class(state.view_mode.get() == SocketViewMode::All)
-                                type="button"
-                                aria-pressed=move || (state.view_mode.get() == SocketViewMode::All).to_string()
-                                on:click=move |_| state.view_mode.set(SocketViewMode::All)
-                            >
-                                <i class="bi bi-grid-3x3-gap me-1"></i>
-                                "All"
-                            </button>
-                            <button
-                                class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly)
-                                type="button"
-                                aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string()
-                                on:click=move |_| state.view_mode.set(SocketViewMode::PinnedOnly)
-                            >
-                                <i class="bi bi-pin-angle me-1"></i>
-                                "Pinned only"
-                            </button>
-                        </div>
-
-                        <div class="d-flex align-items-center gap-2 ms-md-auto">
-                            <label class="small text-body-secondary" for="socket-sort-mode">"Sort by"</label>
-                            <select
-                                id="socket-sort-mode"
-                                class="form-select form-select-sm socket-sort-select"
-                                aria-label="Sort tickers by"
-                                prop:value=move || match state.sort_mode.get() {
-                                    SocketSortMode::Momentum => "momentum",
-                                    SocketSortMode::TotalTicks => "activity",
-                                }
-                                on:change=move |ev| {
-                                    if event_target_value(&ev) == "activity" {
-                                        state.sort_mode.set(SocketSortMode::TotalTicks);
-                                    } else {
-                                        state.sort_mode.set(SocketSortMode::Momentum);
-                                    }
-                                }
-                            >
-                                <option value="momentum">"Momentum"</option>
-                                <option value="activity">"Total Ticks"</option>
-                            </select>
-                        </div>
-
-                        <div class="d-flex align-items-center gap-2">
-                            <label class="small text-body-secondary" for="socket-ticker-limit">"Show"</label>
-                            <select
-                                id="socket-ticker-limit"
-                                class="form-select form-select-sm socket-limit-select"
-                                aria-label="Number of dynamic tickers to show"
-                                prop:value=move || state.ticker_limit.get().to_string()
-                                on:change=move |ev| {
-                                    let value = event_target_value(&ev)
-                                        .parse::<usize>()
-                                        .unwrap_or(DEFAULT_LIMIT);
-                                    state.set_ticker_limit(value);
-                                }
-                            >
-                                {SocketState::limit_options().iter().map(|value| {
-                                    let label = if *value == usize::MAX {
-                                        "All".to_string()
-                                    } else {
-                                        value.to_string()
-                                    };
-                                    view! { <option value=value.to_string()>{label}</option> }
-                                }).collect_view()}
-                            </select>
-                            <span class="small text-body-secondary">"dynamic"</span>
-                        </div>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3 flex-shrink-0">
+                    <div class="input-group input-group-sm w-auto me-md-auto">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input
+                            type="search"
+                            class="form-control"
+                            placeholder="Search symbol..."
+                            prop:value=move || state.search_query.get()
+                            on:input=move |ev| state.search_query.set(event_target_value(&ev))
+                        />
                     </div>
 
-                    <div class="card bg-body-tertiary border-secondary">
-                        <div class="card-body p-2">
-                            <div class="d-flex flex-wrap align-items-end gap-2">
-                                <div class="small fw-semibold text-body-secondary align-self-center me-1">
-                                    <i class="bi bi-funnel me-1"></i>
-                                    "Filters"
-                                </div>
+                    <div class="btn-group" role="group" aria-label="Ticker view">
+                        <button
+                            class=move || view_button_class(state.view_mode.get() == SocketViewMode::All)
+                            type="button"
+                            aria-pressed=move || (state.view_mode.get() == SocketViewMode::All).to_string()
+                            on:click=move |_| state.view_mode.set(SocketViewMode::All)
+                        >
+                            <i class="bi bi-grid-3x3-gap me-1"></i>
+                            "All"
+                        </button>
+                        <button
+                            class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly)
+                            type="button"
+                            aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string()
+                            on:click=move |_| state.view_mode.set(SocketViewMode::PinnedOnly)
+                        >
+                            <i class="bi bi-pin-angle me-1"></i>
+                            "Pinned only"
+                        </button>
+                    </div>
 
-                                <div>
-                                    <label class="form-label small text-body-secondary mb-1" for="socket-change-filter">"24h Change"</label>
-                                    <select
-                                        id="socket-change-filter"
-                                        class="form-select form-select-sm"
-                                        aria-label="Filter by 24 hour price change"
-                                        prop:value=move || match state.filters.get().change {
-                                            SocketChangeFilter::All => "all",
-                                            SocketChangeFilter::Positive => "positive",
-                                            SocketChangeFilter::Negative => "negative",
-                                        }
-                                        on:change=move |ev| {
-                                            let filter = match event_target_value(&ev).as_str() {
-                                                "positive" => SocketChangeFilter::Positive,
-                                                "negative" => SocketChangeFilter::Negative,
-                                                _ => SocketChangeFilter::All,
-                                            };
-                                            state.filters.update(|filters| filters.change = filter);
-                                        }
-                                    >
-                                        <option value="all">"All"</option>
-                                        <option value="positive">"Positive"</option>
-                                        <option value="negative">"Negative"</option>
-                                    </select>
-                                </div>
+                    <div class="d-flex align-items-center gap-2 ms-md-auto">
+                        <label class="small text-body-secondary" for="socket-sort-mode">"Sort by"</label>
+                        <select
+                            id="socket-sort-mode"
+                            class="form-select form-select-sm socket-sort-select"
+                            aria-label="Sort tickers by"
+                            prop:value=move || match state.sort_mode.get() {
+                                SocketSortMode::Momentum => "momentum",
+                                SocketSortMode::TotalTicks => "activity",
+                                SocketSortMode::Funding => "funding",
+                                SocketSortMode::Change24h => "change24h",
+                                SocketSortMode::Volume24h => "volume24h",
+                            }
+                            on:change=move |ev| {
+                                let val = event_target_value(&ev);
+                                let mode = match val.as_str() {
+                                    "activity" => SocketSortMode::TotalTicks,
+                                    "funding" => SocketSortMode::Funding,
+                                    "change24h" => SocketSortMode::Change24h,
+                                    "volume24h" => SocketSortMode::Volume24h,
+                                    _ => SocketSortMode::Momentum,
+                                };
+                                state.sort_mode.set(mode);
+                            }
+                        >
+                            <option value="momentum">"Momentum"</option>
+                            <option value="activity">"Total Ticks"</option>
+                            <option value="funding">"Funding Rate"</option>
+                            <option value="change24h">"24h Change"</option>
+                            <option value="volume24h">"24h Volume"</option>
+                        </select>
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm ms-1"
+                            title=move || match state.sort_direction.get() {
+                                SocketSortDirection::Ascending => "Sort Ascending",
+                                SocketSortDirection::Descending => "Sort Descending",
+                            }
+                            on:click=move |_| {
+                                state.sort_direction.update(|d| {
+                                    *d = match d {
+                                        SocketSortDirection::Ascending => SocketSortDirection::Descending,
+                                        SocketSortDirection::Descending => SocketSortDirection::Ascending,
+                                    }
+                                });
+                            }
+                        >
+                            <i class=move || match state.sort_direction.get() {
+                                SocketSortDirection::Ascending => "bi bi-sort-up-alt",
+                                SocketSortDirection::Descending => "bi bi-sort-down",
+                            }></i>
+                        </button>
+                    </div>
 
-                                <div>
-                                    <label class="form-label small text-body-secondary mb-1" for="socket-momentum-filter">"Momentum"</label>
-                                    <select
-                                        id="socket-momentum-filter"
-                                        class="form-select form-select-sm"
-                                        aria-label="Filter by momentum direction"
-                                        prop:value=move || match state.filters.get().momentum {
-                                            SocketMomentumFilter::All => "all",
-                                            SocketMomentumFilter::Bullish => "bullish",
-                                            SocketMomentumFilter::Bearish => "bearish",
-                                        }
-                                        on:change=move |ev| {
-                                            let filter = match event_target_value(&ev).as_str() {
-                                                "bullish" => SocketMomentumFilter::Bullish,
-                                                "bearish" => SocketMomentumFilter::Bearish,
-                                                _ => SocketMomentumFilter::All,
-                                            };
-                                            state.filters.update(|filters| filters.momentum = filter);
-                                        }
-                                    >
-                                        <option value="all">"All"</option>
-                                        <option value="bullish">"Bullish"</option>
-                                        <option value="bearish">"Bearish"</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="form-label small text-body-secondary mb-1" for="socket-fair-price-filter">"Fair Price"</label>
-                                    <select
-                                        id="socket-fair-price-filter"
-                                        class="form-select form-select-sm"
-                                        aria-label="Filter by last price relative to fair price"
-                                        prop:value=move || match state.filters.get().fair_price {
-                                            SocketFairPriceFilter::All => "all",
-                                            SocketFairPriceFilter::Above => "above",
-                                            SocketFairPriceFilter::Below => "below",
-                                        }
-                                        on:change=move |ev| {
-                                            let filter = match event_target_value(&ev).as_str() {
-                                                "above" => SocketFairPriceFilter::Above,
-                                                "below" => SocketFairPriceFilter::Below,
-                                                _ => SocketFairPriceFilter::All,
-                                            };
-                                            state.filters.update(|filters| filters.fair_price = filter);
-                                        }
-                                    >
-                                        <option value="all">"All"</option>
-                                        <option value="above">"Above fair"</option>
-                                        <option value="below">"Below fair"</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="form-label small text-body-secondary mb-1" for="socket-volume-filter">"24h Volume"</label>
-                                    <select
-                                        id="socket-volume-filter"
-                                        class="form-select form-select-sm"
-                                        aria-label="Filter by 24 hour volume rank"
-                                        prop:value=move || match state.filters.get().volume {
-                                            SocketVolumeFilter::All => "all",
-                                            SocketVolumeFilter::TopHalf => "top-half",
-                                            SocketVolumeFilter::TopQuarter => "top-quarter",
-                                        }
-                                        on:change=move |ev| {
-                                            let filter = match event_target_value(&ev).as_str() {
-                                                "top-half" => SocketVolumeFilter::TopHalf,
-                                                "top-quarter" => SocketVolumeFilter::TopQuarter,
-                                                _ => SocketVolumeFilter::All,
-                                            };
-                                            state.filters.update(|filters| filters.volume = filter);
-                                        }
-                                    >
-                                        <option value="all">"All"</option>
-                                        <option value="top-half">"Top 50%"</option>
-                                        <option value="top-quarter">"Top 25%"</option>
-                                    </select>
-                                </div>
-
-                                <button
-                                    class="btn btn-outline-secondary btn-sm"
-                                    type="button"
-                                    disabled=move || filter_count(state.filters.get()) == 0
-                                    on:click=clear_filters
-                                >
-                                    "Clear"
-                                </button>
-                                <span class="small text-body-secondary ms-auto" aria-live="polite">
-                                    {move || format!("{} active", filter_count(state.filters.get()))}
-                                </span>
-                            </div>
-                        </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="small text-body-secondary" for="socket-ticker-limit">"Show"</label>
+                        <select
+                            id="socket-ticker-limit"
+                            class="form-select form-select-sm socket-limit-select"
+                            aria-label="Number of dynamic tickers to show"
+                            prop:value=move || state.ticker_limit.get().to_string()
+                            on:change=move |ev| {
+                                let value = event_target_value(&ev)
+                                    .parse::<usize>()
+                                    .unwrap_or(DEFAULT_LIMIT);
+                                state.set_ticker_limit(value);
+                            }
+                        >
+                            {SocketState::limit_options().iter().map(|value| {
+                                let label = if *value == usize::MAX {
+                                    "All".to_string()
+                                } else {
+                                    value.to_string()
+                                };
+                                view! { <option value=value.to_string()>{label}</option> }
+                            }).collect_view()}
+                        </select>
+                        <span class="small text-body-secondary">"dynamic"</span>
                     </div>
                 </div>
 
                 <div class="socket-grid flex-grow-1 overflow-auto pe-1" aria-live="polite">
                     <Show
                         when=move || !visible.get().is_empty()
-                        fallback=move || empty_state(state.view_mode.get(), filter_count(state.filters.get()) > 0)
+                        fallback=move || empty_state(state.view_mode.get())
                     >
                         <For
                             each=move || visible.get()
@@ -304,6 +224,15 @@ fn TickerCard(
                 .any(|slot| slot.as_deref() == Some(symbol.as_str()))
         }
     });
+    let funding_rate = Memo::new({
+        let funding_rates = state.funding_rates;
+        let symbol = symbol.clone();
+        move |_| {
+            funding_rates
+                .get()
+                .and_then(|snapshot| snapshot.get(&symbol))
+        }
+    });
 
     view! {
         <button
@@ -314,7 +243,7 @@ fn TickerCard(
                 "socket-ticker-card card bg-body-tertiary border-secondary"
             }
             title={let symbol_title = symbol.clone(); move || if is_pinned.get() { format!("Unpin {symbol_title}") } else { format!("Pin {symbol_title}") }}
-            aria-label={let symbol_aria = symbol.clone(); move || ticker.get().map(|item| card_aria_label(item, is_pinned.get())).unwrap_or_else(|| format!("{symbol_aria}, market data unavailable"))}
+            aria-label={let symbol_aria = symbol.clone(); move || ticker.get().map(|item| card_aria_label(item, is_pinned.get(), funding_rate.get())).unwrap_or_else(|| format!("{symbol_aria}, market data unavailable"))}
             on:click={
                 let symbol = symbol.clone();
                 move |_| {
@@ -355,6 +284,13 @@ fn TickerCard(
                     </span>
                 </div>
 
+                <div class="d-flex justify-content-between align-items-center gap-2 mt-1 small">
+                    <span class="text-body-secondary">"Funding"</span>
+                    <span class=move || funding_rate_class(funding_rate.get())>
+                        {move || format_funding_rate(funding_rate.get())}
+                    </span>
+                </div>
+
                 <progress
                     class="socket-ticker-progress mt-2"
                     max="100"
@@ -375,32 +311,90 @@ fn TickerCard(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
     sort: SocketSortMode,
-    filters: SocketFilters,
+    direction: SocketSortDirection,
     limit: usize,
     slots: Vec<Option<String>>,
+    funding_rates: Option<FundingRateSnapshot>,
+    search_query: String,
 ) -> Vec<TrackedFuturesTicker> {
-    let volume_threshold = volume_threshold(&all, filters.volume);
+    let query = search_query.trim().to_uppercase();
+    let is_searching = !query.is_empty();
+
+    let sort_fn = |left: &TrackedFuturesTicker, right: &TrackedFuturesTicker| {
+        let cmp = match sort {
+            SocketSortMode::Momentum => right
+                .momentum
+                .progress()
+                .cmp(&left.momentum.progress())
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+            SocketSortMode::TotalTicks => {
+                let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
+                let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
+                right_total
+                    .cmp(&left_total)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
+            SocketSortMode::Funding => {
+                let left_funding = funding_rates
+                    .as_ref()
+                    .and_then(|r| r.get(&left.ticker.symbol))
+                    .unwrap_or(0.0);
+                let right_funding = funding_rates
+                    .as_ref()
+                    .and_then(|r| r.get(&right.ticker.symbol))
+                    .unwrap_or(0.0);
+                right_funding
+                    .partial_cmp(&left_funding)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
+            SocketSortMode::Change24h => {
+                let left_change = left.ticker.change_24h.unwrap_or(0.0);
+                let right_change = right.ticker.change_24h.unwrap_or(0.0);
+                right_change
+                    .partial_cmp(&left_change)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
+            SocketSortMode::Volume24h => {
+                let left_vol = left.ticker.volume_24h.unwrap_or(0.0);
+                let right_vol = right.ticker.volume_24h.unwrap_or(0.0);
+                right_vol
+                    .partial_cmp(&left_vol)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
+        };
+        match direction {
+            SocketSortDirection::Descending => cmp,
+            SocketSortDirection::Ascending => cmp.reverse(),
+        }
+    };
+
+    if is_searching {
+        let mut results = all
+            .values()
+            .filter(|item| item.ticker.symbol.contains(&query))
+            .cloned()
+            .collect::<Vec<_>>();
+        results.sort_unstable_by(sort_fn);
+        return results;
+    }
+
     let pinned_symbols = slots
         .iter()
         .filter_map(|slot| slot.as_deref())
         .collect::<Vec<_>>();
 
-    let matches_filters = |item: &TrackedFuturesTicker| {
-        matches_change(item, filters.change)
-            && matches_momentum(item, filters.momentum)
-            && matches_fair_price(item, filters.fair_price)
-            && matches_volume(item, filters.volume, volume_threshold)
-    };
-
     if mode == SocketViewMode::PinnedOnly {
         return slots
             .iter()
             .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)))
-            .filter(|item| matches_filters(item))
             .cloned()
             .collect();
     }
@@ -408,24 +402,10 @@ fn build_visible(
     let mut dynamic = all
         .values()
         .filter(|item| !pinned_symbols.contains(&item.ticker.symbol.as_str()))
-        .filter(|item| matches_filters(item))
         .cloned()
         .collect::<Vec<_>>();
 
-    dynamic.sort_unstable_by(|left, right| match sort {
-        SocketSortMode::Momentum => right
-            .momentum
-            .progress()
-            .cmp(&left.momentum.progress())
-            .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
-        SocketSortMode::TotalTicks => {
-            let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
-            let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
-            right_total
-                .cmp(&left_total)
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
-        }
-    });
+    dynamic.sort_unstable_by(sort_fn);
     dynamic.truncate(limit);
 
     let pinned_count = slots.iter().filter(|slot| slot.is_some()).count();
@@ -436,9 +416,7 @@ fn build_visible(
     for index in 0..output_len {
         if let Some(symbol) = slots.get(index).and_then(|slot| slot.as_deref()) {
             if let Some(ticker) = all.get(symbol) {
-                if matches_filters(ticker) {
-                    output.push(ticker.clone());
-                }
+                output.push(ticker.clone());
             }
         } else if let Some(ticker) = dynamic.get(dynamic_index) {
             output.push(ticker.clone());
@@ -447,86 +425,6 @@ fn build_visible(
     }
 
     output
-}
-
-fn matches_change(ticker: &TrackedFuturesTicker, filter: SocketChangeFilter) -> bool {
-    match filter {
-        SocketChangeFilter::All => true,
-        SocketChangeFilter::Positive => ticker.ticker.change_24h.is_some_and(|value| value > 0.0),
-        SocketChangeFilter::Negative => ticker.ticker.change_24h.is_some_and(|value| value < 0.0),
-    }
-}
-
-fn matches_momentum(ticker: &TrackedFuturesTicker, filter: SocketMomentumFilter) -> bool {
-    match filter {
-        SocketMomentumFilter::All => true,
-        SocketMomentumFilter::Bullish => ticker.momentum.net_ticks() > 0,
-        SocketMomentumFilter::Bearish => ticker.momentum.net_ticks() < 0,
-    }
-}
-
-fn matches_fair_price(ticker: &TrackedFuturesTicker, filter: SocketFairPriceFilter) -> bool {
-    match filter {
-        SocketFairPriceFilter::All => true,
-        SocketFairPriceFilter::Above => {
-            match (ticker.ticker.last_price, ticker.ticker.fair_price) {
-                (Some(last), Some(fair)) => last > fair,
-                _ => false,
-            }
-        }
-        SocketFairPriceFilter::Below => {
-            match (ticker.ticker.last_price, ticker.ticker.fair_price) {
-                (Some(last), Some(fair)) => last < fair,
-                _ => false,
-            }
-        }
-    }
-}
-
-fn volume_threshold(all: &MarketSnapshot, filter: SocketVolumeFilter) -> Option<f64> {
-    if filter == SocketVolumeFilter::All {
-        return None;
-    }
-
-    let mut volumes = all
-        .values()
-        .filter_map(|item| item.ticker.volume_24h)
-        .filter(|value| value.is_finite())
-        .collect::<Vec<_>>();
-    if volumes.is_empty() {
-        return None;
-    }
-
-    volumes.sort_unstable_by(f64::total_cmp);
-    let rank = match filter {
-        SocketVolumeFilter::All => return None,
-        SocketVolumeFilter::TopHalf => 0.5,
-        SocketVolumeFilter::TopQuarter => 0.75,
-    };
-    let index = ((volumes.len() - 1) as f64 * rank).floor() as usize;
-    volumes.get(index).copied()
-}
-
-fn matches_volume(
-    ticker: &TrackedFuturesTicker,
-    filter: SocketVolumeFilter,
-    threshold: Option<f64>,
-) -> bool {
-    match filter {
-        SocketVolumeFilter::All => true,
-        SocketVolumeFilter::TopHalf | SocketVolumeFilter::TopQuarter => ticker
-            .ticker
-            .volume_24h
-            .zip(threshold)
-            .is_some_and(|(volume, threshold)| volume >= threshold),
-    }
-}
-
-fn filter_count(filters: SocketFilters) -> usize {
-    (filters.change != SocketChangeFilter::All) as usize
-        + (filters.momentum != SocketMomentumFilter::All) as usize
-        + (filters.fair_price != SocketFairPriceFilter::All) as usize
-        + (filters.volume != SocketVolumeFilter::All) as usize
 }
 
 fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
@@ -551,24 +449,22 @@ fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
                 "Disconnected"
             </span>
         }.into_any(),
-        FuturesConnectionStatus::Error(message) => view! {
-            <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle" title=message>
+        FuturesConnectionStatus::Error(_) => view! {
+            <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
                 <i class="bi bi-exclamation-triangle me-1"></i>"Connection error"
             </span>
         }.into_any(),
     }
 }
 
-fn empty_state(mode: SocketViewMode, filters_active: bool) -> impl IntoView {
-    let text = match (mode, filters_active) {
-        (SocketViewMode::All, true) => "No contracts match the active filters",
-        (SocketViewMode::All, false) => "Waiting for market data...",
-        (SocketViewMode::PinnedOnly, true) => "No pinned tickers match the active filters",
-        (SocketViewMode::PinnedOnly, false) => "No pinned tickers",
+fn empty_state(mode: SocketViewMode) -> impl IntoView {
+    let text = match mode {
+        SocketViewMode::All => "Waiting for market data...",
+        SocketViewMode::PinnedOnly => "No pinned tickers",
     };
     view! {
         <div class="d-flex flex-column align-items-center justify-content-center h-100 text-body-secondary py-5">
-            <i class="bi bi-funnel fs-2 mb-2" aria-hidden="true"></i>
+            <i class="bi bi-broadcast fs-2 mb-2" aria-hidden="true"></i>
             <span>{text}</span>
         </div>
     }
@@ -582,12 +478,17 @@ fn view_button_class(active: bool) -> &'static str {
     }
 }
 
-fn card_aria_label(ticker: TrackedFuturesTicker, pinned: bool) -> String {
+fn card_aria_label(
+    ticker: TrackedFuturesTicker,
+    pinned: bool,
+    funding_rate: Option<f64>,
+) -> String {
     format!(
-        "{}, 24 hour change {}, price {}, {} up ticks, {} down ticks, {} percent progress, {}",
+        "{}, 24 hour change {}, price {}, funding rate {}, {} up ticks, {} down ticks, {} percent progress, {}",
         ticker.ticker.symbol,
         format_percent(ticker.ticker.change_24h),
         format_number(ticker.ticker.last_price),
+        format_funding_rate(funding_rate),
         ticker.momentum.up_ticks,
         ticker.momentum.down_ticks,
         ticker.momentum.progress(),
@@ -600,6 +501,15 @@ fn change_class(value: Option<f64>) -> &'static str {
         Some(value) if value > 0.0 => "text-success-emphasis",
         Some(value) if value < 0.0 => "text-danger-emphasis",
         _ => "text-body",
+    }
+}
+
+fn funding_rate_class(value: Option<f64>) -> &'static str {
+    match value {
+        Some(value) if value > 0.0 => "text-success-emphasis font-monospace",
+        Some(value) if value < 0.0 => "text-danger-emphasis font-monospace",
+        Some(_) => "text-body font-monospace",
+        None => "text-body-secondary font-monospace",
     }
 }
 
@@ -618,5 +528,11 @@ fn format_number(value: Option<f64>) -> String {
 fn format_percent(value: Option<f64>) -> String {
     value
         .map(|number| format!("{number:+.2}%", number = number * 100.0))
+        .unwrap_or_else(|| "—".into())
+}
+
+fn format_funding_rate(value: Option<f64>) -> String {
+    value
+        .map(|number| format!("{number:+.4}%", number = number * 100.0))
         .unwrap_or_else(|| "—".into())
 }
