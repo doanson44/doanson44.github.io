@@ -6,6 +6,7 @@ use std::{
 
 use leptos::prelude::*;
 use send_wrapper::SendWrapper;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast};
 
 use crate::application::{
@@ -18,8 +19,16 @@ use crate::domain::futures::TrackedFuturesTicker;
 const DEFAULT_LIMIT: usize = 10;
 const LIMIT_OPTIONS: [usize; 6] = [10, 20, 30, 50, 100, usize::MAX];
 const UI_FLUSH_MS: i32 = 75;
+const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct CachedTickerMomentum {
+    symbol: String,
+    up_ticks: u64,
+    down_ticks: u64,
+}
 
 /// Socket ticker view mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -77,12 +86,12 @@ impl SocketState {
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
         if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
-            if let Some(raw) = storage.get_item("socket.tickers-cache").ok().flatten() {
-                if let Ok(snapshot) =
-                    serde_json::from_str::<HashMap<String, TrackedFuturesTicker>>(&raw)
-                {
-                    service.borrow_mut().restore_snapshot(snapshot);
-                    tickers.set(Rc::new(service.borrow().snapshot()));
+            if let Some(raw) = storage.get_item(TICKER_CACHE_KEY).ok().flatten() {
+                if let Ok(snapshot) = serde_json::from_str::<Vec<CachedTickerMomentum>>(&raw) {
+                    let cached = snapshot
+                        .into_iter()
+                        .map(|item| (item.symbol, item.up_ticks, item.down_ticks));
+                    service.borrow_mut().restore_momentum(cached);
                 }
             }
         }
@@ -155,9 +164,18 @@ impl SocketState {
         let save_callback = Closure::wrap(Box::new(move || {
             if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten())
             {
-                let snapshot = save_service.borrow().snapshot();
+                let snapshot = save_service
+                    .borrow()
+                    .snapshot()
+                    .into_values()
+                    .map(|tracked| CachedTickerMomentum {
+                        symbol: tracked.ticker.symbol,
+                        up_ticks: tracked.momentum.up_ticks,
+                        down_ticks: tracked.momentum.down_ticks,
+                    })
+                    .collect::<Vec<_>>();
                 if let Ok(raw) = serde_json::to_string(&snapshot) {
-                    let _ = storage.set_item("socket.tickers-cache", &raw);
+                    let _ = storage.set_item(TICKER_CACHE_KEY, &raw);
                 }
             }
         }) as Box<dyn FnMut()>);
