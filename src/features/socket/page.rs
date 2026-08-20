@@ -6,9 +6,7 @@ use crate::application::ports::{
     FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream,
 };
 use crate::domain::futures::TrackedFuturesTicker;
-use crate::features::socket::state::{
-    SocketFilters, SocketSortMode, SocketState, SocketViewMode,
-};
+use crate::features::socket::state::{SocketSortMode, SocketState, SocketViewMode};
 
 /// Realtime Futures market ticker monitor page.
 #[component]
@@ -28,7 +26,6 @@ pub fn SocketPage(
                 tickers.get(),
                 view_mode.get(),
                 sort_mode.get(),
-                SocketFilters::default(),
                 ticker_limit.get(),
                 pinned_slots.get(),
             )
@@ -267,7 +264,6 @@ fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
     sort: SocketSortMode,
-    _filters: SocketFilters,
     limit: usize,
     slots: Vec<Option<String>>,
 ) -> Vec<TrackedFuturesTicker> {
