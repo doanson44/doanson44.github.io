@@ -2,17 +2,20 @@ use std::{collections::HashMap, rc::Rc};
 
 use leptos::prelude::*;
 
-use crate::application::ports::{FuturesConnectionStatus, FuturesMarketStream};
+use crate::application::ports::{FuturesConnectionStatus, FundingRateProvider, FuturesMarketStream};
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::features::socket::state::{
     SocketChangeFilter, SocketFairPriceFilter, SocketFilters, SocketMomentumFilter, SocketSortMode,
     SocketState, SocketViewMode, SocketVolumeFilter,
 };
 
-/// Realtime MEXC Futures ticker monitor page.
+/// Realtime Futures market ticker monitor page.
 #[component]
-pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
-    let state = SocketState::new(stream);
+pub fn SocketPage(
+    stream: Rc<dyn FuturesMarketStream>,
+    funding_provider: Rc<dyn FundingRateProvider>,
+) -> impl IntoView {
+    let state = SocketState::new(stream, funding_provider);
     let visible = Memo::new({
         let tickers = state.tickers;
         let view_mode = state.view_mode;
@@ -41,7 +44,7 @@ pub fn SocketPage(stream: Rc<dyn FuturesMarketStream>) -> impl IntoView {
                     <div>
                         <h2 class="mb-1">
                             <i class="bi bi-broadcast me-2 text-primary"></i>
-                            "MEXC Futures"
+                            "Futures Market"
                         </h2>
                         <div class="small text-body-secondary">
                             "Realtime market momentum from the moment this page opens"
@@ -304,6 +307,11 @@ fn TickerCard(
                 .any(|slot| slot.as_deref() == Some(symbol.as_str()))
         }
     });
+    let funding_rate = Memo::new({
+        let funding_rates = state.funding_rates;
+        let symbol = symbol.clone();
+        move |_| funding_rates.get().and_then(|snapshot| snapshot.get(&symbol))
+    });
 
     view! {
         <button
@@ -314,7 +322,7 @@ fn TickerCard(
                 "socket-ticker-card card bg-body-tertiary border-secondary"
             }
             title={let symbol_title = symbol.clone(); move || if is_pinned.get() { format!("Unpin {symbol_title}") } else { format!("Pin {symbol_title}") }}
-            aria-label={let symbol_aria = symbol.clone(); move || ticker.get().map(|item| card_aria_label(item, is_pinned.get())).unwrap_or_else(|| format!("{symbol_aria}, market data unavailable"))}
+            aria-label={let symbol_aria = symbol.clone(); move || ticker.get().map(|item| card_aria_label(item, is_pinned.get(), funding_rate.get())).unwrap_or_else(|| format!("{symbol_aria}, market data unavailable"))}
             on:click={
                 let symbol = symbol.clone();
                 move |_| {
@@ -352,6 +360,13 @@ fn TickerCard(
                     }}
                     <span class="small text-body-secondary font-monospace">
                         {move || ticker.get().map(|item| format!("{}%", item.momentum.progress())).unwrap_or_else(|| "—".into())}
+                    </span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center gap-2 mt-1 small">
+                    <span class="text-body-secondary">"Funding"</span>
+                    <span class=move || funding_rate_class(funding_rate.get())>
+                        {move || format_funding_rate(funding_rate.get())}
                     </span>
                 </div>
 
@@ -551,8 +566,8 @@ fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
                 "Disconnected"
             </span>
         }.into_any(),
-        FuturesConnectionStatus::Error(message) => view! {
-            <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle" title=message>
+        FuturesConnectionStatus::Error(_) => view! {
+            <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle">
                 <i class="bi bi-exclamation-triangle me-1"></i>"Connection error"
             </span>
         }.into_any(),
@@ -582,12 +597,17 @@ fn view_button_class(active: bool) -> &'static str {
     }
 }
 
-fn card_aria_label(ticker: TrackedFuturesTicker, pinned: bool) -> String {
+fn card_aria_label(
+    ticker: TrackedFuturesTicker,
+    pinned: bool,
+    funding_rate: Option<f64>,
+) -> String {
     format!(
-        "{}, 24 hour change {}, price {}, {} up ticks, {} down ticks, {} percent progress, {}",
+        "{}, 24 hour change {}, price {}, funding rate {}, {} up ticks, {} down ticks, {} percent progress, {}",
         ticker.ticker.symbol,
         format_percent(ticker.ticker.change_24h),
         format_number(ticker.ticker.last_price),
+        format_funding_rate(funding_rate),
         ticker.momentum.up_ticks,
         ticker.momentum.down_ticks,
         ticker.momentum.progress(),
@@ -600,6 +620,15 @@ fn change_class(value: Option<f64>) -> &'static str {
         Some(value) if value > 0.0 => "text-success-emphasis",
         Some(value) if value < 0.0 => "text-danger-emphasis",
         _ => "text-body",
+    }
+}
+
+fn funding_rate_class(value: Option<f64>) -> &'static str {
+    match value {
+        Some(value) if value > 0.0 => "text-success-emphasis font-monospace",
+        Some(value) if value < 0.0 => "text-danger-emphasis font-monospace",
+        Some(_) => "text-body font-monospace",
+        None => "text-body-secondary font-monospace",
     }
 }
 
@@ -618,5 +647,11 @@ fn format_number(value: Option<f64>) -> String {
 fn format_percent(value: Option<f64>) -> String {
     value
         .map(|number| format!("{number:+.2}%", number = number * 100.0))
+        .unwrap_or_else(|| "—".into())
+}
+
+fn format_funding_rate(value: Option<f64>) -> String {
+    value
+        .map(|number| format!("{number:+.4}%", number = number * 100.0))
         .unwrap_or_else(|| "—".into())
 }
