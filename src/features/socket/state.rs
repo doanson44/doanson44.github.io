@@ -9,7 +9,7 @@ use send_wrapper::SendWrapper;
 use wasm_bindgen::{closure::Closure, JsCast};
 
 use crate::application::{
-    ports::{FuturesConnectionStatus, FuturesMarketStream, FundingRateProvider},
+    ports::{FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream},
     services::FuturesMarketService,
 };
 use crate::domain::funding::FundingRateSnapshot;

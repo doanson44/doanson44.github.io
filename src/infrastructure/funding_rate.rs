@@ -1,8 +1,8 @@
 use std::{collections::HashMap, rc::Rc};
 
 use js_sys::Date;
-use serde::Deserialize;
-use wasm_bindgen::{closure::Closure, JsCast, JsValue};
+use serde::{Deserialize, Serialize};
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::Storage;
 
@@ -26,7 +26,7 @@ struct ApiFundingRate {
     funding_rate: f64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct CachedSnapshot {
     fetched_at_ms: f64,
     rates: HashMap<String, f64>,
@@ -64,18 +64,20 @@ async fn fetch_snapshot() -> Result<FundingRateSnapshot, String> {
         .map_err(|_| "Funding rate response is invalid".to_string())?;
 
     if !response.ok() {
-        return Err(format!("Funding rate request returned HTTP {}", response.status()));
+        return Err(format!(
+            "Funding rate request returned HTTP {}",
+            response.status()
+        ));
     }
 
-    let text = JsFuture::from(
-        response
-            .text()
-            .map_err(|error| format!("Failed to read funding rate response: {}", js_error(&error)))?,
-    )
-    .await
-    .map_err(|error| format!("Failed to read funding rate response: {}", js_error(&error)))?
-    .as_string()
-    .ok_or_else(|| "Funding rate response was not text".to_string())?;
+    let text =
+        JsFuture::from(response.text().map_err(|error| {
+            format!("Failed to read funding rate response: {}", js_error(&error))
+        })?)
+        .await
+        .map_err(|error| format!("Failed to read funding rate response: {}", js_error(&error)))?
+        .as_string()
+        .ok_or_else(|| "Funding rate response was not text".to_string())?;
 
     let payload: ApiResponse = serde_json::from_str(&text)
         .map_err(|error| format!("Failed to decode funding rate response: {error}"))?;

@@ -2,7 +2,9 @@ use std::{collections::HashMap, rc::Rc};
 
 use leptos::prelude::*;
 
-use crate::application::ports::{FuturesConnectionStatus, FundingRateProvider, FuturesMarketStream};
+use crate::application::ports::{
+    FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream,
+};
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::features::socket::state::{
     SocketChangeFilter, SocketFairPriceFilter, SocketFilters, SocketMomentumFilter, SocketSortMode,
@@ -310,7 +312,11 @@ fn TickerCard(
     let funding_rate = Memo::new({
         let funding_rates = state.funding_rates;
         let symbol = symbol.clone();
-        move |_| funding_rates.get().and_then(|snapshot| snapshot.get(&symbol))
+        move |_| {
+            funding_rates
+                .get()
+                .and_then(|snapshot| snapshot.get(&symbol))
+        }
     });
 
     view! {
