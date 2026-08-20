@@ -3,7 +3,7 @@
 /// The widget owns its market data and renders an iframe backed by TradingView.
 /// The caller is responsible for providing a stable container element.
 pub fn initialize_advanced_chart(
-    container: &web_sys::Element,
+    container: &web_sys::HtmlElement,
     symbol: &str,
     theme: &str,
 ) -> Result<(), String> {
