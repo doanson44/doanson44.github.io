@@ -20,6 +20,7 @@ use crate::features::tools::jwt::page::JwtPage;
 use crate::features::tools::markdown::page::MarkdownPage;
 use crate::features::tools::page::ToolsPage;
 use crate::features::tools::time::page::TimePage;
+use crate::infrastructure::funding_rate::FundingRateApi;
 use crate::infrastructure::mexc_futures::MexcFuturesStream;
 
 #[component]
@@ -85,7 +86,12 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools/time" => view! { <TimePage /> }.into_any(),
         "/games" => view! { <GamesPage /> }.into_any(),
         "/cv" => view! { <CvPage /> }.into_any(),
-        "/socket" => view! { <SocketPage stream=Rc::new(MexcFuturesStream) /> }.into_any(),
+        "/socket" => view! {
+            <SocketPage
+                stream=Rc::new(MexcFuturesStream)
+                funding_provider=Rc::new(FundingRateApi)
+            />
+        }.into_any(),
         _ => view! { <div class="container py-5 text-center flex-grow-1"><h3 class="text-body-secondary">"404"</h3><p class="text-body-tertiary">"Page not found."</p><a href="#/" class="btn btn-outline-secondary btn-sm">"Go Home"</a></div> }.into_any(),
     }
 }
