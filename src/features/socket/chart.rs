@@ -2,7 +2,7 @@ use leptos::prelude::*;
 
 use crate::infrastructure::tradingview::initialize_advanced_chart;
 
-const DEFAULT_SYMBOL: &str = "MEXC:BTCUSDT";
+const DEFAULT_SYMBOL: &str = "MEXC:BTCUSDT.P";
 
 /// Renders a TradingView Advanced Chart using TradingView's own market data.
 #[component]
