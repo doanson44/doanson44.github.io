@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use crate::domain::document::MarkdownDocument;
+use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::FuturesTickerUpdate;
 
 /// Port for document persistence.
@@ -51,4 +52,9 @@ pub trait FuturesMarketStream {
         on_batch: Rc<dyn Fn(Vec<FuturesTickerUpdate>)>,
         on_status: Rc<dyn Fn(FuturesConnectionStatus)>,
     ) -> Result<Box<dyn FuturesMarketStreamHandle>, String>;
+}
+
+/// Application port for cached all-market funding rates.
+pub trait FundingRateProvider {
+    fn load_cached_or_fetch(&self, on_result: Rc<dyn Fn(Result<FundingRateSnapshot, String>)>);
 }

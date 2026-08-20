@@ -1,7 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 
 /// Public Futures ticker state and update primitives.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FuturesTicker {
     pub symbol: String,
     pub last_price: Option<f64>,
@@ -25,7 +26,7 @@ pub struct FuturesTickerUpdate {
 const MOMENTUM_WINDOW: usize = 100;
 
 /// Tracks directional price changes over a bounded rolling tick window.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct FuturesTickerMomentum {
     pub previous_price: Option<f64>,
     pub up_ticks: u64,
@@ -94,7 +95,7 @@ impl FuturesTickerMomentum {
 }
 
 /// A Futures ticker together with session-local directional momentum.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrackedFuturesTicker {
     pub ticker: FuturesTicker,
     pub momentum: FuturesTickerMomentum,
