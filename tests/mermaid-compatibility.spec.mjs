@@ -69,21 +69,24 @@ test.describe('Markdown Mermaid compatibility', () => {
     await expect(containers).toHaveCount(diagrams.length, {
       timeout: 15000,
     });
-    await expect(page.locator('#markdown-preview-content .mermaid-error')).toHaveCount(0, {
-      timeout: 30000,
-    });
 
-    const diagramResults = await containers.evaluateAll((elements) =>
-      elements.map((element) => ({
-        hasSvg: Boolean(element.querySelector('.mermaid-diagram svg')),
-        hasError: Boolean(element.querySelector('.mermaid-error')),
+    await expect.poll(
+      async () =>
+        containers.evaluateAll((elements) =>
+          elements.map((element) => ({
+            hasSvg: Boolean(element.querySelector('.mermaid-diagram svg')),
+            hasError: Boolean(element.querySelector('.mermaid-error')),
+          })),
+        ),
+      {
+        timeout: 30000,
+        intervals: [100, 250, 500, 1000],
+      },
+    ).toEqual(
+      diagrams.map(() => ({
+        hasSvg: true,
+        hasError: false,
       })),
     );
-
-    expect(diagramResults).toHaveLength(diagrams.length);
-    for (const [index, result] of diagramResults.entries()) {
-      expect(result.hasError, `${diagrams[index][0]}: preview contains an error`).toBe(false);
-      expect(result.hasSvg, `${diagrams[index][0]}: preview is missing an SVG`).toBe(true);
-    }
   });
 });
