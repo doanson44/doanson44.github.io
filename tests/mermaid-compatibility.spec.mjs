@@ -34,7 +34,7 @@ const diagrams = [
 ];
 
 const markdownSource = diagrams
-  .map(([name, code]) => `## ${name}\n\n\\`\\`\\`mermaid\n${code}\n\\`\\`\\`\n`)
+  .map(([name, code]) => ['## ' + name, '', '```mermaid', code, '```', ''].join('\n'))
   .join('\n');
 
 test.describe('Markdown Mermaid compatibility', () => {
