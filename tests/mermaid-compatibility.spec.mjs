@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+const BASE_URL = 'http://127.0.0.1:8080';
+
 const diagrams = [
   ['flowchart', 'flowchart LR\n  A[Start] --> B[End]'],
   ['swimlane', 'swimlane-beta LR\n  subgraph Customer\n    request[Request]\n  end\n  subgraph Support\n    answer[Answer]\n  end\n  request --> answer'],
@@ -39,7 +41,7 @@ const markdownSource = diagrams
 
 test.describe('Markdown Mermaid compatibility', () => {
   test('renders every supported Mermaid diagram type', async ({ page }) => {
-    await page.goto('/#/tools/markdown');
+    await page.goto(`${BASE_URL}/#/tools/markdown`);
     await page.locator('#markdown-editor').waitFor();
 
     const results = await page.evaluate(async (items) => {
@@ -58,7 +60,7 @@ test.describe('Markdown Mermaid compatibility', () => {
   });
 
   test('renders every Mermaid type through the Markdown Studio preview', async ({ page }) => {
-    await page.goto('/#/tools/markdown');
+    await page.goto(`${BASE_URL}/#/tools/markdown`);
     const editor = page.locator('#markdown-editor');
     await editor.waitFor();
     await editor.fill(markdownSource);
