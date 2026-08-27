@@ -54,3 +54,20 @@ jobs:
 
       - name: Build release
         run: trunk build --release
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install browser test dependencies
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Serve release build
+        run: python3 -m http.server 8080 --directory dist > /tmp/markdown-studio-http.log 2>&1 &
+
+      - name: Run Mermaid compatibility tests
+        run: npx playwright test tests/mermaid-compatibility.spec.mjs
