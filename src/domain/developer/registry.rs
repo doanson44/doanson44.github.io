@@ -8,6 +8,7 @@ pub struct ToolDefinition {
     pub sample_source: &'static str,
     pub sample_secondary: &'static str,
     pub secondary_label: Option<&'static str>,
+    pub secondary_options: Option<&'static [(&'static str, &'static str)]>,
     pub svg_output: bool,
     pub execute: fn(&str, &str) -> Result<String, String>,
 }
@@ -22,10 +23,29 @@ macro_rules! definition {
             sample_source: $source,
             sample_secondary: $secondary,
             secondary_label: $label,
+            secondary_options: secondary_options(ToolId::$id),
             svg_output: $svg,
             execute: $executor,
         }
     };
+}
+
+const JSON_TO_TYPE_LANGUAGES: &[(&str, &str)] = &[
+    ("Rust", "Rust"),
+    ("C#", "C#"),
+    ("TypeScript", "TypeScript"),
+    ("Go", "Go"),
+    ("Python", "Python"),
+];
+
+const SQL_TO_ENTITY_LANGUAGES: &[(&str, &str)] = &[("Rust", "Rust"), ("C#", "C#")];
+
+fn secondary_options(tool: ToolId) -> Option<&'static [(&'static str, &'static str)]> {
+    match tool {
+        ToolId::JsonToType => Some(JSON_TO_TYPE_LANGUAGES),
+        ToolId::SqlToEntity => Some(SQL_TO_ENTITY_LANGUAGES),
+        _ => None,
+    }
 }
 
 pub static TOOLS: &[ToolDefinition] = &[
