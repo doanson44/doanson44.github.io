@@ -11,6 +11,7 @@ pub fn DeveloperToolPage(tool: ToolId) -> impl IntoView {
     let title = tool.title();
     let description = tool.description();
     let secondary_label = tool.secondary_label();
+    let secondary_options = tool.secondary_options();
     let output_is_svg = tool.is_svg_output();
 
     let run = move |_| state.run(tool);
@@ -42,7 +43,40 @@ pub fn DeveloperToolPage(tool: ToolId) -> impl IntoView {
                 <ToolPanel side=ToolPanelSide::First>
                     <div class="panel-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary"><span class="panel-title" id="developer-input-title"><i class="bi bi-pencil-square me-2 text-primary" aria-hidden="true"></i>{if tool == ToolId::Regex { "Pattern" } else { "Input" }}</span><span class="text-body-secondary small">{move || format!("{} lines", line_count(&state.source.get()))}</span></div>
                     <textarea class="editor-textarea form-control rounded-0 border-0 flex-grow-1" placeholder="Enter input..." spellcheck="false" aria-label=format!("{} input", title) prop:value=move || state.source.get() on:input=move |ev| state.set_source(tool, event_target_value(&ev))></textarea>
-                    {secondary_label.map(|label| view! { <div class="border-top border-secondary p-2 flex-shrink-0"><label class="form-label small text-body-secondary mb-1" for="developer-secondary-input">{label}</label><textarea id="developer-secondary-input" class="form-control form-control-sm font-monospace" rows="4" prop:value=move || state.secondary.get() on:input=move |ev| state.set_secondary(tool, event_target_value(&ev))></textarea></div> })}
+                    {secondary_label.map(|label| view! {
+                        <div class="border-top border-secondary p-2 flex-shrink-0">
+                            <label class="form-label small text-body-secondary mb-1" for="developer-secondary-input">{label}</label>
+                            {if let Some(options) = secondary_options {
+                                view! {
+                                    <select
+                                        id="developer-secondary-input"
+                                        class="form-select form-select-sm"
+                                        prop:value=move || state.secondary.get()
+                                        on:change=move |ev| state.set_secondary(tool, event_target_value(&ev))
+                                    >
+                                        {options
+                                            .iter()
+                                            .map(|(value, label)| {
+                                                view! { <option value=*value>{*label}</option> }
+                                            })
+                                            .collect_view()}
+                                    </select>
+                                }
+                                .into_any()
+                            } else {
+                                view! {
+                                    <textarea
+                                        id="developer-secondary-input"
+                                        class="form-control form-control-sm font-monospace"
+                                        rows="4"
+                                        prop:value=move || state.secondary.get()
+                                        on:input=move |ev| state.set_secondary(tool, event_target_value(&ev))
+                                    ></textarea>
+                                }
+                                .into_any()
+                            }}
+                        </div>
+                    })}
                 </ToolPanel>
                 <ToolDivider />
                 <ToolPanel side=ToolPanelSide::Second>
