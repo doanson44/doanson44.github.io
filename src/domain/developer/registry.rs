@@ -8,6 +8,7 @@ pub struct ToolDefinition {
     pub sample_source: &'static str,
     pub sample_secondary: &'static str,
     pub secondary_label: Option<&'static str>,
+    pub secondary_options: Option<&'static [(&'static str, &'static str)]>,
     pub svg_output: bool,
     pub execute: fn(&str, &str) -> Result<String, String>,
 }
@@ -22,10 +23,29 @@ macro_rules! definition {
             sample_source: $source,
             sample_secondary: $secondary,
             secondary_label: $label,
+            secondary_options: secondary_options(ToolId::$id),
             svg_output: $svg,
             execute: $executor,
         }
     };
+}
+
+const JSON_TO_TYPE_LANGUAGES: &[(&str, &str)] = &[
+    ("Rust", "Rust"),
+    ("C#", "C#"),
+    ("TypeScript", "TypeScript"),
+    ("Go", "Go"),
+    ("Python", "Python"),
+];
+
+const SQL_TO_ENTITY_LANGUAGES: &[(&str, &str)] = &[("Rust", "Rust"), ("C#", "C#")];
+
+const fn secondary_options(tool: ToolId) -> Option<&'static [(&'static str, &'static str)]> {
+    match tool {
+        ToolId::JsonToType => Some(JSON_TO_TYPE_LANGUAGES),
+        ToolId::SqlToEntity => Some(SQL_TO_ENTITY_LANGUAGES),
+        _ => None,
+    }
 }
 
 pub static TOOLS: &[ToolDefinition] = &[
@@ -46,7 +66,7 @@ pub static TOOLS: &[ToolDefinition] = &[
     definition!(HttpStatus, "http-status", "HTTP Status Lookup", "Look up common HTTP status codes.", "404", "", None, false, http_status),
     definition!(Subnet, "subnet", "IP / Subnet Calculator", "Calculate IPv4 network and host ranges.", "192.168.1.0/24", "", None, false, subnet),
     definition!(Qr, "qr", "QR Code Generator", "Generate an SVG QR code locally.", "https://doanson44.github.io", "", None, true, qr),
-    definition!(JsonDiff, "json-diff", "JSON Diff", "Compare two JSON documents structurally.", r#"{"name":"Son","age":31}"#, r#"{"name":"Son","age":32,"active":true}"#, Some("Compare With"), false, data::json_diff),
+    definition!(JsonDiff, "json-diff", "JSON Diff", "Compare two JSON documents structurally.", r#"{"id":1,"name":"Son","age":31}"#, r#"{"name":"Son","age":32,"active":true}"#, Some("Compare With"), false, data::json_diff),
     definition!(JsonPath, "json-path", "JSONPath Tester", "Evaluate simple JSONPath expressions against JSON.", r#"{"users":[{"name":"Son","email":"son@example.com"}]}"#, "$.users[0].email", Some("JSONPath Expression"), false, data::json_path),
     definition!(JsonToType, "json-to-type", "JSON → Type Generator", "Generate Rust, C#, TypeScript, Go, or Python types from JSON.", r#"{"id":1,"name":"Son","active":true}"#, "Rust", Some("Target Language"), false, data::json_to_type),
     definition!(Curl, "curl", "cURL Builder", "Build cURL commands from a compact request definition.", "POST https://api.example.com/users\nAuthorization: Bearer TOKEN\nContent-Type: application/json\n\n{\"name\":\"Son\"}", "", None, false, curl),
