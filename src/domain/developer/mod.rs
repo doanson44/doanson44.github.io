@@ -71,6 +71,9 @@ impl ToolId {
     pub fn secondary_label(self) -> Option<&'static str> {
         registry::get(self).and_then(|tool| tool.secondary_label)
     }
+    pub fn secondary_options(self) -> Option<&'static [(&'static str, &'static str)]> {
+        registry::get(self).and_then(|tool| tool.secondary_options)
+    }
     pub fn is_svg_output(self) -> bool {
         registry::get(self).is_some_and(|tool| tool.svg_output)
     }
