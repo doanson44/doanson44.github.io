@@ -72,10 +72,16 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
                                 if let Ok(Some(code_el)) = parent.query_selector("code") {
                                     code_el.unchecked_into::<HtmlElement>().inner_text()
                                 } else {
-                                    parent.unchecked_into::<HtmlElement>().inner_text().replace(" Copy", "")
+                                    parent
+                                        .unchecked_into::<HtmlElement>()
+                                        .inner_text()
+                                        .replace(" Copy", "")
                                 }
                             } else if tag == "table" {
-                                parent.unchecked_into::<HtmlElement>().inner_text().replace(" Copy", "")
+                                parent
+                                    .unchecked_into::<HtmlElement>()
+                                    .inner_text()
+                                    .replace(" Copy", "")
                             } else {
                                 String::new()
                             };
