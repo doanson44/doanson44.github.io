@@ -54,6 +54,13 @@ jobs:
       - name: Install Node dependencies
         run: npm install
 
+      - name: Audit Bootstrap removal
+        run: |
+          if grep -RniE 'bootstrap|data-bs-|--bs-|bi-[a-z0-9-]+' src styles index.html package.json Trunk.toml public 2>/dev/null; then
+            echo "Bootstrap-era references remain in production files."
+            exit 1
+          fi
+
       - name: Install Trunk
         run: |
           wget -qO- https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
