@@ -45,7 +45,7 @@ pub fn Base64Page() -> impl IntoView {
                     <div class="flex h-full flex-col overflow-hidden">
                         <div class="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2"><span class="font-medium text-[var(--text-primary)]"><span class="mr-2" aria-hidden="true">"⌨"</span>"Input"</span><span class="text-xs text-[var(--text-secondary)]">{move || format!("{} lines", line_count(&state.source.get()))}</span></div>
                         <div class="flex flex-1 overflow-hidden">
-                            <div class="flex flex-col items-end pe-2 text-xs text-[var(--text-secondary)]" node_ref=line_numbers_ref aria-hidden="true">{move || { let count = line_count(&state.source.get()).max(1); (1..=count).map(|number| view! { <span class="line-number">{number}</span> }).collect_view() }}</div>
+                            <div class="flex min-w-12 flex-col items-end overflow-hidden border-r border-[var(--border-color)] bg-[var(--surface)] pe-2 text-xs text-[var(--text-tertiary)]" node_ref=line_numbers_ref aria-hidden="true">{move || { let count = line_count(&state.source.get()).max(1); (1..=count).map(|number| view! { <span class="line-number min-h-6">{number}</span> }).collect_view() }}</div>
                             <textarea id="base64-input" class="editor-textarea min-w-0 flex-1 resize-none border-0 bg-transparent p-3 font-mono text-sm text-[var(--text-primary)] outline-none" placeholder="Enter text or Base64..." spellcheck="false" aria-label="Base64 input" prop:value=move || state.source.get() on:input=move |ev| state.set_content(event_target_value(&ev)) on:scroll=on_input_scroll node_ref=input_ref></textarea>
                         </div>
                     </div>
