@@ -13,14 +13,22 @@ pub fn JsonPage() -> impl IntoView {
     let button = "inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
 
     let on_input_scroll = move |_| {
-        if let (Some(input), Some(line_numbers)) = (input_ref.get(), line_numbers_ref.get()) { line_numbers.set_scroll_top(input.scroll_top()); }
+        if let (Some(input), Some(line_numbers)) = (input_ref.get(), line_numbers_ref.get()) {
+            line_numbers.set_scroll_top(input.scroll_top());
+        }
     };
     let on_copy = move |_| {
         let output = state.output.get_untracked();
-        if output.is_empty() { return; }
+        if output.is_empty() {
+            return;
+        }
         state.copied.set(false);
         let copied = state.copied;
-        wasm_bindgen_futures::spawn_local(async move { if copy_to_clipboard(&output).await.is_ok() { copied.set(true); } });
+        wasm_bindgen_futures::spawn_local(async move {
+            if copy_to_clipboard(&output).await.is_ok() {
+                copied.set(true);
+            }
+        });
     };
 
     view! {
@@ -59,5 +67,9 @@ pub fn JsonPage() -> impl IntoView {
 }
 
 fn line_count(content: &str) -> usize {
-    if content.is_empty() { 0 } else { content.lines().count() }
+    if content.is_empty() {
+        0
+    } else {
+        content.lines().count()
+    }
 }
