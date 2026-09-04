@@ -27,8 +27,8 @@ pub fn CvSection(
 
 /// Renders a professional experience entry.
 #[component]
-pub fn ExperienceCard(experience: Experience, index: usize) -> impl IntoView {
-    let marker = if index == 0 { "Current" } else { "" };
+pub fn ExperienceCard(experience: Experience) -> impl IntoView {
+    let is_current = experience.period.ends_with("Present");
 
     view! {
         <article class="relative pl-8 sm:pl-10">
@@ -42,7 +42,7 @@ pub fn ExperienceCard(experience: Experience, index: usize) -> impl IntoView {
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
                             <h3 class="text-lg font-semibold text-[var(--text-primary)]">{experience.company}</h3>
-                            {(!marker.is_empty()).then(|| view! {
+                            {is_current.then(|| view! {
                                 <span class="rounded-full border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-2 py-0.5 text-xs font-semibold text-[var(--accent)]">"Current"</span>
                             })}
                         </div>
