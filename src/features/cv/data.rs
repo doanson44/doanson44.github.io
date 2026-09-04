@@ -51,7 +51,7 @@ pub fn profile() -> Profile {
         location: "Vietnam",
         phone: "0814466008",
         email: "doanson44@gmail.com",
-        summary: "Senior Backend Developer with approximately 11 years of professional experience delivering enterprise software across Finance, Retail, FMCG, Employee Management, Project Management, Promotion Platforms, Virtual Commerce, and Embedded Software domains. Specialized in designing and developing scalable backend applications using C#, ASP.NET Core, .NET Core, Entity Framework Core, SQL Server, PostgreSQL, Azure, and RESTful APIs. Strong background in enterprise application modernization, system integration, database optimization, software architecture, and production support.",
+        summary: "Senior Backend Developer with professional experience delivering enterprise software across Finance, Retail, FMCG, Employee Management, Project Management, Promotion Platforms, Virtual Commerce, and Embedded Software domains. Specialized in designing and developing scalable backend applications using C#, ASP.NET Core, .NET Core, Entity Framework Core, SQL Server, PostgreSQL, Azure, and RESTful APIs. Strong background in enterprise application modernization, system integration, database optimization, software architecture, and production support.",
     }
 }
 
@@ -195,27 +195,6 @@ pub fn skill_categories() -> Vec<SkillCategory> {
 pub fn experiences() -> Vec<Experience> {
     vec![
         Experience {
-            company: "Niteco Vietnam",
-            role: "Software Developer",
-            period: "Apr 2022 — Present",
-            description: "Enterprise software development for Heineken APAC platforms and project management systems.",
-            projects: vec![
-                "Ignite",
-                "Heineken UCA",
-                "Heineken EKOIN",
-                "APAC Heineken Virtual Commerce",
-                "APAC Code Merge",
-            ],
-            contributions: vec![
-                "Designed and implemented backend features for enterprise applications.",
-                "Developed RESTful APIs and business services using .NET Core and NestJS.",
-                "Optimized SQL queries and improved application performance.",
-                "Collaborated with business stakeholders to refine requirements.",
-                "Performed production troubleshooting, debugging, code reviews, and feature delivery.",
-            ],
-            technologies: vec!["C#", "ASP.NET Core", ".NET Core", "NestJS", "PostgreSQL", "SQL Server", "Azure"],
-        },
-        Experience {
             company: "Titan Technology",
             role: "Senior Software Developer",
             period: "Jun 2020 — Mar 2022",
@@ -274,7 +253,7 @@ pub fn experiences() -> Vec<Experience> {
 /// Returns selected technical highlights from the CV.
 pub fn highlights() -> Vec<&'static str> {
     vec![
-        "Nearly 11 years of enterprise software development experience.",
+        "Extensive enterprise software development experience.",
         "Extensive experience with backend development using C# and .NET technologies.",
         "Strong knowledge of relational databases and SQL optimization.",
         "Experienced in enterprise system integration and cloud-based solutions.",
@@ -307,11 +286,12 @@ mod tests {
     }
 
     #[test]
-    fn experiences_contain_complete_career_history() {
+    fn experiences_exclude_nda_sensitive_employment() {
         let value = experiences();
-        assert_eq!(value.len(), 5);
-        assert_eq!(value[0].company, "Niteco Vietnam");
-        assert_eq!(value[4].company, "Renesas Design Vietnam");
+        assert_eq!(value.len(), 4);
+        assert!(!value.iter().any(|experience| experience.company.contains("Niteco")));
+        assert_eq!(value[0].company, "Titan Technology");
+        assert_eq!(value[3].company, "Renesas Design Vietnam");
     }
 
     #[test]
