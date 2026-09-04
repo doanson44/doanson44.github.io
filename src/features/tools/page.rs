@@ -16,7 +16,10 @@ pub fn ToolsPage() -> impl IntoView {
                         <input type="search" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]" placeholder="Search tools..." aria-label="Search tools" prop:value=search on:input=move |ev| search.set(event_target_value(&ev)) />
                     </div>
                 </div>
-                <Show when=move || search.get().trim().is_empty() fallback=move || view! { <SearchResults query=search.get() developer_tools=ToolId::all().collect() finance_tools=finance_tools() /> }>
+                <Show
+                    when=move || search.get().trim().is_empty()
+                    fallback=move || view! { <SearchResults query=search.get() developer_tools=ToolId::all().collect() finance_tools=finance_tools() /> }
+                >
                     <ToolSection title="General Tools" icon="▦">
                         <ToolCard href="#/tools/markdown" title="Markdown Studio" description="Live Markdown editor with Mermaid diagram support." />
                         <ToolCard href="#/tools/json" title="JSON Formatter" description="Validate, format, and minify JSON in your browser." />
@@ -25,10 +28,15 @@ pub fn ToolsPage() -> impl IntoView {
                         <ToolCard href="#/tools/time" title="Time & Utilities" description="World clock, countdown, stopwatch, ruler, and timestamp utilities." />
                     </ToolSection>
                     <ToolSection title="Developer Tools" icon="</>">
-                        {ToolId::all().map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description() /> }).collect_view()}
+                        {ToolId::all()
+                            .map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description() /> })
+                            .collect_view()}
                     </ToolSection>
                     <ToolSection title="Finance Tools" icon="$">
-                        {finance_tools().into_iter().map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category()) /> }).collect_view()}
+                        {finance_tools()
+                            .into_iter()
+                            .map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category()) /> })
+                            .collect_view()}
                     </ToolSection>
                 </Show>
             </div>
@@ -37,29 +45,65 @@ pub fn ToolsPage() -> impl IntoView {
 }
 
 #[component]
-fn SearchResults(query: String, developer_tools: Vec<ToolId>, finance_tools: Vec<FinanceTool>) -> impl IntoView {
+fn SearchResults(
+    query: String,
+    developer_tools: Vec<ToolId>,
+    finance_tools: Vec<FinanceTool>,
+) -> impl IntoView {
     let query = query.trim().to_lowercase();
     let mut results: Vec<AnyView> = Vec::new();
     let general = [
-        ("#/tools/markdown", "Markdown Studio", "Live Markdown editor with Mermaid diagram support."),
-        ("#/tools/json", "JSON Formatter", "Validate, format, and minify JSON in your browser."),
-        ("#/tools/jwt", "JWT Decoder", "Decode JWT header, payload, and signature locally."),
-        ("#/tools/base64", "Base64 Encoder / Decoder", "Encode and decode UTF-8 text as standard Base64 locally."),
-        ("#/tools/time", "Time & Utilities", "World clock, countdown, stopwatch, ruler, and timestamp utilities."),
+        (
+            "#/tools/markdown",
+            "Markdown Studio",
+            "Live Markdown editor with Mermaid diagram support.",
+        ),
+        (
+            "#/tools/json",
+            "JSON Formatter",
+            "Validate, format, and minify JSON in your browser.",
+        ),
+        (
+            "#/tools/jwt",
+            "JWT Decoder",
+            "Decode JWT header, payload, and signature locally.",
+        ),
+        (
+            "#/tools/base64",
+            "Base64 Encoder / Decoder",
+            "Encode and decode UTF-8 text as standard Base64 locally.",
+        ),
+        (
+            "#/tools/time",
+            "Time & Utilities",
+            "World clock, countdown, stopwatch, ruler, and timestamp utilities.",
+        ),
     ];
     for (href, title, description) in general {
         if title.to_lowercase().contains(&query) || description.to_lowercase().contains(&query) {
-            results.push(view! { <ToolCard href=href title=title description=description/> }.into_any());
+            results.push(
+                view! { <ToolCard href=href title=title description=description/> }.into_any(),
+            );
         }
     }
     for tool in developer_tools {
-        if tool.title().to_lowercase().contains(&query) || tool.description().to_lowercase().contains(&query) {
-            results.push(view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description()/> }.into_any());
+        if tool.title().to_lowercase().contains(&query)
+            || tool.description().to_lowercase().contains(&query)
+        {
+            results.push(
+                view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description()/> }
+                    .into_any(),
+            );
         }
     }
     for tool in finance_tools {
-        if tool.title().to_lowercase().contains(&query) || tool.category().to_lowercase().contains(&query) {
-            results.push(view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category())/> }.into_any());
+        if tool.title().to_lowercase().contains(&query)
+            || tool.category().to_lowercase().contains(&query)
+        {
+            results.push(
+                view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category())/> }
+                    .into_any(),
+            );
         }
     }
     let count = results.len();
@@ -93,7 +137,11 @@ fn ToolSection(title: &'static str, icon: &'static str, children: Children) -> i
 }
 
 #[component]
-fn ToolCard(#[prop(into)] href: String, #[prop(into)] title: String, #[prop(into)] description: String) -> impl IntoView {
+fn ToolCard(
+    #[prop(into)] href: String,
+    #[prop(into)] title: String,
+    #[prop(into)] description: String,
+) -> impl IntoView {
     view! {
         <a href=href class="group rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4 no-underline transition hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]">
             <h3 class="mb-1 text-sm font-semibold text-[var(--text-primary)]"><span class="mr-2 text-[var(--accent)]" aria-hidden="true">"◆"</span>{title}</h3>
@@ -104,16 +152,47 @@ fn ToolCard(#[prop(into)] href: String, #[prop(into)] title: String, #[prop(into
 
 fn finance_tools() -> Vec<FinanceTool> {
     vec![
-        FinanceTool::CompoundInterest, FinanceTool::Loan, FinanceTool::Mortgage, FinanceTool::InvestmentReturn,
-        FinanceTool::PresentFutureValue, FinanceTool::Roi, FinanceTool::Cagr, FinanceTool::BreakEven,
-        FinanceTool::Budget, FinanceTool::SavingsGoal, FinanceTool::EmergencyFund, FinanceTool::DebtPayoff,
-        FinanceTool::NetWorth, FinanceTool::Budget503020, FinanceTool::Dca, FinanceTool::StockReturn,
-        FinanceTool::Dividend, FinanceTool::PortfolioAllocation, FinanceTool::PositionSize, FinanceTool::RealReturn,
-        FinanceTool::ProfitMargin, FinanceTool::MarkupMargin, FinanceTool::Ebitda, FinanceTool::CashFlow,
-        FinanceTool::BurnRate, FinanceTool::Runway, FinanceTool::CacLtv, FinanceTool::Dcf,
-        FinanceTool::Npv, FinanceTool::Irr, FinanceTool::BondYtm, FinanceTool::FuturesPnl,
-        FinanceTool::OptionsPnl, FinanceTool::RiskReward, FinanceTool::LeverageLiquidation, FinanceTool::CurrencyConverter,
-        FinanceTool::Inflation, FinanceTool::PurchasingPower, FinanceTool::CurrencyChange, FinanceTool::Discount,
-        FinanceTool::TaxPrice, FinanceTool::PercentageChange,
+        FinanceTool::CompoundInterest,
+        FinanceTool::Loan,
+        FinanceTool::Mortgage,
+        FinanceTool::InvestmentReturn,
+        FinanceTool::PresentFutureValue,
+        FinanceTool::Roi,
+        FinanceTool::Cagr,
+        FinanceTool::BreakEven,
+        FinanceTool::Budget,
+        FinanceTool::SavingsGoal,
+        FinanceTool::EmergencyFund,
+        FinanceTool::DebtPayoff,
+        FinanceTool::NetWorth,
+        FinanceTool::Budget503020,
+        FinanceTool::Dca,
+        FinanceTool::StockReturn,
+        FinanceTool::Dividend,
+        FinanceTool::PortfolioAllocation,
+        FinanceTool::PositionSize,
+        FinanceTool::RealReturn,
+        FinanceTool::ProfitMargin,
+        FinanceTool::MarkupMargin,
+        FinanceTool::Ebitda,
+        FinanceTool::CashFlow,
+        FinanceTool::BurnRate,
+        FinanceTool::Runway,
+        FinanceTool::CacLtv,
+        FinanceTool::Dcf,
+        FinanceTool::Npv,
+        FinanceTool::Irr,
+        FinanceTool::BondYtm,
+        FinanceTool::FuturesPnl,
+        FinanceTool::OptionsPnl,
+        FinanceTool::RiskReward,
+        FinanceTool::LeverageLiquidation,
+        FinanceTool::CurrencyConverter,
+        FinanceTool::Inflation,
+        FinanceTool::PurchasingPower,
+        FinanceTool::CurrencyChange,
+        FinanceTool::Discount,
+        FinanceTool::TaxPrice,
+        FinanceTool::PercentageChange,
     ]
 }
