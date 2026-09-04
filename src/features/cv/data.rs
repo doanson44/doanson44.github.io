@@ -49,8 +49,8 @@ pub fn profile() -> Profile {
         name: "Thai Doan Son",
         title: "Senior Backend Developer",
         location: "Vietnam",
-        phone: "0376690868",
-        email: "son.thai@niteco.se",
+        phone: "0814466008",
+        email: "doanson44@gmail.com",
         summary: "Senior Backend Developer with approximately 11 years of professional experience delivering enterprise software across Finance, Retail, FMCG, Employee Management, Project Management, Promotion Platforms, Virtual Commerce, and Embedded Software domains. Specialized in designing and developing scalable backend applications using C#, ASP.NET Core, .NET Core, Entity Framework Core, SQL Server, PostgreSQL, Azure, and RESTful APIs. Strong background in enterprise application modernization, system integration, database optimization, software architecture, and production support.",
     }
 }
@@ -302,6 +302,8 @@ mod tests {
         let value = profile();
         assert_eq!(value.name, "Thai Doan Son");
         assert_eq!(value.title, "Senior Backend Developer");
+        assert_eq!(value.phone, "0814466008");
+        assert_eq!(value.email, "doanson44@gmail.com");
     }
 
     #[test]
