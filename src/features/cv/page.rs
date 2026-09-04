@@ -1,8 +1,8 @@
 use leptos::prelude::*;
 
-use crate::infrastructure::browser::print_page;
 use super::components::{CvSection, EducationCard, ExperienceCard, SkillGroup};
 use super::data::{competencies, education, experiences, highlights, profile, skill_categories};
+use crate::infrastructure::browser::print_page;
 
 /// Public CV and technical portfolio page.
 #[component]
