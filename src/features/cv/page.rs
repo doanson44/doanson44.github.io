@@ -12,6 +12,8 @@ pub fn CvPage() -> impl IntoView {
     let experiences = experiences();
     let highlights = highlights();
     let education = education();
+    let show_phone = RwSignal::new(false);
+    let show_email = RwSignal::new(false);
 
     view! {
         <main class="flex flex-1 flex-col">
@@ -24,10 +26,54 @@ pub fn CvPage() -> impl IntoView {
                             <p class="mt-3 text-xl font-semibold text-[var(--accent)] sm:text-2xl">{profile.title}</p>
                             <p class="mt-5 max-w-3xl text-base leading-7 text-[var(--text-secondary)]">{profile.summary}</p>
                         </div>
-                        <div class="flex flex-col gap-2 text-sm text-[var(--text-secondary)] lg:min-w-52 lg:text-right">
+                        <div class="flex flex-col gap-3 text-sm text-[var(--text-secondary)] lg:min-w-52 lg:text-right">
                             <span>{profile.location}</span>
-                            <a class="break-all text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href=format!("tel:{}", profile.phone)>{profile.phone}</a>
-                            <a class="break-all text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href=format!("mailto:{}", profile.email)>{profile.email}</a>
+
+                            <div class="flex items-center justify-start gap-2 lg:justify-end">
+                                <Show
+                                    when=move || show_phone.get()
+                                    fallback=move || view! {
+                                        <button
+                                            type="button"
+                                            class="rounded-md px-2 py-1 text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                                            aria-label="Show phone number"
+                                            on:click=move |_| show_phone.set(true)
+                                        >
+                                            "Show phone"
+                                        </button>
+                                    }
+                                >
+                                    <a
+                                        class="break-all text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                                        href=format!("tel:{}", profile.phone)
+                                    >
+                                        {profile.phone}
+                                    </a>
+                                </Show>
+                            </div>
+
+                            <div class="flex items-center justify-start gap-2 lg:justify-end">
+                                <Show
+                                    when=move || show_email.get()
+                                    fallback=move || view! {
+                                        <button
+                                            type="button"
+                                            class="rounded-md px-2 py-1 text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                                            aria-label="Show email address"
+                                            on:click=move |_| show_email.set(true)
+                                        >
+                                            "Show email"
+                                        </button>
+                                    }
+                                >
+                                    <a
+                                        class="break-all text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                                        href=format!("mailto:{}", profile.email)
+                                    >
+                                        {profile.email}
+                                    </a>
+                                </Show>
+                            </div>
                         </div>
                     </div>
 
