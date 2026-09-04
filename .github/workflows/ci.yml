@@ -46,6 +46,14 @@ jobs:
       - name: Run clippy
         run: cargo clippy --target wasm32-unknown-unknown -- -D warnings
 
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node dependencies
+        run: npm install
+
       - name: Install Trunk
         run: |
           wget -qO- https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
@@ -55,15 +63,8 @@ jobs:
       - name: Build release
         run: trunk build --release
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
       - name: Install browser test dependencies
-        run: |
-          npm install
-          npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Serve release build
         run: python3 -m http.server 8080 --directory dist > /tmp/markdown-studio-http.log 2>&1 &
