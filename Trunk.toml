@@ -7,4 +7,10 @@ dist = "dist"
 
 [watch]
 # Ignore Visual Studio and other IDE metadata folders that update constantly
-ignore = [".vs"]
+ignore = [".vs", "node_modules"]
+
+# Build Tailwind before Trunk reads and bundles the HTML/CSS assets.
+[[hooks]]
+stage = "pre_build"
+command = "npm"
+command_arguments = ["run", "build:css"]
