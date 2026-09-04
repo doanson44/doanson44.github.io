@@ -64,6 +64,11 @@ pub async fn copy_to_clipboard(text: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Open the browser print dialog so the current page can be saved as PDF.
+pub fn print_page() {
+    get_window().print().ok();
+}
+
 /// Copy the rendered preview as rich HTML with a plain-text fallback.
 pub async fn copy_preview_as_html(element_id: &str) -> Result<(), String> {
     match copy_preview_as_html_js(element_id).await {
