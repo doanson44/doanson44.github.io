@@ -11,7 +11,11 @@ pub fn JwtPage() -> impl IntoView {
     let input_ref = NodeRef::<leptos::html::Textarea>::new();
     let line_numbers_ref = NodeRef::<leptos::html::Div>::new();
     let button = "inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
-    let on_input_scroll = move |_| { if let (Some(input), Some(lines)) = (input_ref.get(), line_numbers_ref.get()) { lines.set_scroll_top(input.scroll_top()); } };
+    let on_input_scroll = move |_| {
+        if let (Some(input), Some(lines)) = (input_ref.get(), line_numbers_ref.get()) {
+            lines.set_scroll_top(input.scroll_top());
+        }
+    };
 
     view! {
         <main class="flex flex-1 flex-col overflow-hidden">
@@ -41,4 +45,10 @@ fn JwtJsonPanel(title: &'static str, value: RwSignal<Option<serde_json::Value>>)
     view! { <div class="overflow-hidden rounded-lg border border-[var(--border-color)]"><div class="flex items-center border-b border-[var(--border-color)] px-3 py-2"><span class="font-medium text-[var(--text-primary)]"><span class="mr-2" aria-hidden="true">"{}"</span>{title}</span><button type="button" class=format!("{} ml-auto", button) title=format!("Copy {title}") aria-label=format!("Copy {title}") disabled=move || value.get().is_none() on:click=move |_| { if let Some(json) = value.get_untracked() { if let Ok(text) = serde_json::to_string_pretty(&json) { wasm_bindgen_futures::spawn_local(async move { let _ = copy_to_clipboard(&text).await; }); } } }><span aria-hidden="true">"⧉"</span></button></div><pre class="m-0 overflow-auto p-3"><code class="font-mono text-sm text-[var(--text-primary)]">{move || value.get().and_then(|json| serde_json::to_string_pretty(&json).ok()).unwrap_or_else(|| "No decoded data".into())}</code></pre></div> }
 }
 
-fn line_count(content: &str) -> usize { if content.is_empty() { 0 } else { content.lines().count() } }
+fn line_count(content: &str) -> usize {
+    if content.is_empty() {
+        0
+    } else {
+        content.lines().count()
+    }
+}
