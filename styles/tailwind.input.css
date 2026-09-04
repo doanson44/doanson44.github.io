@@ -1,0 +1,9 @@
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/*
+ * Tailwind is introduced without Preflight during the migration so the
+ * existing Bootstrap UI remains stable until each feature is migrated.
+ */
