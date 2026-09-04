@@ -10,10 +10,19 @@ pub fn Editor(
     let line_numbers_ref = NodeRef::<leptos::html::Div>::new();
     let on_input = move |ev: leptos::ev::Event| source.set(event_target_value(&ev));
     let on_scroll = move |_| {
-        if let (Some(ta), Some(ln)) = (textarea_ref.get(), line_numbers_ref.get()) { ln.set_scroll_top(ta.scroll_top()); }
+        if let (Some(ta), Some(ln)) = (textarea_ref.get(), line_numbers_ref.get()) {
+            ln.set_scroll_top(ta.scroll_top());
+        }
     };
     let char_count = move || source.get().len();
-    let line_count = move || { let content = source.get(); if content.is_empty() { 0 } else { content.lines().count() } };
+    let line_count = move || {
+        let content = source.get();
+        if content.is_empty() {
+            0
+        } else {
+            content.lines().count()
+        }
+    };
 
     view! {
         <div class="flex h-full flex-col overflow-hidden" id="editor-panel">
@@ -23,7 +32,19 @@ pub fn Editor(
             </div>
             <div class="flex flex-1 overflow-hidden">
                 <div class="flex min-w-12 flex-col items-end overflow-hidden border-r border-[var(--border-color)] bg-[var(--surface)] pe-2 text-xs text-[var(--text-tertiary)]" node_ref=line_numbers_ref aria-hidden="true">
-                    {move || { let lines: Vec<_> = source.get().lines().enumerate().map(|(i, _)| view! { <span class="line-number min-h-6">{i + 1}</span> }).collect(); if lines.is_empty() { view! { <span class="line-number min-h-6">"1"</span> }.into_any() } else { lines.into_iter().map(|line| line.into_any()).collect::<Vec<_>>().into_any() } }}
+                    {move || {
+                        let lines: Vec<_> = source
+                            .get()
+                            .lines()
+                            .enumerate()
+                            .map(|(i, _)| view! { <span class="line-number min-h-6">{i + 1}</span> })
+                            .collect();
+                        if lines.is_empty() {
+                            view! { <span class="line-number min-h-6">"1"</span> }.into_any()
+                        } else {
+                            lines.into_iter().map(|line| line.into_any()).collect::<Vec<_>>().into_any()
+                        }
+                    }}
                 </div>
                 <textarea id=textarea_id class="editor-textarea min-w-0 flex-1 resize-none border-0 bg-transparent p-3 font-mono text-sm leading-6 text-[var(--text-primary)] outline-none" placeholder="Write your Markdown here..." spellcheck="false" prop:value=move || source.get() on:input=on_input on:scroll=on_scroll node_ref=textarea_ref></textarea>
             </div>
