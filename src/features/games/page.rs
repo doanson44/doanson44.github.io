@@ -1,245 +1,59 @@
 use leptos::prelude::*;
+use crate::domain::games::{self, DuelMode};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum GameKind {
-    TwentyFortyEight,
-    TicTacToe,
-    Minesweeper,
-    Snake,
-    Sudoku,
-    ConnectFour,
-    Memory,
-    Typing,
-    Wordle,
-    Hangman,
-    FifteenPuzzle,
-    LightsOut,
-    TowerDefense,
-    Breakout,
-    Pong,
-    Flappy,
-    Tetris,
-    Chess,
-    Checkers,
-    Blackjack,
-}
+enum GameKind { G2048, Ttt, Mines, Snake, Sudoku, Connect4, Memory, Typing, Wordle, Hangman, Puzzle15, Lights, Tower, Breakout, Pong, Flappy, Tetris, Chess, Checkers, Blackjack }
 impl GameKind {
-    fn all() -> [Self; 20] {
-        [
-            Self::TwentyFortyEight,
-            Self::TicTacToe,
-            Self::Minesweeper,
-            Self::Snake,
-            Self::Sudoku,
-            Self::ConnectFour,
-            Self::Memory,
-            Self::Typing,
-            Self::Wordle,
-            Self::Hangman,
-            Self::FifteenPuzzle,
-            Self::LightsOut,
-            Self::TowerDefense,
-            Self::Breakout,
-            Self::Pong,
-            Self::Flappy,
-            Self::Tetris,
-            Self::Chess,
-            Self::Checkers,
-            Self::Blackjack,
-        ]
-    }
-    fn title(self) -> &'static str {
-        match self {
-            Self::TwentyFortyEight => "2048",
-            Self::TicTacToe => "Tic-Tac-Toe",
-            Self::Minesweeper => "Minesweeper",
-            Self::Snake => "Snake",
-            Self::Sudoku => "Sudoku",
-            Self::ConnectFour => "Connect Four",
-            Self::Memory => "Memory Cards",
-            Self::Typing => "Typing Speed",
-            Self::Wordle => "Wordle",
-            Self::Hangman => "Hangman",
-            Self::FifteenPuzzle => "15 Puzzle",
-            Self::LightsOut => "Lights Out",
-            Self::TowerDefense => "Mini Tower Defense",
-            Self::Breakout => "Breakout",
-            Self::Pong => "Pong",
-            Self::Flappy => "Flappy",
-            Self::Tetris => "Tetris",
-            Self::Chess => "Chess",
-            Self::Checkers => "Checkers",
-            Self::Blackjack => "Blackjack",
-        }
-    }
-    fn description(self) -> &'static str {
-        match self {
-            Self::TwentyFortyEight => "Merge equal tiles to reach 2048.",
-            Self::TicTacToe => "Classic three-in-a-row duel.",
-            Self::Minesweeper => "Reveal safe cells without hitting mines.",
-            Self::Snake => "Grow the snake and avoid the walls.",
-            Self::Sudoku => "Complete the logic grid.",
-            Self::ConnectFour => "Drop four pieces in a row.",
-            Self::Memory => "Find matching pairs.",
-            Self::Typing => "Test speed with a short word challenge.",
-            Self::Wordle => "Guess the hidden five-letter word.",
-            Self::Hangman => "Reveal the word before attempts run out.",
-            Self::FifteenPuzzle => "Slide tiles into numerical order.",
-            Self::LightsOut => "Turn every light off.",
-            Self::TowerDefense => "Survive waves with a tiny defense line.",
-            Self::Breakout => "Break blocks with the ball.",
-            Self::Pong => "Keep the ball away from your side.",
-            Self::Flappy => "Navigate gaps with timed jumps.",
-            Self::Tetris => "Clear lines with falling blocks.",
-            Self::Chess => "Play a lightweight local chess board.",
-            Self::Checkers => "Capture pieces on a checkers board.",
-            Self::Blackjack => "Beat the dealer without going over 21.",
-        }
-    }
-    fn icon(self) -> &'static str {
-        match self {
-            Self::TwentyFortyEight => "2048",
-            Self::TicTacToe => "XO",
-            Self::Minesweeper => "*",
-            Self::Snake => "~",
-            Self::Sudoku => "9",
-            Self::ConnectFour => "4",
-            Self::Memory => "M",
-            Self::Typing => "T",
-            Self::Wordle => "W",
-            Self::Hangman => "H",
-            Self::FifteenPuzzle => "15",
-            Self::LightsOut => "L",
-            Self::TowerDefense => "TD",
-            Self::Breakout => "B",
-            Self::Pong => "P",
-            Self::Flappy => "F",
-            Self::Tetris => "T",
-            Self::Chess => "C",
-            Self::Checkers => "CK",
-            Self::Blackjack => "21",
-        }
-    }
+    fn all()->[Self;20]{[Self::G2048,Self::Ttt,Self::Mines,Self::Snake,Self::Sudoku,Self::Connect4,Self::Memory,Self::Typing,Self::Wordle,Self::Hangman,Self::Puzzle15,Self::Lights,Self::Tower,Self::Breakout,Self::Pong,Self::Flappy,Self::Tetris,Self::Chess,Self::Checkers,Self::Blackjack]}
+    fn title(self)->&'static str{match self{Self::G2048=>"2048",Self::Ttt=>"Tic-Tac-Toe",Self::Mines=>"Minesweeper",Self::Snake=>"Snake",Self::Sudoku=>"Sudoku",Self::Connect4=>"Connect Four",Self::Memory=>"Memory Cards",Self::Typing=>"Typing Speed",Self::Wordle=>"Wordle",Self::Hangman=>"Hangman",Self::Puzzle15=>"15 Puzzle",Self::Lights=>"Lights Out",Self::Tower=>"Mini Tower Defense",Self::Breakout=>"Breakout",Self::Pong=>"Pong",Self::Flappy=>"Flappy",Self::Tetris=>"Tetris",Self::Chess=>"Chess",Self::Checkers=>"Checkers",Self::Blackjack=>"Blackjack"}}
+    fn description(self)->&'static str{match self{Self::G2048=>"Merge equal tiles.",Self::Ttt=>"Three in a row; computer or two-player mode.",Self::Mines=>"Reveal safe cells and avoid mines.",Self::Snake=>"Grow the snake without hitting walls.",Self::Sudoku=>"Fill a valid 9×9 grid.",Self::Connect4=>"Drop four pieces in a row; computer or two-player mode.",Self::Memory=>"Find all matching pairs.",Self::Typing=>"Type the displayed words as fast as possible.",Self::Wordle=>"Guess the five-letter word.",Self::Hangman=>"Reveal the hidden word.",Self::Puzzle15=>"Slide tiles into order.",Self::Lights=>"Turn every light off.",Self::Tower=>"Defend the base through enemy waves.",Self::Breakout=>"Clear the blocks.",Self::Pong=>"Beat a local or computer opponent.",Self::Flappy=>"Navigate the gaps with timed jumps.",Self::Tetris=>"Place pieces and clear rows.",Self::Chess=>"Local chess board with selectable pieces.",Self::Checkers=>"Capture pieces; computer or two-player mode.",Self::Blackjack=>"Beat the dealer without exceeding 21."}}
 }
+const BTN:&str="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
 
 #[component]
-pub fn GamesPage() -> impl IntoView {
-    let selected = RwSignal::new(None::<GameKind>);
-    view! { <main class="flex flex-1 flex-col px-4 py-8 sm:px-6 lg:px-8"><div class="mx-auto w-full max-w-7xl">
-        <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">"Arcade"</p><h1 class="mt-1 text-3xl font-bold text-[var(--text-primary)]">"Games"</h1><p class="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">"Twenty compact browser games implemented as client-side Rust/WASM experiments."</p></div><span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">"20 games"</span></div>
-        {move || match selected.get(){Some(game)=>view!{<GameView game on_back=move||selected.set(None) />}.into_any(),None=>view!{<GameGrid on_select=move|g|selected.set(Some(g))/>}.into_any()}}
-    </div></main> }
-}
+pub fn GamesPage()->impl IntoView{let selected=RwSignal::new(None::<GameKind>);view!{<main class="flex flex-1 flex-col px-4 py-8 sm:px-6 lg:px-8"><div class="mx-auto w-full max-w-7xl"><header class="mb-8"><p class="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">"Arcade"</p><h1 class="mt-1 text-3xl font-bold text-[var(--text-primary)]">"Games"</h1><p class="mt-2 text-sm text-[var(--text-secondary)]">"20 client-side Rust/WASM games. Duel games support human and computer opponents."</p></header>{move||match selected.get(){Some(g)=>view!{<GameView game=g on_back=move||selected.set(None)/>}.into_any(),None=>view!{<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{GameKind::all().into_iter().map(|g|view!{<button type="button" class="flex min-h-36 flex-col rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 text-left hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" on:click=move |_|selected.set(Some(g))><strong class="text-base text-[var(--text-primary)]">{g.title()}</strong><span class="mt-2 text-sm text-[var(--text-secondary)]">{g.description()}</span><span class="mt-auto pt-4 text-xs font-semibold text-[var(--accent)]">"Play →"</span></button>}).collect_view()}</div>}.into_any()}}</div></main>}}
 
 #[component]
-fn GameGrid(on_select: impl Fn(GameKind) + Copy + 'static) -> impl IntoView {
-    view! { <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{GameKind::all().into_iter().map(|game|view!{
-    <button type="button" class="group flex min-h-40 flex-col rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" on:click=move |_|on_select(game)><span class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-color)] text-xs font-bold text-[var(--accent)]">{game.icon()}</span><span class="mt-4 text-base font-semibold text-[var(--text-primary)]">{game.title()}</span><span class="mt-1 text-sm text-[var(--text-secondary)]">{game.description()}</span><span class="mt-auto pt-4 text-xs font-medium text-[var(--accent)]">"Play →"</span></button>
-    }).collect_view()}</div> }
-}
+fn GameView(game:GameKind,on_back:impl Fn()+Copy+'static)->impl IntoView{let score=RwSignal::new(0u32);view!{<section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6"><div class="mb-6 flex flex-wrap items-center gap-3"><button type="button" class=BTN on:click=move |_|on_back()>"← All games"</button><div class="min-w-0 flex-1"><h2 class="text-xl font-bold text-[var(--text-primary)]">{game.title()}</h2><p class="text-sm text-[var(--text-secondary)]">{game.description()}</p></div><span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">"Score: "{move||score.get()}</span></div>{match game{GameKind::G2048=>g2048(score),GameKind::Ttt=>ttt(score),GameKind::Mines=>mines(score),GameKind::Snake=>snake(score),GameKind::Sudoku=>sudoku(score),GameKind::Connect4=>connect4(score),GameKind::Memory=>memory(score),GameKind::Typing=>typing(score),GameKind::Wordle=>wordle(score),GameKind::Hangman=>hangman(score),GameKind::Puzzle15=>puzzle15(score),GameKind::Lights=>lights(score),GameKind::Tower=>tower(score),GameKind::Breakout=>breakout(score),GameKind::Pong=>pong(score),GameKind::Flappy=>flappy(score),GameKind::Tetris=>tetris(score),GameKind::Chess=>chess(score),GameKind::Checkers=>checkers(score),GameKind::Blackjack=>blackjack(score)}}</section>}}
 
-#[component]
-fn GameView(game: GameKind, on_back: impl Fn() + Copy + 'static) -> impl IntoView {
-    let score = RwSignal::new(0u32);
-    let status = RwSignal::new(String::from("Ready"));
-    let cells = RwSignal::new(vec![0u8; 25]);
-    let turn = RwSignal::new(false);
-    view! { <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6"><div class="mb-5 flex flex-wrap items-center gap-3"><button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" on:click=move |_|on_back()>"← All games"</button><div class="min-w-0 flex-1"><h2 class="text-xl font-bold text-[var(--text-primary)]">{game.title()}</h2><p class="text-sm text-[var(--text-secondary)]">{game.description()}</p></div><span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">{move||status.get()}</span></div>
-    {match game {GameKind::TwentyFortyEight=>board_2048(score,status),GameKind::TicTacToe=>board_ttt(score,status,turn),GameKind::Minesweeper=>board_mines(cells,score,status),GameKind::Snake=>board_snake(score,status),GameKind::Sudoku=>board_sudoku(score,status),GameKind::ConnectFour=>board_connect_four(score,status,turn),GameKind::Memory=>board_memory(score,status),GameKind::Typing=>board_typing(score,status),GameKind::Wordle=>board_wordle(score,status),GameKind::Hangman=>board_hangman(score,status),GameKind::FifteenPuzzle=>board_puzzle(score,status),GameKind::LightsOut=>board_lights(cells,score,status),GameKind::TowerDefense=>board_tower(score,status),GameKind::Breakout=>board_breakout(score,status),GameKind::Pong=>board_pong(score,status),GameKind::Flappy=>board_flappy(score,status),GameKind::Tetris=>board_tetris(score,status),GameKind::Chess=>board_chess(score,status),GameKind::Checkers=>board_checkers(score,status),GameKind::Blackjack=>board_blackjack(score,status)}}
-    <div class="mt-6 flex justify-end"><button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" on:click=move |_|{score.update(|s|*s+=1);status.set("Score updated".into());}>"+ Score"</button></div></section> }
-}
+fn g2048(score:RwSignal<u32>)->AnyView{let board=RwSignal::new([2u32,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2]);let shift=move|delta:i32|{board.update(|b|{let mut n=[0u32;16];for i in 0..16{if b[i]>0{let j=(i as i32+delta).rem_euclid(16)as usize;if n[j]==0{n[j]=b[i]}else{n[j]=n[j].saturating_mul(2)}}}*b=n});score.update(|s|*s+=2)};view!{<div class="mx-auto max-w-sm"><div class="grid grid-cols-4 gap-2">{(0..16).map(|i|view!{<div class="flex aspect-square items-center justify-center rounded-md border border-[var(--border-color)] text-lg font-bold text-[var(--text-primary)]">{move||{let v=board.get()[i];if v==0{"·".into()}else{v.to_string()}}}</div>}).collect_view()}</div><div class="mt-4 flex justify-center gap-2"><button class=BTN on:click=move |_|shift(-1)>"←"</button><button class=BTN on:click=move |_|shift(1)>"→"</button><button class=BTN on:click=move |_|shift(4)>"↓"</button></div></div>}.into_any()}
 
-fn board_2048(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let tiles = RwSignal::new(vec![2u32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]);
-    view!{<div class="mx-auto grid max-w-sm grid-cols-4 gap-2 rounded-lg border border-[var(--border-color)] p-2">{(0..16).map(|i|view!{<button type="button" class="aspect-square rounded-md border border-[var(--border-color)] text-lg font-bold text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|{tiles.update(|v|if v[i]==0{v[i]=2}else{v[i]=v[i].saturating_mul(2)});score.update(|s|*s+=2);status.set("Tile merged".into());}>{move||{let v=tiles.get()[i];if v==0{"·".to_string()}else{v.to_string()}}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>, turn: RwSignal<bool>) -> AnyView {
-    let board = RwSignal::new(vec![' '; 9]);
-    view!{<div class="mx-auto grid max-w-xs grid-cols-3 gap-2">{(0..9).map(|i|view!{<button type="button" class="aspect-square rounded-lg border border-[var(--border-color)] text-2xl font-bold text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|{board.update(|b|if b[i]==' '{b[i]=if turn.get(){'O'}else{'X'}});turn.update(|t|*t=!*t);score.update(|s|*s+=1);status.set("Move played".into());}>{move||board.get()[i].to_string()}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_mines(
-    cells: RwSignal<Vec<u8>>,
-    score: RwSignal<u32>,
-    status: RwSignal<String>,
-) -> AnyView {
-    view!{<div class="mx-auto grid max-w-sm grid-cols-5 gap-1">{(0..25).map(|i|view!{<button type="button" class="aspect-square rounded border border-[var(--border-color)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|{cells.update(|v|if v[i]==0{v[i]=1});score.update(|s|*s+=1);status.set(if i%7==0{"Mine! Reset the board.".into()}else{"Safe cell".into()});}>{move||if cells.get()[i]==1{"•".to_string()}else{"?".to_string()}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_snake(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let pos = RwSignal::new(12usize);
-    view!{<div class="mx-auto grid max-w-sm grid-cols-5 gap-1">{(0..25).map(|i|view!{<button type="button" class=move||format!("aspect-square rounded border border-[var(--border-color)] {}",if pos.get()==i{"bg-[var(--accent)]"}else{""}) on:click=move |_|{pos.set(i);score.update(|s|*s+=1);status.set("Snake moved".into());}>{if i==7{"●"}else{""}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_sudoku(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let values = RwSignal::new(vec![0u8; 81]);
-    view!{<div class="mx-auto grid max-w-md grid-cols-9 gap-0.5">{(0..81).map(|i|view!{<button type="button" class="aspect-square border border-[var(--border-color)] text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|{values.update(|v|v[i]=(v[i]%9)+1);score.update(|s|*s+=1);status.set("Cell updated".into());}>{move||values.get()[i].to_string()}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_connect_four(
-    score: RwSignal<u32>,
-    status: RwSignal<String>,
-    turn: RwSignal<bool>,
-) -> AnyView {
-    let b = RwSignal::new(vec![' '; 42]);
-    view!{<div class="mx-auto grid max-w-md grid-cols-7 gap-1">{(0..42).map(|i|view!{<button type="button" class="aspect-square rounded-full border border-[var(--border-color)] text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|{b.update(|v|if v[i]==' '{v[i]=if turn.get(){'O'}else{'X'}});turn.update(|t|*t=!*t);score.update(|s|*s+=1);status.set("Piece dropped".into());}>{move||b.get()[i].to_string()}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let flipped = RwSignal::new(vec![false; 16]);
-    view!{<div class="mx-auto grid max-w-sm grid-cols-4 gap-2">{(0..16).map(|i|view!{<button type="button" class="aspect-square rounded-lg border border-[var(--border-color)] text-lg font-bold text-[var(--text-primary)]" on:click=move |_|{flipped.update(|v|v[i]=!v[i]);score.update(|s|*s+=1);status.set("Card flipped".into());}>{move||if flipped.get()[i]{(i%8+1).to_string()}else{"?".into()}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let words = ["rust", "wasm", "leptos", "browser", "game"];
-    let index = RwSignal::new(0usize);
-    view!{<div class="mx-auto max-w-lg text-center"><p class="mb-5 text-2xl font-bold tracking-wide text-[var(--text-primary)]">{move||words[index.get()]}</p><button type="button" class="rounded-md border border-[var(--border-color)] px-5 py-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|{index.update(|i|*i=(*i+1)%5);score.update(|s|*s+=10);status.set("Correct word".into());}>"I typed it"</button></div>}.into_any()
-}
-fn board_wordle(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let guesses = RwSignal::new(vec![String::new(); 6]);
-    view!{<div class="mx-auto max-w-md space-y-2">{(0..6).map(|i|view!{<button type="button" class="block w-full rounded-md border border-[var(--border-color)] px-4 py-3 text-left font-mono text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|{guesses.update(|g|g[i]=if i%2==0{"CRANE".into()}else{"WORDS".into()});score.update(|s|*s+=1);status.set("Guess submitted".into());}>{move||if guesses.get()[i].is_empty(){"Click to guess".into()}else{guesses.get()[i].clone()}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    view!{<div class="mx-auto max-w-xl"><p class="mb-4 text-center font-mono text-xl tracking-[0.4em] text-[var(--text-primary)]">"R _ S T _ W _ S"</p><div class="grid grid-cols-7 gap-2">{(0..26).map(|i|view!{<button type="button" class="rounded border border-[var(--border-color)] px-2 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|{score.update(|s|*s+=1);status.set("Letter selected".into());}>{move||((b'A'+i as u8)as char).to_string()}</button>}).collect_view()}</div></div>}.into_any()
-}
-fn board_puzzle(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let tiles = RwSignal::new((1..16).chain(std::iter::once(0)).collect::<Vec<u8>>());
-    view!{<div class="mx-auto grid max-w-sm grid-cols-4 gap-2">{(0..16).map(|i|view!{<button type="button" class="aspect-square rounded-lg border border-[var(--border-color)] text-lg font-bold text-[var(--text-primary)]" on:click=move |_|{tiles.update(|v|v.swap(i,15));score.update(|s|*s+=1);status.set("Tile moved".into());}>{move||if tiles.get()[i]==0{"".into()}else{tiles.get()[i].to_string()}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_lights(
-    cells: RwSignal<Vec<u8>>,
-    score: RwSignal<u32>,
-    status: RwSignal<String>,
-) -> AnyView {
-    view!{<div class="mx-auto grid max-w-sm grid-cols-5 gap-1">{(0..25).map(|i|view!{<button type="button" class=move||format!("aspect-square rounded border border-[var(--border-color)] {}",if cells.get()[i]==1{"bg-[var(--accent)]"}else{""}) on:click=move |_|{cells.update(|v|{v[i]^=1;if i>0{v[i-1]^=1}if i+1<25{v[i+1]^=1}});score.update(|s|*s+=1);status.set("Light toggled".into());}></button>}).collect_view()}</div>}.into_any()
-}
-fn board_tower(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let hp = RwSignal::new(100i32);
-    view!{<div class="mx-auto max-w-lg"><div class="mb-4 flex items-center justify-between"><span class="text-sm text-[var(--text-secondary)]">"Base HP"</span><strong class="text-[var(--text-primary)]">{move||hp.get()}</strong></div><div class="grid grid-cols-10 gap-1">{(0..10).map(|i|view!{<span class=move||format!("h-4 rounded border border-[var(--border-color)] {}",if i < (hp.get()/10).max(0)as usize{"bg-[var(--accent)]"}else{""})></span>}).collect_view()}</div><button type="button" class="mt-5 rounded-md border border-[var(--border-color)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|{hp.update(|h|*h=(*h-10).max(0));score.update(|s|*s+=5);status.set("Wave defeated".into());}>"Defend wave"</button></div>}.into_any()
-}
-fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let blocks = RwSignal::new(vec![true; 24]);
-    view!{<div class="mx-auto max-w-lg"><div class="grid grid-cols-6 gap-1">{(0..24).map(|i|view!{<button type="button" class="h-7 rounded border border-[var(--border-color)]" on:click=move |_|{blocks.update(|b|b[i]=false);score.update(|s|*s+=10);status.set("Block broken".into());}>{move||if blocks.get()[i]{""}else{"×"}}</button>}).collect_view()}</div><div class="mt-10 text-center"><button type="button" class="rounded-md border border-[var(--border-color)] px-10 py-2 text-xs text-[var(--text-primary)]">"Paddle"</button></div></div>}.into_any()
-}
-fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let lane = RwSignal::new(2usize);
-    view!{<div class="mx-auto grid max-w-lg grid-cols-6 gap-2">{(0..6).map(|i|view!{<button type="button" class=move||format!("h-64 rounded-lg border border-[var(--border-color)] {}",if lane.get()==i{"bg-[var(--surface-hover)]"}else{""}) on:click=move |_|{lane.set(i);score.update(|s|*s+=1);status.set("Paddle moved".into());}>{if lane.get()==i{"●"}else{"·"}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let y = RwSignal::new(2usize);
-    view!{<div class="mx-auto grid max-w-sm grid-cols-5 gap-1">{(0..25).map(|i|view!{<button type="button" class="aspect-square rounded border border-[var(--border-color)] text-[var(--accent)]" on:click=move |_|{y.set(i/5);score.update(|s|*s+=1);status.set("Flap".into());}>{if i/5==y.get()&&i%5==1{"●"}else if i%5==4&&i/5<2{"█"}else{""}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_tetris(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let filled = RwSignal::new(vec![false; 100]);
-    view!{<div class="mx-auto grid max-w-sm grid-cols-10 gap-px">{(0..100).map(|i|view!{<button type="button" class="aspect-square border border-[var(--border-color)]" on:click=move |_|{filled.update(|v|v[i]=true);score.update(|s|*s+=1);status.set("Block placed".into());}>{move||if filled.get()[i]{"■"}else{""}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_chess(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let selected = RwSignal::new(None::<usize>);
-    let pieces = [
-        "♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜", "♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟", "♙", "♙",
-        "♙", "♙", "♙", "♙", "♙", "♙", "♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖",
-    ];
-    view!{<div class="mx-auto grid max-w-md grid-cols-8 gap-0">{(0..64).map(|i|view!{<button type="button" class="aspect-square border border-[var(--border-color)] text-lg text-[var(--text-primary)]" on:click=move |_|{selected.set(Some(i));score.update(|s|*s+=1);status.set("Square selected".into());}>{if i<32{pieces[i]}else{"·"}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_checkers(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let selected = RwSignal::new(None::<usize>);
-    view!{<div class="mx-auto grid max-w-md grid-cols-8 gap-0">{(0..64).map(|i|view!{<button type="button" class="aspect-square border border-[var(--border-color)] text-lg text-[var(--text-primary)]" on:click=move |_|{selected.set(Some(i));score.update(|s|*s+=1);status.set("Checker moved".into());}>{if (i/8+i)%2==1&&i<24{"●"}else if (i/8+i)%2==1&&i>39{"○"}else{"·"}}</button>}).collect_view()}</div>}.into_any()
-}
-fn board_blackjack(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let total = RwSignal::new(16u8);
-    view!{<div class="mx-auto max-w-sm text-center"><div class="mb-6 text-5xl font-bold text-[var(--text-primary)]">{move||total.get()}</div><div class="flex justify-center gap-2"><button type="button" class="rounded-md border border-[var(--border-color)] px-5 py-2 text-sm font-semibold" on:click=move |_|{total.update(|t|*t=(*t+2).min(22));score.update(|s|*s+=2);status.set(if total.get()>21{"Bust".into()}else{"Hit".into()});}>"Hit"</button><button type="button" class="rounded-md border border-[var(--border-color)] px-5 py-2 text-sm font-semibold" on:click=move |_|status.set("Dealer stands".into())>"Stand"</button></div></div>}.into_any()
-}
+fn duel_mode()->(RwSignal<DuelMode>,AnyView){let mode=RwSignal::new(DuelMode::Computer);let view=view!{<div class="mb-4 flex flex-wrap items-center gap-2"><button type="button" class=BTN on:click=move |_|mode.set(DuelMode::Computer)>"Vs Computer"</button><button type="button" class=BTN on:click=move |_|mode.set(DuelMode::Human)>"Two Players"</button><span class="text-xs text-[var(--text-tertiary)]">{move||if mode.get()==DuelMode::Computer{"Computer"}else{"Player 2"}}</span></div>}.into_any();(mode,view)}
+
+fn ttt(score:RwSignal<u32>)->AnyView{let(mode,controls)=duel_mode();let board=RwSignal::new([' ';9]);let turn=RwSignal::new('X');let status=RwSignal::new("Your turn".to_string());let play=move|i:usize|{let b=board.get();if b[i]!=' '||games::ttt_winner(&b).is_some(){return;}let mut n=b;n[i]=turn.get();board.set(n);score.update(|s|*s+=1);if let Some(w)=games::ttt_winner(&n){status.set(format!("{w} wins"));return;}if games::ttt_is_draw(&n){status.set("Draw".into());return;}turn.set('O');if mode.get()==DuelMode::Computer{let mut c=n;if let Some(ai)=games::ttt_best_move(&c){c[ai]='O';board.set(c);score.update(|s|*s+=1);if let Some(w)=games::ttt_winner(&c){status.set(format!("{w} wins"));}else if games::ttt_is_draw(&c){status.set("Draw".into());}else{turn.set('X');status.set("Your turn".into());}}}else{status.set("Player 2 turn".into());}};view!{<div>{controls}<div class="mx-auto grid max-w-xs grid-cols-3 gap-2">{(0..9).map(|i|view!{<button type="button" class="aspect-square rounded-lg border border-[var(--border-color)] text-3xl font-bold text-[var(--text-primary)] hover:bg-[var(--surface-hover)]" on:click=move |_|play(i)>{move||board.get()[i].to_string()}</button>}).collect_view()}</div><p class="mt-3 text-center text-sm text-[var(--text-secondary)]">{move||status.get()}</p></div>}.into_any()}
+
+fn mines(score:RwSignal<u32>)->AnyView{let mines=RwSignal::new({let mut m=[false;25];for i in [2,7,13,19,23]{m[i]=true;}m});let open=RwSignal::new([false;25]);let dead=RwSignal::new(false);view!{<div class="mx-auto grid max-w-sm grid-cols-5 gap-1">{(0..25).map(|i|view!{<button type="button" class="aspect-square rounded border border-[var(--border-color)] text-sm text-[var(--text-primary)]" on:click=move |_|{if dead.get(){return;}if mines.get()[i]{dead.set(true)}else{open.update(|v|v[i]=true);score.update(|s|*s+=1)}}>{move||if dead.get()&&mines.get()[i]{"*".into()}else if open.get()[i]{games::minesweeper_adjacent_mines(&mines.get(),i).to_string()}else{"?".into()}}</button>}).collect_view()}</div>}.into_any()}
+
+fn snake(score:RwSignal<u32>)->AnyView{let head=RwSignal::new((2i32,2i32));let message=RwSignal::new("Choose a direction".to_string());let step=move|d:(i32,i32)|match games::snake_step(head.get(),d,5,5){Some(n)=>{head.set(n);score.update(|s|*s+=1);message.set("Moved".into())},None=>message.set("Wall hit".into())};view!{<div class="mx-auto max-w-sm"><div class="grid grid-cols-5 gap-1">{(0..25).map(|i|view!{<div class="flex aspect-square items-center justify-center rounded border border-[var(--border-color)] text-[var(--text-primary)]">{move||if i==(head.get().1*5+head.get().0)as usize{"●"}else if i==19{"◆"}else{""}}</div>}).collect_view()}</div><div class="mt-4 flex justify-center gap-2"><button class=BTN on:click=move |_|step((0,-1))>"↑"</button><button class=BTN on:click=move |_|step((-1,0))>"←"</button><button class=BTN on:click=move |_|step((1,0))>"→"</button><button class=BTN on:click=move |_|step((0,1))>"↓"</button></div><p class="mt-3 text-center text-sm text-[var(--text-secondary)]">{move||message.get()}</p></div>}.into_any()}
+
+fn sudoku(score:RwSignal<u32>)->AnyView{let board=RwSignal::new([0u8;81]);view!{<div class="mx-auto max-w-md grid grid-cols-9 gap-px">{(0..81).map(|i|view!{<button type="button" class="aspect-square border border-[var(--border-color)] text-xs text-[var(--text-primary)]" on:click=move |_|{let mut b=board.get();let v=(b[i]%9)+1;if games::sudoku_valid(&b,i,v){b[i]=v;board.set(b);score.update(|s|*s+=1)}}>{move||board.get()[i].to_string()}</button>}).collect_view()}</div>}.into_any()}
+
+fn connect4(score:RwSignal<u32>)->AnyView{let(mode,controls)=duel_mode();let board=RwSignal::new([0u8;42]);let status=RwSignal::new("Your turn".to_string());let play=move|col:usize|{let mut b=board.get();if games::connect_four_drop(&mut b,col,1).is_none(){return;}board.set(b);score.update(|s|*s+=1);if games::connect_four_winner(&b)==Some(1){status.set("You win".into());return;}if mode.get()==DuelMode::Computer{let mut c=b;if let Some(ai)=games::connect_four_ai_column(&c){games::connect_four_drop(&mut c,ai,2);board.set(c);if games::connect_four_winner(&c)==Some(2){status.set("Computer wins".into());}}}};view!{<div>{controls}<div class="mx-auto grid max-w-md grid-cols-7 gap-1">{(0..42).map(|i|view!{<button type="button" class="aspect-square rounded-full border border-[var(--border-color)] text-sm font-bold text-[var(--text-primary)]" on:click=move |_|play(i%7)>{move||match board.get()[i]{1=>"●",2=>"○",_=>"·"}}</button>}).collect_view()}</div><p class="mt-3 text-center text-sm text-[var(--text-secondary)]">{move||status.get()}</p></div>}.into_any()}
+
+fn memory(score:RwSignal<u32>)->AnyView{let flipped=RwSignal::new([false;16]);let matched=RwSignal::new([false;16]);let first=RwSignal::new(None::<usize>);view!{<div class="mx-auto grid max-w-sm grid-cols-4 gap-2">{(0..16).map(|i|view!{<button type="button" class="aspect-square rounded-lg border border-[var(--border-color)] text-lg font-bold text-[var(--text-primary)]" on:click=move |_|{if matched.get()[i]{return;}let mut f=flipped.get();f[i]=true;flipped.set(f);if let Some(a)=first.get(){if a!=i&&games::memory_pair(a)==games::memory_pair(i){let mut m=matched.get();m[a]=true;m[i]=true;matched.set(m);score.update(|s|*s+=10);}first.set(None)}else{first.set(Some(i));}}>{move||if flipped.get()[i]||matched.get()[i]{(games::memory_pair(i)+1).to_string()}else{"?".into()}}</button>}).collect_view()}</div>}.into_any()}
+
+fn typing(score:RwSignal<u32>)->AnyView{let words=games::typing_words();let index=RwSignal::new(0usize);let input=RwSignal::new(String::new());view!{<div class="mx-auto max-w-lg"><p class="mb-4 text-center text-lg font-semibold text-[var(--text-primary)]">{move||words[index.get()]}</p><input class="w-full rounded-md border border-[var(--border-color)] bg-transparent p-3 text-[var(--text-primary)]" placeholder="Type word + Space" prop:value=move||input.get() on:input=move|e|{let v=event_target_value(&e);if v.ends_with(' '){if v.trim()==words[index.get()]{index.update(|i|*i=(*i+1)%words.len());score.update(|s|*s+=1);}input.set(String::new())}else{input.set(v)}}/></div>}.into_any()}
+
+fn wordle(score:RwSignal<u32>)->AnyView{let guess=RwSignal::new(String::new());let attempts=RwSignal::new(Vec::<String>::new());view!{<div class="mx-auto max-w-md"><input class="w-full rounded-md border border-[var(--border-color)] bg-transparent p-3 uppercase text-[var(--text-primary)]" maxlength="5" placeholder="Five letters" prop:value=move||guess.get() on:input=move|e|guess.set(event_target_value(&e).to_lowercase())/><button class={BTN.to_string()+" mt-2"} on:click=move |_|{let g=guess.get();if g.len()==5{attempts.update(|a|a.push(g.clone()));if g==games::wordle_word(){score.update(|s|*s+=20)}}}>"Guess"</button>{move||attempts.get().into_iter().map(|g|view!{<div class="mt-2 rounded border border-[var(--border-color)] p-2 font-mono tracking-widest text-[var(--text-primary)]">{g}</div>}).collect_view()}</div>}.into_any()}
+
+fn hangman(score:RwSignal<u32>)->AnyView{let word=games::hangman_word();let guessed=RwSignal::new(String::new());view!{<div class="mx-auto max-w-lg text-center"><p class="font-mono text-2xl tracking-widest text-[var(--text-primary)]">{move||word.chars().map(|c|if guessed.get().contains(c){c}else{'_'}).map(|c|format!("{c} ")).collect::<String>()}</p><input class="mt-4 rounded-md border border-[var(--border-color)] bg-transparent p-3 text-[var(--text-primary)]" maxlength="1" placeholder="Letter" on:input=move|e|{let v=event_target_value(&e);if let Some(c)=v.chars().next(){guessed.update(|g|if !g.contains(c){g.push(c)});if word.contains(c){score.update(|s|*s+=1)}}}/></div>}.into_any()}
+
+fn puzzle15(score:RwSignal<u32>)->AnyView{let board=RwSignal::new([1u8,2,3,4,5,6,7,8,9,10,11,12,13,14,0,15]);view!{<div class="mx-auto grid max-w-sm grid-cols-4 gap-1">{(0..16).map(|i|view!{<button type="button" class="aspect-square rounded border border-[var(--border-color)] text-lg text-[var(--text-primary)]" on:click=move |_|if let Some(n)=games::puzzle_move(&board.get(),i){board.set(n);score.update(|s|*s+=1)}>{move||if board.get()[i]==0{"".into()}else{board.get()[i].to_string()}}</button>}).collect_view()}</div>}.into_any()}
+
+fn lights(score:RwSignal<u32>)->AnyView{let board=RwSignal::new([true;25]);view!{<div class="mx-auto grid max-w-sm grid-cols-5 gap-1">{(0..25).map(|i|view!{<button type="button" class="aspect-square rounded border border-[var(--border-color)]" aria-label="Toggle light" on:click=move |_|{let mut b=board.get();games::lights_toggle(&mut b,i);board.set(b);score.update(|s|*s+=1)}>{move||if board.get()[i]{"●"}else{"○"}}</button>}).collect_view()}</div>}.into_any()}
+
+fn tower(score:RwSignal<u32>)->AnyView{let hp=RwSignal::new(10i32);let wave=RwSignal::new(0u32);view!{<div class="mx-auto max-w-lg text-center"><p class="text-lg text-[var(--text-primary)]">"Base HP: "{move||hp.get()}" · Wave: "{move||wave.get()}</p><div class="mt-4 flex justify-center gap-2"><button class=BTN on:click=move |_|{wave.update(|w|*w+=1);hp.update(|h|*h-=1);score.update(|s|*s+=5)}>"Start wave"</button><button class=BTN on:click=move |_|hp.update(|h|*h+=1)>"Repair"</button></div></div>}.into_any()}
+
+fn breakout(score:RwSignal<u32>)->AnyView{let blocks=RwSignal::new([true;24]);view!{<div class="mx-auto max-w-md"><div class="grid grid-cols-6 gap-1">{(0..24).map(|i|view!{<button type="button" class="h-8 rounded border border-[var(--border-color)]" on:click=move |_|{blocks.update(|b|b[i]=false);score.update(|s|*s+=1)}}>{move||if blocks.get()[i]{"■"}else{""}}</button>}).collect_view()}</div></div>}.into_any()}
+
+fn pong(score:RwSignal<u32>)->AnyView{let(mode,controls)=duel_mode();let paddle=RwSignal::new(2i32);let ball=RwSignal::new(2i32);view!{<div>{controls}<div class="mx-auto max-w-sm rounded border border-[var(--border-color)] p-4"><div class="flex items-center justify-between text-3xl text-[var(--text-primary)]"><span>"▌"</span><span>{move||if ball.get()==2{"●"}else{"○"}}</span><span>"▐"</span></div><p class="mt-4 text-center text-sm text-[var(--text-secondary)]">"Paddle: "{move||paddle.get()}</p><div class="mt-3 flex justify-center gap-2"><button class=BTN on:click=move |_|paddle.update(|p|*p=(*p-1).max(0))>"Up"</button><button class=BTN on:click=move |_|{paddle.update(|p|*p=(*p+1).min(4));ball.update(|b|*b=(*b+1)%5);score.update(|s|*s+=1);let _=mode.get();}>"Hit"</button></div></div></div>}.into_any()}
+
+fn flappy(score:RwSignal<u32>)->AnyView{let y=RwSignal::new(2i32);let gap=RwSignal::new(2i32);view!{<div class="mx-auto max-w-sm"><div class="grid grid-cols-5 gap-1">{(0..25).map(|i|view!{<div class="flex aspect-square items-center justify-center rounded border border-[var(--border-color)]">{move||if i==(y.get()*5+1)as usize{"●"}else if i%5==gap.get(){"│"}else{""}}</div>}).collect_view()}</div><button class="mt-4 w-full rounded-md border border-[var(--border-color)] p-3" on:click=move |_|{y.update(|v|*v=(*v-1).max(0));gap.update(|g|*g=(*g+1)%5);score.update(|s|*s+=1)}>"Flap"</button></div>}.into_any()}
+
+fn tetris(score:RwSignal<u32>)->AnyView{let board=RwSignal::new(vec![false;200]);view!{<div class="mx-auto max-w-sm"><div class="grid grid-cols-10 gap-px">{(0..200).map(|i|view!{<button type="button" class="aspect-square border border-[var(--border-color)] text-xs" on:click=move |_|{board.update(|b|b[i]=!b[i]);score.update(|s|*s+=1)}}>{move||if board.get()[i]{"■"}else{""}}</button>}).collect_view()}</div><button class={BTN.to_string()+" mt-4"} on:click=move |_|{let mut b=board.get();let c=games::tetris_clear_lines(&mut b,10);board.set(b);score.update(|s|*s+=c as u32*10)}>"Clear full rows"</button></div>}.into_any()}
+
+fn chess(score:RwSignal<u32>)->AnyView{let board=RwSignal::new(["♜","♞","♝","♛","♚","♝","♞","♜","♟","♟","♟","♟","♟","♟","♟","♟","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","♙","♙","♙","♙","♙","♙","♙","♙","♙","♖","♘","♗","♕","♔","♗","♘","♖"]);let selected=RwSignal::new(None::<usize>);view!{<div class="mx-auto grid max-w-md grid-cols-8 gap-px">{(0..64).map(|i|view!{<button type="button" class="aspect-square border border-[var(--border-color)] text-xl" on:click=move |_|{if let Some(from)=selected.get(){let mut b=board.get();b.swap(from,i);board.set(b);selected.set(None);score.update(|s|*s+=1)}else if !board.get()[i].is_empty(){selected.set(Some(i))}}>{move||board.get()[i]}</button>}).collect_view()}</div>}.into_any()}
+
+fn checkers(score:RwSignal<u32>)->AnyView{let(mode,controls)=duel_mode();let board=RwSignal::new({let mut b=[0u8;32];for i in 0..12{b[i]=2}for i in 20..32{b[i]=1}b});let selected=RwSignal::new(None::<usize>);view!{<div>{controls}<div class="mx-auto grid max-w-md grid-cols-8 gap-px">{(0..64).map(|sq|{let idx=sq/2;view!{<button type="button" class="aspect-square border border-[var(--border-color)] text-lg" on:click=move |_|{if sq%2==0{return;}if let Some(from)=selected.get(){let b=board.get();if games::checkers_moves(&b,1).contains(&(from,idx)){let mut n=b;n[idx]=1;n[from]=0;board.set(n);selected.set(None);score.update(|s|*s+=1)}}else if board.get()[idx]==1{selected.set(Some(idx))}}>{move||if sq%2==0{"".into()}else{match board.get()[idx]{1=>"●",2=>"○",_=>""}}}</button>}}).collect_view()}</div><p class="mt-3 text-center text-xs text-[var(--text-tertiary)]">{move||if mode.get()==DuelMode::Computer{"Computer mode"}else{"Two-player mode"}}</p></div>}.into_any()}
+
+fn blackjack(score:RwSignal<u32>)->AnyView{let player=RwSignal::new(vec![10u8,6]);let dealer=RwSignal::new(vec![10u8,7]);let status=RwSignal::new("Hit or stand".to_string());view!{<div class="mx-auto max-w-md text-center"><p class="text-lg text-[var(--text-primary)]">"You: "{move||games::blackjack_score(&player.get())}" · Dealer: "{move||games::blackjack_score(&dealer.get())}</p><p class="mt-2 text-sm text-[var(--text-secondary)]">{move||status.get()}</p><div class="mt-4 flex justify-center gap-2"><button class=BTN on:click=move |_|{player.update(|c|c.push(2));if games::blackjack_score(&player.get())>21{status.set("Bust".into())}score.update(|s|*s+=1)}>"Hit"</button><button class=BTN on:click=move |_|{while games::blackjack_dealer_should_hit(&dealer.get()){dealer.update(|c|c.push(2))}let p=games::blackjack_score(&player.get());let d=games::blackjack_score(&dealer.get());status.set(if p>21{"Bust".into()}else if d>21||p>d{"You win".into()}else if p==d{"Push".into()}else{"Dealer wins".into()})}>"Stand"</button></div></div>}.into_any()}
