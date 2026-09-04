@@ -19,7 +19,9 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
             leptos::task::spawn_local(async move {
                 let promise = js_sys::Promise::new(&mut |resolve, _| {
                     let window = web_sys::window().unwrap();
-                    window.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, 50).unwrap();
+                    window
+                        .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, 50)
+                        .unwrap();
                 });
                 let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
                 let doc = web_sys::window().unwrap().document().unwrap();
@@ -27,7 +29,11 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
                     for i in 0..pres.length() {
                         if let Some(pre) = pres.item(i) {
                             if let Ok(pre_el) = pre.dyn_into::<Element>() {
-                                if pre_el.query_selector(".copy-btn").unwrap_or(None).is_none() {
+                                if pre_el
+                                    .query_selector(".copy-btn")
+                                    .unwrap_or(None)
+                                    .is_none()
+                                {
                                     let btn = doc.create_element("button").unwrap();
                                     btn.set_class_name("copy-btn rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--surface-hover)]");
                                     btn.set_text_content(Some("Copy"));
@@ -41,7 +47,11 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
                     for i in 0..tables.length() {
                         if let Some(table) = tables.item(i) {
                             if let Ok(table_el) = table.dyn_into::<Element>() {
-                                if table_el.query_selector(".copy-btn").unwrap_or(None).is_none() {
+                                if table_el
+                                    .query_selector(".copy-btn")
+                                    .unwrap_or(None)
+                                    .is_none()
+                                {
                                     let btn = doc.create_element("button").unwrap();
                                     btn.set_class_name("copy-btn rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--surface-hover)]");
                                     btn.set_text_content(Some("Copy"));
@@ -66,10 +76,16 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
                                 if let Ok(Some(code_el)) = parent.query_selector("code") {
                                     code_el.unchecked_into::<HtmlElement>().inner_text()
                                 } else {
-                                    parent.unchecked_into::<HtmlElement>().inner_text().replace(" Copy", "")
+                                    parent
+                                        .unchecked_into::<HtmlElement>()
+                                        .inner_text()
+                                        .replace(" Copy", "")
                                 }
                             } else if tag == "table" {
-                                parent.unchecked_into::<HtmlElement>().inner_text().replace(" Copy", "")
+                                parent
+                                    .unchecked_into::<HtmlElement>()
+                                    .inner_text()
+                                    .replace(" Copy", "")
                             } else {
                                 String::new()
                             };
@@ -80,7 +96,11 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
                                         btn.set_text_content(Some("Copied"));
                                         let promise = js_sys::Promise::new(&mut |resolve, _| {
                                             let window = web_sys::window().unwrap();
-                                            window.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, 2000).unwrap();
+                                            window
+                                                .set_timeout_with_callback_and_timeout_and_arguments_0(
+                                                    &resolve, 2000,
+                                                )
+                                                .unwrap();
                                         });
                                         let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
                                         let _ = btn.class_list().remove_1("copied");
@@ -96,13 +116,24 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
     };
 
     let on_copy_for_word = move |_| {
-        if copy_status.get_untracked() == "Copying..." { return; }
+        if copy_status.get_untracked() == "Copying..." {
+            return;
+        }
         copy_status.set("Copying...");
         leptos::task::spawn_local(async move {
-            if copy_preview_as_html("markdown-preview-content").await.is_ok() { copy_status.set("Copied"); } else { copy_status.set("Copy failed"); }
+            if copy_preview_as_html("markdown-preview-content")
+                .await
+                .is_ok()
+            {
+                copy_status.set("Copied");
+            } else {
+                copy_status.set("Copy failed");
+            }
             let promise = js_sys::Promise::new(&mut |resolve, _| {
                 let window = web_sys::window().unwrap();
-                window.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, 2000).unwrap();
+                window
+                    .set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, 2000)
+                    .unwrap();
             });
             let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
             copy_status.set("Copy for Word");
@@ -154,17 +185,28 @@ fn MermaidDiagram(id: String, code: String, #[prop(optional)] _key: usize) -> im
                         let svg = svg.clone();
                         let copy_image = move |_| {
                             if let Some(container) = container_ref.get() {
-                                if let Ok(Some(btn)) = container.clone().unchecked_into::<Element>().query_selector(".copy-btn") {
+                                if let Ok(Some(btn)) = container
+                                    .clone()
+                                    .unchecked_into::<Element>()
+                                    .query_selector(".copy-btn")
+                                {
                                     let btn_el = btn.unchecked_into::<HtmlElement>();
                                     leptos::task::spawn_local(async move {
-                                        if let Ok(Some(svg_node)) = container.unchecked_into::<Element>().query_selector("svg") {
+                                        if let Ok(Some(svg_node)) = container
+                                            .unchecked_into::<Element>()
+                                            .query_selector("svg")
+                                        {
                                             if let Some(svg_id) = svg_node.get_attribute("id") {
                                                 if copy_svg_as_png(&svg_id).await.is_ok() {
                                                     let _ = btn_el.class_list().add_1("copied");
                                                     btn_el.set_text_content(Some("Copied"));
                                                     let promise = js_sys::Promise::new(&mut |resolve, _| {
                                                         let window = web_sys::window().unwrap();
-                                                        window.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, 2000).unwrap();
+                                                        window
+                                                            .set_timeout_with_callback_and_timeout_and_arguments_0(
+                                                                &resolve, 2000,
+                                                            )
+                                                            .unwrap();
                                                     });
                                                     let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
                                                     let _ = btn_el.class_list().remove_1("copied");
