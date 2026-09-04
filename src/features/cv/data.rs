@@ -289,7 +289,9 @@ mod tests {
     fn experiences_exclude_nda_sensitive_employment() {
         let value = experiences();
         assert_eq!(value.len(), 4);
-        assert!(!value.iter().any(|experience| experience.company.contains("Niteco")));
+        assert!(!value
+            .iter()
+            .any(|experience| experience.company.contains("Niteco")));
         assert_eq!(value[0].company, "Titan Technology");
         assert_eq!(value[3].company, "Renesas Design Vietnam");
     }
