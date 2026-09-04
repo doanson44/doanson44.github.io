@@ -4,10 +4,12 @@ use leptos::prelude::*;
 #[component]
 pub fn GamesPage() -> impl IntoView {
     view! {
-        <div class="container py-5 text-center flex-grow-1">
-            <i class="bi bi-joystick fs-1 text-secondary mb-3 d-block"></i>
-            <h3 class="text-body-secondary">"Games"</h3>
-            <p class="text-body-tertiary">"Coming soon — browser games and experiments."</p>
-        </div>
+        <main class="flex flex-1 items-center justify-center px-4 py-12 text-center">
+            <div>
+                <div class="mb-4 text-4xl text-[var(--text-secondary)]" aria-hidden="true">"♟"</div>
+                <h1 class="text-xl font-semibold text-[var(--text-primary)]">"Games"</h1>
+                <p class="mt-2 text-sm text-[var(--text-secondary)]">"Coming soon — browser games and experiments."</p>
+            </div>
+        </main>
     }
 }

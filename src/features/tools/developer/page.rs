@@ -29,59 +29,44 @@ pub fn DeveloperToolPage(tool: ToolId) -> impl IntoView {
     };
 
     view! {
-        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-            <div class="toolbar d-flex flex-wrap align-items-center gap-1 p-2 border-bottom border-secondary">
-                <div class="ms-auto d-flex flex-wrap gap-1">
-                    <button type="button" class="btn btn-outline-primary btn-sm toolbar-btn" title=format!("Run {}", title) on:click=run><i class="bi bi-play" aria-hidden="true"></i><span class="d-none d-lg-inline ms-1">"Run"</span></button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm toolbar-btn" title="Reset sample" on:click=move |_| state.reset(tool)><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span class="d-none d-lg-inline ms-1">"Reset"</span></button>
-                    <button type="button" class="btn btn-outline-danger btn-sm toolbar-btn" title="Clear input" on:click=move |_| state.clear(tool)><i class="bi bi-trash3" aria-hidden="true"></i><span class="d-none d-lg-inline ms-1">"Clear"</span></button>
+        <div class="flex flex-grow flex-col overflow-hidden">
+            <div class="toolbar flex flex-wrap items-center gap-1 border-b border-[var(--border-color)] p-2">
+                <div class="ml-auto flex flex-wrap gap-1">
+                    <button type="button" class="rounded-md border border-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=format!("Run {}", title) on:click=run>"Run"</button>
+                    <button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title="Reset sample" on:click=move |_| state.reset(tool)>"Reset"</button>
+                    <button type="button" class="rounded-md border border-[var(--danger)] px-3 py-1.5 text-sm font-medium text-[var(--danger)] hover:bg-[var(--danger)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title="Clear input" on:click=move |_| state.clear(tool)>"Clear"</button>
                 </div>
             </div>
-            <header class="px-3 py-2 border-bottom border-secondary bg-body-tertiary flex-shrink-0"><div class="d-flex align-items-center gap-2"><i class="bi bi-tools text-primary" aria-hidden="true"></i><strong>{title}</strong></div><div class="small text-body-secondary">{description}</div></header>
-            {move || state.error.get().map(|error| view! { <div class="alert alert-danger rounded-0 border-0 border-bottom d-flex align-items-start gap-2 mb-0" role="alert"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><span>{error}</span></div> })}
+            <header class="flex shrink-0 flex-col border-b border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
+                <div class="font-semibold">{title}</div>
+                <div class="text-sm text-[var(--text-secondary)]">{description}</div>
+            </header>
+            {move || state.error.get().map(|error| view! { <div class="flex items-start gap-2 border-b border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">{error}</div> })}
             <ToolSplit initial_ratio=50>
                 <ToolPanel side=ToolPanelSide::First>
-                    <div class="panel-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom border-secondary"><span class="panel-title" id="developer-input-title"><i class="bi bi-pencil-square me-2 text-primary" aria-hidden="true"></i>{if tool == ToolId::Regex { "Pattern" } else { "Input" }}</span><span class="text-body-secondary small">{move || format!("{} lines", line_count(&state.source.get()))}</span></div>
-                    <textarea class="editor-textarea form-control rounded-0 border-0 flex-grow-1" placeholder="Enter input..." spellcheck="false" aria-label=format!("{} input", title) prop:value=move || state.source.get() on:input=move |ev| state.set_source(tool, event_target_value(&ev))></textarea>
+                    <div class="panel-header flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2"><span class="panel-title" id="developer-input-title">{if tool == ToolId::Regex { "Pattern" } else { "Input" }}</span><span class="text-sm text-[var(--text-secondary)]">{move || format!("{} lines", line_count(&state.source.get()))}</span></div>
+                    <textarea class="editor-textarea flex-grow rounded-none border-0" placeholder="Enter input..." spellcheck="false" aria-label=format!("{} input", title) prop:value=move || state.source.get() on:input=move |ev| state.set_source(tool, event_target_value(&ev))></textarea>
                     {secondary_label.map(|label| view! {
-                        <div class="border-top border-secondary p-2 flex-shrink-0">
-                            <label class="form-label small text-body-secondary mb-1" for="developer-secondary-input">{label}</label>
+                        <div class="shrink-0 border-t border-[var(--border-color)] p-2">
+                            <label class="mb-1 block text-xs text-[var(--text-secondary)]" for="developer-secondary-input">{label}</label>
                             {if let Some(options) = secondary_options {
                                 view! {
-                                    <select
-                                        id="developer-secondary-input"
-                                        class="form-select form-select-sm"
-                                        prop:value=move || state.secondary.get()
-                                        on:change=move |ev| state.set_secondary(tool, event_target_value(&ev))
-                                    >
-                                        {options
-                                            .iter()
-                                            .map(|(value, label)| {
-                                                view! { <option value=*value>{*label}</option> }
-                                            })
-                                            .collect_view()}
+                                    <select id="developer-secondary-input" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" prop:value=move || state.secondary.get() on:change=move |ev| state.set_secondary(tool, event_target_value(&ev))>
+                                        {options.iter().map(|(value, label)| view! { <option value=*value>{*label}</option> }).collect_view()}
                                     </select>
-                                }
-                                .into_any()
+                                }.into_any()
                             } else {
                                 view! {
-                                    <textarea
-                                        id="developer-secondary-input"
-                                        class="form-control form-control-sm font-monospace"
-                                        rows="4"
-                                        prop:value=move || state.secondary.get()
-                                        on:input=move |ev| state.set_secondary(tool, event_target_value(&ev))
-                                    ></textarea>
-                                }
-                                .into_any()
+                                    <textarea id="developer-secondary-input" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" rows="4" prop:value=move || state.secondary.get() on:input=move |ev| state.set_secondary(tool, event_target_value(&ev))></textarea>
+                                }.into_any()
                             }}
                         </div>
                     })}
                 </ToolPanel>
                 <ToolDivider />
                 <ToolPanel side=ToolPanelSide::Second>
-                    <div class="panel-header d-flex align-items-center px-3 py-2 border-bottom border-secondary"><span class="panel-title" id="developer-result-title"><i class="bi bi-eye me-2 text-success" aria-hidden="true"></i>"Result"</span><button type="button" class="btn btn-outline-primary btn-sm ms-auto" disabled=move || state.output.get().is_empty() on:click=on_copy title="Copy result" aria-label="Copy result"><i class="bi bi-clipboard" aria-hidden="true"></i><span class="d-none d-md-inline ms-1" aria-live="polite">{move || if state.copied.get() { "Copied" } else { "Copy" }}</span></button></div>
-                    <div class="preview-content flex-grow-1 p-3 overflow-auto">{move || { let output=state.output.get(); if output.is_empty() { view! { <div class="h-100 d-flex align-items-center justify-content-center text-body-secondary"><div class="text-center"><i class="bi bi-tools display-6 d-block mb-2" aria-hidden="true"></i><span>"Run the tool to see the result."</span></div></div> }.into_any() } else if output_is_svg { view! { <div class="h-100 d-flex align-items-center justify-content-center" inner_html=output></div> }.into_any() } else { view! { <pre class="mb-0"><code class="font-monospace">{output}</code></pre> }.into_any() } }}</div>
+                    <div class="panel-header flex items-center border-b border-[var(--border-color)] px-3 py-2"><span class="panel-title" id="developer-result-title">"Result"</span><button type="button" class="ml-auto rounded-md border border-[var(--accent)] px-3 py-1.5 text-sm font-medium text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[var(--accent)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" disabled=move || state.output.get().is_empty() on:click=on_copy title="Copy result" aria-label="Copy result">{move || if state.copied.get() { "Copied" } else { "Copy" }}</button></div>
+                    <div class="preview-content flex-grow overflow-auto p-3">{move || { let output=state.output.get(); if output.is_empty() { view! { <div class="flex h-full items-center justify-center text-[var(--text-secondary)]"><div class="text-center">"Run the tool to see the result."</div></div> }.into_any() } else if output_is_svg { view! { <div class="flex h-full items-center justify-center" inner_html=output></div> }.into_any() } else { view! { <pre class="mb-0"><code class="font-mono">{output}</code></pre> }.into_any() } }}</div>
                 </ToolPanel>
             </ToolSplit>
         </div>

@@ -1,6 +1,7 @@
 # Build artifacts
 /target/
 /dist/
+/styles/tailwind.generated.css
 
 # IDE
 .idea/
@@ -15,3 +16,7 @@ Thumbs.db
 # Trunk
 /.trunk/
 /.vs
+
+# Node
+node_modules/
+package-lock.json

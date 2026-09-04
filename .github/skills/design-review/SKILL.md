@@ -20,7 +20,7 @@ Look at the app and check for obvious issues:
 ### Phase 2: Dark Mode Audit (5 min)
 Use `ui-ux-studio` skill → `references/dark-mode-rules.md`:
 - [ ] No pure black backgrounds
-- [ ] All borders visible (`border-secondary`)
+- [ ] All borders visible using project semantic tokens/Tailwind utilities
 - [ ] Text contrast comfortable (not blinding white on black)
 - [ ] Mermaid diagrams readable in dark context
 - [ ] Copy buttons visible on code blocks
@@ -45,7 +45,7 @@ Test at these widths:
 Use `ui-ux-studio` skill → `references/accessibility.md`:
 - [ ] Tab through all interactive elements
 - [ ] Focus rings visible everywhere
-- [ ] Toolbar buttons have `title` attributes
+- [ ] Toolbar buttons have accessible names
 - [ ] Color contrast ≥4.5:1 for body text
 - [ ] Textarea has accessible label
 
@@ -66,23 +66,24 @@ Use `ui-ux-studio` skill → `references/accessibility.md`:
 - [ ] Rapid typing — no lag or flicker
 
 ### Phase 7: Code Quality (3 min)
-- [ ] No hardcoded colors — use Bootstrap classes or CSS variables
+- [ ] No hardcoded UI colors — use Tailwind theme utilities or project CSS variables
 - [ ] No inline styles in Rust `view!` macro (use CSS classes)
 - [ ] All new components have `///` doc comments
 - [ ] Components registered in `mod.rs`
 - [ ] No Leptos warnings in console
+- [ ] No Bootstrap classes, variables, JavaScript, or icon-font dependencies
 
 ## Common Issues & Fixes
 
 | Issue | Fix |
-|-------|-----|
-| Border invisible in dark mode | Use `border-secondary` instead of default |
-| Toolbar button has no tooltip | Add `title="Description"` |
+|---|---|
+| Border invisible in dark mode | Use project border tokens or Tailwind border utilities |
+| Toolbar button has no accessible name | Add a visible label, `title`, or appropriate ARIA label |
 | Preview flickers on type | Verify `Memo` is used for `rendered` signal |
 | Mermaid doesn't render | Check `__mermaid` loaded in console |
 | Copy button stuck on "Copied!" | Reset after 2 seconds |
-| Horizontal scroll on mobile | Check `overflow-x: hidden` on body |
-| Focus ring missing | Remove `outline: none` styles |
+| Horizontal scroll on mobile | Check responsive overflow utilities and focused project CSS |
+| Focus ring missing | Remove `outline: none` styles and preserve visible focus indicators |
 
 ## Reporting
 

@@ -23,35 +23,25 @@ pub fn MarkdownPage() -> impl IntoView {
     });
 
     view! {
-        <div class="d-flex flex-column flex-grow-1 markdown-tool-page">
-            <Toolbar
-                source=state.source
-                toggle_preview=Callback::new(move |_| state.toggle_preview_only())
-            />
-
+        <main class="flex flex-1 flex-col overflow-hidden markdown-tool-page">
+            <Toolbar source=state.source toggle_preview=Callback::new(move |_| state.toggle_preview_only()) />
             {move || {
                 if state.preview_only.get() {
                     view! {
-                        <div class="tool-workspace tool-preview-only flex-grow-1">
-                            <ToolPanel side=ToolPanelSide::Second>
-                                <Preview rendered=state.rendered />
-                            </ToolPanel>
+                        <div class="tool-workspace tool-preview-only flex flex-1 overflow-hidden">
+                            <ToolPanel side=ToolPanelSide::Second><Preview rendered=state.rendered /></ToolPanel>
                         </div>
                     }.into_any()
                 } else {
                     view! {
                         <ToolSplit initial_ratio=50>
-                            <ToolPanel side=ToolPanelSide::First>
-                                <Editor source=state.source />
-                            </ToolPanel>
+                            <ToolPanel side=ToolPanelSide::First><Editor source=state.source /></ToolPanel>
                             <ToolDivider />
-                            <ToolPanel side=ToolPanelSide::Second>
-                                <Preview rendered=state.rendered />
-                            </ToolPanel>
+                            <ToolPanel side=ToolPanelSide::Second><Preview rendered=state.rendered /></ToolPanel>
                         </ToolSplit>
                     }.into_any()
                 }
             }}
-        </div>
+        </main>
     }
 }
