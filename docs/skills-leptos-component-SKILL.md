@@ -1,4 +1,4 @@
-﻿# Leptos Component Skill â€” doanson44.github.io
+﻿# Leptos Component Skill — doanson44.github.io
 
 ## Component Creation Checklist
 
@@ -30,34 +30,25 @@ pub fn ComponentName(
     some_signal: RwSignal<String>,
     #[prop(default = "default-value")] optional_prop: &'static str,
 ) -> impl IntoView {
-    // Derived signals
     let derived = Memo::new(move |_| {
         let val = some_signal.get();
-        // transformation...
         val
     });
 
-    // DOM refs
     let container_ref = NodeRef::<Div>::new();
 
-    // Effects
     Effect::new(move |_| {
         let _ = derived.get();
-        // side effect when derived changes
     });
 
-    // Event handlers
-    let on_click = move |ev: leptos::ev::MouseEvent| {
+    let on_click = move |_ev: leptos::ev::MouseEvent| {
         // handle event
     };
 
     view! {
-        <div class="component-root" node_ref=container_ref>
+        <div class="component-root" node_ref=container_ref on:click=on_click>
             <div class="panel-header">
-                <span class="panel-title">
-                    <i class="bi bi-icon-name me-2 text-primary"></i>
-                    "Title"
-                </span>
+                <span class="panel-title">"Title"</span>
             </div>
             <div class="panel-body">
                 {move || derived.get()}
@@ -87,14 +78,16 @@ pub mod <name>;
 | DOM element reference | `NodeRef::<Div>::new()` + `node_ref=ref` |
 | Side effect on signal change | `Effect::new(move \|_\| { ... })` |
 | Async in component | `leptos::task::spawn_local(async { ... })` |
-| Input event â†’ value | `event_target_value(&ev)` |
+| Input event → value | `event_target_value(&ev)` |
 | Conditional rendering | `{move \|\| if condition { view! {...} } else { view! {...} }}` |
 | Class binding | `class=("class-name", move \|\| condition)` |
 
-## Bootstrap 5 Styling Conventions
+## Tailwind CSS Styling Conventions
 
-- Dark theme: Bootstrap dark mode is enabled via `data-bs-theme="dark"` on `<html>`
-- Use Bootstrap utility classes: `d-flex`, `flex-grow-1`, `gap-2`, `p-2`, `border`, `border-secondary`
-- Borders between panels: class `border-secondary`
-- Text colors: `text-body-secondary`, `text-primary`
-- Icons: Bootstrap Icons via `<i class="bi bi-xxx"></i>`
+- Use Tailwind utilities directly in Leptos `view!` for layout, spacing, typography, controls, panels, borders, and responsive behavior.
+- Use project semantic theme tokens through Tailwind arbitrary values when a project-specific color is required, for example `bg-[var(--surface)]`, `text-[var(--text-primary)]`, and `border-[var(--border-color)]`.
+- Use focused project CSS classes only for behavior or styling that cannot reasonably be expressed with Tailwind utilities.
+- Theme is controlled by `data-theme="dark|light"` on `<html>`.
+- Do not introduce Bootstrap classes, Bootstrap variables, Bootstrap JavaScript, or icon-font dependencies.
+- Do not use inline `style="..."` in Leptos views.
+- Icon-only controls require an accessible name and visible focus state.
