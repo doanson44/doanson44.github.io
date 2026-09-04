@@ -29,11 +29,7 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
                     for i in 0..pres.length() {
                         if let Some(pre) = pres.item(i) {
                             if let Ok(pre_el) = pre.dyn_into::<Element>() {
-                                if pre_el
-                                    .query_selector(".copy-btn")
-                                    .unwrap_or(None)
-                                    .is_none()
-                                {
+                                if pre_el.query_selector(".copy-btn").unwrap_or(None).is_none() {
                                     let btn = doc.create_element("button").unwrap();
                                     btn.set_class_name("copy-btn rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--surface-hover)]");
                                     btn.set_text_content(Some("Copy"));
@@ -76,16 +72,10 @@ pub fn Preview(rendered: Memo<RenderedMarkdown>) -> impl IntoView {
                                 if let Ok(Some(code_el)) = parent.query_selector("code") {
                                     code_el.unchecked_into::<HtmlElement>().inner_text()
                                 } else {
-                                    parent
-                                        .unchecked_into::<HtmlElement>()
-                                        .inner_text()
-                                        .replace(" Copy", "")
+                                    parent.unchecked_into::<HtmlElement>().inner_text().replace(" Copy", "")
                                 }
                             } else if tag == "table" {
-                                parent
-                                    .unchecked_into::<HtmlElement>()
-                                    .inner_text()
-                                    .replace(" Copy", "")
+                                parent.unchecked_into::<HtmlElement>().inner_text().replace(" Copy", "")
                             } else {
                                 String::new()
                             };
