@@ -49,7 +49,7 @@ pub fn Base64Page() -> impl IntoView {
                 <ToolDivider />
                 <ToolPanel side=ToolPanelSide::Second>
                     <div class="flex h-full flex-col overflow-hidden">
-                        <div class="flex items-center border-b border-[var(--border-color)] px-3 py-2"><span class="font-medium text-[var(--text-primary)]"><span class="mr-2" aria-hidden="true">"{}"</span>"Output"</span><button type="button" class=button class:ml-auto=true title="Copy output" aria-label="Copy output" disabled=move || state.output.get().is_empty() on:click=copy_output><span aria-hidden="true">"⧉"</span></button></div>
+                        <div class="flex items-center border-b border-[var(--border-color)] px-3 py-2"><span class="font-medium text-[var(--text-primary)]"><span class="mr-2" aria-hidden="true">"{}"</span>"Output"</span><button type="button" class=format!("{} ml-auto", button) title="Copy output" aria-label="Copy output" disabled=move || state.output.get().is_empty() on:click=copy_output><span aria-hidden="true">"⧉"</span></button></div>
                         <div class="flex-1 overflow-auto p-3"><pre class="m-0 whitespace-pre-wrap"><code class="font-mono text-sm text-[var(--text-primary)]">{move || state.output.get()}</code></pre></div>
                     </div>
                 </ToolPanel>
