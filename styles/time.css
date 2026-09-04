@@ -1,6 +1,6 @@
 .time-tool-nav {
     width: 100%;
-    background: var(--bs-body-bg);
+    background: var(--ms-bg-primary);
 }
 
 .time-tool-tab {
@@ -39,7 +39,7 @@
     align-items: flex-end;
     gap: 0;
     padding: 1rem 0.5rem 0;
-    border-bottom: 2px solid var(--bs-border-color);
+    border-bottom: 2px solid var(--ms-border-default);
     overflow: hidden;
 }
 
@@ -47,7 +47,7 @@
     flex: 1 1 0;
     min-width: 2rem;
     height: 44px;
-    border-left: 1px solid var(--bs-secondary-color);
+    border-left: 1px solid var(--ms-text-secondary);
     position: relative;
 }
 
@@ -60,8 +60,8 @@
     position: absolute;
     top: -1.5rem;
     left: 0.25rem;
-    font: 0.75rem/1 var(--bs-font-monospace);
-    color: var(--bs-secondary-color);
+    font: 0.75rem/1 var(--ms-font-mono);
+    color: var(--ms-text-secondary);
 }
 
 .screen-ruler-vertical {
@@ -70,7 +70,7 @@
     flex-direction: column;
     align-items: flex-start;
     border-bottom: 0;
-    border-left: 2px solid var(--bs-border-color);
+    border-left: 2px solid var(--ms-border-default);
     padding: 0 0 0 1rem;
 }
 
@@ -79,7 +79,7 @@
     min-height: 2rem;
     height: auto;
     border-left: 0;
-    border-top: 1px solid var(--bs-secondary-color);
+    border-top: 1px solid var(--ms-text-secondary);
 }
 
 .screen-ruler-vertical .ruler-mark:nth-child(5n + 1) {
@@ -92,7 +92,6 @@
     left: -2rem;
 }
 
-/* The horizontal ruler should use the entire available tool viewport. */
 main > section > div.border.border-secondary.rounded {
     width: 100%;
     min-height: 140px;
@@ -109,7 +108,7 @@ main > section > div.border.border-secondary.rounded > div {
 @media (min-width: 992px) {
     .time-tool-nav {
         width: 180px;
-        border-right: 1px solid var(--bs-border-color);
+        border-right: 1px solid var(--ms-border-default);
     }
 
     .time-tool-tab {
