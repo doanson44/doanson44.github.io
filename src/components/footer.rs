@@ -7,18 +7,18 @@ use leptos::prelude::*;
 #[component]
 pub fn Footer() -> impl IntoView {
     view! {
-        <footer class="app-footer d-flex align-items-center justify-content-between px-3 py-1 border-top border-secondary">
-            <span class="text-body-secondary small">
+        <footer class="app-footer flex items-center justify-between border-t border-[var(--border-color)] px-3 py-1">
+            <span class="text-xs text-[var(--text-secondary)]">
                 "doanson44.github.io · Powered by "
-                <a href="https://www.rust-lang.org/" target="_blank" rel="noopener" class="text-decoration-none">"Rust"</a>
+                <a href="https://www.rust-lang.org/" target="_blank" rel="noopener noreferrer" class="no-underline hover:underline">"Rust"</a>
                 " + "
-                <a href="https://leptos.dev/" target="_blank" rel="noopener" class="text-decoration-none">"Leptos"</a>
+                <a href="https://leptos.dev/" target="_blank" rel="noopener noreferrer" class="no-underline hover:underline">"Leptos"</a>
                 " + "
-                <a href="https://webassembly.org/" target="_blank" rel="noopener" class="text-decoration-none">"WebAssembly"</a>
+                <a href="https://webassembly.org/" target="_blank" rel="noopener noreferrer" class="no-underline hover:underline">"WebAssembly"</a>
             </span>
-            <span class="text-body-secondary small">
-                <i class="bi bi-shield-lock me-1"></i>
-                "100% client-side · No data leaves your browser"
+            <span class="text-xs text-[var(--text-secondary)]">
+                <span aria-hidden="true">"🔒"</span>
+                " 100% client-side · No data leaves your browser"
             </span>
         </footer>
     }
