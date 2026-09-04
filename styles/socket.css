@@ -2,19 +2,6 @@
     min-height: 0;
 }
 
-.socket-page header h2 {
-    font-size: 0;
-}
-
-.socket-page header h2::after {
-    content: "Futures Market";
-    font-size: 1.5rem;
-}
-
-.socket-page header .badge[title] {
-    pointer-events: none;
-}
-
 .socket-limit-select {
     width: 5rem;
 }
@@ -85,10 +72,6 @@
 @media (max-width: 575.98px) {
     .socket-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .socket-ticker-card .card-body {
-        padding: 0.4rem !important;
     }
 }
 
