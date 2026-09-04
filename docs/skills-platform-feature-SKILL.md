@@ -1,4 +1,4 @@
-﻿# Platform Feature Skill â€” doanson44.github.io
+﻿# Platform Feature Skill — doanson44.github.io
 
 ## Feature Development Checklist
 
@@ -17,16 +17,16 @@ When adding a new feature to the platform:
 For a new tool:
 ```
 features/tools/<name>/
-â”œâ”€â”€ mod.rs       # pub mod page; pub mod state;
-â”œâ”€â”€ page.rs      # #[component] pub fn XxxPage() -> impl IntoView
-â””â”€â”€ state.rs     # Feature-specific RwSignal/Memo state (if needed)
+├── mod.rs       # pub mod page; pub mod state;
+├── page.rs      # #[component] pub fn XxxPage() -> impl IntoView
+└── state.rs     # Feature-specific RwSignal/Memo state (if needed)
 ```
 
 For a new top-level page:
 ```
 features/<name>/
-â”œâ”€â”€ mod.rs       # pub mod page;
-â””â”€â”€ page.rs      # #[component] pub fn XxxPage() -> impl IntoView
+├── mod.rs       # pub mod page;
+└── page.rs      # #[component] pub fn XxxPage() -> impl IntoView
 ```
 
 ### 3. Register the Module
@@ -79,12 +79,9 @@ use leptos::prelude::*;
 #[component]
 pub fn XxxPage() -> impl IntoView {
     view! {
-        <div class="d-flex flex-column flex-grow-1">
-            <div class="container py-4">
-                <h2>
-                    <i class="bi bi-icon me-2 text-primary"></i>
-                    "Page Title"
-                </h2>
+        <div class="flex min-h-0 flex-grow flex-col">
+            <div class="container mx-auto py-4">
+                <h2 class="text-xl font-semibold">"Page Title"</h2>
                 // Page content
             </div>
         </div>
@@ -105,7 +102,7 @@ pub fn XxxPage() -> impl IntoView {
     let state = XxxState::new();
 
     view! {
-        <div class="d-flex flex-column flex-grow-1" style="min-height: 0;">
+        <div class="flex min-h-0 flex-grow flex-col">
             // Tool-specific UI
         </div>
     }
@@ -115,17 +112,18 @@ pub fn XxxPage() -> impl IntoView {
 ## Platform Conventions
 
 ### Layout
-- All pages: use `d-flex flex-column flex-grow-1` as root
-- Content: wrap in `container py-4` or similar
-- Tool pages: use `style="min-height: 0"` to prevent flex overflow
-- Placeholder pages: centered icon + heading + "Coming soon" text
+- All pages: use Tailwind `flex flex-col flex-grow` or equivalent responsive utilities as the root.
+- Content: wrap in a project container utility such as `mx-auto w-full max-w-7xl px-4 py-4` when appropriate.
+- Tool pages: use `min-h-0` to prevent flex overflow.
+- Placeholder pages: centered icon + heading + "Coming soon" text.
 
 ### Styling
-- Use Bootstrap 5 classes, no hardcoded colors
-- Text: `text-body-secondary` for muted, `text-body-tertiary` for very muted
-- Cards: `card bg-body-tertiary border-secondary`
-- Icons: Bootstrap Icons with `me-2 text-primary` (or appropriate color)
-- Coming soon: `<span class="badge bg-secondary">"Coming soon"</span>`
+- Use Tailwind CSS utilities by default.
+- Use project semantic theme tokens through arbitrary values such as `bg-[var(--surface)]`, `text-[var(--text-primary)]`, and `border-[var(--border-color)]`.
+- Use focused project CSS classes only for repeated semantic patterns or behavior that cannot reasonably be expressed with utilities.
+- Do not introduce Bootstrap classes, variables, JavaScript, or icon-font dependencies.
+- Do not use inline styles in Leptos `view!`.
+- Coming-soon/status states must remain understandable without color alone.
 
 ### Links
 - Always use hash-based: `href="#/path"`
@@ -135,8 +133,8 @@ pub fn XxxPage() -> impl IntoView {
 
 Hash-based routing in `src/app.rs`:
 - Uses `window.location.hash` + `hashchange` event
-- `create_hash_signal()` â€” tracks current hash as `RwSignal<String>`
-- `render_page()` â€” match route string to page component
+- `create_hash_signal()` — tracks current hash as `RwSignal<String>`
+- `render_page()` — match route string to page component
 - Fallback: 404 page with "Go Home" link
 
 To add a route:
@@ -146,9 +144,9 @@ To add a route:
 
 ## Anti-Patterns
 
-- âŒ Putting feature logic in `app.rs`
-- âŒ Duplicating Navbar/Footer inside feature pages
-- âŒ Adding leptos_router dependency (use hash routing)
-- âŒ Hardcoding colors in `view!`
-- âŒ Forgetting to register module in `mod.rs`
-- âŒ Using absolute paths (`href="/path"`) instead of hash (`href="#/path"`)
+- ❌ Putting feature logic in `app.rs`
+- ❌ Duplicating Navbar/Footer inside feature pages
+- ❌ Adding leptos_router dependency (use hash routing)
+- ❌ Hardcoding colors in `view!`
+- ❌ Forgetting to register module in `mod.rs`
+- ❌ Using absolute paths (`href="/path"`) instead of hash (`href="#/path"`)
