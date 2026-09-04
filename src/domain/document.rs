@@ -47,7 +47,7 @@ You can write **bold text**, *italic text*, and ***bold italic*** text. You can 
 #### Unordered List
 - 🦀 Written in **Rust** with Leptos
 - ⚡ Compiled to **WebAssembly**
-- 🎨 Styled with **Bootstrap 5**
+- 🎨 Styled with **Tailwind CSS**
 - 📊 **Mermaid** diagram support
 
 #### Ordered List

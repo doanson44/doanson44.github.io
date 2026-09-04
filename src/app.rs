@@ -27,9 +27,9 @@ use crate::infrastructure::mexc_futures::MexcFuturesStream;
 pub fn App() -> impl IntoView {
     let current_hash = create_hash_signal();
     view! {
-        <div class="app-container d-flex flex-column vh-100" id="app">
+        <div class="app-container flex h-screen flex-col" id="app">
             <Navbar />
-            <main class="flex-grow-1 d-flex overflow-auto app-main min-height-0">
+            <main class="app-main min-h-0 flex flex-1 overflow-auto">
                 {move || render_page(current_hash.get())}
             </main>
             <Footer />
@@ -92,6 +92,12 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
                 funding_provider=Rc::new(FundingRateApi)
             />
         }.into_any(),
-        _ => view! { <div class="container py-5 text-center flex-grow-1"><h3 class="text-body-secondary">"404"</h3><p class="text-body-tertiary">"Page not found."</p><a href="#/" class="btn btn-outline-secondary btn-sm">"Go Home"</a></div> }.into_any(),
+        _ => view! {
+            <div class="flex flex-1 flex-col items-center px-4 py-20 text-center">
+                <h3 class="text-xl font-semibold text-[var(--text-secondary)]">"404"</h3>
+                <p class="mt-2 text-sm text-[var(--text-tertiary)]">"Page not found."</p>
+                <a href="#/" class="mt-4 inline-flex items-center rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]">"Go Home"</a>
+            </div>
+        }.into_any(),
     }
 }

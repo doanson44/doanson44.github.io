@@ -1,41 +1,19 @@
-# Light Mode Design Rules — doanson44.github.io
+# Light Mode Design Rules
 
-These rules ensure the light theme is clean, accessible, and consistent with the platform's visual identity.
+These rules keep the light theme clean, accessible, and consistent.
 
 ## Core Principles
 
-### 1. Comfortable White (Never Maximum Brightness)
-Pure white (`#ffffff`) is acceptable as a body background in light mode, but avoid making it the ONLY surface color. Use layered backgrounds to create depth.
+1. Use layered surfaces rather than making every element pure white.
+2. Maintain WCAG AA contrast, especially for muted text and borders.
+3. Keep panel, card, table, and input boundaries visible.
+4. Every `--ms-*` theme token must have an appropriate light-mode value.
+5. Never use pure black for UI backgrounds.
 
-### 2. Maintain Adequate Contrast
-Light mode can easily become "gray on gray" — ensure body text has at least 4.5:1 contrast (WCAG AA). Bootstrap light mode provides this by default.
-
-### 3. Visible Borders Still Matter
-In light mode, `border-secondary` stays visible and consistent. Do not use `border-light` (too subtle) or remove borders entirely.
-
-### 4. Custom Variables Must Work in Both Modes
-Every `--ms-*` CSS variable MUST have both `[data-bs-theme="dark"]` and `[data-bs-theme="light"]` definitions. Adding a new variable without a light mode counterpart will break the UI when the user switches.
-
-## Bootstrap Light Mode CSS Variables
+## Light Theme Tokens
 
 ```css
-/* Bootstrap light mode defaults */
---bs-body-bg: #ffffff;
---bs-body-bg-rgb: 255, 255, 255;
---bs-body-color: #212529;
---bs-body-color-rgb: 33, 37, 41;
---bs-secondary-bg: #e9ecef;
---bs-tertiary-bg: #f8f9fa;
---bs-border-color: #dee2e6;
---bs-link-color: #0d6efd;
---bs-link-hover-color: #0a58ca;
---bs-code-color: #d63384;
-```
-
-## Platform Custom Variables — Light Mode
-
-```css
-[data-bs-theme="light"] {
+[data-theme="light"] {
     --ms-bg-primary: #ffffff;
     --ms-bg-secondary: #f6f8fa;
     --ms-bg-surface: #f0f2f5;
@@ -50,110 +28,39 @@ Every `--ms-*` CSS variable MUST have both `[data-bs-theme="dark"]` and `[data-b
     --ms-accent-purple: #8250df;
     --ms-accent-orange: #bf8700;
     --ms-accent-red: #cf222e;
-    --ms-shadow-glow: 0 0 20px rgba(9, 105, 218, 0.08);
-    --ms-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 ```
 
-## Field-by-Field Rules
+## Field Rules
 
-### Text
-| Rule | Good | Bad |
-|------|------|-----|
-| Body text | `color: var(--bs-body-color)` on `var(--bs-body-bg)` | #555 gray on white (too low contrast) |
-| Muted text | `text-body-secondary` | Light gray `#ccc` on white |
-| Links | `--bs-link-color: #0d6efd` | Custom low-contrast blue |
-| Code inline | `var(--bs-code-color)` (pink/red) | Same color as body text |
+| Area | Guidance |
+|------|----------|
+| Body text | `--ms-text-primary` on `--ms-bg-primary` |
+| Muted text | `--ms-text-secondary` with sufficient contrast |
+| Main background | `--ms-bg-primary` |
+| Elevated surfaces | `--ms-bg-secondary` / `--ms-bg-elevated` |
+| Cards | `--ms-bg-surface` with visible borders |
+| Inputs | Visible border and readable text/placeholder |
+| Focus | Visible accent outline |
+| Links | Semantic accent color with hover feedback |
 
-### Backgrounds
-| Rule | Good | Bad |
-|------|------|-----|
-| Main background | `var(--bs-body-bg)` = `#ffffff` | Off-white that looks dirty |
-| Elevated surfaces | `var(--bs-secondary-bg)` = `#e9ecef` | Same as body (no depth) |
-| Cards | `bg-body-tertiary` = `#f8f9fa` | No visual distinction from body |
-| Editor textarea | Platform `--ms-bg-primary` = `#ffffff` | Dark gray in light mode (jarring) |
+## Tailwind Pattern
 
-### Borders
-| Rule | Good | Bad |
-|------|------|-----|
-| Panel separators | `border-secondary` | `border-light` (invisible), removed borders |
-| Card edges | `border border-secondary` | No border on white bg (floats visually) |
-| Focus rings | Bootstrap default blue (`rgba(13,110,253,.25)`) | Custom low-contrast focus |
-
-### Interactive Elements
-| Element | Light Mode Approach |
-|---------|-------------------|
-| Toolbar buttons | `btn-outline-secondary` — visible border on light bg |
-| Copy buttons (overlay) | `btn-dark` still works, or `btn-outline-secondary` |
-| Badges | `bg-primary bg-opacity-10 text-primary-emphasis` (subtle tint) |
-| Hover states | Bootstrap defaults, slightly darker background |
-| Theme toggle icon | `bi-sun-fill` shown (🌙 hidden), hover color: `--ms-accent-orange` |
-
-### Gradients & Decorative
-| Rule | Good | Bad |
-|------|------|-----|
-| Navbar brand icon | `text-primary` (solid blue) | Dark gradient invisible on white |
-| Heading 1 gradient | Gradient with opaque fallback | Transparent gradient invisible on light |
-| Horizontal rules | `border-top: 2px solid var(--ms-border-default)` | Same as dark (low contrast) |
-
-## Heading Gradient Fix in Light Mode
-
-The h1 gradient uses `background-clip: text` with transparent fill — this breaks in light mode if colors are too bright. Ensure light mode gradients use darker shades:
-
-```css
-[data-bs-theme="light"] .markdown-body h1 {
-    background: linear-gradient(135deg, #0969da, #8250df);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
+```html
+<div class="border border-[var(--border-color)] bg-[var(--surface)] text-[var(--text-primary)]">
 ```
 
-## Scrollbar Styling
+## Mermaid and Code
 
-```css
-[data-bs-theme="light"] ::-webkit-scrollbar-track {
-    background: var(--ms-bg-surface);
-}
-
-[data-bs-theme="light"] ::-webkit-scrollbar-thumb {
-    background: var(--ms-border-default);
-}
-
-[data-bs-theme="light"] ::-webkit-scrollbar-thumb:hover {
-    background: var(--ms-text-secondary);
-}
-```
-
-## Mermaid SVG in Light Mode
-
-- SVG backgrounds should remain transparent to blend with light preview
-- Mermaid text uses `theme: neutral` or `theme: default` (handled by Mermaid)
-- No need to change Mermaid config between themes — transparent SVG adapts automatically
-
-## Theme Toggle Button
-
-```css
-/* Show/hide icons based on theme */
-[data-bs-theme="dark"] .theme-icon-light { display: none; }
-[data-bs-theme="dark"] .theme-icon-dark { display: inline; }
-[data-bs-theme="light"] .theme-icon-light { display: inline; }
-[data-bs-theme="light"] .theme-icon-dark { display: none; }
-```
+Code blocks and Mermaid diagrams must remain visually distinct from the page background while preserving readable text and borders.
 
 ## Testing Checklist
 
-- [ ] All `--ms-*` variables have both dark and light definitions
-- [ ] Body text contrast ≥ 4.5:1
-- [ ] Borders visible (`border-secondary`) on all panels
-- [ ] Cards visually distinct from body background
-- [ ] Toolbar buttons distinguishable
-- [ ] Copy buttons visible on light code blocks
-- [ ] Placeholder text not too faint
-- [ ] Focus indicators clearly visible on white bg
-- [ ] Heading gradient renders correctly
-- [ ] Scrollbar visible and styled
-- [ ] Mermaid diagrams readable
-- [ ] Toggle icon switches correctly (☀️↔🌙)
-- [ ] No pure black elements (use dark grays)
-- [ ] No white text that becomes invisible on light bg
+- [ ] Text contrast meets WCAG AA
+- [ ] Borders remain visible
+- [ ] Cards and inputs are visually distinct
+- [ ] Focus indicators are visible
+- [ ] Code and Mermaid content remains readable
+- [ ] Hover/disabled states remain understandable without color alone
+- [ ] Theme toggle remains usable
+- [ ] No pure-black UI backgrounds

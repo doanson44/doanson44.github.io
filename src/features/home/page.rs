@@ -7,75 +7,44 @@ use leptos::prelude::*;
 #[component]
 pub fn HomePage() -> impl IntoView {
     view! {
-        <div class="d-flex flex-column flex-grow-1">
-            <div class="container py-5">
-                <div class="row justify-content-center">
-                    <div class="col-12 col-md-10 col-lg-8 text-center">
-                        <h1 class="display-4 fw-bold mb-3">
-                            <i class="bi bi-terminal-fill text-primary me-2"></i>
-                            "doanson44.github.io"
-                        </h1>
-                        <p class="lead text-body-secondary mb-4">
-                            "A personal web platform — developer tools, games, CV, and more. Built with Rust, Leptos, and WebAssembly."
-                        </p>
-                    </div>
+        <main class="flex flex-1 flex-col">
+            <div class="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+                <div class="mx-auto max-w-3xl text-center">
+                    <h1 class="mb-3 text-4xl font-bold tracking-tight text-[var(--text-primary)] sm:text-5xl">
+                        <span class="mr-2 text-[var(--accent)]" aria-hidden="true">">_"</span>
+                        "doanson44.github.io"
+                    </h1>
+                    <p class="mb-8 text-lg text-[var(--text-secondary)]">
+                        "A personal web platform — developer tools, games, CV, and more. Built with Rust, Leptos, and WebAssembly."
+                    </p>
                 </div>
 
-                <div class="row g-4 mt-2 justify-content-center">
-                    <div class="col-12 col-sm-6 col-lg-4">
-                        <a href="#/tools" class="text-decoration-none">
-                            <div class="card bg-body-tertiary border-secondary h-100">
-                                <div class="card-body text-center p-4">
-                                    <i class="bi bi-tools fs-1 text-primary mb-3 d-block"></i>
-                                    <h5 class="card-title">"Tools"</h5>
-                                    <p class="card-text text-body-secondary small">
-                                        "Developer utilities — Markdown Studio, JSON, JWT, and more."
-                                    </p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-4">
-                        <a href="#/games" class="text-decoration-none">
-                            <div class="card bg-body-tertiary border-secondary h-100">
-                                <div class="card-body text-center p-4">
-                                    <i class="bi bi-joystick fs-1 text-success mb-3 d-block"></i>
-                                    <h5 class="card-title">"Games"</h5>
-                                    <p class="card-text text-body-secondary small">
-                                        "Small browser games and experiments."
-                                    </p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-4">
-                        <a href="#/cv" class="text-decoration-none">
-                            <div class="card bg-body-tertiary border-secondary h-100">
-                                <div class="card-body text-center p-4">
-                                    <i class="bi bi-person-badge fs-1 text-info mb-3 d-block"></i>
-                                    <h5 class="card-title">"CV"</h5>
-                                    <p class="card-text text-body-secondary small">
-                                        "Public CV and portfolio."
-                                    </p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-12 col-sm-6 col-lg-4">
-                        <a href="#/socket" class="text-decoration-none">
-                            <div class="card bg-body-tertiary border-secondary h-100">
-                                <div class="card-body text-center p-4">
-                                    <i class="bi bi-diagram-3 fs-1 text-warning mb-3 d-block"></i>
-                                    <h5 class="card-title">"Socket"</h5>
-                                    <p class="card-text text-body-secondary small">
-                                        "WebSocket and realtime playground."
-                                    </p>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
+                <div class="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <HomeCard href="#/tools" icon="⚒" title="Tools" description="Developer utilities — Markdown Studio, JSON, JWT, and more." />
+                    <HomeCard href="#/games" icon="♟" title="Games" description="Small browser games and experiments." />
+                    <HomeCard href="#/cv" icon="●" title="CV" description="Public CV and portfolio." />
+                    <HomeCard href="#/socket" icon="↔" title="Socket" description="WebSocket and realtime playground." />
                 </div>
             </div>
-        </div>
+        </main>
+    }
+}
+
+#[component]
+fn HomeCard(
+    #[prop(into)] href: String,
+    icon: &'static str,
+    title: &'static str,
+    description: &'static str,
+) -> impl IntoView {
+    view! {
+        <a
+            href=href
+            class="group rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-6 text-center no-underline shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+        >
+            <div class="mb-4 text-4xl text-[var(--accent)]" aria-hidden="true">{icon}</div>
+            <h2 class="mb-2 text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+            <p class="text-sm leading-6 text-[var(--text-secondary)]">{description}</p>
+        </a>
     }
 }

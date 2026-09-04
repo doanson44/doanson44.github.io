@@ -23,68 +23,66 @@ pub fn SocketPage() -> impl IntoView {
     };
 
     view! {
-        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-            <div class="container-fluid py-3 d-flex flex-column flex-grow-1 overflow-hidden">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div class="flex flex-grow flex-col overflow-hidden">
+            <div class="flex flex-grow flex-col overflow-hidden px-4 py-3">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="mb-1"><i class="bi bi-broadcast me-2 text-primary"></i>"MEXC Futures"</h2>
-                        <div class="text-body-secondary small">"Public market data · all perpetual contracts"</div>
+                        <h2 class="mb-1 text-xl font-semibold">"MEXC Futures"</h2>
+                        <div class="text-sm text-[var(--text-secondary)]">"Public market data · all perpetual contracts"</div>
                     </div>
-                    <div class="small">{move || status_badge(state.connection_status.get())}</div>
+                    <div class="text-sm">{move || status_badge(state.connection_status.get())}</div>
                 </div>
 
-                <div class="card bg-body-tertiary border-secondary mb-3">
-                    <div class="card-body p-2">
-                        <div class="row g-2 align-items-end">
-                            <div class="col-12 col-md-5 col-lg-4">
-                                <label class="form-label small text-body-secondary mb-1" for="socket-search">"Search contracts"</label>
-                                <input id="socket-search" class="form-control form-control-sm" type="search" placeholder="BTC_USDT" aria-label="Search Futures contracts" prop:value=state.search on:input=move |ev| { state.search.set(event_target_value(&ev)); reset_page(); } />
-                            </div>
-                            <div class="col-6 col-md-3 col-lg-2">
-                                <label class="form-label small text-body-secondary mb-1" for="socket-quote">"Quote"</label>
-                                <select id="socket-quote" class="form-select form-select-sm" aria-label="Filter by quote asset" prop:value=move || match state.quote_filter.get() { QuoteFilter::All => "all", QuoteFilter::Usdt => "usdt", QuoteFilter::Usdc => "usdc" } on:change=move |ev| { state.quote_filter.set(match event_target_value(&ev).as_str() { "usdt" => QuoteFilter::Usdt, "usdc" => QuoteFilter::Usdc, _ => QuoteFilter::All }); reset_page(); }>
-                                    <option value="all">"All quotes"</option><option value="usdt">"USDT"</option><option value="usdc">"USDC"</option>
-                                </select>
-                            </div>
-                            <div class="col-6 col-md-3 col-lg-2">
-                                <label class="form-label small text-body-secondary mb-1" for="socket-change">"24h change"</label>
-                                <select id="socket-change" class="form-select form-select-sm" aria-label="Filter by 24 hour change" prop:value=move || match state.change_filter.get() { ChangeFilter::All => "all", ChangeFilter::Positive => "positive", ChangeFilter::Negative => "negative" } on:change=move |ev| { state.change_filter.set(match event_target_value(&ev).as_str() { "positive" => ChangeFilter::Positive, "negative" => ChangeFilter::Negative, _ => ChangeFilter::All }); reset_page(); }>
-                                    <option value="all">"All"</option><option value="positive">"Positive"</option><option value="negative">"Negative"</option>
-                                </select>
-                            </div>
-                            <div class="col-6 col-md-3 col-lg-2">
-                                <label class="form-label small text-body-secondary mb-1" for="socket-page-size">"Rows"</label>
-                                <select id="socket-page-size" class="form-select form-select-sm" aria-label="Rows per page" prop:value=move || state.page_size.get().to_string() on:change=move |ev| { let size = event_target_value(&ev).parse::<usize>().unwrap_or(25); state.page_size.set(size.clamp(10, 100)); reset_page(); }>
-                                    <option value="10">"10"</option><option value="25">"25"</option><option value="50">"50"</option><option value="100">"100"</option>
-                                </select>
-                            </div>
-                            <div class="col-6 col-md-auto ms-md-auto small text-body-secondary text-md-end">{move || format!("{} contracts", state.filtered_sorted.get().len())}</div>
+                <div class="mb-3 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3">
+                    <div class="grid grid-cols-1 items-end gap-3 md:grid-cols-2 lg:grid-cols-5">
+                        <div>
+                            <label class="mb-1 block text-xs text-[var(--text-secondary)]" for="socket-search">"Search contracts"</label>
+                            <input id="socket-search" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" type="search" placeholder="BTC_USDT" aria-label="Search Futures contracts" prop:value=state.search on:input=move |ev| { state.search.set(event_target_value(&ev)); reset_page(); } />
                         </div>
+                        <div>
+                            <label class="mb-1 block text-xs text-[var(--text-secondary)]" for="socket-quote">"Quote"</label>
+                            <select id="socket-quote" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Filter by quote asset" prop:value=move || match state.quote_filter.get() { QuoteFilter::All => "all", QuoteFilter::Usdt => "usdt", QuoteFilter::Usdc => "usdc" } on:change=move |ev| { state.quote_filter.set(match event_target_value(&ev).as_str() { "usdt" => QuoteFilter::Usdt, "usdc" => QuoteFilter::Usdc, _ => QuoteFilter::All }); reset_page(); }>
+                                <option value="all">"All quotes"</option><option value="usdt">"USDT"</option><option value="usdc">"USDC"</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs text-[var(--text-secondary)]" for="socket-change">"24h change"</label>
+                            <select id="socket-change" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Filter by 24 hour change" prop:value=move || match state.change_filter.get() { ChangeFilter::All => "all", ChangeFilter::Positive => "positive", ChangeFilter::Negative => "negative" } on:change=move |ev| { state.change_filter.set(match event_target_value(&ev).as_str() { "positive" => ChangeFilter::Positive, "negative" => ChangeFilter::Negative, _ => ChangeFilter::All }); reset_page(); }>
+                                <option value="all">"All"</option><option value="positive">"Positive"</option><option value="negative">"Negative"</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs text-[var(--text-secondary)]" for="socket-page-size">"Rows"</label>
+                            <select id="socket-page-size" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Rows per page" prop:value=move || state.page_size.get().to_string() on:change=move |ev| { let size = event_target_value(&ev).parse::<usize>().unwrap_or(25); state.page_size.set(size.clamp(10, 100)); reset_page(); }>
+                                <option value="10">"10"</option><option value="25">"25"</option><option value="50">"50"</option><option value="100">"100"</option>
+                            </select>
+                        </div>
+                        <div class="text-sm text-[var(--text-secondary)] md:text-right">{move || format!("{} contracts", state.filtered_sorted.get().len())}</div>
                     </div>
                 </div>
 
-                <div class="card border-secondary flex-grow-1 overflow-hidden">
-                    <div class="table-responsive h-100">
-                        <table class="table table-hover table-sm align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th scope="col"><SortButton label="Contract" column=SortColumn::Symbol state=state set_sort=set_sort.clone() /></th>
-                                    <th scope="col" class="text-end"><SortButton label="Last Price" column=SortColumn::LastPrice state=state set_sort=set_sort.clone() /></th>
-                                    <th scope="col" class="text-end"><SortButton label="24h Change" column=SortColumn::Change24h state=state set_sort=set_sort.clone() /></th>
-                                    <th scope="col" class="text-end"><SortButton label="24h Volume" column=SortColumn::Volume24h state=state set_sort=set_sort.clone() /></th>
-                                    <th scope="col" class="text-end"><SortButton label="Fair Price" column=SortColumn::FairPrice state=state set_sort=set_sort /></th>
+                <div class="min-h-0 flex-grow overflow-hidden rounded-lg border border-[var(--border-color)]">
+                    <div class="h-full overflow-auto">
+                        <table class="w-full border-collapse text-sm">
+                            <thead class="sticky top-0 bg-[var(--surface)] text-left">
+                                <tr class="border-b border-[var(--border-color)]">
+                                    <th scope="col" class="px-3 py-2"><SortButton label="Contract" column=SortColumn::Symbol state=state set_sort=set_sort.clone() /></th>
+                                    <th scope="col" class="px-3 py-2 text-right"><SortButton label="Last Price" column=SortColumn::LastPrice state=state set_sort=set_sort.clone() /></th>
+                                    <th scope="col" class="px-3 py-2 text-right"><SortButton label="24h Change" column=SortColumn::Change24h state=state set_sort=set_sort.clone() /></th>
+                                    <th scope="col" class="px-3 py-2 text-right"><SortButton label="24h Volume" column=SortColumn::Volume24h state=state set_sort=set_sort.clone() /></th>
+                                    <th scope="col" class="px-3 py-2 text-right"><SortButton label="Fair Price" column=SortColumn::FairPrice state=state set_sort=set_sort /></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {move || state.visible_rows.get().into_iter().map(|ticker| {
-                                    let change_class = match ticker.change_24h { Some(value) if value > 0.0 => "text-success", Some(value) if value < 0.0 => "text-danger", _ => "text-body" };
+                                    let change_class = match ticker.change_24h { Some(value) if value > 0.0 => "text-[var(--success)]", Some(value) if value < 0.0 => "text-[var(--danger)]", _ => "text-[var(--text-primary)]" };
                                     view! {
-                                        <tr>
-                                            <th scope="row" class="font-monospace fw-normal">{ticker.symbol}</th>
-                                            <td class="text-end font-monospace">{format_number(ticker.last_price)}</td>
-                                            <td class=format!("text-end font-monospace {change_class}")>{format_percent(ticker.change_24h)}</td>
-                                            <td class="text-end font-monospace">{format_number(ticker.volume_24h)}</td>
-                                            <td class="text-end font-monospace">{format_number(ticker.fair_price)}</td>
+                                        <tr class="border-b border-[var(--border-color)] hover:bg-[var(--surface-hover)]">
+                                            <th scope="row" class="px-3 py-2 font-mono font-normal">{ticker.symbol}</th>
+                                            <td class="px-3 py-2 text-right font-mono">{format_number(ticker.last_price)}</td>
+                                            <td class=format!("px-3 py-2 text-right font-mono {change_class}")>{format_percent(ticker.change_24h)}</td>
+                                            <td class="px-3 py-2 text-right font-mono">{format_number(ticker.volume_24h)}</td>
+                                            <td class="px-3 py-2 text-right font-mono">{format_number(ticker.fair_price)}</td>
                                         </tr>
                                     }
                                 }).collect_view()}
@@ -93,12 +91,12 @@ pub fn SocketPage() -> impl IntoView {
                     </div>
                 </div>
 
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pt-2">
-                    <div class="small text-body-secondary">{move || { let total = state.filtered_sorted.get().len(); let size = state.page_size.get().max(1); let page = state.page.get().min(state.page_count.get()); if total == 0 { "Showing 0 contracts".to_string() } else { let start = (page - 1) * size + 1; let end = (start + size - 1).min(total); format!("Showing {start}–{end} of {total}") } }}</div>
-                    <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-outline-secondary btn-sm" type="button" disabled=move || state.page.get() <= 1 on:click=previous_page>"Previous"</button>
-                        <span class="small text-body-secondary" aria-live="polite">{move || format!("Page {} of {}", state.page.get().min(state.page_count.get()), state.page_count.get())}</span>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" disabled=move || state.page.get() >= state.page_count.get() on:click=next_page>"Next"</button>
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+                    <div class="text-sm text-[var(--text-secondary)]">{move || { let total = state.filtered_sorted.get().len(); let size = state.page_size.get().max(1); let page = state.page.get().min(state.page_count.get()); if total == 0 { "Showing 0 contracts".to_string() } else { let start = (page - 1) * size + 1; let end = (start + size - 1).min(total); format!("Showing {start}–{end} of {total}") } }}</div>
+                    <div class="flex items-center gap-2">
+                        <button class="rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" type="button" disabled=move || state.page.get() <= 1 on:click=previous_page>"Previous"</button>
+                        <span class="text-sm text-[var(--text-secondary)]" aria-live="polite">{move || format!("Page {} of {}", state.page.get().min(state.page_count.get()), state.page_count.get())}</span>
+                        <button class="rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" type="button" disabled=move || state.page.get() >= state.page_count.get() on:click=next_page>"Next"</button>
                     </div>
                 </div>
             </div>
@@ -107,25 +105,16 @@ pub fn SocketPage() -> impl IntoView {
 }
 
 #[component]
-fn SortButton(
-    label: &'static str,
-    column: SortColumn,
-    state: SocketState,
-    set_sort: impl Fn(SortColumn) + Clone + 'static,
-) -> impl IntoView {
-    view! {
-        <button class="btn btn-link btn-sm text-body text-decoration-none p-0" type="button" on:click=move |_| set_sort(column)>
-            {label} " " {move || sort_indicator(state.sort_column.get(), state.sort_descending.get(), column)}
-        </button>
-    }
+fn SortButton(label: &'static str, column: SortColumn, state: SocketState, set_sort: impl Fn(SortColumn) + Clone + 'static) -> impl IntoView {
+    view! { <button class="p-0 text-sm font-medium text-[var(--text-primary)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" type="button" on:click=move |_| set_sort(column)>{label} " " {move || sort_indicator(state.sort_column.get(), state.sort_descending.get(), column)}</button> }
 }
 
 fn status_badge(status: crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus) -> impl IntoView {
     match status {
-        crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus::Connected => view! { <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">"Connected"</span> }.into_any(),
-        crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus::Connecting => view! { <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">"Connecting"</span> }.into_any(),
-        crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus::Disconnected => view! { <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle">"Disconnected"</span> }.into_any(),
-        crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus::Error(message) => view! { <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle" title=message>"Connection error"</span> }.into_any(),
+        crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus::Connected => view! { <span class="rounded-full border border-[var(--success)]/40 bg-[var(--success)]/10 px-2 py-1 text-xs text-[var(--success)]">"Connected"</span> }.into_any(),
+        crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus::Connecting => view! { <span class="rounded-full border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-2 py-1 text-xs text-[var(--warning)]">"Connecting"</span> }.into_any(),
+        crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus::Disconnected => view! { <span class="rounded-full border border-[var(--border-color)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-secondary)]">"Disconnected"</span> }.into_any(),
+        crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus::Error(message) => view! { <span class="rounded-full border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-2 py-1 text-xs text-[var(--danger)]" title=message>"Connection error"</span> }.into_any(),
     }
 }
 
@@ -133,10 +122,5 @@ fn sort_indicator(current: SortColumn, descending: bool, column: SortColumn) -> 
     if current != column { "" } else if descending { "▼" } else { "▲" }
 }
 
-fn format_number(value: Option<f64>) -> String {
-    value.map(|number| if number.abs() >= 1.0 { format!("{number:.4}") } else { format!("{number:.8}") }).unwrap_or_else(|| "—".into())
-}
-
-fn format_percent(value: Option<f64>) -> String {
-    value.map(|number| format!("{:.2}%", number * 100.0)).unwrap_or_else(|| "—".into())
-}
+fn format_number(value: Option<f64>) -> String { value.map(|number| if number.abs() >= 1.0 { format!("{number:.4}") } else { format!("{number:.8}") }).unwrap_or_else(|| "—".into()) }
+fn format_percent(value: Option<f64>) -> String { value.map(|number| format!("{:.2}%", number * 100.0)).unwrap_or_else(|| "—".into()) }

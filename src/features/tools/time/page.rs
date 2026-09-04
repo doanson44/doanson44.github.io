@@ -32,14 +32,14 @@ pub fn TimePage() -> impl IntoView {
     });
 
     view! {
-        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-            <div class="px-3 py-2 border-bottom border-secondary bg-body-tertiary flex-shrink-0">
-                <strong><i class="bi bi-clock-history text-primary me-2"></i>"Time & Utilities"</strong>
-                <div class="small text-body-secondary">"World clock, countdown, stopwatch, ruler, and timestamp conversion."</div>
+        <div class="flex flex-grow flex-col overflow-hidden">
+            <div class="flex shrink-0 flex-col border-b border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
+                <strong>"Time & Utilities"</strong>
+                <div class="text-sm text-[var(--text-secondary)]">"World clock, countdown, stopwatch, ruler, and timestamp conversion."</div>
             </div>
-            <div class="d-flex flex-column flex-lg-row flex-grow-1 overflow-hidden">
+            <div class="flex flex-grow flex-col overflow-hidden lg:flex-row">
                 <TimeNavigation state=state />
-                <main class="flex-grow-1 overflow-auto p-3 p-lg-4">
+                <main class="flex-grow overflow-auto p-3 lg:p-4">
                     {move || match state.tab.get() {
                         TimeTab::WorldClock => view! { <WorldClock state=state provider=provider /> }.into_any(),
                         TimeTab::Timer => view! { <Timer state=state /> }.into_any(),
@@ -56,12 +56,21 @@ pub fn TimePage() -> impl IntoView {
 #[component]
 fn TimeNavigation(state: TimeState) -> impl IntoView {
     view! {
-        <nav class="flex-shrink-0" aria-label="Time utilities">
-            <div class="d-flex flex-row flex-lg-column gap-1 overflow-auto p-2">
+        <nav class="shrink-0" aria-label="Time utilities">
+            <div class="flex flex-row gap-1 overflow-auto p-2 lg:flex-col">
                 {[TimeTab::WorldClock, TimeTab::Timer, TimeTab::Stopwatch, TimeTab::Ruler, TimeTab::Timestamp]
                     .into_iter()
                     .map(|item| view! {
-                        <button type="button" class=move || if state.tab.get() == item { "btn btn-primary" } else { "btn btn-outline-secondary" } on:click=move |_| state.tab.set(item) aria-pressed=move || (state.tab.get() == item).to_string()>
+                        <button
+                            type="button"
+                            class=move || if state.tab.get() == item {
+                                "rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                            } else {
+                                "rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                            }
+                            on:click=move |_| state.tab.set(item)
+                            aria-pressed=move || (state.tab.get() == item).to_string()
+                        >
                             {item.label()}
                         </button>
                     })
@@ -85,16 +94,16 @@ fn WorldClock(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView 
 
     view! {
         <section>
-            <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
+            <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h2 class="h4 mb-1">"World Clock"</h2>
-                    <p class="text-body-secondary mb-0">"Track multiple cities with IANA timezone data."</p>
+                    <h2 class="mb-1 text-xl font-semibold">"World Clock"</h2>
+                    <p class="mb-0 text-sm text-[var(--text-secondary)]">"Track multiple cities with IANA timezone data."</p>
                 </div>
-                <div class="d-flex gap-2">
-                    <select class="form-select form-select-sm" aria-label="Timezone to add" prop:value=move || selected.get() on:change=move |ev| selected.set(event_target_value(&ev))>
+                <div class="flex gap-2">
+                    <select class="rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Timezone to add" prop:value=move || selected.get() on:change=move |ev| selected.set(event_target_value(&ev))>
                         {choices.into_iter().map(|(city, zone)| view! { <option value=zone>{city}</option> }).collect_view()}
                     </select>
-                    <button type="button" class="btn btn-primary btn-sm" on:click=move |_| {
+                    <button type="button" class="rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| {
                         if let Some((city, zone)) = choices.into_iter().find(|(_, zone)| *zone == selected.get_untracked()) {
                             state.clocks.update(|clocks| {
                                 if !clocks.iter().any(|item| item.timezone == zone) {
@@ -102,24 +111,28 @@ fn WorldClock(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView 
                                 }
                             });
                         }
-                    }><i class="bi bi-plus-lg me-1"></i>"Add"</button>
+                    }>
+                        "+"
+                        " Add"
+                    </button>
                 </div>
             </div>
-            <div class="row g-3">
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {move || state.clocks.get().into_iter().enumerate().map(|(index, clock)| {
                     let timezone = clock.timezone.clone();
                     let city = clock.city.clone();
                     view! {
-                        <div class="col-12 col-md-6">
-                            <div class="card bg-body-tertiary border-secondary h-100">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between gap-2">
-                                        <div><h3 class="h6 mb-1">{city.clone()}</h3><span class="small text-body-secondary">{timezone.clone()}</span></div>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" title="Remove clock" aria-label=format!("Remove {city}") on:click=move |_| state.clocks.update(|clocks| if clocks.len() > 1 { clocks.remove(index); })><i class="bi bi-x-lg"></i></button>
-                                    </div>
-                                    <div class="fs-4 font-monospace mt-3" aria-live="polite">{move || provider.format_datetime(state.tick.get(), &timezone).unwrap_or_else(|_| "Unavailable".into())}</div>
+                        <div class="min-w-0 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4 shadow-sm">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <h3 class="mb-1 text-sm font-semibold">{city.clone()}</h3>
+                                    <span class="text-xs text-[var(--text-secondary)]">{timezone.clone()}</span>
                                 </div>
+                                <button type="button" class="rounded-md border border-[var(--border-color)] px-2 py-1 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title="Remove clock" aria-label=format!("Remove {city}") on:click=move |_| state.clocks.update(|clocks| if clocks.len() > 1 { clocks.remove(index); })>
+                                    "×"
+                                </button>
                             </div>
+                            <div class="mt-3 font-mono text-2xl" aria-live="polite">{move || provider.format_datetime(state.tick.get(), &timezone).unwrap_or_else(|_| "Unavailable".into())}</div>
                         </div>
                     }
                 }).collect_view()}
@@ -152,21 +165,21 @@ fn Timer(state: TimeState) -> impl IntoView {
 
     view! {
         <section class="text-center">
-            <h2 class="h4">"Countdown"</h2>
-            <p class="text-body-secondary">"Uses timestamps as the source of truth."</p>
-            {move || error.get().map(|message| view! { <div class="alert alert-danger text-start" role="alert">{message}</div> })}
-            <div class="display-3 font-monospace my-4" aria-live="polite">{move || format_duration(remaining())}</div>
-            <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+            <h2 class="text-xl font-semibold">"Countdown"</h2>
+            <p class="text-sm text-[var(--text-secondary)]">"Uses timestamps as the source of truth."</p>
+            {move || error.get().map(|message| view! { <div class="my-3 rounded-md border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-left text-sm text-[var(--danger)]" role="alert">{message}</div> })}
+            <div class="my-6 font-mono text-5xl" aria-live="polite">{move || format_duration(remaining())}</div>
+            <div class="mb-3 flex flex-wrap justify-center gap-2">
                 {move || match state.countdown.get().state() {
-                    CountdownState::Running => view! { <button type="button" class="btn btn-primary" on:click=move |_| state.countdown.update(|timer| timer.pause(state.tick.get_untracked()))>"Pause"</button> }.into_any(),
-                    CountdownState::Paused => view! { <button type="button" class="btn btn-primary" on:click=move |_| state.countdown.update(|timer| timer.resume(state.tick.get_untracked()))>"Resume"</button> }.into_any(),
-                    _ => view! { <button type="button" class="btn btn-primary" on:click=move |_| start()>"Start"</button> }.into_any(),
+                    CountdownState::Running => view! { <button type="button" class="rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.countdown.update(|timer| timer.pause(state.tick.get_untracked()))>"Pause"</button> }.into_any(),
+                    CountdownState::Paused => view! { <button type="button" class="rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.countdown.update(|timer| timer.resume(state.tick.get_untracked()))>"Resume"</button> }.into_any(),
+                    _ => view! { <button type="button" class="rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| start()>"Start"</button> }.into_any(),
                 }}
-                <button type="button" class="btn btn-outline-secondary" on:click=move |_| state.countdown.update(|timer| timer.reset())>"Reset"</button>
+                <button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.countdown.update(|timer| timer.reset())>"Reset"</button>
             </div>
-            <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+            <div class="mb-3 flex flex-wrap justify-center gap-2">
                 {[1u64, 5, 10, 25].into_iter().map(|minutes| view! {
-                    <button type="button" class="btn btn-outline-secondary" on:click=move |_| {
+                    <button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| {
                         state.timer_hours.set("00".into());
                         state.timer_minutes.set(format!("{minutes:02}"));
                         state.timer_seconds.set("00".into());
@@ -174,7 +187,7 @@ fn Timer(state: TimeState) -> impl IntoView {
                     }>{format!("{minutes} min")}</button>
                 }).collect_view()}
             </div>
-            <div class="row g-2 mx-auto time-input-row">
+            <div class="mx-auto grid max-w-md grid-cols-3 gap-2 time-input-row">
                 <TimeInput label="Hours" value=state.timer_hours />
                 <TimeInput label="Minutes" value=state.timer_minutes />
                 <TimeInput label="Seconds" value=state.timer_seconds />
@@ -187,9 +200,9 @@ fn Timer(state: TimeState) -> impl IntoView {
 fn TimeInput(label: &'static str, value: RwSignal<String>) -> impl IntoView {
     let id = format!("time-{}", label.to_ascii_lowercase());
     view! {
-        <div class="col-4">
-            <label class="form-label small text-body-secondary" for=id.clone()>{label}</label>
-            <input id=id type="number" min="0" max=if label == "Hours" { "99" } else { "59" } class="form-control text-center font-monospace" prop:value=move || value.get() on:input=move |ev| value.set(event_target_value(&ev)) />
+        <div>
+            <label class="mb-1 block text-xs text-[var(--text-secondary)]" for=id.clone()>{label}</label>
+            <input id=id type="number" min="0" max=if label == "Hours" { "99" } else { "59" } class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-center font-mono text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" prop:value=move || value.get() on:input=move |ev| value.set(event_target_value(&ev)) />
         </div>
     }
 }
@@ -199,25 +212,28 @@ fn Stopwatch(state: TimeState) -> impl IntoView {
     let elapsed = move || state.stopwatch.get().elapsed(state.tick.get()).as_millis() as u64;
     view! {
         <section class="text-center">
-            <h2 class="h4">"Stopwatch"</h2>
-            <p class="text-body-secondary">"Measure elapsed time with lap splits."</p>
-            <div class="display-3 font-monospace my-4" aria-live="polite">{move || format_stopwatch(elapsed())}</div>
-            <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+            <h2 class="text-xl font-semibold">"Stopwatch"</h2>
+            <p class="text-sm text-[var(--text-secondary)]">"Measure elapsed time with lap splits."</p>
+            <div class="my-6 font-mono text-5xl" aria-live="polite">{move || format_stopwatch(elapsed())}</div>
+            <div class="mb-4 flex flex-wrap justify-center gap-2">
                 {move || if state.stopwatch.get().state() == StopwatchState::Running {
-                    view! { <button type="button" class="btn btn-primary" on:click=move |_| state.stopwatch.update(|watch| watch.pause(state.tick.get_untracked()))>"Pause"</button> }.into_any()
+                    view! { <button type="button" class="rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.stopwatch.update(|watch| watch.pause(state.tick.get_untracked()))>"Pause"</button> }.into_any()
                 } else {
-                    view! { <button type="button" class="btn btn-primary" on:click=move |_| state.stopwatch.update(|watch| watch.start(state.tick.get_untracked()))>"Start / Resume"</button> }.into_any()
+                    view! { <button type="button" class="rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.stopwatch.update(|watch| watch.start(state.tick.get_untracked()))>"Start / Resume"</button> }.into_any()
                 }}
-                <button type="button" class="btn btn-outline-primary" disabled=move || state.stopwatch.get().state() != StopwatchState::Running on:click=move |_| state.stopwatch.update(|watch| { watch.lap(state.tick.get_untracked()); })>"Lap"</button>
-                <button type="button" class="btn btn-outline-secondary" on:click=move |_| state.stopwatch.update(|watch| watch.reset())>"Reset"</button>
+                <button type="button" class="rounded-md border border-[var(--accent)] px-3 py-2 text-sm font-medium text-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" disabled=move || state.stopwatch.get().state() != StopwatchState::Running on:click=move |_| state.stopwatch.update(|watch| { watch.lap(state.tick.get_untracked()); })>"Lap"</button>
+                <button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.stopwatch.update(|watch| watch.reset())>"Reset"</button>
             </div>
-            <div class="table-responsive mx-auto time-laps-table">
-                <table class="table table-sm"><thead><tr><th scope="col">"Lap"</th><th scope="col">"Split"</th><th scope="col">"Total"</th></tr></thead><tbody>
-                    {move || state.stopwatch.get().laps().iter().enumerate().map(|(index, total)| {
-                        let previous = if index == 0 { 0 } else { state.stopwatch.get().laps()[index - 1] };
-                        view! { <tr><th scope="row">{index + 1}</th><td class="font-monospace">{format_stopwatch(total.saturating_sub(previous))}</td><td class="font-monospace">{format_stopwatch(*total)}</td></tr> }
-                    }).collect_view()}
-                </tbody></table>
+            <div class="mx-auto max-w-2xl overflow-x-auto time-laps-table">
+                <table class="w-full border-collapse text-left text-sm">
+                    <thead><tr class="border-b border-[var(--border-color)]"><th scope="col" class="px-3 py-2">"Lap"</th><th scope="col" class="px-3 py-2">"Split"</th><th scope="col" class="px-3 py-2">"Total"</th></tr></thead>
+                    <tbody>
+                        {move || state.stopwatch.get().laps().iter().enumerate().map(|(index, total)| {
+                            let previous = if index == 0 { 0 } else { state.stopwatch.get().laps()[index - 1] };
+                            view! { <tr class="border-b border-[var(--border-color)]"><th scope="row" class="px-3 py-2 font-normal">{index + 1}</th><td class="px-3 py-2 font-mono">{format_stopwatch(total.saturating_sub(previous))}</td><td class="px-3 py-2 font-mono">{format_stopwatch(*total)}</td></tr> }
+                        }).collect_view()}
+                    </tbody>
+                </table>
             </div>
         </section>
     }
@@ -227,36 +243,34 @@ fn Stopwatch(state: TimeState) -> impl IntoView {
 fn Ruler(state: TimeState) -> impl IntoView {
     let _ = state;
     view! {
-        <section class="w-100">
+        <section class="w-full">
             <div class="mb-4">
-                <h2 class="h4">"Screen Ruler"</h2>
-                <p class="text-body-secondary mb-0">"Two responsive scales rendered across the full available width."</p>
+                <h2 class="text-xl font-semibold">"Screen Ruler"</h2>
+                <p class="mb-0 text-sm text-[var(--text-secondary)]">"Two responsive scales rendered across the full available width."</p>
             </div>
-
-            <div class="w-100 border border-secondary rounded overflow-hidden" role="img" aria-label="Responsive screen ruler with inches above centimeters">
-                <div class="d-flex flex-column w-100">
-                    <div class="d-flex w-100 border-bottom border-secondary" aria-label="Inches">
+            <div class="w-full overflow-hidden rounded-md border border-[var(--border-color)]" role="img" aria-label="Responsive screen ruler with inches above centimeters">
+                <div class="flex w-full flex-col">
+                    <div class="flex w-full border-b border-[var(--border-color)]" aria-label="Inches">
                         {(0..=10).map(|value| view! {
-                            <div class="flex-fill text-center border-start border-secondary py-2">
+                            <div class="flex-1 border-l border-[var(--border-color)] py-2 text-center first:border-l-0">
                                 <div class="ruler-tick ruler-tick-inch mx-auto" aria-hidden="true"></div>
-                                <span class="small font-monospace">{value}</span>
+                                <span class="font-mono text-xs">{value}</span>
                             </div>
                         }).collect_view()}
                     </div>
-                    <div class="d-flex w-100" aria-label="Centimeters">
+                    <div class="flex w-full" aria-label="Centimeters">
                         {(0..=30).map(|value| view! {
-                            <div class="flex-fill text-center border-start border-secondary py-2">
+                            <div class="flex-1 border-l border-[var(--border-color)] py-2 text-center first:border-l-0">
                                 <div class="ruler-tick ruler-tick-cm mx-auto" aria-hidden="true"></div>
-                                <span class="small font-monospace">{value}</span>
+                                <span class="font-mono text-xs">{value}</span>
                             </div>
                         }).collect_view()}
                     </div>
                 </div>
             </div>
-
-            <div class="d-flex justify-content-between gap-2 mt-3">
-                <span class="small text-body-secondary">"Top: inch · Bottom: cm"</span>
-                <span class="small text-body-secondary">"Screen scale"</span>
+            <div class="mt-3 flex justify-between gap-2">
+                <span class="text-xs text-[var(--text-secondary)]">"Top: inch · Bottom: cm"</span>
+                <span class="text-xs text-[var(--text-secondary)]">"Screen scale"</span>
             </div>
         </section>
     }
@@ -290,15 +304,36 @@ fn Timestamp(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView {
     };
     view! {
         <section>
-            <h2 class="h4">"Timestamp Converter"</h2>
-            <p class="text-body-secondary">"Select the conversion direction, unit, and timezone."</p>
-            <div class="row g-3">
-                <div class="col-12 col-lg-4"><label class="form-label" for="timestamp-direction">"Conversion"</label><select id="timestamp-direction" class="form-select" prop:value=move || if state.timestamp_direction.get() == TimestampDirection::TimestampToDateTime { "to-date" } else { "to-timestamp" } on:change=move |ev| state.timestamp_direction.set(if event_target_value(&ev) == "to-date" { TimestampDirection::TimestampToDateTime } else { TimestampDirection::DateTimeToTimestamp })><option value="to-date">"Unix Timestamp → Date/Time"</option><option value="to-timestamp">"Date/Time → Unix Timestamp"</option></select></div>
-                <div class="col-12 col-sm-6 col-lg-4"><label class="form-label" for="timestamp-unit">"Unit"</label><select id="timestamp-unit" class="form-select" prop:value=move || if state.timestamp_unit.get() == TimestampUnit::Seconds { "seconds" } else { "milliseconds" } on:change=move |ev| state.timestamp_unit.set(if event_target_value(&ev) == "seconds" { TimestampUnit::Seconds } else { TimestampUnit::Milliseconds })><option value="seconds">"Seconds"</option><option value="milliseconds">"Milliseconds"</option></select></div>
-                <div class="col-12 col-sm-6 col-lg-4"><label class="form-label" for="timestamp-timezone">"Timezone"</label><select id="timestamp-timezone" class="form-select" prop:value=move || state.timestamp_timezone.get() on:change=move |ev| state.timestamp_timezone.set(event_target_value(&ev))><option value="Local">"Local"</option><option value="UTC">"UTC"</option></select></div>
-                <div class="col-12"><label class="form-label" for="timestamp-input">"Value"</label><input id="timestamp-input" class="form-control font-monospace" prop:value=move || state.timestamp_input.get() on:input=move |ev| state.timestamp_input.set(event_target_value(&ev)) /></div>
+            <h2 class="text-xl font-semibold">"Timestamp Converter"</h2>
+            <p class="text-sm text-[var(--text-secondary)]">"Select the conversion direction, unit, and timezone."</p>
+            <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                <div>
+                    <label class="mb-1 block text-sm font-medium" for="timestamp-direction">"Conversion"</label>
+                    <select id="timestamp-direction" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" prop:value=move || if state.timestamp_direction.get() == TimestampDirection::TimestampToDateTime { "to-date" } else { "to-timestamp" } on:change=move |ev| state.timestamp_direction.set(if event_target_value(&ev) == "to-date" { TimestampDirection::TimestampToDateTime } else { TimestampDirection::DateTimeToTimestamp })>
+                        <option value="to-date">"Unix Timestamp → Date/Time"</option><option value="to-timestamp">"Date/Time → Unix Timestamp"</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium" for="timestamp-unit">"Unit"</label>
+                    <select id="timestamp-unit" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" prop:value=move || if state.timestamp_unit.get() == TimestampUnit::Seconds { "seconds" } else { "milliseconds" } on:change=move |ev| state.timestamp_unit.set(if event_target_value(&ev) == "seconds" { TimestampUnit::Seconds } else { TimestampUnit::Milliseconds })>
+                        <option value="seconds">"Seconds"</option><option value="milliseconds">"Milliseconds"</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium" for="timestamp-timezone">"Timezone"</label>
+                    <select id="timestamp-timezone" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" prop:value=move || state.timestamp_timezone.get() on:change=move |ev| state.timestamp_timezone.set(event_target_value(&ev))>
+                        <option value="Local">"Local"</option><option value="UTC">"UTC"</option>
+                    </select>
+                </div>
+                <div class="lg:col-span-3">
+                    <label class="mb-1 block text-sm font-medium" for="timestamp-input">"Value"</label>
+                    <input id="timestamp-input" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 font-mono text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" prop:value=move || state.timestamp_input.get() on:input=move |ev| state.timestamp_input.set(event_target_value(&ev)) />
+                </div>
             </div>
-            <div class="card bg-body-tertiary border-secondary mt-4"><div class="card-body"><h3 class="h6">"Result"</h3><div class="font-monospace text-break">{move || match result() { Ok(value) => value, Err(message) => message }}</div></div></div>
+            <div class="mt-4 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4">
+                <h3 class="mb-2 text-sm font-semibold">"Result"</h3>
+                <div class="break-words font-mono text-sm">{move || match result() { Ok(value) => value, Err(message) => message }}</div>
+            </div>
         </section>
     }
 }

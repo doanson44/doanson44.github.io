@@ -4,10 +4,12 @@ use leptos::prelude::*;
 #[component]
 pub fn CvPage() -> impl IntoView {
     view! {
-        <div class="container py-5 text-center flex-grow-1">
-            <i class="bi bi-person-badge fs-1 text-secondary mb-3 d-block"></i>
-            <h3 class="text-body-secondary">"CV / Portfolio"</h3>
-            <p class="text-body-tertiary">"Coming soon — public CV and portfolio."</p>
-        </div>
+        <main class="flex flex-1 items-center justify-center px-4 py-12 text-center">
+            <div>
+                <div class="mb-4 text-4xl text-[var(--text-secondary)]" aria-hidden="true">"●"</div>
+                <h1 class="text-xl font-semibold text-[var(--text-primary)]">"CV / Portfolio"</h1>
+                <p class="mt-2 text-sm text-[var(--text-secondary)]">"Coming soon — public CV and portfolio."</p>
+            </div>
+        </main>
     }
 }

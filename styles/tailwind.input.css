@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --color-app: var(--ms-bg-primary);
+    --color-surface: var(--ms-bg-surface);
+    --color-surface-hover: var(--ms-bg-elevated);
+    --color-border-app: var(--ms-border-default);
+    --color-text-app: var(--ms-text-primary);
+    --color-text-muted: var(--ms-text-secondary);
+    --color-text-faint: var(--ms-text-tertiary);
+    --color-accent-app: var(--ms-accent-blue);
+}
+
+@layer base {
+    html,
+    body {
+        min-height: 100%;
+        font-family: var(--ms-font-body);
+        background-color: var(--ms-bg-primary);
+        color: var(--ms-text-primary);
+    }
+
+    body {
+        overflow: hidden;
+    }
+
+    a {
+        color: inherit;
+    }
+}

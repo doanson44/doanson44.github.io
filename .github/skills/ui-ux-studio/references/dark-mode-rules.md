@@ -1,82 +1,75 @@
-# Dark Mode Design Rules — Markdown Studio
+# Dark Mode Design Rules
 
-These rules ensure our dark-themed editor is comfortable, accessible, and professional.
+These rules keep the platform readable, accessible, and visually consistent in dark mode.
 
 ## Core Principles
 
-### 1. Never Use Pure Black (#000)
-Pure black (`#000`) backgrounds cause eye strain against white text. Bootstrap dark mode uses `#212529` as body background. Always use Bootstrap's dark tokens.
+### 1. Never Use Pure Black
+Do not use `#000` or `#000000` for UI backgrounds. Use the project dark surface tokens instead.
 
-### 2. Reduce Contrast Slightly
-Maximum contrast (white on pure black) is harsh. Bootstrap dark mode targets ~15:1 for body text — comfortable for reading but not blinding.
+### 2. Use Semantic Tokens
+Prefer `--ms-*` theme tokens and Tailwind utilities referencing them. Do not introduce framework-specific color variables.
 
-### 3. Visible Borders
-Dark backgrounds make borders hard to see. Always use `border-secondary` (not `border-light` which would be too subtle).
+### 3. Keep Boundaries Visible
+Use `var(--ms-border-default)` or the corresponding Tailwind border utility. Inputs, panels, tables, and interactive controls must remain distinguishable from their background.
 
-## Bootstrap Dark Mode CSS Variables
+## Theme Tokens
 
 ```css
-/* In :root or inherited from data-bs-theme="dark" */
---bs-body-bg: #212529;
---bs-body-bg-rgb: 33, 37, 41;
---bs-body-color: #dee2e6;
---bs-body-color-rgb: 222, 226, 230;
---bs-secondary-bg: #343a40;
---bs-tertiary-bg: #2b3035;
---bs-border-color: #495057;
---bs-link-color: #6ea8fe;
---bs-link-hover-color: #8bb9fe;
---bs-code-color: #e685b5;
+--ms-bg-primary: #0d1117;
+--ms-bg-secondary: #161b22;
+--ms-bg-surface: #1c2128;
+--ms-bg-elevated: #21262d;
+--ms-border-default: #30363d;
+--ms-border-muted: #21262d;
+--ms-text-primary: #e6edf3;
+--ms-text-secondary: #8b949e;
+--ms-text-tertiary: #6e7681;
+--ms-accent-blue: #58a6ff;
+--ms-accent-green: #3fb950;
+--ms-accent-purple: #bc8cff;
+--ms-accent-orange: #d29922;
+--ms-accent-red: #f85149;
 ```
 
-## Field-by-Field Rules
+## Field Rules
 
-### Text
-| Rule | Good | Bad |
-|------|------|-----|
-| Body text | `color: var(--bs-body-color)` on `var(--bs-body-bg)` | White text on pure black |
-| Muted text | `text-body-secondary` | Gray on dark gray (too low contrast) |
-| Links | Use Bootstrap link tokens | Custom low-contrast link colors |
-| Code inline | `var(--bs-code-color)` (pinkish) | Same color as body text |
+| Area | Guidance |
+|------|----------|
+| Body text | `--ms-text-primary` on `--ms-bg-primary` |
+| Muted text | `--ms-text-secondary`, while maintaining WCAG contrast |
+| Main surface | `--ms-bg-primary` |
+| Elevated surface | `--ms-bg-secondary` or `--ms-bg-elevated` |
+| Cards/panels | `--ms-bg-surface` with a visible border |
+| Inputs | Dark surface with visible `--ms-border-default` |
+| Focus | Visible accent-colored outline with sufficient contrast |
+| Links/actions | `--ms-accent-blue` or another semantic accent |
 
-### Backgrounds
-| Rule | Good | Bad |
-|------|------|-----|
-| Main background | `var(--bs-body-bg)` = `#212529` | `#000000` |
-| Elevated surfaces | `var(--bs-secondary-bg)` = `#343a40` | Same as body (no depth) |
-| Input/textarea | `var(--bs-body-bg)` or slightly lighter | White input on dark page |
-| Card/panel | `var(--bs-tertiary-bg)` = `#2b3035` | No visual distinction |
+## Tailwind Pattern
 
-### Borders
-| Rule | Good | Bad |
-|------|------|-----|
-| Panel separators | `border-secondary` | `border-light` (invisible), `border-dark` (same as bg) |
-| Input borders | `var(--bs-border-color)` | Removed borders (hard to see input area) |
-| Focus rings | Bootstrap default blue glow | Custom low-contrast focus indicator |
+Use utilities such as:
 
-### Interactive Elements
-| Element | Dark Mode Approach |
-|---------|-------------------|
-| Buttons | Use Bootstrap button variants (`.btn-primary`, `.btn-outline-secondary`) |
-| Toolbar buttons | `btn-outline-secondary` — visible border, subtle hover |
-| Copy buttons (overlay) | `btn-dark` for contrast against code blocks |
-| Icons | `text-primary` for emphasis, default for regular |
-| Hover states | Bootstrap handles automatically with `.btn-outline-*` |
+```html
+<div class="border border-[var(--border-color)] bg-[var(--surface)] text-[var(--text-primary)]">
+```
 
-## Mermaid SVG Integration
+## Interaction
 
-Mermaid diagrams render as inline SVG in the preview panel. Rules:
-- SVG backgrounds should be transparent to blend with dark preview
-- Mermaid text should use light colors (handled by Mermaid's `dark` theme)
-- Ensure Mermaid `theme: dark` or `theme: neutral` in render config
+- Keyboard focus must remain clearly visible.
+- Disabled controls must remain distinguishable without relying only on color.
+- Copy, loading, success, and error states need non-color feedback where appropriate.
+- Avoid excessive glow or contrast that makes code-heavy screens fatiguing.
+
+## Mermaid
+
+Mermaid diagrams must remain readable against the dark preview surface. Verify SVG text, lines, and labels in the dark theme.
 
 ## Testing Checklist
 
-- [ ] Text readable against all backgrounds
-- [ ] Borders visible between panels
-- [ ] Toolbar buttons distinguishable
-- [ ] Copy buttons visible on code blocks
-- [ ] Placeholder text has sufficient contrast
-- [ ] Focus indicators clearly visible
-- [ ] Mermaid diagrams readable in dark mode
-- [ ] No elements use pure black or maximum contrast white
+- [ ] No pure-black UI background
+- [ ] Text meets WCAG contrast requirements
+- [ ] Borders remain visible
+- [ ] Inputs and controls are distinguishable
+- [ ] Focus indicators are visible
+- [ ] Mermaid diagrams remain readable
+- [ ] Loading/error/success states remain understandable without color alone

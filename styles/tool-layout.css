@@ -2,6 +2,7 @@
 
 .app-main {
     min-height: 0;
+    min-width: 0;
 }
 
 .tool-split,
@@ -25,6 +26,27 @@
     overflow: hidden;
 }
 
+/* Direct children of tool-panel must be allowed to shrink so their own
+   scroll containers can consume the available height. */
+.tool-panel > * {
+    min-width: 0;
+    min-height: 0;
+}
+
+.tool-panel textarea {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+}
+
+.tool-panel .overflow-auto,
+.tool-panel .overflow-y-auto,
+.tool-panel .overflow-x-auto {
+    min-width: 0;
+    min-height: 0;
+}
+
+
 .tool-panel-first {
     flex: 0 0 calc(var(--tool-first-size, 50%) - 1.5px);
     max-width: calc(var(--tool-first-size, 50%) - 1.5px);
@@ -38,7 +60,7 @@
 .tool-divider {
     width: 3px;
     flex: 0 0 3px;
-    background: var(--ms-border-default, var(--bs-border-color));
+    background: var(--ms-border-default, var(--border-color));
     cursor: col-resize;
     position: relative;
     z-index: 2;
@@ -49,11 +71,11 @@
 .tool-divider:hover,
 .tool-divider:focus-visible,
 .tool-divider:active {
-    background: var(--ms-accent-blue, var(--bs-primary));
+    background: var(--ms-accent-blue, var(--accent));
 }
 
 .tool-divider:focus-visible {
-    outline: 2px solid var(--bs-primary);
+    outline: 2px solid var(--accent);
     outline-offset: 1px;
 }
 
@@ -79,11 +101,14 @@
 
 .editor-textarea {
     min-width: 0;
+    min-height: 0;
+    overflow: auto;
 }
 
 .preview-content {
     min-width: 0;
     min-height: 0;
+    overflow: auto;
 }
 
 .markdown-body,

@@ -4,24 +4,49 @@ use crate::infrastructure::browser::toggle_theme_js;
 
 #[component]
 pub fn Navbar() -> impl IntoView {
+    let menu_open = RwSignal::new(false);
+
     view! {
-        <nav class="navbar navbar-expand-md border-bottom border-secondary" id="main-navbar">
-            <div class="container-fluid">
-                <a class="navbar-brand d-flex align-items-center gap-2" href="#/"><i class="bi bi-code-slash fs-3 text-primary" aria-hidden="true"></i><span class="fw-bold">"doanson44"</span></a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#platform-nav" aria-controls="platform-nav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                <div class="collapse navbar-collapse" id="platform-nav">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item"><a class="nav-link" href="#/"><i class="bi bi-house-door me-1" aria-hidden="true"></i>"Home"</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#/tools"><i class="bi bi-tools me-1" aria-hidden="true"></i>"Tools"</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#/games"><i class="bi bi-joystick me-1" aria-hidden="true"></i>"Games"</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#/cv"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>"CV"</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#/socket"><i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>"Socket"</a></li>
+        <nav class="border-b border-[var(--border-color)] bg-[var(--surface)]" id="main-navbar">
+            <div class="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between gap-2 px-4 py-2">
+                <a class="flex items-center gap-2 text-lg font-bold text-[var(--text-primary)] no-underline" href="#/">
+                    <span class="text-xl text-[var(--accent)]" aria-hidden="true">"⌘"</span>
+                    <span>"doanson44"</span>
+                </a>
+                <button
+                    class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-[var(--border-color)] px-2 text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] md:hidden"
+                    type="button"
+                    aria-controls="platform-nav"
+                    aria-label="Toggle navigation"
+                    aria-expanded=move || menu_open.get().to_string()
+                    on:click=move |_| menu_open.update(|open| *open = !*open)
+                >
+                    <span aria-hidden="true">"☰"</span>
+                </button>
+                <div
+                    class=move || if menu_open.get() {
+                        "order-3 w-full md:order-none md:flex md:w-auto"
+                    } else {
+                        "hidden w-full md:order-none md:flex md:w-auto"
+                    }
+                    id="platform-nav"
+                >
+                    <ul class="flex flex-col gap-1 py-2 md:flex-row md:items-center md:py-0">
+                        <li><a class="flex items-center rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] no-underline hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href="#/" on:click=move |_| menu_open.set(false)>"⌂"<span class="ml-2">"Home"</span></a></li>
+                        <li><a class="flex items-center rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] no-underline hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href="#/tools" on:click=move |_| menu_open.set(false)>"⚒"<span class="ml-2">"Tools"</span></a></li>
+                        <li><a class="flex items-center rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] no-underline hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href="#/games" on:click=move |_| menu_open.set(false)>"♟"<span class="ml-2">"Games"</span></a></li>
+                        <li><a class="flex items-center rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] no-underline hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href="#/cv" on:click=move |_| menu_open.set(false)>"●"<span class="ml-2">"CV"</span></a></li>
+                        <li><a class="flex items-center rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] no-underline hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href="#/socket" on:click=move |_| menu_open.set(false)>"↔"<span class="ml-2">"Socket"</span></a></li>
                     </ul>
-                    <div class="d-flex align-items-center gap-3">
-                        <button type="button" class="btn btn-outline-secondary btn-sm theme-toggle-btn" title="Toggle dark/light mode" aria-label="Toggle dark/light mode" on:click=move |_| { toggle_theme_js(); }><i class="bi bi-sun-fill theme-icon-light" aria-hidden="true"></i><i class="bi bi-moon-fill theme-icon-dark" aria-hidden="true"></i></button>
-                        <span class="badge bg-primary bg-opacity-25 text-primary-emphasis border border-primary-subtle"><i class="bi bi-cpu me-1" aria-hidden="true"></i>"WASM"</span>
-                        <a href="https://github.com/doanson44/doanson44.github.io" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" title="View on GitHub"><i class="bi bi-github" aria-hidden="true"></i><span class="d-none d-md-inline">"GitHub"</span></a>
-                    </div>
+                </div>
+                <div class="ml-auto flex items-center gap-2">
+                    <button type="button" class="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md border border-[var(--border-color)] px-2 text-sm text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title="Toggle dark/light mode" aria-label="Toggle dark/light mode" on:click=move |_| { toggle_theme_js(); }>
+                        <span aria-hidden="true">"☼/☾"</span>
+                    </button>
+                    <span class="rounded-full border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-2 py-1 text-xs font-semibold text-[var(--accent)]">"WASM"</span>
+                    <a href="https://github.com/doanson44/doanson44.github.io" target="_blank" rel="noopener noreferrer" class="hidden items-center gap-1 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-secondary)] no-underline transition hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] md:flex" title="View on GitHub">
+                        <span aria-hidden="true">"◈"</span><span>"GitHub"</span>
+                    </a>
                 </div>
             </div>
         </nav>

@@ -19,8 +19,8 @@ Markdown Studio is **one tool inside the platform**, not the repository identity
 
 ## Technology Constraints
 - Rust edition 2021, `wasm32-unknown-unknown`, Leptos 0.7 CSR only, Trunk as build tool
-- Bootstrap 5.3.3 CDN — dark theme by default, CSS variables for theming
-- Bootstrap Icons 1.11.3 CDN for iconography
+- Tailwind CSS 4.x via the Tailwind CLI, generated during the Trunk pre-build hook
+- Project-owned SVG/icon components; no external icon CSS dependency
 - GitHub Pages deployment (`public_url = "/"`, `dist = "dist"`), GitHub Actions CI/CD
 - Feature-specific deps (pulldown-cmark, Mermaid.js, WebSocket, etc.) only when justified
 
@@ -90,10 +90,11 @@ Prefer reactive state over manual DOM manipulation.
 - Avoid unnecessary `pub`. Keep feature modules cohesive. All code/comments/commits in English
 
 ## UI / UX
-- Bootstrap 5 dark theme as default. Use Bootstrap variables (`--bs-body-bg`, `--bs-border-color`, etc.)
-- No hardcoded colors in `view!`. Use CSS variables and Bootstrap utility classes
-- Icon-only buttons MUST have `title` attr. Never use pure black backgrounds
-- Responsive at 375/576/768/1024/1280/1920px. No horizontal scroll. Editor font 16px on mobile (prevents iOS zoom). Nav collapses at 768px (navbar-expand-md).
+- Tailwind utilities are the default styling mechanism; use project-owned component classes only for repeated semantic UI patterns
+- Theme uses `data-theme="dark|light"` on `<html>` with project CSS variables
+- No hardcoded colors in `view!`; use Tailwind theme utilities or project CSS variables
+- Icon-only buttons MUST have `title` or an ARIA label. Never use pure black backgrounds
+- Responsive at 375/576/768/1024/1280/1920px. No horizontal scroll. Editor font 16px on mobile (prevents iOS zoom). Navigation collapses at 768px
 - Keyboard accessible, visible focus rings, WCAG 2.1 AA contrast, no color-only state indicators
 
 ## Routing
@@ -122,7 +123,7 @@ Release: `opt-level = "z"`, `lto = true`, `codegen-units = 1`, `strip = true`, `
 ## Anti-Patterns (NEVER)
 - Domain importing Leptos/web-sys/wasm-bindgen
 - Components calling domain functions directly (bypass application services)
-- Hardcoded colors in `view!` (use CSS classes/variables)
+- Hardcoded colors in `view!` (use Tailwind classes/variables)
 - JS logic duplicated in Rust (use infrastructure interop)
 - Feature-specific logic in global platform components
 - Duplicating shared platform components across features
