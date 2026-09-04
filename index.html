@@ -9,25 +9,20 @@
     <meta name="author" content="doanson44" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
-    <!-- Trunk static assets -->
     <link data-trunk rel="copy-file" href="public/favicon.svg" />
     <link data-trunk rel="copy-file" href="public/.nojekyll" />
     <link data-trunk rel="copy-dir" href="public/vendor/fonts" />
 
-    <!-- Tailwind CSS -->
     <link data-trunk rel="css" href="styles/tailwind.generated.css" />
-
-    <!-- Application CSS -->
+    <link data-trunk rel="css" href="styles/theme.css" />
     <link data-trunk rel="css" href="styles/app.css" />
     <link data-trunk rel="css" href="styles/tool-layout.css" />
     <link data-trunk rel="css" href="styles/theme-transition.css" />
     <link data-trunk rel="css" href="styles/time.css" />
     <link data-trunk rel="css" href="styles/socket.css" />
 
-    <!-- Trunk configuration for Leptos -->
     <link data-trunk rel="rust" data-bin="markdown-studio" data-wasm-opt="0" />
 
-    <!-- Theme Initialization -->
     <script>
         (function() {
             const saved = localStorage.getItem('ms-theme');
@@ -48,7 +43,6 @@
                     retries++;
                 }
                 if (!window.__mermaid) throw new Error("Mermaid library failed to load");
-
                 window.__mermaid_render_counter += 1;
                 const uniqueId = 'mermaid-svg-' + id + '-' + window.__mermaid_render_counter;
                 const { svg } = await window.__mermaid.render(uniqueId, code);
@@ -150,7 +144,6 @@
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.esm.min.mjs';
         import zenuml from 'https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml@0.2.0/dist/mermaid-zenuml.esm.min.mjs';
-
         await mermaid.registerExternalDiagrams([zenuml]);
         const theme = (document.documentElement.getAttribute('data-theme') || 'dark') === 'light' ? 'default' : 'dark';
         mermaid.initialize({ startOnLoad: false, theme: theme, securityLevel: 'strict', logLevel: 'error', fontFamily: '"Inter", system-ui, -apple-system, sans-serif' });
