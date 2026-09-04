@@ -49,6 +49,7 @@ html {
 
     .cv-hero::after,
     .cv-nav-link,
+    .cv-print-button,
     nav[aria-label="CV sections"] {
         display: none !important;
     }
