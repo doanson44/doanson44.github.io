@@ -44,8 +44,7 @@ pub fn DeveloperToolPage(tool: ToolId) -> impl IntoView {
             {move || state.error.get().map(|error| view! { <div class="flex items-start gap-2 border-b border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">{error}</div> })}
             <ToolSplit initial_ratio=50>
                 <ToolPanel side=ToolPanelSide::First>
-                    <div class="panel-header flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2"><span class="panel-title" id="developer-input-title">{if tool == ToolId::Regex { "Pattern" } else { "Input" }}</span><span class="text-sm text-[var(--text-secondary)]">{move || format!("{} lines", line_count(&state.source.get()))}</span></div>
-                    <textarea class="editor-textarea flex-grow rounded-none border-0" placeholder="Enter input..." spellcheck="false" aria-label=format!("{} input", title) prop:value=move || state.source.get() on:input=move |ev| state.set_source(tool, event_target_value(&ev))></textarea>
+                    {move || view! { <crate::components::editor::Editor source=state.source title={if tool == ToolId::Regex { "Pattern" } else { "Input" }} placeholder="Enter input..." aria_label=title textarea_id="developer-input" on_change=Callback::new(move |s| state.set_source(tool, s)) /> }.into_any()}
                     {secondary_label.map(|label| view! {
                         <div class="shrink-0 border-t border-[var(--border-color)] p-2">
                             <label class="mb-1 block text-xs text-[var(--text-secondary)]" for="developer-secondary-input">{label}</label>
@@ -70,13 +69,5 @@ pub fn DeveloperToolPage(tool: ToolId) -> impl IntoView {
                 </ToolPanel>
             </ToolSplit>
         </div>
-    }
-}
-
-fn line_count(content: &str) -> usize {
-    if content.is_empty() {
-        0
-    } else {
-        content.lines().count()
     }
 }

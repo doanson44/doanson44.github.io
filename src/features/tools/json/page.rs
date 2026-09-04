@@ -8,15 +8,8 @@ use crate::infrastructure::browser::copy_to_clipboard;
 #[component]
 pub fn JsonPage() -> impl IntoView {
     let state = JsonState::new();
-    let input_ref = NodeRef::<leptos::html::Textarea>::new();
-    let line_numbers_ref = NodeRef::<leptos::html::Div>::new();
     let button = "inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
 
-    let on_input_scroll = move |_| {
-        if let (Some(input), Some(line_numbers)) = (input_ref.get(), line_numbers_ref.get()) {
-            line_numbers.set_scroll_top(input.scroll_top());
-        }
-    };
     let on_copy = move |_| {
         let output = state.output.get_untracked();
         if output.is_empty() {
@@ -44,13 +37,7 @@ pub fn JsonPage() -> impl IntoView {
             {move || state.error.get().map(|error| view! { <div class="flex items-start gap-2 border-b border-red-400/40 bg-red-400/10 px-3 py-2 text-sm text-red-300" role="alert"><span aria-hidden="true">"⚠"</span><span>{error}</span></div> })}
             <ToolSplit initial_ratio=50>
                 <ToolPanel side=ToolPanelSide::First>
-                    <div class="flex h-full flex-col overflow-hidden">
-                        <div class="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2"><span class="font-medium text-[var(--text-primary)]"><span class="mr-2" aria-hidden="true">"✎"</span>"Input"</span><span class="text-xs text-[var(--text-secondary)]" aria-live="polite">{move || format!("{} lines", line_count(&state.source.get()))}</span></div>
-                        <div class="flex flex-1 overflow-hidden">
-                            <div class="flex min-w-12 flex-col items-end overflow-hidden border-r border-[var(--border-color)] bg-[var(--surface)] pe-2 text-xs text-[var(--text-tertiary)]" node_ref=line_numbers_ref aria-hidden="true">{move || { let lines: Vec<_> = state.source.get().lines().enumerate().map(|(i, _)| view! { <span class="line-number min-h-6">{i + 1}</span> }).collect(); if lines.is_empty() { view! { <span class="line-number min-h-6">"1"</span> }.into_any() } else { lines.into_iter().map(|line| line.into_any()).collect::<Vec<_>>().into_any() } }}</div>
-                            <textarea id="json-input" class="editor-textarea min-w-0 flex-1 resize-none border-0 bg-transparent p-3 font-mono text-sm text-[var(--text-primary)] outline-none" placeholder="Paste JSON here..." spellcheck="false" aria-label="JSON input" prop:value=move || state.source.get() on:input=move |ev| state.set_content(event_target_value(&ev)) on:scroll=on_input_scroll node_ref=input_ref></textarea>
-                        </div>
-                    </div>
+                    <crate::components::editor::Editor source=state.source title="Input" placeholder="Paste JSON here..." aria_label="JSON input" textarea_id="json-input" on_change=Callback::new(move |s| state.set_content(s)) />
                 </ToolPanel>
                 <ToolDivider />
                 <ToolPanel side=ToolPanelSide::Second>
@@ -63,13 +50,5 @@ pub fn JsonPage() -> impl IntoView {
                 </ToolPanel>
             </ToolSplit>
         </main>
-    }
-}
-
-fn line_count(content: &str) -> usize {
-    if content.is_empty() {
-        0
-    } else {
-        content.lines().count()
     }
 }
