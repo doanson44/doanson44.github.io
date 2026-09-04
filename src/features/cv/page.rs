@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 
+use crate::infrastructure::browser::print_page;
 use super::components::{CvSection, EducationCard, ExperienceCard, SkillGroup};
 use super::data::{competencies, education, experiences, highlights, profile, skill_categories};
 
@@ -77,15 +78,28 @@ pub fn CvPage() -> impl IntoView {
                         </div>
                     </div>
 
-                    <nav class="mt-8 border-t border-[var(--border-color)] pt-4" aria-label="CV sections">
-                        <ul class="flex flex-wrap gap-2 text-sm">
-                            <li><a class="cv-nav-link" href="#cv-about">"About"</a></li>
-                            <li><a class="cv-nav-link" href="#cv-skills">"Skills"</a></li>
-                            <li><a class="cv-nav-link" href="#cv-experience">"Experience"</a></li>
-                            <li><a class="cv-nav-link" href="#cv-highlights">"Highlights"</a></li>
-                            <li><a class="cv-nav-link" href="#cv-education">"Education"</a></li>
-                        </ul>
-                    </nav>
+                    <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border-color)] pt-4">
+                        <nav aria-label="CV sections">
+                            <ul class="flex flex-wrap gap-2 text-sm">
+                                <li><a class="cv-nav-link" href="#cv-about">"About"</a></li>
+                                <li><a class="cv-nav-link" href="#cv-skills">"Skills"</a></li>
+                                <li><a class="cv-nav-link" href="#cv-experience">"Experience"</a></li>
+                                <li><a class="cv-nav-link" href="#cv-highlights">"Highlights"</a></li>
+                                <li><a class="cv-nav-link" href="#cv-education">"Education"</a></li>
+                            </ul>
+                        </nav>
+
+                        <button
+                            type="button"
+                            class="cv-print-button inline-flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] shadow-sm transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
+                            title="Open print dialog to save this CV as PDF"
+                            aria-label="Download CV as PDF"
+                            on:click=move |_| print_page()
+                        >
+                            <span aria-hidden="true">"↓"</span>
+                            "Download PDF"
+                        </button>
+                    </div>
                 </header>
 
                 <div class="mt-12 space-y-12 sm:mt-16 sm:space-y-16">
