@@ -62,95 +62,88 @@ pub fn FinancePage(tool: FinanceTool) -> impl IntoView {
     };
 
     view! {
-        <div class="container-fluid py-4 overflow-auto finance-page">
-            <div class="container">
-                <div class="mb-3">
-                    <a href="#/tools" class="btn btn-sm btn-outline-secondary mb-2">
-                        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
-                        "Back to Tools"
+        <div class="h-full overflow-auto px-4 py-6 finance-page">
+            <div class="mx-auto max-w-6xl">
+                <div class="mb-4">
+                    <a href="#/tools" class="mb-2 inline-flex items-center rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]">
+                        "← Back to Tools"
                     </a>
-                    <h2 class="mb-1">{tool.title()}</h2>
-                    <p class="text-body-secondary mb-0">{tool.category()}</p>
+                    <h2 class="mb-1 text-2xl font-semibold">{tool.title()}</h2>
+                    <p class="mb-0 text-sm text-[var(--text-secondary)]">{tool.category()}</p>
                 </div>
-                <div class="row g-3">
-                    <section class="col-12 col-lg-6">
-                        <div class="card bg-body-tertiary border-secondary h-100">
-                            <div class="card-body">
-                                <h5 class="card-title mb-3">"Inputs"</h5>
-                                <div class="row g-3">
-                                    {labels
-                                        .iter()
-                                        .enumerate()
-                                        .map(|(index, label)| {
-                                            view! {
-                                                <div class="col-12 col-md-6">
-                                                    <label class="form-label" for=format!("finance-input-{index}")>{*label}</label>
-                                                    <input
-                                                        id=format!("finance-input-{index}")
-                                                        class="form-control"
-                                                        type="number"
-                                                        step="any"
-                                                        value=move || inputs.get().get(index).cloned().unwrap_or_default()
-                                                        on:input=move |ev| {
-                                                            let mut values = inputs.get();
-                                                            if let Some(value) = values.get_mut(index) {
-                                                                *value = event_target_value(&ev);
-                                                            }
-                                                            inputs.set(values);
+                <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    <section>
+                        <div class="h-full rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-5 shadow-sm">
+                            <h5 class="mb-4 text-base font-semibold">"Inputs"</h5>
+                            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                {labels
+                                    .iter()
+                                    .enumerate()
+                                    .map(|(index, label)| {
+                                        view! {
+                                            <div>
+                                                <label class="mb-1 block text-sm font-medium" for=format!("finance-input-{index}")>{*label}</label>
+                                                <input
+                                                    id=format!("finance-input-{index}")
+                                                    class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                                                    type="number"
+                                                    step="any"
+                                                    value=move || inputs.get().get(index).cloned().unwrap_or_default()
+                                                    on:input=move |ev| {
+                                                        let mut values = inputs.get();
+                                                        if let Some(value) = values.get_mut(index) {
+                                                            *value = event_target_value(&ev);
                                                         }
-                                                    />
-                                                </div>
-                                            }
-                                        })
-                                        .collect_view()}
-                                    <div class="col-12">
-                                        <label class="form-label" for="finance-series">"Cash flows (optional; comma or newline separated)"</label>
-                                        <textarea
-                                            id="finance-series"
-                                            class="form-control"
-                                            rows="3"
-                                            placeholder="-1000, 300, 400, 500"
-                                            prop:value=move || series.get()
-                                            on:input=move |ev| series.set(event_target_value(&ev))
-                                        ></textarea>
-                                    </div>
+                                                        inputs.set(values);
+                                                    }
+                                                />
+                                            </div>
+                                        }
+                                    })
+                                    .collect_view()}
+                                <div class="md:col-span-2">
+                                    <label class="mb-1 block text-sm font-medium" for="finance-series">"Cash flows (optional; comma or newline separated)"</label>
+                                    <textarea
+                                        id="finance-series"
+                                        class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                                        rows="3"
+                                        placeholder="-1000, 300, 400, 500"
+                                        prop:value=move || series.get()
+                                        on:input=move |ev| series.set(event_target_value(&ev))
+                                    ></textarea>
                                 </div>
-                                <div class="d-flex justify-content-end gap-2 mt-3">
-                                    <button type="button" class="btn btn-outline-secondary" on:click=reset>"Reset"</button>
-                                    <button type="button" class="btn btn-primary" on:click=calculate>"Calculate"</button>
-                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end gap-2">
+                                <button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=reset>"Reset"</button>
+                                <button type="button" class="rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=calculate>"Calculate"</button>
                             </div>
                         </div>
                     </section>
-                    <section class="col-12 col-lg-6">
-                        <div class="card bg-body-tertiary border-secondary h-100">
-                            <div class="card-body">
-                                <h5 class="card-title mb-3">"Results"</h5>
-                                {move || error.get().map(|message| view! {
-                                    <div class="alert alert-danger" role="alert">{message}</div>
-                                })}
-                                {move || result.get().map(|value| view! {
-                                    <div class="row g-3">
-                                        {value.metrics.into_iter().map(|metric| view! {
-                                            <div class="col-12 col-sm-6">
-                                                <div class="border border-secondary rounded p-3 h-100">
-                                                    <div class="small text-body-secondary">{metric.label}</div>
-                                                    <div class="fs-4 fw-semibold mt-1">{format_number(metric.value)}</div>
-                                                </div>
-                                            </div>
-                                        }).collect_view()}
-                                    </div>
-                                })}
-                                {move || if result.get().is_none() && error.get().is_none() {
-                                    view! { <p class="text-body-secondary mb-0">"Enter values and calculate to see the result."</p> }.into_any()
-                                } else {
-                                    view! { <span></span> }.into_any()
-                                }}
-                            </div>
+                    <section>
+                        <div class="h-full rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-5 shadow-sm">
+                            <h5 class="mb-4 text-base font-semibold">"Results"</h5>
+                            {move || error.get().map(|message| view! {
+                                <div class="mb-3 rounded-md border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">{message}</div>
+                            })}
+                            {move || result.get().map(|value| view! {
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    {value.metrics.into_iter().map(|metric| view! {
+                                        <div class="h-full rounded-md border border-[var(--border-color)] p-3">
+                                            <div class="text-xs text-[var(--text-secondary)]">{metric.label}</div>
+                                            <div class="mt-1 text-2xl font-semibold">{format_number(metric.value)}</div>
+                                        </div>
+                                    }).collect_view()}
+                                </div>
+                            })}
+                            {move || if result.get().is_none() && error.get().is_none() {
+                                view! { <p class="mb-0 text-sm text-[var(--text-secondary)]">"Enter values and calculate to see the result."</p> }.into_any()
+                            } else {
+                                view! { <span></span> }.into_any()
+                            }}
                         </div>
                     </section>
                 </div>
-                <div class="alert alert-secondary mt-3 mb-0" role="note">
+                <div class="mt-3 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-secondary)]" role="note">
                     "Results are estimates. Trading, lending, tax, currency, and liquidation rules can differ from the simplified models used here."
                 </div>
             </div>
