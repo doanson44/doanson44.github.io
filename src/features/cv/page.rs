@@ -64,8 +64,8 @@ pub fn CvPage() -> impl IntoView {
 
                     <CvSection id="cv-experience" title="Professional Experience" eyebrow="Career">
                         <div class="space-y-6">
-                            {experiences.into_iter().enumerate().map(|(index, experience)| view! {
-                                <ExperienceCard experience=experience index=index />
+                            {experiences.into_iter().map(|experience| view! {
+                                <ExperienceCard experience=experience />
                             }).collect_view()}
                         </div>
                     </CvSection>

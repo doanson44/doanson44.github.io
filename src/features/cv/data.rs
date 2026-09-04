@@ -58,18 +58,42 @@ pub fn profile() -> Profile {
 /// Returns the candidate's core professional competencies.
 pub fn competencies() -> Vec<Competency> {
     vec![
-        Competency { name: "Backend Engineering" },
-        Competency { name: "Enterprise Application Development" },
-        Competency { name: "RESTful API Design" },
-        Competency { name: "Database Design & Optimization" },
-        Competency { name: "System Integration" },
-        Competency { name: "Performance Optimization" },
-        Competency { name: "Cloud-based Solutions" },
-        Competency { name: "Software Architecture" },
-        Competency { name: "Clean Code & Maintainability" },
-        Competency { name: "Legacy System Modernization" },
-        Competency { name: "Cross-functional Collaboration" },
-        Competency { name: "Production Support & Debugging" },
+        Competency {
+            name: "Backend Engineering",
+        },
+        Competency {
+            name: "Enterprise Application Development",
+        },
+        Competency {
+            name: "RESTful API Design",
+        },
+        Competency {
+            name: "Database Design & Optimization",
+        },
+        Competency {
+            name: "System Integration",
+        },
+        Competency {
+            name: "Performance Optimization",
+        },
+        Competency {
+            name: "Cloud-based Solutions",
+        },
+        Competency {
+            name: "Software Architecture",
+        },
+        Competency {
+            name: "Clean Code & Maintainability",
+        },
+        Competency {
+            name: "Legacy System Modernization",
+        },
+        Competency {
+            name: "Cross-functional Collaboration",
+        },
+        Competency {
+            name: "Production Support & Debugging",
+        },
     ]
 }
 
@@ -140,7 +164,13 @@ pub fn skill_categories() -> Vec<SkillCategory> {
         },
         SkillCategory {
             name: "Tools",
-            skills: vec!["Visual Studio", "VS Code", "IntelliJ IDEA", "Eclipse", "Notepad++"],
+            skills: vec![
+                "Visual Studio",
+                "VS Code",
+                "IntelliJ IDEA",
+                "Eclipse",
+                "Notepad++",
+            ],
         },
         SkillCategory {
             name: "Platforms",
