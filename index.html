@@ -12,13 +12,7 @@
     <!-- Trunk static assets -->
     <link data-trunk rel="copy-file" href="public/favicon.svg" />
     <link data-trunk rel="copy-file" href="public/.nojekyll" />
-    <link data-trunk rel="copy-dir" href="public/vendor" />
-
-    <!-- Bootstrap 5 CSS (temporary during migration) -->
-    <link href="vendor/bootstrap/bootstrap.min.css" rel="stylesheet" />
-
-    <!-- Bootstrap Icons (temporary during migration) -->
-    <link href="vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet" />
+    <link data-trunk rel="copy-dir" href="public/vendor/fonts" />
 
     <!-- Tailwind CSS -->
     <link data-trunk rel="css" href="styles/tailwind.generated.css" />
@@ -33,17 +27,16 @@
     <!-- Trunk configuration for Leptos -->
     <link data-trunk rel="rust" data-bin="markdown-studio" data-wasm-opt="0" />
 
-    <!-- Theme Initialization (must run before page render to avoid FOUC) -->
+    <!-- Theme Initialization -->
     <script>
         (function() {
             const saved = localStorage.getItem('ms-theme');
             const theme = saved || 'dark';
-            document.documentElement.setAttribute('data-bs-theme', theme);
+            document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
 </head>
 <body>
-    <!-- Mermaid interop + copy + theme toggle -->
     <script>
         window.__mermaid_render_counter = 0;
 
@@ -75,7 +68,7 @@
                 const rect = svgElement.getBoundingClientRect();
                 clone.setAttribute("width", rect.width);
                 clone.setAttribute("height", rect.height);
-                const bgColor = (document.documentElement.getAttribute('data-bs-theme') || 'dark') === 'light' ? '#ffffff' : '#161b22';
+                const bgColor = (document.documentElement.getAttribute('data-theme') || 'dark') === 'light' ? '#ffffff' : '#161b22';
                 clone.style.backgroundColor = bgColor;
                 const serializer = new XMLSerializer();
                 const svgString = serializer.serializeToString(clone);
@@ -123,7 +116,7 @@
 
         window.__toggle_theme = function() {
             const html = document.documentElement;
-            const current = html.getAttribute('data-bs-theme') || 'dark';
+            const current = html.getAttribute('data-theme') || 'dark';
             const next = current === 'dark' ? 'light' : 'dark';
             const bodyBackground = getComputedStyle(document.body).backgroundColor;
             const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -131,7 +124,7 @@
                 html.style.setProperty('--theme-transition-color', bodyBackground);
                 html.setAttribute('data-theme-transition', 'active');
             }
-            html.setAttribute('data-bs-theme', next);
+            html.setAttribute('data-theme', next);
             localStorage.setItem('ms-theme', next);
             if (!reducedMotion) {
                 requestAnimationFrame(function() { html.setAttribute('data-theme-transition', 'fade'); });
@@ -154,18 +147,14 @@
         };
     </script>
 
-    <!-- Mermaid.js ES module init -->
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.16.1/dist/mermaid.esm.min.mjs';
         import zenuml from 'https://cdn.jsdelivr.net/npm/@mermaid-js/mermaid-zenuml@0.2.0/dist/mermaid-zenuml.esm.min.mjs';
 
         await mermaid.registerExternalDiagrams([zenuml]);
-        const theme = (document.documentElement.getAttribute('data-bs-theme') || 'dark') === 'light' ? 'default' : 'dark';
+        const theme = (document.documentElement.getAttribute('data-theme') || 'dark') === 'light' ? 'default' : 'dark';
         mermaid.initialize({ startOnLoad: false, theme: theme, securityLevel: 'strict', logLevel: 'error', fontFamily: '"Inter", system-ui, -apple-system, sans-serif' });
         window.__mermaid = mermaid;
     </script>
-
-    <!-- Bootstrap 5 JS (temporary during migration) -->
-    <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
 </body>
 </html>
