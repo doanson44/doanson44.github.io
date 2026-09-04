@@ -27,7 +27,7 @@ use crate::infrastructure::mexc_futures::MexcFuturesStream;
 pub fn App() -> impl IntoView {
     let current_hash = create_hash_signal();
     view! {
-        <div class="app-container flex min-h-screen flex-col" id="app">
+        <div class="app-container flex h-screen flex-col" id="app">
             <Navbar />
             <main class="app-main min-h-0 flex flex-1 overflow-auto">
                 {move || render_page(current_hash.get())}

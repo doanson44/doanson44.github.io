@@ -26,8 +26,8 @@
     overflow: hidden;
 }
 
-/* Every direct child of a tool panel must be allowed to shrink so its own
-   scroll container can consume the available height. */
+/* Direct children of tool-panel must be allowed to shrink so their own
+   scroll containers can consume the available height. */
 .tool-panel > * {
     min-width: 0;
     min-height: 0;
@@ -45,6 +45,7 @@
     min-width: 0;
     min-height: 0;
 }
+
 
 .tool-panel-first {
     flex: 0 0 calc(var(--tool-first-size, 50%) - 1.5px);
