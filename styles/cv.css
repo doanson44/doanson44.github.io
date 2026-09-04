@@ -48,6 +48,13 @@ html {
         margin: 14mm 12mm;
     }
 
+    html,
+    body {
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+    }
+
     html {
         scroll-behavior: auto;
     }
@@ -95,8 +102,17 @@ html {
         text-decoration: none !important;
     }
 
+    main,
     main > div {
+        display: block !important;
+        width: 100% !important;
         max-width: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+    }
+
+    main > div {
         padding-top: 0 !important;
         padding-bottom: 0 !important;
     }
