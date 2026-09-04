@@ -19,8 +19,12 @@ pub fn Base64Page() -> impl IntoView {
 
     let copy_output = move |_| {
         let output = state.output.get_untracked();
-        if output.is_empty() { return; }
-        wasm_bindgen_futures::spawn_local(async move { let _ = copy_to_clipboard(&output).await; });
+        if output.is_empty() {
+            return;
+        }
+        wasm_bindgen_futures::spawn_local(async move {
+            let _ = copy_to_clipboard(&output).await;
+        });
     };
 
     let button = "inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
@@ -59,5 +63,9 @@ pub fn Base64Page() -> impl IntoView {
 }
 
 fn line_count(content: &str) -> usize {
-    if content.is_empty() { 0 } else { content.lines().count() }
+    if content.is_empty() {
+        0
+    } else {
+        content.lines().count()
+    }
 }
