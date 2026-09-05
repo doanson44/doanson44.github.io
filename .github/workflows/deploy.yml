@@ -44,6 +44,15 @@ jobs:
       - name: Run clippy
         run: cargo clippy --target wasm32-unknown-unknown -- -D warnings
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm install
+
       - name: Install Trunk
         run: |
           wget -qO- https://github.com/trunk-rs/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
@@ -56,12 +65,11 @@ jobs:
       - name: Verify static assets
         run: |
           test -f dist/favicon.svg
-          test -f dist/vendor/bootstrap/bootstrap.min.css
-          test -f dist/vendor/bootstrap/bootstrap.bundle.min.js
-          test -f dist/vendor/bootstrap-icons/bootstrap-icons.min.css
+          test -f dist/index.html
+          test -f dist/tailwind.generated.css
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
 
