@@ -12,5 +12,5 @@ ignore = [".vs", "node_modules"]
 # Build Tailwind before Trunk reads and bundles the HTML/CSS assets.
 [[hooks]]
 stage = "pre_build"
-command = "npm"
-command_arguments = ["run", "build:css"]
+command = "cmd"
+command_arguments = ["/c", "npm", "run", "build:css"]
