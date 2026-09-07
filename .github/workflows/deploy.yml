@@ -65,7 +65,7 @@ jobs:
         run: |
           test -f dist/favicon.svg
           test -f dist/index.html
-          test -f dist/tailwind.generated.css
+          test -n "$(find dist -maxdepth 1 -type f -name 'tailwind.generated-*.css' -print -quit)"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
