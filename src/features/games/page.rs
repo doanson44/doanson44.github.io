@@ -1520,7 +1520,10 @@ fn board_tower(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         } else {
             wave.set(w + 1);
             countdown.set(tower_wave_countdown(w + 1));
-            status.set(format!("Wave {w} survived ({damage} dmg). Next in {}s", countdown.get()));
+            status.set(format!(
+                "Wave {w} survived ({damage} dmg). Next in {}s",
+                countdown.get()
+            ));
         }
     };
 
@@ -1537,7 +1540,11 @@ fn board_tower(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             game_over.set(false);
         }
         running.set(true);
-        status.set(format!("Wave {} incoming in {}s — build towers!", wave.get(), countdown.get()));
+        status.set(format!(
+            "Wave {} incoming in {}s — build towers!",
+            wave.get(),
+            countdown.get()
+        ));
         leptos::task::spawn_local(async move {
             loop {
                 gloo_timers::future::TimeoutFuture::new(1000).await;
