@@ -607,9 +607,7 @@ fn chess_piece_attacks(board: &[i8; 64], from: usize, target: usize) -> bool {
             dr == dir && dc.abs() == 1
         }
         2 => dr.abs() * dc.abs() == 2,
-        3 => {
-            dr.abs() == dc.abs() && dr != 0 && chess_clear_ray(board, from, target)
-        }
+        3 => dr.abs() == dc.abs() && dr != 0 && chess_clear_ray(board, from, target),
         4 => (dr == 0) != (dc == 0) && chess_clear_ray(board, from, target),
         5 => {
             ((dr.abs() == dc.abs() && dr != 0) || ((dr == 0) != (dc == 0)))
