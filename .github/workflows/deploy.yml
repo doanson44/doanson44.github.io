@@ -32,6 +32,9 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
 
+      - name: Format Rust sources
+        run: cargo fmt
+
       - name: Check formatting
         run: cargo fmt --check
 
