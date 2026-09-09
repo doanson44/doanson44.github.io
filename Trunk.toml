@@ -10,7 +10,8 @@ dist = "dist"
 ignore = [".vs", "node_modules"]
 
 # Build Tailwind before Trunk reads and bundles the HTML/CSS assets.
+# Use Node as the cross-platform process launcher; the helper handles npm.cmd on Windows.
 [[hooks]]
 stage = "pre_build"
-command = "cmd"
-command_arguments = ["/c", "npm", "run", "build:css"]
+command = "node"
+command_arguments = ["scripts/trunk-build-css.cjs"]
