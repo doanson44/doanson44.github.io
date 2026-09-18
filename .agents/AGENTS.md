@@ -34,8 +34,7 @@ Platform Shell (Routing, Navbar, Footer, Theme, Shared Components, A11y)
 │   ├── JWT Decoder
 │   └── ...
 ├── Games
-├── CV
-└── Socket (external backend for WebSocket)
+└── CV
 ```
 
 ## Clean Architecture (Highest Priority)
@@ -56,13 +55,13 @@ src/
 │
 ├── application/     # APPLICATION: Services + Port traits
 ├── domain/          # DOMAIN: Pure Rust, zero framework deps
-└── infrastructure/  # INFRASTRUCTURE: Browser APIs, JS interop, HTTP, WebSocket
+└── infrastructure/  # INFRASTRUCTURE: Browser APIs, JS interop, HTTP
 ```
 
 ### Layer Rules
 - **Domain** MUST NOT depend on Leptos, web-sys, wasm-bindgen, or browser APIs
 - **Application** may depend on Domain only. Ports define traits; services call domain + ports
-- **Infrastructure** wraps browser/JS/HTTP/WebSocket APIs behind safe Rust functions
+- **Infrastructure** wraps browser/JS/HTTP APIs behind safe Rust functions
 - **Features** hold `RwSignal<T>` + `Memo<T>`, bridge Components ↔ Application. Must not bypass application services to call domain directly
 - **Components** consume signals from features, call Application services, NEVER call Domain directly
 - **Platform shell** owns routing, navigation, theme, global layout, shared components, a11y, global styles
@@ -104,7 +103,6 @@ Prefer reactive state over manual DOM manipulation.
 /tools/json          → JSON Formatter
 /games               → Games
 /cv                  → CV / Portfolio
-/socket              → Socket playground
 ```
 When adding a feature: define route → register in router → add navigation → add feature module → reuse platform shell.
 
@@ -126,11 +124,10 @@ Release: `opt-level = "z"`, `lto = true`, `codegen-units = 1`, `strip = true`, `
 - JS logic duplicated in Rust (use infrastructure interop)
 - Feature-specific logic in global platform components
 - Duplicating shared platform components across features
-- Assuming GitHub Pages can host WebSocket servers
 - Unnecessary `pub`, missing `mod.rs`, speculative abstractions
 - Modifying unrelated features during a focused task
 - Claiming tests/build passed without actually running them
 - Tuyệt đối không tự ý commit (Absolutely do not commit on your own)
 
 ## Core Rule
-Treat `doanson44.github.io` as a **Rust/Leptos/WASM multi-feature web platform deployed to GitHub Pages** — with Tools, Games, CV, and Socket as separate features — not as a single Markdown editor and not as a backend application.
+Treat `doanson44.github.io` as a **Rust/Leptos/WASM multi-feature web platform deployed to GitHub Pages** — with Tools, Games, and CV as separate features — not as a single Markdown editor and not as a backend application.
