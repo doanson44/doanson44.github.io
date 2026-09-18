@@ -36,7 +36,6 @@ pub fn Navbar() -> impl IntoView {
                         <li><a class="flex items-center rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] no-underline hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href="#/tools" on:click=move |_| menu_open.set(false)>"⚒"<span class="ml-2">"Tools"</span></a></li>
                         <li><a class="flex items-center rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] no-underline hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href="#/games" on:click=move |_| menu_open.set(false)>"♟"<span class="ml-2">"Games"</span></a></li>
                         <li><a class="flex items-center rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] no-underline hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href="#/cv" on:click=move |_| menu_open.set(false)>"●"<span class="ml-2">"CV"</span></a></li>
-                        <li><a class="flex items-center rounded-md px-3 py-2 text-sm text-[var(--text-secondary)] no-underline hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" href="#/socket" on:click=move |_| menu_open.set(false)>"↔"<span class="ml-2">"Socket"</span></a></li>
                     </ul>
                 </div>
                 <div class="ml-auto flex items-center gap-2">
