@@ -5,14 +5,13 @@
 # doanson44.github.io — Project Conventions
 
 ## Project Identity
-`doanson44.github.io` is a **client-side-first Web Utility Hub + Personal Portfolio + Playground** — not a single application. It is a multi-feature platform containing developer tools, games, a public CV/portfolio, and realtime/socket experiments, built with Rust/Leptos 0.7 CSR/WASM.
+`doanson44.github.io` is a **client-side-first Web Utility Hub + Personal Portfolio + Playground** — not a single application. It is a multi-feature platform containing developer tools, games, a public CV/portfolio, built with Rust/Leptos 0.7 CSR/WASM.
 
 Primary areas:
 - **Home** — platform landing page and navigation
 - **Tools** — developer utilities (Markdown Studio, JSON, JWT, Base64, Regex, etc.)
 - **Games** — small browser games and experiments
 - **CV** — public CV / portfolio
-- **Socket** — WebSocket/realtime playground and demonstrations
 - **Shared Platform** — routing, navigation, theme, layout, reusable components, accessibility, common infrastructure
 
 Markdown Studio is **one tool inside the platform**, not the repository identity.
@@ -22,7 +21,7 @@ Markdown Studio is **one tool inside the platform**, not the repository identity
 - Tailwind CSS 4.x via the Tailwind CLI, generated during the Trunk pre-build hook
 - Project-owned SVG/icon components; no external icon CSS dependency
 - GitHub Pages deployment (`public_url = "/"`, `dist = "dist"`), GitHub Actions CI/CD
-- Feature-specific deps (pulldown-cmark, Mermaid.js, WebSocket, etc.) only when justified
+- Feature-specific deps (pulldown-cmark, Mermaid.js, etc.) only when justified
 
 ## Platform Architecture
 ```
@@ -54,7 +53,7 @@ src/
 │   │   └── ...
 │   ├── games/
 │   ├── cv/
-│   └── socket/
+│
 ├── application/     # APPLICATION: Services + Port traits
 ├── domain/          # DOMAIN: Pure Rust, zero framework deps
 └── infrastructure/  # INFRASTRUCTURE: Browser APIs, JS interop, HTTP, WebSocket
