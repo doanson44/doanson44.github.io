@@ -1,6 +1,6 @@
 # doanson44.github.io
 
-A **Rust-first, client-side multi-feature web platform** with developer tools, Markdown Studio, games, CV/portfolio, and a realtime socket playground — powered by WebAssembly.
+A **Rust-first, client-side multi-feature web platform** with developer tools, Markdown Studio, games, CV/portfolio, — powered by WebAssembly.
 
 [![Deploy to GitHub Pages](https://github.com/doanson44/doanson44.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/doanson44/doanson44.github.io/actions/workflows/deploy.yml)
 
@@ -11,7 +11,6 @@ A **Rust-first, client-side multi-feature web platform** with developer tools, M
 - 📊 **Mermaid Diagrams** — Diagram rendering and PNG export
 - 🎮 **Games** — Browser-based experiments
 - 📄 **CV / Portfolio** — Public professional profile
-- 🔌 **Socket Playground** — External-backend realtime/WebSocket experiments
 - 🦀 **Rust-Powered** — Core logic written in Rust, compiled to WebAssembly
 - 🔒 **100% Client-Side** — Application execution stays in the browser
 - 🎨 **Dark/Light Theme** — Project-owned CSS variables with Tailwind utilities
@@ -40,7 +39,7 @@ Application (Services, Ports)
     ↓
 Domain (Pure Rust Business Logic)
     ↑
-Infrastructure (Browser APIs, JS Interop, WebSocket)
+Infrastructure (Browser APIs, JS Interop)
 ```
 
 The architecture follows clean layering with explicit dependency direction.
