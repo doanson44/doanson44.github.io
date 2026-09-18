@@ -1,6 +1,6 @@
 # doanson44.github.io
 
-A **Rust-first, client-side multi-feature web platform** with developer tools, Markdown Studio, games, CV/portfolio, — powered by WebAssembly.
+A **Rust-first, client-side multi-feature web platform** with developer tools, Markdown Studio, games, and CV/portfolio — powered by WebAssembly.
 
 [![Deploy to GitHub Pages](https://github.com/doanson44/doanson44.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/doanson44/doanson44.github.io/actions/workflows/deploy.yml)
 
