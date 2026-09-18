@@ -1,8 +1,4 @@
-use std::rc::Rc;
-
 use crate::domain::document::MarkdownDocument;
-use crate::domain::funding::FundingRateSnapshot;
-use crate::domain::futures::FuturesTickerUpdate;
 
 /// Port for document persistence.
 pub trait DocumentRepository {
@@ -28,33 +24,4 @@ pub trait TimeProvider {
         unit: crate::domain::time::TimestampUnit,
         timezone: &str,
     ) -> Result<String, String>;
-}
-
-/// Public connection states exposed by the Futures market stream.
-#[derive(Debug, Clone, PartialEq)]
-pub enum FuturesConnectionStatus {
-    Connecting,
-    Connected,
-    Reconnecting,
-    Disconnected,
-    Error(String),
-}
-
-/// Handle for a Futures market stream lifecycle.
-pub trait FuturesMarketStreamHandle {
-    fn close(&mut self);
-}
-
-/// Application port for a public Futures market stream.
-pub trait FuturesMarketStream {
-    fn connect(
-        &self,
-        on_batch: Rc<dyn Fn(Vec<FuturesTickerUpdate>)>,
-        on_status: Rc<dyn Fn(FuturesConnectionStatus)>,
-    ) -> Result<Box<dyn FuturesMarketStreamHandle>, String>;
-}
-
-/// Application port for cached all-market funding rates.
-pub trait FundingRateProvider {
-    fn load_cached_or_fetch(&self, on_result: Rc<dyn Fn(Result<FundingRateSnapshot, String>)>);
 }
