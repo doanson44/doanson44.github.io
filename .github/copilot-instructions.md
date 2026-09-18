@@ -1,5 +1,5 @@
 ---
-description: "Always-on coding conventions for doanson44.github.io — a Rust/Leptos/WASM multi-feature web platform (Tools, Games, CV, Socket) with Clean Architecture, deployed to GitHub Pages. Apply to Rust, TOML, HTML, and CSS files."
+description: "Always-on coding conventions for doanson44.github.io — a Rust/Leptos/WASM multi-feature web platform (Tools, Games, CV) with Clean Architecture, deployed to GitHub Pages. Apply to Rust, TOML, HTML, and CSS files."
 applyTo: "**/*.rs,**/*.toml,**/*.html,**/*.css"
 ---
 
@@ -13,7 +13,7 @@ Primary areas:
 - **Tools** — developer utilities (Markdown Studio, JSON, JWT, Base64, Regex, etc.)
 - **Games** — small browser games and experiments
 - **CV** — public CV / portfolio
-- **Socket** — WebSocket/realtime playground and demonstrations
+- **Socket** — browser APIs and JavaScript interop/realtime playground and demonstrations
 - **Shared Platform** — routing, navigation, theme, layout, reusable components, accessibility, common infrastructure
 
 Markdown Studio is **one tool inside the platform**, not the repository identity.
@@ -23,7 +23,7 @@ Markdown Studio is **one tool inside the platform**, not the repository identity
 - Tailwind CSS 4.x via the Tailwind CLI, generated during the Trunk pre-build hook
 - Project-owned SVG/icon components; no external icon CSS dependency
 - GitHub Pages deployment (`public_url = "/"`, `dist = "dist"`), GitHub Actions CI/CD
-- Feature-specific deps (pulldown-cmark, Mermaid.js, WebSocket, etc.) only when justified
+- Feature-specific deps (pulldown-cmark, Mermaid.js, browser APIs and JavaScript interop, etc.) only when justified
 
 ## Platform Architecture
 ```
@@ -37,7 +37,7 @@ Platform Shell (Routing, Navbar, Footer, Theme, Shared Components, A11y)
 │   └── ...
 ├── Games
 ├── CV
-└── Socket (external backend for WebSocket)
+└── Socket (external backend for browser APIs and JavaScript interop)
 ```
 
 ## Clean Architecture (Highest Priority)
@@ -58,13 +58,13 @@ src/
 │   └── socket/
 ├── application/     # APPLICATION: Services + Port traits
 ├── domain/          # DOMAIN: Pure Rust, zero framework deps
-└── infrastructure/  # INFRASTRUCTURE: Browser APIs, JS interop, HTTP, WebSocket
+└── infrastructure/  # INFRASTRUCTURE: Browser APIs, JS interop, HTTP, browser APIs and JavaScript interop
 ```
 
 ### Layer Rules
 - **Domain** MUST NOT depend on Leptos, web-sys, wasm-bindgen, or browser APIs
 - **Application** may depend on Domain only. Ports define traits; services call domain + ports
-- **Infrastructure** wraps browser/JS/HTTP/WebSocket APIs behind safe Rust functions
+- **Infrastructure** wraps browser/JS/HTTP/browser APIs and JavaScript interop APIs behind safe Rust functions
 - **Features** hold `RwSignal<T>` + `Memo<T>`, bridge Components ↔ Application. Must not bypass application services to call domain directly
 - **Components** consume signals from features, call Application services, NEVER call Domain directly
 - **Platform shell** owns routing, navigation, theme, global layout, shared components, a11y, global styles
@@ -129,7 +129,7 @@ Release: `opt-level = "z"`, `lto = true`, `codegen-units = 1`, `strip = true`, `
 - JS logic duplicated in Rust (use infrastructure interop)
 - Feature-specific logic in global platform components
 - Duplicating shared platform components across features
-- Assuming GitHub Pages can host WebSocket servers
+- Assuming GitHub Pages can host browser APIs and JavaScript interop servers
 - Unnecessary `pub`, missing `mod.rs`, speculative abstractions
 - Modifying unrelated features during a focused task
 - Claiming tests/build passed without actually running them
