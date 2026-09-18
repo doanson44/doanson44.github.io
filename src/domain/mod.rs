@@ -2,8 +2,6 @@ pub mod base64;
 pub mod developer;
 pub mod document;
 pub mod finance;
-pub mod funding;
-pub mod futures;
 pub mod games;
 pub mod json;
 pub mod jwt;
