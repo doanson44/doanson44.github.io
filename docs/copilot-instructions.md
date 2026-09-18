@@ -3,7 +3,7 @@
 ## Project Identity
 `doanson44.github.io` is a **client-side-first Web Utility Hub + Personal Portfolio + Playground** built with Rust/Leptos 0.7 CSR/WASM.
 
-Primary areas: Home, Tools, Games, CV, Socket, and shared platform infrastructure.
+Primary areas: Home, Tools, Games, CV, and shared platform infrastructure.
 
 ## Technology Constraints
 - Rust edition 2021, `wasm32-unknown-unknown`, Leptos 0.7 CSR only, Trunk
@@ -22,13 +22,13 @@ src/
 ├── features/        # Feature presentation + state
 ├── application/     # Services + ports
 ├── domain/          # Pure Rust business logic
-└── infrastructure/  # Browser/JS/HTTP/WebSocket adapters
+└── infrastructure/  # Browser/JS/HTTP/browser APIs and JavaScript interop adapters
 ```
 
 ### Layer Rules
 - Domain MUST NOT depend on Leptos, web-sys, wasm-bindgen, or browser APIs.
 - Application coordinates Domain and Ports.
-- Infrastructure wraps browser, JavaScript, HTTP, and WebSocket APIs.
+- Infrastructure wraps browser, JavaScript, HTTP, and browser APIs and JavaScript interop APIs.
 - Features own reactive state and presentation.
 - Components must not bypass Application services to call Domain directly.
 
@@ -55,7 +55,6 @@ Hash-based routes:
 - `/tools/base64`
 - `/games`
 - `/cv`
-- `/socket`
 
 ## Deployment Validation
 ```bash
@@ -71,7 +70,7 @@ trunk build --release
 - Components bypassing Application services
 - Hardcoded UI colors instead of semantic tokens
 - Feature logic in global components
-- Assuming GitHub Pages hosts a WebSocket server
+- Assuming GitHub Pages hosts a browser APIs and JavaScript interop server
 - Claiming validation passed without running it
 - Unrelated refactors during focused work
 
