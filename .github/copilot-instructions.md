@@ -6,14 +6,13 @@ applyTo: "**/*.rs,**/*.toml,**/*.html,**/*.css"
 # doanson44.github.io — Project Conventions
 
 ## Project Identity
-`doanson44.github.io` is a **client-side-first Web Utility Hub + Personal Portfolio + Playground** — not a single application. It is a multi-feature platform containing developer tools, games, a public CV/portfolio, and realtime/socket experiments, built with Rust/Leptos 0.7 CSR/WASM.
+`doanson44.github.io` is a **client-side-first Web Utility Hub + Personal Portfolio + Playground** — not a single application. It is a multi-feature platform containing developer tools, games, and a public CV/portfolio, built with Rust/Leptos 0.7 CSR/WASM.
 
 Primary areas:
 - **Home** — platform landing page and navigation
 - **Tools** — developer utilities (Markdown Studio, JSON, JWT, Base64, Regex, etc.)
 - **Games** — small browser games and experiments
 - **CV** — public CV / portfolio
-- **Socket** — browser APIs and JavaScript interop/realtime playground and demonstrations
 - **Shared Platform** — routing, navigation, theme, layout, reusable components, accessibility, common infrastructure
 
 Markdown Studio is **one tool inside the platform**, not the repository identity.
@@ -54,17 +53,16 @@ src/
 │   │   ├── json/
 │   │   └── ...
 │   ├── games/
-│   ├── cv/
-│   └── socket/
+│   └── cv/
 ├── application/     # APPLICATION: Services + Port traits
 ├── domain/          # DOMAIN: Pure Rust, zero framework deps
-└── infrastructure/  # INFRASTRUCTURE: Browser APIs, JS interop, HTTP, browser APIs and JavaScript interop
+└── infrastructure/  # INFRASTRUCTURE: Browser APIs, JS interop, HTTP
 ```
 
 ### Layer Rules
 - **Domain** MUST NOT depend on Leptos, web-sys, wasm-bindgen, or browser APIs
 - **Application** may depend on Domain only. Ports define traits; services call domain + ports
-- **Infrastructure** wraps browser/JS/HTTP/browser APIs and JavaScript interop APIs behind safe Rust functions
+- **Infrastructure** wraps browser/JS/HTTP APIs behind safe Rust functions
 - **Features** hold `RwSignal<T>` + `Memo<T>`, bridge Components ↔ Application. Must not bypass application services to call domain directly
 - **Components** consume signals from features, call Application services, NEVER call Domain directly
 - **Platform shell** owns routing, navigation, theme, global layout, shared components, a11y, global styles
@@ -107,7 +105,6 @@ Prefer reactive state over manual DOM manipulation.
 /tools/json          → JSON Formatter
 /games               → Games
 /cv                  → CV / Portfolio
-/socket              → Socket playground
 ```
 When adding a feature: define route → register in router → add navigation → add feature module → reuse platform shell.
 
@@ -129,10 +126,9 @@ Release: `opt-level = "z"`, `lto = true`, `codegen-units = 1`, `strip = true`, `
 - JS logic duplicated in Rust (use infrastructure interop)
 - Feature-specific logic in global platform components
 - Duplicating shared platform components across features
-- Assuming GitHub Pages can host browser APIs and JavaScript interop servers
 - Unnecessary `pub`, missing `mod.rs`, speculative abstractions
 - Modifying unrelated features during a focused task
 - Claiming tests/build passed without actually running them
 
 ## Core Rule
-Treat `doanson44.github.io` as a **Rust/Leptos/WASM multi-feature web platform deployed to GitHub Pages** — with Tools, Games, CV, and Socket as separate features — not as a single Markdown editor and not as a backend application.
+Treat `doanson44.github.io` as a **Rust/Leptos/WASM multi-feature web platform deployed to GitHub Pages** — with Tools, Games, and CV as separate features — not as a single Markdown editor and not as a backend application.
