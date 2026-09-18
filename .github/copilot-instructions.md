@@ -35,8 +35,7 @@ Platform Shell (Routing, Navbar, Footer, Theme, Shared Components, A11y)
 │   ├── JWT Decoder
 │   └── ...
 ├── Games
-├── CV
-└── Socket (external backend for browser APIs and JavaScript interop)
+└── CV
 ```
 
 ## Clean Architecture (Highest Priority)
