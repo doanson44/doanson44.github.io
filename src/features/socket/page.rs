@@ -8,7 +8,7 @@ use crate::application::ports::{
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::features::socket::state::{
-    SocketSortDirection, SocketSortMode, SocketState, SocketViewMode,
+    SocketFilter, SocketSortDirection, SocketSortMode, SocketState, SocketViewMode,
 };
 
 /// Realtime Futures market ticker monitor page.
@@ -21,6 +21,7 @@ pub fn SocketPage(
     let visible = Memo::new({
         let tickers = state.tickers;
         let view_mode = state.view_mode;
+        let filter = state.filter;
         let sort_mode = state.sort_mode;
         let sort_direction = state.sort_direction;
         let ticker_limit = state.ticker_limit;
@@ -31,6 +32,7 @@ pub fn SocketPage(
             build_visible(
                 tickers.get(),
                 view_mode.get(),
+                filter.get(),
                 sort_mode.get(),
                 sort_direction.get(),
                 ticker_limit.get(),
@@ -58,6 +60,7 @@ pub fn SocketPage(
                     </div>
                     <div class="flex" role="group" aria-label="Ticker view">
                         <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All).to_string() on:click=move |_| state.view_mode.set(SocketViewMode::All)>"All"</button>
+                        <button class=move || view_button_class(state.filter.get() == SocketFilter::Burst) type="button" aria-pressed=move || (state.filter.get() == SocketFilter::Burst).to_string() on:click=move |_| state.filter.set(SocketFilter::Burst)>"Burst"</button>
                         <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string() on:click=move |_| state.view_mode.set(SocketViewMode::PinnedOnly)>"Pinned only"</button>
                     </div>
                     <div class="flex items-center gap-2">
@@ -129,7 +132,7 @@ fn TickerCard(
         <button type="button" class=move || if is_pinned.get() { "socket-ticker-card rounded-lg border border-[var(--accent)] bg-[var(--surface)] text-left shadow-sm socket-ticker-card-pinned" } else { "socket-ticker-card rounded-lg border border-[var(--border-color)] bg-[var(--surface)] text-left shadow-sm" } title={let symbol_title = symbol.clone(); move || if is_pinned.get() { format!("Unpin {symbol_title}") } else { format!("Pin {symbol_title}") }} aria-label={let symbol_aria = symbol.clone(); move || ticker.get().map(|item| card_aria_label(item, is_pinned.get(), funding_rate.get())).unwrap_or_else(|| format!("{symbol_aria}, market data unavailable"))} on:click={let symbol = symbol.clone(); move |_| { let index = visible.get_untracked().iter().position(|item| item.ticker.symbol == symbol).unwrap_or(0); state.toggle_pin(&symbol, index); }}>
             <div class="flex min-h-0 flex-col p-2">
                 <div class="flex items-start justify-between gap-2"><span class="truncate font-mono font-semibold">{symbol.clone()}</span><span aria-hidden="true" class="text-sm text-[var(--text-secondary)]">{move || if is_pinned.get() { "●" } else { "○" }}</span></div>
-                <div class="socket-ticker-price mt-1 truncate font-mono">{move || ticker.get().map(|item| format_number(item.ticker.last_price)).unwrap_or_else(|| "—".into())}</div>
+                <div class="socket-ticker-price mt-1 flex items-center justify-between gap-2"><span class="truncate font-mono">{move || ticker.get().map(|item| format_number(item.ticker.last_price)).unwrap_or_else(|| "—".into())}</span>{move || ticker.get().filter(|item| item.momentum.is_burst()).map(|_| view! { <span class="shrink-0 rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]" aria-label="Burst detected">"BURST"</span> })}</div>
                 <div class="mt-1 flex items-center justify-between gap-2">{move || ticker.get().map(|item| view! { <span class=change_class(item.ticker.change_24h)>{format_percent(item.ticker.change_24h)}</span> }).unwrap_or_else(|| view! { <span class="text-[var(--text-secondary)]">{"—".to_string()}</span> })}<span class="font-mono text-xs text-[var(--text-secondary)]">{move || ticker.get().map(|item| format!("{}%", item.momentum.progress())).unwrap_or_else(|| "—".into())}</span></div>
                 <div class="mt-1 flex items-center justify-between gap-2 text-xs"><span class="text-[var(--text-secondary)]">"Funding"</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
                 <progress class="socket-ticker-progress mt-2 w-full" max="100" value=move || ticker.get().map(|item| item.momentum.progress().to_string()).unwrap_or_else(|| "0".into()) aria-label="Directional progress"></progress>
@@ -143,6 +146,7 @@ fn TickerCard(
 fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
+    filter: SocketFilter,
     sort: SocketSortMode,
     direction: SocketSortDirection,
     limit: usize,
@@ -202,6 +206,11 @@ fn build_visible(
             SocketSortDirection::Ascending => cmp.reverse(),
         }
     };
+    let matches_filter = |item: &TrackedFuturesTicker| match filter {
+        SocketFilter::All => true,
+        SocketFilter::Burst => item.momentum.is_burst(),
+    };
+
     let pinned_symbols = slots
         .iter()
         .filter_map(|slot| slot.as_deref())
@@ -211,6 +220,7 @@ fn build_visible(
         let mut pinned = slots
             .iter()
             .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)))
+            .filter(|item| matches_filter(item))
             .filter(|item| !is_searching || item.ticker.symbol.contains(&query))
             .cloned()
             .collect::<Vec<_>>();
@@ -222,6 +232,7 @@ fn build_visible(
     if is_searching {
         let mut results = all
             .values()
+            .filter(|item| matches_filter(item))
             .filter(|item| item.ticker.symbol.contains(&query))
             .cloned()
             .collect::<Vec<_>>();
@@ -232,6 +243,7 @@ fn build_visible(
     let pinned = slots
         .iter()
         .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)))
+        .filter(|item| matches_filter(item))
         .filter(|item| !is_searching || item.ticker.symbol.contains(&query))
         .cloned()
         .collect::<Vec<_>>();
