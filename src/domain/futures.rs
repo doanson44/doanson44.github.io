@@ -24,6 +24,9 @@ pub struct FuturesTickerUpdate {
 }
 
 const MOMENTUM_WINDOW: usize = 100;
+const BURST_WINDOW: usize = 6;
+const BURST_MIN_RETURN: f64 = 0.0005;
+const BURST_MIN_STREAK: usize = 2;
 
 /// Tracks directional price changes over a bounded rolling tick window.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -32,6 +35,9 @@ pub struct FuturesTickerMomentum {
     pub up_ticks: u64,
     pub down_ticks: u64,
     directions: VecDeque<i8>,
+    recent_returns: VecDeque<f64>,
+    previous_timestamp_ms: Option<u64>,
+    burst_score: u8,
 }
 
 impl FuturesTickerMomentum {
@@ -61,11 +67,17 @@ impl FuturesTickerMomentum {
 
     /// Applies a price observation and keeps only the latest directional window.
     pub fn observe(&mut self, price: Option<f64>) {
+        self.observe_at(price, None);
+    }
+
+    /// Applies a price observation with an optional observation timestamp.
+    pub fn observe_at(&mut self, price: Option<f64>, timestamp_ms: Option<u64>) {
         let Some(new_price) = price else {
             return;
         };
         let Some(previous_price) = self.previous_price else {
             self.previous_price = Some(new_price);
+            self.previous_timestamp_ms = timestamp_ms;
             return;
         };
 
@@ -94,7 +106,78 @@ impl FuturesTickerMomentum {
                 }
             }
         }
+
+        if let (Some(previous_timestamp_ms), Some(timestamp_ms)) =
+            (self.previous_timestamp_ms, timestamp_ms)
+        {
+            if timestamp_ms > previous_timestamp_ms && previous_price > 0.0 && new_price > 0.0 {
+                let return_rate = new_price / previous_price - 1.0;
+                self.recent_returns.push_back(return_rate);
+                if self.recent_returns.len() > BURST_WINDOW {
+                    self.recent_returns.pop_front();
+                }
+                self.burst_score = self.calculate_burst_score();
+            }
+        }
+
         self.previous_price = Some(new_price);
+        if timestamp_ms.is_some() {
+            self.previous_timestamp_ms = timestamp_ms;
+        }
+    }
+
+    fn calculate_burst_score(&self) -> u8 {
+        let Some(&current) = self.recent_returns.back() else {
+            return 0;
+        };
+        if current.abs() < BURST_MIN_RETURN || self.recent_returns.len() < 2 {
+            return 0;
+        }
+
+        let previous = self
+            .recent_returns
+            .iter()
+            .rev()
+            .skip(1)
+            .take(BURST_WINDOW - 1)
+            .copied()
+            .collect::<Vec<_>>();
+        let baseline = previous.iter().map(|value| value.abs()).sum::<f64>()
+            / previous.len() as f64;
+        let ratio = if baseline > f64::EPSILON {
+            current.abs() / baseline
+        } else {
+            0.0
+        };
+
+        let mut streak = 1;
+        for value in self.recent_returns.iter().rev().skip(1) {
+            if value.signum() == current.signum() {
+                streak += 1;
+            } else {
+                break;
+            }
+        }
+
+        if ratio < 2.0 || streak < BURST_MIN_STREAK {
+            return 0;
+        }
+
+        let magnitude_score = (current.abs() / BURST_MIN_RETURN * 30.0).min(30.0);
+        let ratio_score = ((ratio - 1.0) * 13.333_333).min(40.0);
+        let streak_score = ((streak.saturating_sub(1)) as f64 * 15.0).min(30.0);
+
+        (magnitude_score + ratio_score + streak_score).round().min(100.0) as u8
+    }
+
+    /// Returns the current burst score, where 70+ indicates a sudden move.
+    pub fn burst_score(&self) -> u8 {
+        self.burst_score
+    }
+
+    /// Returns whether the ticker is currently experiencing a burst.
+    pub fn is_burst(&self) -> bool {
+        self.burst_score >= 70
     }
 
     /// Returns the net directional ticks in the current rolling window.
@@ -315,6 +398,39 @@ mod tests {
         assert_eq!(momentum.up_ticks, 99);
         assert_eq!(momentum.down_ticks, 1);
         assert_eq!(momentum.progress(), 98);
+    }
+
+    #[test]
+    fn burst_detects_a_sudden_acceleration() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        momentum.observe_at(Some(100.02), Some(1_000));
+        momentum.observe_at(Some(100.04), Some(2_000));
+        momentum.observe_at(Some(100.08), Some(3_000));
+        momentum.observe_at(Some(100.20), Some(4_000));
+
+        assert!(momentum.is_burst());
+        assert!(momentum.burst_score() >= 70);
+    }
+
+    #[test]
+    fn burst_does_not_trigger_on_steady_moves() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        momentum.observe_at(Some(100.02), Some(1_000));
+        momentum.observe_at(Some(100.04), Some(2_000));
+        momentum.observe_at(Some(100.06), Some(3_000));
+        momentum.observe_at(Some(100.08), Some(4_000));
+
+        assert!(!momentum.is_burst());
+    }
+
+    #[test]
+    fn burst_requires_timestamped_observations() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        momentum.observe(Some(100.02));
+        momentum.observe(Some(100.20));
+
+        assert_eq!(momentum.burst_score(), 0);
+        assert!(!momentum.is_burst());
     }
 
     #[test]
