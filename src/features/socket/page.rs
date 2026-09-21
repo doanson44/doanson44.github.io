@@ -202,6 +202,23 @@ fn build_visible(
             SocketSortDirection::Ascending => cmp.reverse(),
         }
     };
+    let pinned_symbols = slots
+        .iter()
+        .filter_map(|slot| slot.as_deref())
+        .collect::<Vec<_>>();
+
+    if mode == SocketViewMode::PinnedOnly {
+        let mut pinned = slots
+            .iter()
+            .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)))
+            .filter(|item| !is_searching || item.ticker.symbol.contains(&query))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        pinned.sort_unstable_by(sort_fn);
+        return pinned;
+    }
+
     if is_searching {
         let mut results = all
             .values()
@@ -211,17 +228,7 @@ fn build_visible(
         results.sort_unstable_by(sort_fn);
         return results;
     }
-    let pinned_symbols = slots
-        .iter()
-        .filter_map(|slot| slot.as_deref())
-        .collect::<Vec<_>>();
-    if mode == SocketViewMode::PinnedOnly {
-        return slots
-            .iter()
-            .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)))
-            .cloned()
-            .collect();
-    }
+
     let mut dynamic = all
         .values()
         .filter(|item| !pinned_symbols.contains(&item.ticker.symbol.as_str()))
