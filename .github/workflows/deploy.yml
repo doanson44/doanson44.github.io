@@ -62,7 +62,15 @@ jobs:
           sudo mv trunk /usr/local/bin/
 
       - name: Build release
-        run: trunk build --release
+        run: |
+          for attempt in 1 2 3; do
+            if trunk build --release; then
+              exit 0
+            fi
+            echo "Trunk build attempt $attempt failed; retrying..."
+            sleep $((attempt * 10))
+          done
+          exit 1
 
       - name: Verify static assets
         run: |
