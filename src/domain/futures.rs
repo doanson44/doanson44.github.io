@@ -35,8 +35,11 @@ pub struct FuturesTickerMomentum {
     pub up_ticks: u64,
     pub down_ticks: u64,
     directions: VecDeque<i8>,
+    #[serde(default)]
     recent_returns: VecDeque<f64>,
+    #[serde(default)]
     previous_timestamp_ms: Option<u64>,
+    #[serde(default)]
     burst_score: u8,
 }
 
@@ -62,6 +65,9 @@ impl FuturesTickerMomentum {
             up_ticks,
             down_ticks,
             directions,
+            recent_returns: VecDeque::new(),
+            previous_timestamp_ms: None,
+            burst_score: 0,
         }
     }
 
