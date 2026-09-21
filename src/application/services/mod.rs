@@ -33,7 +33,7 @@ impl FuturesMarketService {
                 .momentum
                 .entry(update.symbol.clone())
                 .or_insert_with(|| FuturesTickerMomentum::baseline(None));
-            momentum.observe(update.last_price);
+            momentum.observe_at(update.last_price, update.updated_at_ms);
         }
         self.registry.apply_batch(updates);
     }
