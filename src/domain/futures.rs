@@ -148,8 +148,8 @@ impl FuturesTickerMomentum {
             .take(BURST_WINDOW - 1)
             .copied()
             .collect::<Vec<_>>();
-        let baseline = previous.iter().map(|value| value.abs()).sum::<f64>()
-            / previous.len() as f64;
+        let baseline =
+            previous.iter().map(|value| value.abs()).sum::<f64>() / previous.len() as f64;
         let ratio = if baseline > f64::EPSILON {
             current.abs() / baseline
         } else {
@@ -173,7 +173,9 @@ impl FuturesTickerMomentum {
         let ratio_score = ((ratio - 1.0) * 13.333_333).min(40.0);
         let streak_score = ((streak.saturating_sub(1)) as f64 * 15.0).min(30.0);
 
-        (magnitude_score + ratio_score + streak_score).round().min(100.0) as u8
+        (magnitude_score + ratio_score + streak_score)
+            .round()
+            .min(100.0) as u8
     }
 
     /// Returns the current burst score, where 70+ indicates a sudden move.
