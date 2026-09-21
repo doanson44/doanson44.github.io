@@ -20,6 +20,7 @@ const DEFAULT_LIMIT: usize = 10;
 const LIMIT_OPTIONS: [usize; 6] = [10, 20, 30, 50, 100, usize::MAX];
 const UI_FLUSH_MS: i32 = 75;
 const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
+const PINNED_SLOTS_KEY: &str = "socket.pinned-slots";
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
@@ -81,7 +82,7 @@ impl SocketState {
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
         let search_query = RwSignal::new(String::new());
-        let pinned_slots = RwSignal::new(Vec::<Option<String>>::new());
+        let pinned_slots = RwSignal::new(load_pinned_slots());
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
