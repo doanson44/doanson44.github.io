@@ -229,27 +229,27 @@ fn build_visible(
         return results;
     }
 
+    let pinned = slots
+        .iter()
+        .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)))
+        .filter(|item| !is_searching || item.ticker.symbol.contains(&query))
+        .cloned()
+        .collect::<Vec<_>>();
+
     let mut dynamic = all
         .values()
         .filter(|item| !pinned_symbols.contains(&item.ticker.symbol.as_str()))
+        .filter(|item| !is_searching || item.ticker.symbol.contains(&query))
         .cloned()
         .collect::<Vec<_>>();
     dynamic.sort_unstable_by(sort_fn);
-    dynamic.truncate(limit);
-    let pinned_count = slots.iter().filter(|slot| slot.is_some()).count();
-    let output_len = slots.len().max(dynamic.len() + pinned_count);
-    let mut output = Vec::with_capacity(output_len);
-    let mut dynamic_index = 0;
-    for index in 0..output_len {
-        if let Some(symbol) = slots.get(index).and_then(|slot| slot.as_deref()) {
-            if let Some(ticker) = all.get(symbol) {
-                output.push(ticker.clone());
-            }
-        } else if let Some(ticker) = dynamic.get(dynamic_index) {
-            output.push(ticker.clone());
-            dynamic_index += 1;
-        }
-    }
+
+    let dynamic_limit = limit.saturating_sub(pinned.len());
+    dynamic.truncate(dynamic_limit);
+
+    let mut output = Vec::with_capacity(pinned.len() + dynamic.len());
+    output.extend(pinned);
+    output.extend(dynamic);
     output
 }
 
