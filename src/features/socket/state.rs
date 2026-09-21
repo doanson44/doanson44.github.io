@@ -38,6 +38,13 @@ pub enum SocketViewMode {
     PinnedOnly,
 }
 
+/// Additional market filter for burst detection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketFilter {
+    All,
+    Burst,
+}
+
 /// Socket ticker sort mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SocketSortMode {
@@ -61,6 +68,7 @@ pub struct SocketState {
     pub tickers: RwSignal<MarketSnapshot, LocalStorage>,
     pub funding_rates: RwSignal<Option<FundingRateSnapshot>, LocalStorage>,
     pub view_mode: RwSignal<SocketViewMode>,
+    pub filter: RwSignal<SocketFilter>,
     pub sort_mode: RwSignal<SocketSortMode>,
     pub sort_direction: RwSignal<SocketSortDirection>,
     pub ticker_limit: RwSignal<usize>,
@@ -78,6 +86,7 @@ impl SocketState {
         let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
         let funding_rates = RwSignal::new_local(None);
         let view_mode = RwSignal::new(SocketViewMode::All);
+        let filter = RwSignal::new(SocketFilter::All);
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
@@ -211,6 +220,7 @@ impl SocketState {
             tickers,
             funding_rates,
             view_mode,
+            filter,
             sort_mode,
             sort_direction,
             ticker_limit,
