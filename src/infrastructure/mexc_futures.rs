@@ -164,7 +164,7 @@ fn open_connection(
                         volume_24h: ticker.volume_24h,
                         change_24h: ticker.change_24h,
                         fair_price: ticker.fair_price,
-                        updated_at_ms: None,
+                        updated_at_ms: Some(js_sys::Date::now().max(0.0) as u64),
                     })
                     .collect();
                 batch_callback(updates);
