@@ -80,8 +80,12 @@ async fn fetch_snapshot() -> Result<FundingRateSnapshot, String> {
     options.set_headers(&headers);
     options.set_body(&JsValue::from_str(&body));
 
-    let request = Request::new_with_str_and_init(PROXY_ENDPOINT, &options)
-        .map_err(|error| format!("Failed to create funding proxy request: {}", js_error(&error)))?;
+    let request = Request::new_with_str_and_init(PROXY_ENDPOINT, &options).map_err(|error| {
+        format!(
+            "Failed to create funding proxy request: {}",
+            js_error(&error)
+        )
+    })?;
 
     let response = JsFuture::from(window.fetch_with_request(&request))
         .await
