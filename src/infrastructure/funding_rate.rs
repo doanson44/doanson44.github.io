@@ -9,7 +9,8 @@ use web_sys::{Headers, Request, RequestInit, RequestMode, Storage};
 use crate::application::ports::FundingRateProvider;
 use crate::domain::funding::FundingRateSnapshot;
 
-const PROXY_ENDPOINT: &str = "http://147.224.240.172:8080/api/proxy";
+const PROXY_ENDPOINT: &str =
+    "https://doanson44-forward-proxy.work-sontd.workers.dev/api/proxy";
 const MEXC_FUNDING_ENDPOINT: &str = "https://api.mexc.com/api/v1/contract/funding_rate";
 const CACHE_KEY: &str = "socket.funding-rate-cache.v5";
 const CACHE_TTL_MS: f64 = 60.0 * 60.0 * 1000.0;
