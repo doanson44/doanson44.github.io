@@ -4,12 +4,13 @@ use js_sys::Date;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::Storage;
+use web_sys::{Headers, Request, RequestInit, RequestMode, Storage};
 
 use crate::application::ports::FundingRateProvider;
 use crate::domain::funding::FundingRateSnapshot;
 
-const FUNDING_ENDPOINT: &str = "https://api.mexc.com/api/v1/contract/funding_rate";
+const PROXY_ENDPOINT: &str = "http://147.224.240.172:8080/api/proxy";
+const MEXC_FUNDING_ENDPOINT: &str = "https://api.mexc.com/api/v1/contract/funding_rate";
 const CACHE_KEY: &str = "socket.funding-rate-cache.v5";
 const CACHE_TTL_MS: f64 = 60.0 * 60.0 * 1000.0;
 
@@ -57,28 +58,61 @@ impl FundingRateProvider for FundingRateApi {
 
 async fn fetch_snapshot() -> Result<FundingRateSnapshot, String> {
     let window = web_sys::window().ok_or_else(|| "Browser window is unavailable".to_string())?;
-    let response = JsFuture::from(window.fetch_with_str(FUNDING_ENDPOINT))
+
+    let headers = Headers::new()
+        .map_err(|error| format!("Failed to create proxy headers: {}", js_error(&error)))?;
+    headers
+        .set("Accept", "application/json")
+        .map_err(|error| format!("Failed to set Accept header: {}", js_error(&error)))?;
+    headers
+        .set("Content-Type", "application/json")
+        .map_err(|error| format!("Failed to set Content-Type header: {}", js_error(&error)))?;
+
+    let body = serde_json::json!({
+        "targetUrl": MEXC_FUNDING_ENDPOINT,
+        "method": "GET",
+    })
+    .to_string();
+
+    let options = RequestInit::new();
+    options.set_method("POST");
+    options.set_mode(RequestMode::Cors);
+    options.set_headers(&headers);
+    options.set_body(&JsValue::from_str(&body));
+
+    let request = Request::new_with_str_and_init(PROXY_ENDPOINT, &options)
+        .map_err(|error| format!("Failed to create funding proxy request: {}", js_error(&error)))?;
+
+    let response = JsFuture::from(window.fetch_with_request(&request))
         .await
-        .map_err(|error| format!("Funding rate request failed: {}", js_error(&error)))?;
+        .map_err(|error| format!("Funding proxy request failed: {}", js_error(&error)))?;
+
     let response: web_sys::Response = response
         .dyn_into()
-        .map_err(|_| "Funding rate response is invalid".to_string())?;
+        .map_err(|_| "Funding proxy response is invalid".to_string())?;
 
     if !response.ok() {
         return Err(format!(
-            "Funding rate request returned HTTP {}",
+            "Funding proxy request returned HTTP {}",
             response.status()
         ));
     }
 
-    let text =
-        JsFuture::from(response.text().map_err(|error| {
-            format!("Failed to read funding rate response: {}", js_error(&error))
-        })?)
-        .await
-        .map_err(|error| format!("Failed to read funding rate response: {}", js_error(&error)))?
-        .as_string()
-        .ok_or_else(|| "Funding rate response was not text".to_string())?;
+    let text = JsFuture::from(response.text().map_err(|error| {
+        format!(
+            "Failed to read funding proxy response: {}",
+            js_error(&error)
+        )
+    })?)
+    .await
+    .map_err(|error| {
+        format!(
+            "Failed to read funding proxy response: {}",
+            js_error(&error)
+        )
+    })?
+    .as_string()
+    .ok_or_else(|| "Funding proxy response was not text".to_string())?;
 
     let payload: ApiFundingRateResponse = serde_json::from_str(&text)
         .map_err(|error| format!("Failed to decode MEXC funding rate response: {error}"))?;
