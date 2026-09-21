@@ -251,6 +251,7 @@ fn build_visible(
     let mut dynamic = all
         .values()
         .filter(|item| !pinned_symbols.contains(&item.ticker.symbol.as_str()))
+        .filter(|item| matches_filter(item))
         .filter(|item| !is_searching || item.ticker.symbol.contains(&query))
         .cloned()
         .collect::<Vec<_>>();
