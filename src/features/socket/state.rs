@@ -249,6 +249,25 @@ impl SocketState {
             }
             slots[current_index] = Some(symbol.to_owned());
         }
-        self.pinned_slots.set(slots);
+        self.pinned_slots.set(slots.clone());
+        save_pinned_slots(&slots);
+    }
+}
+
+fn load_pinned_slots() -> Vec<Option<String>> {
+    web_sys::window()
+        .and_then(|window| window.local_storage().ok().flatten())
+        .and_then(|storage| storage.get_item(PINNED_SLOTS_KEY).ok().flatten())
+        .and_then(|raw| serde_json::from_str::<Vec<Option<String>>>(&raw).ok())
+        .unwrap_or_default()
+}
+
+fn save_pinned_slots(slots: &[Option<String>]) {
+    if let Some(storage) =
+        web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+    {
+        if let Ok(raw) = serde_json::to_string(slots) {
+            let _ = storage.set_item(PINNED_SLOTS_KEY, &raw);
+        }
     }
 }
