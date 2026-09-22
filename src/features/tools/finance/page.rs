@@ -68,7 +68,7 @@ pub fn FinancePage(tool: FinanceTool) -> impl IntoView {
             <div class="mx-auto max-w-6xl">
                 <div class="mb-4">
                     <a href="#/tools" class="mb-2 inline-flex items-center rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]">
-                        {move || format!("← {}", t!(i18n, tools_title))}
+                        {move || format!("← {}", t_string!(i18n, tools_title))}
                     </a>
                     <h2 class="mb-1 text-2xl font-semibold">{tool.title()}</h2>
                     <p class="mb-0 text-sm text-[var(--text-secondary)]">{tool.category()}</p>
@@ -116,7 +116,7 @@ pub fn FinancePage(tool: FinanceTool) -> impl IntoView {
                                 </div>
                             </div>
                             <div class="mt-4 flex justify-end gap-2">
-                                <button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=reset>{move || t!(i18n, common_reset)}</button>
+                                <button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=reset>{move || t_string!(i18n, common_reset)}</button>
                                 <button type="button" class="rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=calculate>{move || if i18n.get_locale() == Locale::vi { "Tính toán" } else { "Calculate" }}</button>
                             </div>
                         </div>
