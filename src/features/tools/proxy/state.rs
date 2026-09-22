@@ -20,6 +20,12 @@ pub struct ProxyState {
     pub copied: RwSignal<bool>,
 }
 
+impl Default for ProxyState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProxyState {
     /// Creates the default proxy playground state.
     pub fn new() -> Self {
