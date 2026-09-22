@@ -115,5 +115,6 @@
   "tools_desc_number_base": "Convert integers between binary, octal, decimal, and hexadecimal.",
   "tools_desc_html_entity": "Encode or decode common HTML entities.",
   "tools_desc_unicode_escape": "Escape or unescape Unicode code points.",
-  "tools_proxy_desc": "Call JSON APIs through the proxy and minimize responses for compact output."
+  "tools_proxy_desc": "Call JSON APIs through the proxy and minimize responses for compact output.",
+  "tools_calculator_suffix": "calculator."
 }
