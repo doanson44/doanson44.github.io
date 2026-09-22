@@ -844,7 +844,6 @@ pub fn minesweeper_flood_reveal(
     result
 }
 
-
 /// Fixed-size simulation state for the Flappy game.
 #[derive(Clone, Debug, PartialEq)]
 pub struct FlappyGame {
