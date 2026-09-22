@@ -252,12 +252,12 @@ fn localized_finance_category(category: &str) -> String {
     if i18n.get_locale() == Locale::vi {
         match category {
             "Core Finance" => "Tài chính cốt lõi".to_string(),
-            "Personal Finance" => "Tài chính cá nhân",
-            "Investment" => "Đầu tư",
-            "Business Finance" => "Tài chính doanh nghiệp",
-            "Valuation" => "Định giá",
-            "Trading" => "Giao dịch",
-            "Currency & Utilities" => "Tiền tệ & tiện ích",
+            "Personal Finance" => "Tài chính cá nhân".to_string(),
+            "Investment" => "Đầu tư".to_string(),
+            "Business Finance" => "Tài chính doanh nghiệp".to_string(),
+            "Valuation" => "Định giá".to_string(),
+            "Trading" => "Giao dịch".to_string(),
+            "Currency & Utilities" => "Tiền tệ & tiện ích".to_string(),
             _ => category.to_string(),
         }
     } else {
