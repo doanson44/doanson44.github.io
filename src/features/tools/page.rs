@@ -247,7 +247,7 @@ fn localized_tool_description(tool: ToolId) -> &'static str {
     }
 }
 
-fn localized_finance_category(category: &str) -> &'static str {
+fn localized_finance_category(category: &str) -> String {
     let i18n = use_i18n();
     if i18n.get_locale() == Locale::vi {
         match category {
@@ -258,10 +258,10 @@ fn localized_finance_category(category: &str) -> &'static str {
             "Valuation" => "Định giá",
             "Trading" => "Giao dịch",
             "Currency & Utilities" => "Tiền tệ & tiện ích",
-            _ => category,
+            _ => category.to_string(),
         }
     } else {
-        category
+        category.to_string()
     }
 }
 
