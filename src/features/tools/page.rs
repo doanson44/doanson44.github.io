@@ -24,22 +24,22 @@ pub fn ToolsPage() -> impl IntoView {
                     fallback=move || view! { <SearchResults query=search.get() developer_tools=ToolId::all().collect() finance_tools=finance_tools() /> }
                 >
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_general)) icon="▦">
-                        <ToolCard href="#/tools/markdown" title="Markdown Studio" description="Live Markdown editor with Mermaid diagram support." />
-                        <ToolCard href="#/tools/json" title="JSON Formatter" description="Validate, format, and minify JSON in your browser." />
-                        <ToolCard href="#/tools/jwt" title="JWT Decoder" description="Decode JWT header, payload, and signature locally." />
-                        <ToolCard href="#/tools/base64" title="Base64 Encoder / Decoder" description="Encode and decode UTF-8 text as standard Base64 locally." />
-                        <ToolCard href="#/tools/time" title="Time & Utilities" description="World clock, countdown, stopwatch, ruler, and timestamp utilities." />
-                        <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description="Call JSON APIs through the proxy and minimize responses for compact output." />
+                        <ToolCard href="#/tools/markdown" title="Markdown Studio" description=move || t_string!(i18n, tools_markdown_desc) />
+                        <ToolCard href="#/tools/json" title="JSON Formatter" description=move || t_string!(i18n, tools_json_desc) />
+                        <ToolCard href="#/tools/jwt" title="JWT Decoder" description=move || t_string!(i18n, tools_jwt_desc) />
+                        <ToolCard href="#/tools/base64" title="Base64 Encoder / Decoder" description=move || t_string!(i18n, tools_base64_desc) />
+                        <ToolCard href="#/tools/time" title="Time & Utilities" description=move || t_string!(i18n, tools_time_desc) />
+                        <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description=move || t_string!(i18n, tools_proxy_desc) />
                     </ToolSection>
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_developer)) icon="</>">
                         {ToolId::all()
-                            .map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description() /> })
+                            .map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=move || localized_tool_description(tool) /> })
                             .collect_view()}
                     </ToolSection>
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_finance)) icon="$">
                         {finance_tools()
                             .into_iter()
-                            .map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category()) /> })
+                            .map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=move || localized_finance_description(tool) /> })
                             .collect_view()}
                     </ToolSection>
                 </Show>
@@ -98,7 +98,7 @@ fn SearchResults(
     }
     for tool in developer_tools {
         if tool.title().to_lowercase().contains(&query)
-            || tool.description().to_lowercase().contains(&query)
+            || localized_tool_description(tool).to_lowercase().contains(&query)
         {
             results.push(
                 view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description()/> }
@@ -108,7 +108,7 @@ fn SearchResults(
     }
     for tool in finance_tools {
         if tool.title().to_lowercase().contains(&query)
-            || tool.category().to_lowercase().contains(&query)
+            || localized_finance_category(tool.category()).to_lowercase().contains(&query)
         {
             results.push(
                 view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category())/> }
@@ -165,6 +165,71 @@ fn ToolCard(
             <p class="m-0 text-sm leading-6 text-[var(--text-secondary)]">{description}</p>
         </a>
     }
+}
+
+fn localized_tool_description(tool: ToolId) -> String {
+    let i18n = use_i18n();
+    match tool.route() {
+        "xml" => t_string!(i18n, tools_desc_xml).to_string(),
+        "yaml" => t_string!(i18n, tools_desc_yaml).to_string(),
+        "toml" => t_string!(i18n, tools_desc_toml).to_string(),
+        "sql" => t_string!(i18n, tools_desc_sql).to_string(),
+        "html" => t_string!(i18n, tools_desc_html).to_string(),
+        "css" => t_string!(i18n, tools_desc_css).to_string(),
+        "javascript" => t_string!(i18n, tools_desc_javascript).to_string(),
+        "regex" => t_string!(i18n, tools_desc_regex).to_string(),
+        "url" => t_string!(i18n, tools_desc_url).to_string(),
+        "hash" => t_string!(i18n, tools_desc_hash).to_string(),
+        "uuid" => t_string!(i18n, tools_desc_uuid).to_string(),
+        "timestamp" => t_string!(i18n, tools_desc_timestamp).to_string(),
+        "color" => t_string!(i18n, tools_desc_color).to_string(),
+        "cron" => t_string!(i18n, tools_desc_cron).to_string(),
+        "http-status" => t_string!(i18n, tools_desc_http_status).to_string(),
+        "subnet" => t_string!(i18n, tools_desc_subnet).to_string(),
+        "qr" => t_string!(i18n, tools_desc_qr).to_string(),
+        "json-diff" => t_string!(i18n, tools_desc_json_diff).to_string(),
+        "json-path" => t_string!(i18n, tools_desc_json_path).to_string(),
+        "json-to-type" => t_string!(i18n, tools_desc_json_to_type).to_string(),
+        "curl" => t_string!(i18n, tools_desc_curl).to_string(),
+        "http-headers" => t_string!(i18n, tools_desc_http_headers).to_string(),
+        "openapi" => t_string!(i18n, tools_desc_openapi).to_string(),
+        "sql-to-entity" => t_string!(i18n, tools_desc_sql_to_entity).to_string(),
+        "git" => t_string!(i18n, tools_desc_git).to_string(),
+        "gitignore" => t_string!(i18n, tools_desc_gitignore).to_string(),
+        "chmod" => t_string!(i18n, tools_desc_chmod).to_string(),
+        "mime" => t_string!(i18n, tools_desc_mime).to_string(),
+        "diff" => t_string!(i18n, tools_desc_diff).to_string(),
+        "fake-data" => t_string!(i18n, tools_desc_fake_data).to_string(),
+        "mock-json" => t_string!(i18n, tools_desc_mock_json).to_string(),
+        "number-base" => t_string!(i18n, tools_desc_number_base).to_string(),
+        "html-entity" => t_string!(i18n, tools_desc_html_entity).to_string(),
+        "unicode-escape" => t_string!(i18n, tools_desc_unicode_escape).to_string(),
+        _ => tool.description().to_string(),
+    }
+}
+
+fn localized_finance_category(category: &str) -> String {
+    let i18n = use_i18n();
+    if i18n.get_locale() == Locale::vi {
+        match category {
+            "Core Finance" => "Tài chính cốt lõi".to_string(),
+            "Personal Finance" => "Tài chính cá nhân".to_string(),
+            "Investment" => "Đầu tư".to_string(),
+            "Business Finance" => "Tài chính doanh nghiệp".to_string(),
+            "Valuation" => "Định giá".to_string(),
+            "Trading" => "Giao dịch".to_string(),
+            "Currency & Utilities" => "Tiền tệ & tiện ích".to_string(),
+            _ => category.to_string(),
+        }
+    } else {
+        category.to_string()
+    }
+}
+
+fn localized_finance_description(tool: FinanceTool) -> String {
+    let category = localized_finance_category(tool.category());
+    let i18n = use_i18n();
+    format!("{} {}", category, t_string!(i18n, tools_calculator_suffix))
 }
 
 fn finance_tools() -> Vec<FinanceTool> {
