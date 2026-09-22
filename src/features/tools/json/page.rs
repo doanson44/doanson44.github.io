@@ -2,8 +2,8 @@ use leptos::prelude::*;
 
 use crate::components::tool_layout::{ToolDivider, ToolPanel, ToolPanelSide, ToolSplit};
 use crate::features::tools::json::state::JsonState;
-use crate::infrastructure::browser::copy_to_clipboard;
 use crate::i18n::*;
+use crate::infrastructure::browser::copy_to_clipboard;
 
 /// JSON Formatter page for validating, formatting, and minifying JSON.
 #[component]
