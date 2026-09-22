@@ -65,11 +65,11 @@ pub fn SocketPage(
                     </div>
                     <div class="flex items-center gap-2">
                         <label class="text-sm text-[var(--text-secondary)]" for="socket-sort-mode">"Sort by"</label>
-                        <select id="socket-sort-mode" class="rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Sort tickers by" prop:value=move || match state.sort_mode.get() { SocketSortMode::Momentum => "momentum", SocketSortMode::TotalTicks => "activity", SocketSortMode::Funding => "funding", SocketSortMode::Change24h => "change24h", SocketSortMode::Volume24h => "volume24h" } on:change=move |ev| {
+                        <select id="socket-sort-mode" class="rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Sort tickers by" prop:value=move || match state.sort_mode.get() { SocketSortMode::Momentum => "momentum", SocketSortMode::Price => "price", SocketSortMode::TotalTicks => "activity", SocketSortMode::Funding => "funding", SocketSortMode::Change24h => "change24h", SocketSortMode::Volume24h => "volume24h" } on:change=move |ev| {
                             let val = event_target_value(&ev);
-                            state.sort_mode.set(match val.as_str() { "activity" => SocketSortMode::TotalTicks, "funding" => SocketSortMode::Funding, "change24h" => SocketSortMode::Change24h, "volume24h" => SocketSortMode::Volume24h, _ => SocketSortMode::Momentum });
+                            state.sort_mode.set(match val.as_str() { "activity" => SocketSortMode::TotalTicks, "price" => SocketSortMode::Price, "funding" => SocketSortMode::Funding, "change24h" => SocketSortMode::Change24h, "volume24h" => SocketSortMode::Volume24h, _ => SocketSortMode::Momentum });
                         }>
-                            <option value="momentum">"Momentum"</option><option value="activity">"Total Ticks"</option><option value="funding">"Funding Rate"</option><option value="change24h">"24h Change"</option><option value="volume24h">"24h Volume"</option>
+                            <option value="momentum">"Momentum"</option><option value="price">"Price"</option><option value="activity">"Total Ticks"</option><option value="funding">"Funding Rate"</option><option value="change24h">"24h Change"</option><option value="volume24h">"24h Volume"</option>
                         </select>
                         <button type="button" class="rounded-md border border-[var(--border-color)] px-2 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=move || match state.sort_direction.get() { SocketSortDirection::Ascending => "Sort Ascending", SocketSortDirection::Descending => "Sort Descending" } on:click=move |_| state.sort_direction.update(|d| *d = match d { SocketSortDirection::Ascending => SocketSortDirection::Descending, SocketSortDirection::Descending => SocketSortDirection::Ascending })>
                             {move || match state.sort_direction.get() { SocketSortDirection::Ascending => "↑", SocketSortDirection::Descending => "↓" }}
@@ -163,6 +163,14 @@ fn build_visible(
                 .progress()
                 .cmp(&left.momentum.progress())
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+            SocketSortMode::Price => {
+                let left_price = left.ticker.last_price.unwrap_or(0.0);
+                let right_price = right.ticker.last_price.unwrap_or(0.0);
+                right_price
+                    .partial_cmp(&left_price)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+            }
             SocketSortMode::TotalTicks => {
                 let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
                 let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
