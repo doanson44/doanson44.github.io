@@ -444,7 +444,6 @@ pub fn pong_ai_y(paddle_y: i32, ball_y: i32, max_y: i32) -> i32 {
     (paddle_y + (ball_y - paddle_y) / 2).clamp(1, max_y)
 }
 
-
 /// The result of advancing a Breakout game by one simulation tick.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BreakoutTickResult {
@@ -544,8 +543,7 @@ impl BreakoutGame {
 
     /// Moves the player's paddle while keeping it inside the playfield.
     pub fn move_paddle(&mut self, delta: i32) {
-        self.paddle_x =
-            (self.paddle_x + delta).clamp(0, Self::WIDTH - Self::PADDLE_WIDTH);
+        self.paddle_x = (self.paddle_x + delta).clamp(0, Self::WIDTH - Self::PADDLE_WIDTH);
     }
 
     /// Advances the game by one fixed simulation step.
