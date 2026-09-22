@@ -129,9 +129,9 @@ fn localized_cv_text(key: &str) -> String {
     match key {
         "competencies" => t_string!(i18n, cv_competencies).to_string(),
         "skills" => t_string!(i18n, cv_skills).to_string(),
-        "experience" => t_string!(i18n, cv_experience),
-        "highlights" => t_string!(i18n, cv_highlights),
-        "education" => t_string!(i18n, cv_education),
+        "experience" => t_string!(i18n, cv_experience).to_string(),
+        "highlights" => t_string!(i18n, cv_highlights).to_string(),
+        "education" => t_string!(i18n, cv_education).to_string(),
         "what_i_do" => {
             if i18n.get_locale() == Locale::vi {
                 "Tôi làm gì".into()
