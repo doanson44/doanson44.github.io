@@ -1,4 +1,6 @@
 use leptos::prelude::*;
+
+use crate::i18n::*;
 use web_sys::HtmlTextAreaElement;
 
 /// Toolbar button descriptor.
@@ -188,6 +190,7 @@ pub fn Toolbar(
     #[prop(default = "markdown-editor")] textarea_id: &'static str,
     #[prop(optional)] toggle_preview: Option<Callback<()>>,
 ) -> impl IntoView {
+    let i18n = use_i18n();
     let buttons: Vec<_> = TOOLBAR_BUTTONS
         .iter()
         .enumerate()
@@ -217,12 +220,12 @@ pub fn Toolbar(
             {buttons}
             <div class="ml-auto flex gap-1">
                 {if let Some(toggle) = toggle_preview {
-                    view! { <button type="button" class="inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title="Preview only (hide editor)" on:click=move |_| toggle.run(())><span aria-hidden="true">"◉"</span><span class="ml-1 hidden lg:inline">"Preview"</span></button> }.into_any()
+                    view! { <button type="button" class="inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title=move || t!(i18n, markdown_preview) on:click=move |_| toggle.run(())><span aria-hidden="true">"◉"</span><span class="ml-1 hidden lg:inline">{move || t!(i18n, markdown_preview)}</span></button> }.into_any()
                 } else {
                     ().into_any()
                 }}
-                <button type="button" class="inline-flex min-h-8 items-center rounded border border-red-400/50 px-2 text-xs font-semibold text-red-400 transition hover:bg-red-400/10 focus:outline-none focus:ring-2 focus:ring-red-400" title="Clear editor" on:click=move |_| { source.set(String::new()); if let Some(textarea) = crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(textarea_id) { textarea.set_value(""); let _ = textarea.focus(); } }><span aria-hidden="true">"×"</span><span class="ml-1 hidden lg:inline">"Clear"</span></button>
-                <button type="button" class="inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title="Reset to sample" on:click=move |_| { let doc = crate::domain::document::MarkdownDocument::sample(); source.set(doc.content.clone()); if let Some(textarea) = crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(textarea_id) { textarea.set_value(&doc.content); } }><span aria-hidden="true">"↶"</span><span class="ml-1 hidden lg:inline">"Reset"</span></button>
+                <button type="button" class="inline-flex min-h-8 items-center rounded border border-red-400/50 px-2 text-xs font-semibold text-red-400 transition hover:bg-red-400/10 focus:outline-none focus:ring-2 focus:ring-red-400" title=move || t!(i18n, markdown_clear) on:click=move |_| { source.set(String::new()); if let Some(textarea) = crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(textarea_id) { textarea.set_value(""); let _ = textarea.focus(); } }><span aria-hidden="true">"×"</span><span class="ml-1 hidden lg:inline">{move || t!(i18n, markdown_clear)}</span></button>
+                <button type="button" class="inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title=move || t!(i18n, markdown_reset) on:click=move |_| { let doc = crate::domain::document::MarkdownDocument::sample(); source.set(doc.content.clone()); if let Some(textarea) = crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(textarea_id) { textarea.set_value(&doc.content); } }><span aria-hidden="true">"↶"</span><span class="ml-1 hidden lg:inline">{move || t!(i18n, markdown_reset)}</span></button>
             </div>
         </div>
     }
