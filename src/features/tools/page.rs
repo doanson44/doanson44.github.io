@@ -251,7 +251,7 @@ fn localized_finance_category(category: &str) -> String {
     let i18n = use_i18n();
     if i18n.get_locale() == Locale::vi {
         match category {
-            "Core Finance" => "Tài chính cốt lõi",
+            "Core Finance" => "Tài chính cốt lõi".to_string(),
             "Personal Finance" => "Tài chính cá nhân",
             "Investment" => "Đầu tư",
             "Business Finance" => "Tài chính doanh nghiệp",
