@@ -98,7 +98,9 @@ fn SearchResults(
     }
     for tool in developer_tools {
         if tool.title().to_lowercase().contains(&query)
-            || localized_tool_description(tool).to_lowercase().contains(&query)
+            || localized_tool_description(tool)
+                .to_lowercase()
+                .contains(&query)
         {
             results.push(
                 view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description()/> }
@@ -108,7 +110,9 @@ fn SearchResults(
     }
     for tool in finance_tools {
         if tool.title().to_lowercase().contains(&query)
-            || localized_finance_category(tool.category()).to_lowercase().contains(&query)
+            || localized_finance_category(tool.category())
+                .to_lowercase()
+                .contains(&query)
         {
             results.push(
                 view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category())/> }
