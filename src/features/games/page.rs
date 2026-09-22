@@ -1728,7 +1728,7 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             return;
         }
 
-        if game.get().lives() == 0 || game.get().score() > 0 {
+        if game.get().is_finished() {
             BreakoutService::reset(&mut game.write());
             score.set(0);
         }
@@ -1847,7 +1847,7 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     on:click=move |_| toggle()
                 >
                     {move || {
-                        if game.get().lives() == 0 {
+                        if game.get().is_finished() {
                             "New Game (Space)"
                         } else if running.get() {
                             "Pause (Space)"
