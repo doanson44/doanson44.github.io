@@ -167,7 +167,8 @@ fn ToolCard(
     }
 }
 
-fn localized_tool_description(i18n: impl Copy, tool: ToolId) -> &'static str {
+fn localized_tool_description(tool: ToolId) -> &'static str {
+    let i18n = use_i18n();
     match i18n.get_locale() {
         Locale::vi => match tool.route() {
             "xml" => t_string!(i18n, tools_desc_xml),
@@ -246,7 +247,8 @@ fn localized_tool_description(i18n: impl Copy, tool: ToolId) -> &'static str {
     }
 }
 
-fn localized_finance_category(i18n: impl Copy, category: &str) -> &'static str {
+fn localized_finance_category(category: &str) -> &'static str {
+    let i18n = use_i18n();
     if i18n.get_locale() == Locale::vi {
         match category {
             "Core Finance" => "Tài chính cốt lõi",
