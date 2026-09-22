@@ -218,9 +218,13 @@ fn build_visible(
                 }
             }
         };
-        match direction {
-            SocketSortDirection::Descending => cmp,
-            SocketSortDirection::Ascending => cmp.reverse(),
+        if filter == SocketFilter::Burst {
+            cmp
+        } else {
+            match direction {
+                SocketSortDirection::Descending => cmp,
+                SocketSortDirection::Ascending => cmp.reverse(),
+            }
         }
     };
     let matches_filter = |item: &TrackedFuturesTicker| match filter {
