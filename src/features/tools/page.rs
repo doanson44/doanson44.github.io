@@ -167,6 +167,32 @@ fn ToolCard(
     }
 }
 
+fn localized_tool_description(i18n: I18nContext, tool: ToolId) -> &'static str {
+    match i18n.get_locale() {
+        Locale::vi => match tool.route() {
+            "xml" => t_string!(i18n, tools_desc_xml),\n            "yaml" => t_string!(i18n, tools_desc_yaml),\n            "toml" => t_string!(i18n, tools_desc_toml),\n            "sql" => t_string!(i18n, tools_desc_sql),\n            "html" => t_string!(i18n, tools_desc_html),\n            "css" => t_string!(i18n, tools_desc_css),\n            "javascript" => t_string!(i18n, tools_desc_javascript),\n            "regex" => t_string!(i18n, tools_desc_regex),\n            "url" => t_string!(i18n, tools_desc_url),\n            "hash" => t_string!(i18n, tools_desc_hash),\n            "uuid" => t_string!(i18n, tools_desc_uuid),\n            "timestamp" => t_string!(i18n, tools_desc_timestamp),\n            "color" => t_string!(i18n, tools_desc_color),\n            "cron" => t_string!(i18n, tools_desc_cron),\n            "http-status" => t_string!(i18n, tools_desc_http_status),\n            "subnet" => t_string!(i18n, tools_desc_subnet),\n            "qr" => t_string!(i18n, tools_desc_qr),\n            "json-diff" => t_string!(i18n, tools_desc_json_diff),\n            "json-path" => t_string!(i18n, tools_desc_json_path),\n            "json-to-type" => t_string!(i18n, tools_desc_json_to_type),\n            "curl" => t_string!(i18n, tools_desc_curl),\n            "http-headers" => t_string!(i18n, tools_desc_http_headers),\n            "openapi" => t_string!(i18n, tools_desc_openapi),\n            "sql-to-entity" => t_string!(i18n, tools_desc_sql_to_entity),\n            "git" => t_string!(i18n, tools_desc_git),\n            "gitignore" => t_string!(i18n, tools_desc_gitignore),\n            "chmod" => t_string!(i18n, tools_desc_chmod),\n            "mime" => t_string!(i18n, tools_desc_mime),\n            "diff" => t_string!(i18n, tools_desc_diff),\n            "fake-data" => t_string!(i18n, tools_desc_fake_data),\n            "mock-json" => t_string!(i18n, tools_desc_mock_json),\n            "number-base" => t_string!(i18n, tools_desc_number_base),\n            "html-entity" => t_string!(i18n, tools_desc_html_entity),\n            "unicode-escape" => t_string!(i18n, tools_desc_unicode_escape),
+            _ => tool.description(),
+        },
+        _ => match tool.route() {
+            "xml" => t_string!(i18n, tools_desc_xml),\n            "yaml" => t_string!(i18n, tools_desc_yaml),\n            "toml" => t_string!(i18n, tools_desc_toml),\n            "sql" => t_string!(i18n, tools_desc_sql),\n            "html" => t_string!(i18n, tools_desc_html),\n            "css" => t_string!(i18n, tools_desc_css),\n            "javascript" => t_string!(i18n, tools_desc_javascript),\n            "regex" => t_string!(i18n, tools_desc_regex),\n            "url" => t_string!(i18n, tools_desc_url),\n            "hash" => t_string!(i18n, tools_desc_hash),\n            "uuid" => t_string!(i18n, tools_desc_uuid),\n            "timestamp" => t_string!(i18n, tools_desc_timestamp),\n            "color" => t_string!(i18n, tools_desc_color),\n            "cron" => t_string!(i18n, tools_desc_cron),\n            "http-status" => t_string!(i18n, tools_desc_http_status),\n            "subnet" => t_string!(i18n, tools_desc_subnet),\n            "qr" => t_string!(i18n, tools_desc_qr),\n            "json-diff" => t_string!(i18n, tools_desc_json_diff),\n            "json-path" => t_string!(i18n, tools_desc_json_path),\n            "json-to-type" => t_string!(i18n, tools_desc_json_to_type),\n            "curl" => t_string!(i18n, tools_desc_curl),\n            "http-headers" => t_string!(i18n, tools_desc_http_headers),\n            "openapi" => t_string!(i18n, tools_desc_openapi),\n            "sql-to-entity" => t_string!(i18n, tools_desc_sql_to_entity),\n            "git" => t_string!(i18n, tools_desc_git),\n            "gitignore" => t_string!(i18n, tools_desc_gitignore),\n            "chmod" => t_string!(i18n, tools_desc_chmod),\n            "mime" => t_string!(i18n, tools_desc_mime),\n            "diff" => t_string!(i18n, tools_desc_diff),\n            "fake-data" => t_string!(i18n, tools_desc_fake_data),\n            "mock-json" => t_string!(i18n, tools_desc_mock_json),\n            "number-base" => t_string!(i18n, tools_desc_number_base),\n            "html-entity" => t_string!(i18n, tools_desc_html_entity),\n            "unicode-escape" => t_string!(i18n, tools_desc_unicode_escape),
+            _ => tool.description(),
+        },
+    }
+}
+
+fn localized_finance_category(i18n: I18nContext, category: &str) -> &'static str {
+    if i18n.get_locale() == Locale::vi {
+        match category {
+            "Core Finance" => "Tài chính cốt lõi",
+            "Personal Finance" => "Tài chính cá nhân",
+            "Investing" => "Đầu tư",
+            "Business Finance" => "Tài chính doanh nghiệp",
+            "Markets" => "Thị trường",
+            _ => category,
+        }
+    } else { category }
+}
+
 fn finance_tools() -> Vec<FinanceTool> {
     vec![
         FinanceTool::CompoundInterest,
