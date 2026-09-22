@@ -157,12 +157,20 @@ fn build_visible(
     let query = search_query.trim().to_uppercase();
     let is_searching = !query.is_empty();
     let sort_fn = |left: &TrackedFuturesTicker, right: &TrackedFuturesTicker| {
-        let cmp = match sort {
-            SocketSortMode::Momentum => right
+        let cmp = if filter == SocketFilter::Burst {
+            right
                 .momentum
-                .progress()
-                .cmp(&left.momentum.progress())
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+                .burst_streak()
+                .cmp(&left.momentum.burst_streak())
+                .then_with(|| right.momentum.burst_score().cmp(&left.momentum.burst_score()))
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+        } else {
+            match sort {
+                SocketSortMode::Momentum => right
+                    .momentum
+                    .progress()
+                    .cmp(&left.momentum.progress())
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
             SocketSortMode::Price => {
                 let left_price = left.ticker.last_price.unwrap_or(0.0);
                 let right_price = right.ticker.last_price.unwrap_or(0.0);
@@ -207,6 +215,7 @@ fn build_visible(
                     .partial_cmp(&left_vol)
                     .unwrap_or(std::cmp::Ordering::Equal)
                     .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+                }
             }
         };
         match direction {
