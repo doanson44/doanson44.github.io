@@ -2,6 +2,8 @@ use std::{collections::HashMap, rc::Rc};
 
 use leptos::prelude::*;
 
+use crate::i18n::*;
+
 use crate::application::ports::{
     FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream,
 };
@@ -18,6 +20,7 @@ pub fn SocketPage(
     funding_provider: Rc<dyn FundingRateProvider>,
 ) -> impl IntoView {
     let state = SocketState::new(stream, funding_provider);
+    let i18n = use_i18n();
     let visible = Memo::new({
         let tickers = state.tickers;
         let view_mode = state.view_mode;
@@ -56,31 +59,31 @@ pub fn SocketPage(
                 <div class="mb-3 flex shrink-0 flex-wrap items-center gap-2">
                     <div class="flex w-full max-w-sm items-center md:mr-auto">
                         <label class="sr-only" for="socket-search">"Search symbol"</label>
-                        <input id="socket-search" type="search" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" placeholder="Search symbol..." prop:value=move || state.search_query.get() on:input=move |ev| state.search_query.set(event_target_value(&ev)) />
+                        <input id="socket-search" type="search" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" placeholder={move || t!(i18n, socket_search)} prop:value=move || state.search_query.get() on:input=move |ev| state.search_query.set(event_target_value(&ev)) />
                     </div>
-                    <div class="flex" role="group" aria-label="Ticker view">
-                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::All) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::All).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::All); state.filter.set(SocketFilter::All); }>"All"</button>
-                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::All); state.filter.set(SocketFilter::Burst); }>"Burst"</button>
-                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::PinnedOnly); state.filter.set(SocketFilter::All); }>"Pinned only"</button>
+                    <div class="flex" role="group" aria-label=move || t!(i18n, socket_view)>
+                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::All) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::All).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::All); state.filter.set(SocketFilter::All); }>{move || t!(i18n, socket_all)}</button>
+                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::All); state.filter.set(SocketFilter::Burst); }>{move || t!(i18n, socket_burst)}</button>
+                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::PinnedOnly); state.filter.set(SocketFilter::All); }>{move || t!(i18n, socket_pinned)}</button>
                     </div>
                     <div class="flex items-center gap-2">
-                        <label class="text-sm text-[var(--text-secondary)]" for="socket-sort-mode">"Sort by"</label>
+                        <label class="text-sm text-[var(--text-secondary)]" for="socket-sort-mode">{move || t!(i18n, socket_sort)}</label>
                         <select id="socket-sort-mode" class="rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Sort tickers by" prop:value=move || match state.sort_mode.get() { SocketSortMode::Momentum => "momentum", SocketSortMode::Price => "price", SocketSortMode::TotalTicks => "activity", SocketSortMode::Funding => "funding", SocketSortMode::Change24h => "change24h", SocketSortMode::Volume24h => "volume24h" } on:change=move |ev| {
                             let val = event_target_value(&ev);
                             state.sort_mode.set(match val.as_str() { "activity" => SocketSortMode::TotalTicks, "price" => SocketSortMode::Price, "funding" => SocketSortMode::Funding, "change24h" => SocketSortMode::Change24h, "volume24h" => SocketSortMode::Volume24h, _ => SocketSortMode::Momentum });
                         }>
-                            <option value="momentum">"Momentum"</option><option value="price">"Price"</option><option value="activity">"Total Ticks"</option><option value="funding">"Funding Rate"</option><option value="change24h">"24h Change"</option><option value="volume24h">"24h Volume"</option>
+                            <option value="momentum">{move || t!(i18n, socket_momentum)}</option><option value="price">{move || t!(i18n, socket_price)}</option><option value="activity">{move || t!(i18n, socket_activity)}</option><option value="funding">{move || t!(i18n, socket_funding)}</option><option value="change24h">{move || t!(i18n, socket_change24h)}</option><option value="volume24h">{move || t!(i18n, socket_volume24h)}</option>
                         </select>
                         <button type="button" class="rounded-md border border-[var(--border-color)] px-2 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=move || match state.sort_direction.get() { SocketSortDirection::Ascending => "Sort Ascending", SocketSortDirection::Descending => "Sort Descending" } on:click=move |_| state.sort_direction.update(|d| *d = match d { SocketSortDirection::Ascending => SocketSortDirection::Descending, SocketSortDirection::Descending => SocketSortDirection::Ascending })>
                             {move || match state.sort_direction.get() { SocketSortDirection::Ascending => "↑", SocketSortDirection::Descending => "↓" }}
                         </button>
                     </div>
                     <div class="flex items-center gap-2">
-                        <label class="text-sm text-[var(--text-secondary)]" for="socket-ticker-limit">"Show"</label>
+                        <label class="text-sm text-[var(--text-secondary)]" for="socket-ticker-limit">{move || t!(i18n, socket_show)}</label>
                         <select id="socket-ticker-limit" class="rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Number of dynamic tickers to show" prop:value=move || state.ticker_limit.get().to_string() on:change=move |ev| { let value = event_target_value(&ev).parse::<usize>().unwrap_or(DEFAULT_LIMIT); state.set_ticker_limit(value); }>
                             {SocketState::limit_options().iter().map(|value| { let label = if *value == usize::MAX { "All".to_string() } else { value.to_string() }; view! { <option value=value.to_string()>{label}</option> } }).collect_view()}
                         </select>
-                        <span class="text-sm text-[var(--text-secondary)]">"dynamic"</span>
+                        <span class="text-sm text-[var(--text-secondary)]">{move || t!(i18n, socket_dynamic)}</span>
                     </div>
                 </div>
                 <div class="socket-grid flex-grow overflow-auto" aria-live="polite">
@@ -134,8 +137,8 @@ fn TickerCard(
                 <div class="flex items-start justify-between gap-2"><span class="truncate font-mono font-semibold">{symbol.clone()}</span><span aria-hidden="true" class="text-sm text-[var(--text-secondary)]">{move || if is_pinned.get() { "●" } else { "○" }}</span></div>
                 <div class="socket-ticker-price mt-1 flex items-center justify-between gap-2"><span class="truncate font-mono">{move || ticker.get().map(|item| format_number(item.ticker.last_price)).unwrap_or_else(|| "—".into())}</span>{move || ticker.get().filter(|item| item.momentum.is_burst()).map(|_| view! { <span class="shrink-0 rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]" aria-label="Burst detected">"BURST"</span> })}</div>
                 <div class="mt-1 flex items-center justify-between gap-2">{move || ticker.get().map(|item| view! { <span class=change_class(item.ticker.change_24h)>{format_percent(item.ticker.change_24h)}</span> }).unwrap_or_else(|| view! { <span class="text-[var(--text-secondary)]">{"—".to_string()}</span> })}<span class="font-mono text-xs text-[var(--text-secondary)]">{move || ticker.get().map(|item| format!("{}%", item.momentum.progress())).unwrap_or_else(|| "—".into())}</span></div>
-                <div class="mt-1 flex items-center justify-between gap-2 text-xs"><span class="text-[var(--text-secondary)]">"Funding"</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
-                <progress class="socket-ticker-progress mt-2 w-full" max="100" value=move || ticker.get().map(|item| item.momentum.progress().to_string()).unwrap_or_else(|| "0".into()) aria-label="Directional progress"></progress>
+                <div class="mt-1 flex items-center justify-between gap-2 text-xs"><span class="text-[var(--text-secondary)]">{move || t!(i18n, socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
+                <progress class="socket-ticker-progress mt-2 w-full" max="100" value=move || ticker.get().map(|item| item.momentum.progress().to_string()).unwrap_or_else(|| "0".into()) aria-label=move || t!(i18n, socket_momentum)></progress>
                 <div class="mt-auto flex justify-between gap-2 pt-2 font-mono text-xs"><span class="text-[var(--success)]">{move || ticker.get().map(|item| format!("↑ {}", item.momentum.up_ticks)).unwrap_or_else(|| "↑ 0".into())}</span><span class="text-[var(--danger)]">{move || ticker.get().map(|item| format!("↓ {}", item.momentum.down_ticks)).unwrap_or_else(|| "↓ 0".into())}</span></div>
             </div>
         </button>
@@ -294,19 +297,21 @@ fn build_visible(
 }
 
 fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
+    let i18n = use_i18n();
     match status {
-        FuturesConnectionStatus::Connected => view! { <span class="rounded-full border border-[var(--success)]/40 bg-[var(--success)]/10 px-2 py-1 text-xs text-[var(--success)]">"Connected"</span> }.into_any(),
-        FuturesConnectionStatus::Connecting => view! { <span class="rounded-full border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-2 py-1 text-xs text-[var(--warning)]">"Connecting"</span> }.into_any(),
-        FuturesConnectionStatus::Reconnecting => view! { <span class="rounded-full border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-2 py-1 text-xs text-[var(--warning)]">"Reconnecting"</span> }.into_any(),
-        FuturesConnectionStatus::Disconnected => view! { <span class="rounded-full border border-[var(--border-color)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-secondary)]">"Disconnected"</span> }.into_any(),
-        FuturesConnectionStatus::Error(_) => view! { <span class="rounded-full border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-2 py-1 text-xs text-[var(--danger)]">"Connection error"</span> }.into_any(),
+        FuturesConnectionStatus::Connected => view! { <span class="rounded-full border border-[var(--success)]/40 bg-[var(--success)]/10 px-2 py-1 text-xs text-[var(--success)]">{move || t!(i18n, socket_connected)}</span> }.into_any(),
+        FuturesConnectionStatus::Connecting => view! { <span class="rounded-full border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-2 py-1 text-xs text-[var(--warning)]">{move || t!(i18n, socket_connecting)}</span> }.into_any(),
+        FuturesConnectionStatus::Reconnecting => view! { <span class="rounded-full border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-2 py-1 text-xs text-[var(--warning)]">{move || t!(i18n, socket_reconnecting)}</span> }.into_any(),
+        FuturesConnectionStatus::Disconnected => view! { <span class="rounded-full border border-[var(--border-color)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-secondary)]">{move || t!(i18n, socket_disconnected)}</span> }.into_any(),
+        FuturesConnectionStatus::Error(_) => view! { <span class="rounded-full border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-2 py-1 text-xs text-[var(--danger)]">{move || t!(i18n, socket_connection_error)}</span> }.into_any(),
     }
 }
 
 fn empty_state(mode: SocketViewMode) -> impl IntoView {
-    let text = match mode {
-        SocketViewMode::All => "Waiting for market data...",
-        SocketViewMode::PinnedOnly => "No pinned tickers",
+    let i18n = use_i18n();
+    let text = move || match mode {
+        SocketViewMode::All => t!(i18n, socket_waiting),
+        SocketViewMode::PinnedOnly => t!(i18n, socket_no_pinned),
     };
     view! { <div class="flex h-full flex-col items-center justify-center py-5 text-[var(--text-secondary)]"><span class="mb-2 text-2xl" aria-hidden="true">"◌"</span><span>{text}</span></div> }
 }
