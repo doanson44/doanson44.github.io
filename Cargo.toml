@@ -25,6 +25,7 @@ sha2 = "0.10"
 qrcode = "0.14"
 send_wrapper = "0.6"
 gloo-timers = { version = "0.3", features = ["futures"] }
+leptos_i18n = { version = "0.5.5", features = ["csr"] }
 
 [dependencies.web-sys]
 version = "0.3"
@@ -63,3 +64,7 @@ lto = true
 codegen-units = 1
 strip = true
 panic = "abort"
+
+[package.metadata.leptos-i18n]
+default = "vi"
+locales = ["vi", "en"]
