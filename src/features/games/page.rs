@@ -1972,6 +1972,8 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         let last_time_ref = Rc::clone(&last_time);
         let accumulator_ref = Rc::clone(&accumulator);
 
+        let frame_window = w.clone();
+        let frame_render = Rc::clone(&animation_render);
         let frame = Closure::wrap(Box::new(move |now: f64| {
             let mut last = last_time_ref.borrow_mut();
             let previous = last.replace(now).unwrap_or(now);
@@ -2001,15 +2003,21 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             animation_time.set(now);
             if !game.get_untracked().running {
                 animation_frame.set(None);
-                animation_render();
+                frame_render();
                 return;
             }
 
-            animation_render();
-            if let Some(cb) = callback_ref.borrow().as_ref() {
-                if let Ok(id) = w.request_animation_frame(cb.as_ref().unchecked_ref()) {
-                    animation_frame.set(Some(id));
-                }
+            frame_render();
+            let request_id = {
+                let callback_ref = callback_ref.borrow();
+                callback_ref.as_ref().and_then(|cb| {
+                    frame_window
+                        .request_animation_frame(cb.as_ref().unchecked_ref())
+                        .ok()
+                })
+            };
+            if let Some(id) = request_id {
+                animation_frame.set(Some(id));
             }
         }) as Box<dyn FnMut(f64)>);
 
