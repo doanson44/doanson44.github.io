@@ -24,22 +24,22 @@ pub fn ToolsPage() -> impl IntoView {
                     fallback=move || view! { <SearchResults query=search.get() developer_tools=ToolId::all().collect() finance_tools=finance_tools() /> }
                 >
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_general)) icon="▦">
-                        <ToolCard href="#/tools/markdown" title="Markdown Studio" description=t_string!(i18n, tools_markdown_desc).to_string() />
-                        <ToolCard href="#/tools/json" title="JSON Formatter" description=t_string!(i18n, tools_json_desc).to_string() />
-                        <ToolCard href="#/tools/jwt" title="JWT Decoder" description=t_string!(i18n, tools_jwt_desc).to_string() />
-                        <ToolCard href="#/tools/base64" title="Base64 Encoder / Decoder" description=t_string!(i18n, tools_base64_desc).to_string() />
-                        <ToolCard href="#/tools/time" title="Time & Utilities" description=t_string!(i18n, tools_time_desc).to_string() />
-                        <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description=t_string!(i18n, tools_proxy_desc).to_string() />
+                        <ToolCard href="#/tools/markdown" title="Markdown Studio" description=Signal::derive(move || t_string!(i18n, tools_markdown_desc).to_string()) />
+                        <ToolCard href="#/tools/json" title="JSON Formatter" description=Signal::derive(move || t_string!(i18n, tools_json_desc).to_string()) />
+                        <ToolCard href="#/tools/jwt" title="JWT Decoder" description=Signal::derive(move || t_string!(i18n, tools_jwt_desc).to_string()) />
+                        <ToolCard href="#/tools/base64" title="Base64 Encoder / Decoder" description=Signal::derive(move || t_string!(i18n, tools_base64_desc).to_string()) />
+                        <ToolCard href="#/tools/time" title="Time & Utilities" description=Signal::derive(move || t_string!(i18n, tools_time_desc).to_string()) />
+                        <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description=Signal::derive(move || t_string!(i18n, tools_proxy_desc).to_string()) />
                     </ToolSection>
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_developer)) icon="</>">
                         {ToolId::all()
-                            .map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=localized_tool_description(tool) /> })
+                            .map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=Signal::derive(move || localized_tool_description(tool)) /> })
                             .collect_view()}
                     </ToolSection>
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_finance)) icon="$">
                         {finance_tools()
                             .into_iter()
-                            .map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=localized_finance_description(tool) /> })
+                            .map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=Signal::derive(move || localized_finance_description(tool)) /> })
                             .collect_view()}
                     </ToolSection>
                 </Show>
@@ -92,7 +92,7 @@ fn SearchResults(
     for (href, title, description) in general {
         if title.to_lowercase().contains(&query) || description.to_lowercase().contains(&query) {
             results.push(
-                view! { <ToolCard href=href title=title description=description/> }.into_any(),
+                view! { <ToolCard href=href title=title description=Signal::derive(move || description.to_string())/> }.into_any(),
             );
         }
     }
@@ -103,7 +103,7 @@ fn SearchResults(
                 .contains(&query)
         {
             results.push(
-                view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=tool.description()/> }
+                view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=Signal::derive(move || localized_tool_description(tool))/> }
                     .into_any(),
             );
         }
@@ -115,7 +115,7 @@ fn SearchResults(
                 .contains(&query)
         {
             results.push(
-                view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=format!("{} calculator.", tool.category())/> }
+                view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=Signal::derive(move || localized_finance_description(tool))/> }
                     .into_any(),
             );
         }
@@ -161,12 +161,12 @@ fn ToolSection(
 fn ToolCard(
     #[prop(into)] href: String,
     #[prop(into)] title: String,
-    #[prop(into)] description: String,
+    #[prop(into)] description: Signal<String>,
 ) -> impl IntoView {
     view! {
         <a href=href class="group rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4 no-underline transition hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]">
             <h3 class="mb-1 text-sm font-semibold text-[var(--text-primary)]"><span class="mr-2 text-[var(--accent)]" aria-hidden="true">"◆"</span>{title}</h3>
-            <p class="m-0 text-sm leading-6 text-[var(--text-secondary)]">{description}</p>
+            <p class="m-0 text-sm leading-6 text-[var(--text-secondary)]">{move || description.get()}</p>
         </a>
     }
 }
