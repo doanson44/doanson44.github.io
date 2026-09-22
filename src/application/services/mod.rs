@@ -1,5 +1,6 @@
 pub mod base64;
 pub mod developer;
+pub mod games;
 pub mod finance;
 pub mod json;
 pub mod jwt;
