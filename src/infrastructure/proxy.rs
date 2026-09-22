@@ -6,8 +6,7 @@ use web_sys::{Headers, Request, RequestInit, RequestMode, Response};
 
 use crate::application::ports::ProxyClient;
 
-const PROXY_ENDPOINT: &str =
-    "https://doanson44-forward-proxy.work-sontd.workers.dev/api/proxy";
+const PROXY_ENDPOINT: &str = "https://doanson44-forward-proxy.work-sontd.workers.dev/api/proxy";
 
 /// Browser adapter for the external CORS/forward proxy.
 ///
