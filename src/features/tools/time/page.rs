@@ -7,8 +7,8 @@ use crate::application::ports::TimeProvider;
 use crate::application::services::time::TimeService;
 use crate::domain::time::{CountdownState, StopwatchState, TimestampDirection, TimestampUnit};
 use crate::features::tools::time::state::{ClockEntry, TimeState, TimeTab};
-use crate::infrastructure::time::{local_timezone, BrowserTimeProvider};
 use crate::i18n::*;
+use crate::infrastructure::time::{local_timezone, BrowserTimeProvider};
 
 #[component]
 pub fn TimePage() -> impl IntoView {
