@@ -468,3 +468,17 @@ body {
         width: 100% !important;
     }
 }
+
+
+.flappy-stage {
+    width: min(100%, 400px);
+    background: var(--bs-body-bg);
+}
+
+.flappy-canvas {
+    aspect-ratio: 2 / 3;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
