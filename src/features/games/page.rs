@@ -1,5 +1,5 @@
 #![allow(clippy::possible_missing_else)]
-use crate::application::services::PongService;
+use crate::application::services::games::PongService;
 use crate::domain::games::{
     blackjack_score, blackjack_should_hit, checkers_moves, chess_ai_move, chess_apply_move,
     chess_glyph, chess_has_move, chess_is_check, chess_legal_moves, chess_start,
