@@ -1767,8 +1767,8 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Pong ──────────────────────────────────────────────────────────────────────
 
 fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    const width = PongGame::WIDTH as usize;
-    const height = PongGame::HEIGHT as usize;
+    let width = PongGame::WIDTH as usize;
+    let height = PongGame::HEIGHT as usize;
 
     let game = RwSignal::new(PongService::new_game());
     let running = RwSignal::new(false);
