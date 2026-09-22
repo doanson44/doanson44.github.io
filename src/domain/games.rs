@@ -444,6 +444,194 @@ pub fn pong_ai_y(paddle_y: i32, ball_y: i32, max_y: i32) -> i32 {
     (paddle_y + (ball_y - paddle_y) / 2).clamp(1, max_y)
 }
 
+
+/// The result of advancing a Breakout game by one simulation tick.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BreakoutTickResult {
+    /// The ball is still in play.
+    Rally,
+    /// The ball destroyed a brick.
+    BrickHit,
+    /// The player lost one life and the ball was reset.
+    LifeLost,
+    /// All bricks were destroyed.
+    Won,
+    /// The player lost the final life.
+    GameOver,
+}
+
+/// Pure game state and rules for a single-player Breakout match.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BreakoutGame {
+    paddle_x: i32,
+    ball_x: i32,
+    ball_y: i32,
+    ball_dx: i32,
+    ball_dy: i32,
+    bricks: [bool; Self::BRICK_COUNT],
+    score: u32,
+    lives: u8,
+}
+
+impl BreakoutGame {
+    /// Width of the logical playfield in cells.
+    pub const WIDTH: i32 = 12;
+    /// Height of the logical playfield in cells.
+    pub const HEIGHT: i32 = 18;
+    /// Paddle width in cells.
+    pub const PADDLE_WIDTH: i32 = 3;
+    /// Number of brick rows.
+    pub const BRICK_ROWS: usize = 4;
+    /// Number of brick columns.
+    pub const BRICK_COLS: usize = 6;
+    /// Total number of bricks.
+    pub const BRICK_COUNT: usize = Self::BRICK_ROWS * Self::BRICK_COLS;
+    /// Initial number of lives.
+    pub const INITIAL_LIVES: u8 = 3;
+    const PADDLE_Y: i32 = Self::HEIGHT - 2;
+    const BRICK_START_X: i32 = 3;
+
+    /// Creates a new Breakout match.
+    pub fn new() -> Self {
+        Self {
+            paddle_x: (Self::WIDTH - Self::PADDLE_WIDTH) / 2,
+            ball_x: Self::WIDTH / 2,
+            ball_y: Self::HEIGHT - 4,
+            ball_dx: 1,
+            ball_dy: -1,
+            bricks: [true; Self::BRICK_COUNT],
+            score: 0,
+            lives: Self::INITIAL_LIVES,
+        }
+    }
+
+    /// Returns the paddle's leftmost cell.
+    pub fn paddle_x(&self) -> i32 {
+        self.paddle_x
+    }
+
+    /// Returns the ball position.
+    pub fn ball_position(&self) -> (i32, i32) {
+        (self.ball_x, self.ball_y)
+    }
+
+    /// Returns whether a brick is still active.
+    pub fn brick_active(&self, row: usize, col: usize) -> bool {
+        row < Self::BRICK_ROWS
+            && col < Self::BRICK_COLS
+            && self.bricks[row * Self::BRICK_COLS + col]
+    }
+
+    /// Returns the current score.
+    pub fn score(&self) -> u32 {
+        self.score
+    }
+
+    /// Returns the remaining lives.
+    pub fn lives(&self) -> u8 {
+        self.lives
+    }
+
+    /// Moves the player's paddle while keeping it inside the playfield.
+    pub fn move_paddle(&mut self, delta: i32) {
+        self.paddle_x =
+            (self.paddle_x + delta).clamp(0, Self::WIDTH - Self::PADDLE_WIDTH);
+    }
+
+    /// Advances the game by one fixed simulation step.
+    pub fn tick(&mut self) -> BreakoutTickResult {
+        let mut next_x = self.ball_x + self.ball_dx;
+        let mut next_y = self.ball_y + self.ball_dy;
+        let mut next_dx = self.ball_dx;
+        let mut next_dy = self.ball_dy;
+
+        if next_x < 0 || next_x >= Self::WIDTH {
+            next_dx = -next_dx;
+            next_x = self.ball_x + next_dx;
+        }
+
+        if next_y < 0 {
+            next_dy = 1;
+            next_y = 0;
+        }
+
+        if next_dy > 0
+            && next_y >= Self::PADDLE_Y
+            && self.ball_y < Self::PADDLE_Y
+            && next_x >= self.paddle_x
+            && next_x < self.paddle_x + Self::PADDLE_WIDTH
+        {
+            next_dy = -1;
+            next_y = Self::PADDLE_Y - 1;
+
+            let hit_offset = next_x - self.paddle_x;
+            next_dx = match hit_offset {
+                0 => -1,
+                1 => 0,
+                _ => 1,
+            };
+        }
+
+        if next_y >= Self::HEIGHT {
+            self.lives = self.lives.saturating_sub(1);
+            if self.lives == 0 {
+                return BreakoutTickResult::GameOver;
+            }
+
+            self.reset_ball();
+            return BreakoutTickResult::LifeLost;
+        }
+
+        if next_y < Self::BRICK_ROWS as i32 {
+            let row = next_y as usize;
+            let brick_col = next_x - Self::BRICK_START_X;
+            if (0..Self::BRICK_COLS as i32).contains(&brick_col) {
+                let index = row * Self::BRICK_COLS + brick_col as usize;
+                if self.bricks[index] {
+                    self.bricks[index] = false;
+                    self.score = self.score.saturating_add(10);
+                    next_dy = -next_dy;
+
+                    self.ball_x = next_x;
+                    self.ball_y = next_y;
+                    self.ball_dx = next_dx;
+                    self.ball_dy = next_dy;
+
+                    if self.bricks.iter().all(|active| !active) {
+                        return BreakoutTickResult::Won;
+                    }
+
+                    return BreakoutTickResult::BrickHit;
+                }
+            }
+        }
+
+        self.ball_x = next_x;
+        self.ball_y = next_y;
+        self.ball_dx = next_dx;
+        self.ball_dy = next_dy;
+        BreakoutTickResult::Rally
+    }
+
+    /// Resets the match to its initial state.
+    pub fn reset(&mut self) {
+        *self = Self::new();
+    }
+
+    fn reset_ball(&mut self) {
+        self.ball_x = Self::WIDTH / 2;
+        self.ball_y = Self::HEIGHT - 4;
+        self.ball_dx = 1;
+        self.ball_dy = -1;
+    }
+}
+
+impl Default for BreakoutGame {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Returns legal non-capturing diagonal moves for a regular checker piece.
 pub fn checkers_moves(board: &[u8; 32], player: u8) -> Vec<(usize, usize)> {
     let mut result = Vec::new();
