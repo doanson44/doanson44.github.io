@@ -2186,8 +2186,8 @@ fn draw_flappy(context: &CanvasRenderingContext2d, game: &FlappyGame, time: f64)
     let rotation = (game.bird_velocity / 620.0).clamp(-0.5, 1.0);
     let wing = (time / 90.0).sin() * 5.0;
     context.save();
-    context.translate(FlappyGame::BIRD_X, game.bird_y);
-    context.rotate(rotation);
+    let _ = context.translate(FlappyGame::BIRD_X, game.bird_y);
+    let _ = context.rotate(rotation);
     context.set_fill_style_str("#F6D365");
     context.begin_path();
     let _ = context.ellipse(0.0, 0.0, 18.0, 14.0, 0.0, 0.0, std::f64::consts::TAU);
