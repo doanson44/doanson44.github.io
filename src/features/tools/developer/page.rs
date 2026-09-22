@@ -3,8 +3,8 @@ use leptos::prelude::*;
 use crate::components::tool_layout::{ToolDivider, ToolPanel, ToolPanelSide, ToolSplit};
 use crate::domain::developer::ToolId;
 use crate::features::tools::developer::state::DeveloperToolsState;
-use crate::infrastructure::browser::copy_to_clipboard;
 use crate::i18n::*;
+use crate::infrastructure::browser::copy_to_clipboard;
 
 #[component]
 pub fn DeveloperToolPage(tool: ToolId) -> impl IntoView {
