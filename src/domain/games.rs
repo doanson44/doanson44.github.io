@@ -471,6 +471,7 @@ pub struct BreakoutGame {
     bricks: [bool; Self::BRICK_COUNT],
     score: u32,
     lives: u8,
+    finished: bool,
 }
 
 impl BreakoutGame {
@@ -503,6 +504,7 @@ impl BreakoutGame {
             bricks: [true; Self::BRICK_COUNT],
             score: 0,
             lives: Self::INITIAL_LIVES,
+            finished: false,
         }
     }
 
@@ -533,6 +535,11 @@ impl BreakoutGame {
         self.lives
     }
 
+    /// Returns whether the match has reached a terminal state.
+    pub fn is_finished(&self) -> bool {
+        self.finished
+    }
+
     /// Moves the player's paddle while keeping it inside the playfield.
     pub fn move_paddle(&mut self, delta: i32) {
         self.paddle_x =
@@ -541,6 +548,10 @@ impl BreakoutGame {
 
     /// Advances the game by one fixed simulation step.
     pub fn tick(&mut self) -> BreakoutTickResult {
+        if self.finished {
+            return BreakoutTickResult::GameOver;
+        }
+
         let mut next_x = self.ball_x + self.ball_dx;
         let mut next_y = self.ball_y + self.ball_dy;
         let mut next_dx = self.ball_dx;
@@ -576,6 +587,7 @@ impl BreakoutGame {
         if next_y >= Self::HEIGHT {
             self.lives = self.lives.saturating_sub(1);
             if self.lives == 0 {
+                self.finished = true;
                 return BreakoutTickResult::GameOver;
             }
 
@@ -599,6 +611,7 @@ impl BreakoutGame {
                     self.ball_dy = next_dy;
 
                     if self.bricks.iter().all(|active| !active) {
+                        self.finished = true;
                         return BreakoutTickResult::Won;
                     }
 
@@ -1525,6 +1538,66 @@ mod tests {
     fn chess_rejects_illegal_jump() {
         let b = chess_start();
         assert!(chess_apply_move(&b, 56, 40).is_none());
+    }
+
+    #[test]
+    fn breakout_paddle_stays_inside_board() {
+        let mut game = BreakoutGame::new();
+        game.move_paddle(-100);
+        assert_eq!(game.paddle_x(), 0);
+
+        game.move_paddle(100);
+        assert_eq!(
+            game.paddle_x(),
+            BreakoutGame::WIDTH - BreakoutGame::PADDLE_WIDTH
+        );
+    }
+
+    #[test]
+    fn breakout_brick_hit_increases_score() {
+        let mut game = BreakoutGame::new();
+        game.ball_x = 3;
+        game.ball_y = 1;
+        game.ball_dx = 0;
+        game.ball_dy = -1;
+
+        game.tick();
+
+        assert_eq!(game.score(), 10);
+        assert!(!game.brick_active(0, 0));
+    }
+
+    #[test]
+    fn breakout_life_loss_resets_ball_until_final_life() {
+        let mut game = BreakoutGame::new();
+        game.ball_x = 0;
+        game.ball_y = BreakoutGame::HEIGHT - 1;
+        game.ball_dx = 0;
+        game.ball_dy = 1;
+
+        assert_eq!(game.tick(), BreakoutTickResult::LifeLost);
+        assert_eq!(game.lives(), 2);
+        assert!(!game.is_finished());
+
+        game.lives = 1;
+        assert_eq!(game.tick(), BreakoutTickResult::GameOver);
+        assert_eq!(game.lives(), 0);
+        assert!(game.is_finished());
+    }
+
+    #[test]
+    fn breakout_wins_when_last_brick_is_destroyed() {
+        let mut game = BreakoutGame::new();
+        game.bricks.fill(false);
+        game.bricks[0] = true;
+        game.ball_x = 3;
+        game.ball_y = 1;
+        game.ball_dx = 0;
+        game.ball_dy = -1;
+
+        assert_eq!(game.tick(), BreakoutTickResult::Won);
+        assert_eq!(game.score(), 10);
+        assert!(game.is_finished());
     }
 
     #[test]
