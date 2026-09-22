@@ -1580,6 +1580,8 @@ mod tests {
         assert!(!game.is_finished());
 
         game.lives = 1;
+        game.ball_y = BreakoutGame::HEIGHT - 1;
+        game.ball_dy = 1;
         assert_eq!(game.tick(), BreakoutTickResult::GameOver);
         assert_eq!(game.lives(), 0);
         assert!(game.is_finished());
