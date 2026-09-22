@@ -950,8 +950,7 @@ impl FlappyGame {
         }
 
         let dt = dt.clamp(0.0, Self::MAX_DT);
-        self.bird_velocity =
-            (self.bird_velocity + Self::GRAVITY * dt).min(Self::MAX_FALL_SPEED);
+        self.bird_velocity = (self.bird_velocity + Self::GRAVITY * dt).min(Self::MAX_FALL_SPEED);
         self.bird_y += self.bird_velocity * dt;
 
         for pipe in &mut self.pipes {
@@ -962,8 +961,7 @@ impl FlappyGame {
             }
         }
 
-        self.pipes
-            .retain(|pipe| pipe.x + Self::PIPE_WIDTH > -20.0);
+        self.pipes.retain(|pipe| pipe.x + Self::PIPE_WIDTH > -20.0);
 
         if self
             .pipes
@@ -1040,7 +1038,6 @@ mod tests {
         assert!(game.game_over);
         assert!(!game.running);
     }
-
 
     use super::*;
 
