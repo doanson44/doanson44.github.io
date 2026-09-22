@@ -1942,7 +1942,8 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     .collect_view()}
             </div>
         </div>
-    }.into_any()
+    }
+    .into_any()
 }
 // ── Flappy ────────────────────────────────────────────────────────────────────
 
