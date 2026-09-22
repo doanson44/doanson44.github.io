@@ -46,17 +46,17 @@ fn HomeCard(
         >
             <div class="mb-4 text-4xl text-[var(--accent)]" aria-hidden="true">{icon}</div>
             <h2 class="mb-2 text-lg font-semibold text-[var(--text-primary)]">{move || match title_key {
-                "tools" => t!(use_i18n(), nav_tools),
-                "games" => t!(use_i18n(), nav_games),
-                "cv" => t!(use_i18n(), nav_cv),
-                "socket" => t!(use_i18n(), nav_socket),
+                "tools" => t_string!(use_i18n(), nav_tools),
+                "games" => t_string!(use_i18n(), nav_games),
+                "cv" => t_string!(use_i18n(), nav_cv),
+                "socket" => t_string!(use_i18n(), nav_socket),
                 _ => "",
             }}</h2>
             <p class="text-sm leading-6 text-[var(--text-secondary)]">{move || match description_key {
-                "tools" => t!(use_i18n(), home_tools_desc),
-                "games" => t!(use_i18n(), home_games_desc),
-                "cv" => t!(use_i18n(), home_cv_desc),
-                "socket" => t!(use_i18n(), home_socket_desc),
+                "tools" => t_string!(use_i18n(), home_tools_desc),
+                "games" => t_string!(use_i18n(), home_games_desc),
+                "cv" => t_string!(use_i18n(), home_cv_desc),
+                "socket" => t_string!(use_i18n(), home_socket_desc),
                 _ => "",
             }}</p>
         </a>
