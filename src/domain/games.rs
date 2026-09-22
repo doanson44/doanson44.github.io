@@ -372,7 +372,7 @@ impl PongGame {
 
     /// Moves the player's paddle by the requested number of cells.
     pub fn move_player(&mut self, delta: i32) {
-        self.player_y = (self.player_y + delta).clamp(0, Self::HEIGHT - 1);
+        self.player_y = (self.player_y + delta).clamp(1, Self::HEIGHT - 2);
     }
 
     /// Advances the simulation by one fixed time step.
@@ -441,7 +441,7 @@ impl Default for PongGame {
 }
 
 pub fn pong_ai_y(paddle_y: i32, ball_y: i32, max_y: i32) -> i32 {
-    (paddle_y + (ball_y - paddle_y) / 2).clamp(0, max_y)
+    (paddle_y + (ball_y - paddle_y) / 2).clamp(1, max_y)
 }
 
 /// Returns legal non-capturing diagonal moves for a regular checker piece.
@@ -1336,6 +1336,42 @@ mod tests {
     fn chess_rejects_illegal_jump() {
         let b = chess_start();
         assert!(chess_apply_move(&b, 56, 40).is_none());
+    }
+
+    #[test]
+    fn pong_player_paddle_stays_inside_board() {
+        let mut game = PongGame::new();
+        game.move_player(-100);
+        assert_eq!(game.player_y(), 1);
+
+        game.move_player(100);
+        assert_eq!(game.player_y(), PongGame::HEIGHT - 2);
+    }
+
+    #[test]
+    fn pong_scores_when_computer_misses() {
+        let mut game = PongGame::new();
+        game.ball_x = PongGame::WIDTH - 2;
+        game.ball_y = 0;
+        game.ball_dx = 1;
+        game.ball_dy = 0;
+        game.computer_y = PongGame::HEIGHT - 2;
+
+        assert_eq!(game.tick(), PongTickResult::PlayerScored);
+        assert_eq!(game.score(), 1);
+    }
+
+    #[test]
+    fn pong_stops_when_player_misses() {
+        let mut game = PongGame::new();
+        game.ball_x = 1;
+        game.ball_y = 0;
+        game.ball_dx = -1;
+        game.ball_dy = 0;
+        game.player_y = PongGame::HEIGHT - 2;
+
+        assert_eq!(game.tick(), PongTickResult::ComputerScored);
+        assert!(game.is_game_over());
     }
 
     #[test]
