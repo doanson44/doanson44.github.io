@@ -1,7 +1,5 @@
 use leptos::prelude::*;
 
-use crate::i18n::*;
-
 use crate::components::editor::Editor;
 use crate::components::preview::Preview;
 use crate::components::tool_layout::{ToolDivider, ToolPanel, ToolPanelSide, ToolSplit};
