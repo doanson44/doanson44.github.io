@@ -51,8 +51,8 @@ pub fn SocketPage(
             <div class="flex flex-grow flex-col overflow-hidden px-4 py-3">
                 <header class="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="mb-1 text-xl font-semibold">"Futures Market"</h2>
-                        <div class="text-sm text-[var(--text-secondary)]">"Realtime market momentum from the moment this page opens"</div>
+                        <h2 class="mb-1 text-xl font-semibold">{move || if i18n.get_locale() == Locale::vi { "Thị trường Futures" } else { "Futures Market" }}</h2>
+                        <div class="text-sm text-[var(--text-secondary)]">{move || if i18n.get_locale() == Locale::vi { "Theo dõi momentum realtime kể từ khi mở trang" } else { "Realtime market momentum from the moment this page opens" }}</div>
                     </div>
                     <div class="text-sm">{move || status_badge(state.connection_status.get())}</div>
                 </header>
