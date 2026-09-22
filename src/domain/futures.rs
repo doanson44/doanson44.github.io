@@ -27,6 +27,7 @@ const MOMENTUM_WINDOW: usize = 100;
 const BURST_WINDOW: usize = 6;
 const BURST_MIN_RETURN: f64 = 0.0005;
 const BURST_MIN_STREAK: usize = 2;
+const BURST_DECAY_HALF_LIFE_MS: f64 = 8_000.0;
 
 /// Tracks directional price changes over a bounded rolling tick window.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -41,6 +42,8 @@ pub struct FuturesTickerMomentum {
     previous_timestamp_ms: Option<u64>,
     #[serde(default)]
     burst_score: u8,
+    #[serde(default)]
+    burst_score_updated_at_ms: Option<u64>,
 }
 
 impl FuturesTickerMomentum {
@@ -68,6 +71,7 @@ impl FuturesTickerMomentum {
             recent_returns: VecDeque::new(),
             previous_timestamp_ms: None,
             burst_score: 0,
+            burst_score_updated_at_ms: None,
         }
     }
 
@@ -122,7 +126,10 @@ impl FuturesTickerMomentum {
                 if self.recent_returns.len() > BURST_WINDOW {
                     self.recent_returns.pop_front();
                 }
-                self.burst_score = self.calculate_burst_score();
+                let current_score = self.calculate_burst_score();
+                self.burst_score = self.decayed_burst_score(timestamp_ms);
+                self.burst_score = self.burst_score.max(current_score);
+                self.burst_score_updated_at_ms = Some(timestamp_ms);
             }
         }
 
@@ -130,6 +137,20 @@ impl FuturesTickerMomentum {
         if timestamp_ms.is_some() {
             self.previous_timestamp_ms = timestamp_ms;
         }
+    }
+
+    fn decayed_burst_score(&self, timestamp_ms: u64) -> u8 {
+        let Some(previous_timestamp_ms) = self.burst_score_updated_at_ms else {
+            return self.burst_score;
+        };
+
+        let elapsed_ms = timestamp_ms.saturating_sub(previous_timestamp_ms) as f64;
+        if elapsed_ms <= 0.0 || self.burst_score == 0 {
+            return self.burst_score;
+        }
+
+        let decay = 0.5_f64.powf(elapsed_ms / BURST_DECAY_HALF_LIFE_MS);
+        (self.burst_score as f64 * decay).round().min(100.0) as u8
     }
 
     fn calculate_burst_score(&self) -> u8 {
@@ -418,6 +439,21 @@ mod tests {
 
         assert!(momentum.is_burst());
         assert!(momentum.burst_score() >= 70);
+    }
+
+    #[test]
+    fn burst_score_decays_instead_of_resetting() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        momentum.observe_at(Some(100.02), Some(1_000));
+        momentum.observe_at(Some(100.04), Some(2_000));
+        momentum.observe_at(Some(100.08), Some(3_000));
+        momentum.observe_at(Some(100.20), Some(4_000));
+
+        let initial = momentum.burst_score();
+        momentum.observe_at(Some(100.21), Some(5_000));
+
+        assert!(momentum.burst_score() < initial);
+        assert!(momentum.burst_score() > 0);
     }
 
     #[test]
