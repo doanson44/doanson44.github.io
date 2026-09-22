@@ -1957,6 +1957,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         }
     });
 
+    let animation_render = Rc::clone(&render);
     let start_loop = Rc::new(move || {
         if animation_frame.get_untracked().is_some() {
             return;
@@ -1986,10 +1987,12 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     FlappyGame::GAP_MIN_Y
                         + rand_f64() * (FlappyGame::GAP_MAX_Y - FlappyGame::GAP_MIN_Y),
                 );
+                let next_score = next.score;
+                let next_game_over = next.game_over;
                 game.set(next);
-                score.set(next.score);
-                if next.game_over {
-                    status.set(format!("Game over — score {}", next.score));
+                score.set(next_score);
+                if next_game_over {
+                    status.set(format!("Game over — score {}", next_score));
                 }
                 *accumulated -= 1.0 / 60.0;
             }
@@ -1998,11 +2001,11 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             animation_time.set(now);
             if !game.get_untracked().running {
                 animation_frame.set(None);
-                render();
+                animation_render();
                 return;
             }
 
-            render();
+            animation_render();
             if let Some(cb) = callback_ref.borrow().as_ref() {
                 if let Ok(id) = w.request_animation_frame(cb.as_ref().unchecked_ref()) {
                     animation_frame.set(Some(id));
@@ -2011,10 +2014,16 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         }) as Box<dyn FnMut(f64)>);
 
         *callback.borrow_mut() = Some(frame);
-        if let Some(cb) = callback.borrow().as_ref() {
-            if let Ok(id) = w.request_animation_frame(cb.as_ref().unchecked_ref()) {
-                animation_frame.set(Some(id));
-            }
+        let request_id = {
+            let callback_ref = callback.borrow();
+            callback_ref.as_ref().and_then(|cb| {
+                window()
+                    .request_animation_frame(cb.as_ref().unchecked_ref())
+                    .ok()
+            })
+        };
+        if let Some(id) = request_id {
+            animation_frame.set(Some(id));
         }
     });
 
@@ -2027,7 +2036,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
     let flap_render = Rc::clone(&render);
     let flap_start = Rc::clone(&start_loop);
-    let flap = move || {
+    let flap = Rc::new(move || {
         let mut next = game.get_untracked();
         next.flap();
         game.set(next);
@@ -2035,8 +2044,9 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         status.set("Flying".into());
         flap_render();
         flap_start();
-    };
+    });
 
+    let key_flap = Rc::clone(&flap);
     bind_keys(move |e: web_sys::KeyboardEvent| {
         if is_text_input(&e) {
             return;
@@ -2044,7 +2054,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         if matches!(e.key().as_str(), " " | "ArrowUp" | "w" | "W") {
             e.prevent_default();
             if !e.repeat() {
-                flap();
+                key_flap();
             }
         }
     });
@@ -2076,9 +2086,12 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     class="d-block w-100 flappy-canvas"
                     aria-label="Flappy game canvas. Press Space, ArrowUp, or tap the game to flap."
                     role="img"
-                    on:pointerdown=move |ev: web_sys::PointerEvent| {
-                        ev.prevent_default();
-                        flap();
+                    on:pointerdown={
+                        let pointer_flap = Rc::clone(&flap);
+                        move |ev: web_sys::PointerEvent| {
+                            ev.prevent_default();
+                            pointer_flap();
+                        }
                     }
                 >
                     "Flappy game. Use Space, ArrowUp, or tap to flap. Avoid the pipes and ground."
@@ -2088,7 +2101,10 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 <button
                     type="button"
                     class="btn btn-primary btn-sm px-4"
-                    on:click=move |_| flap()
+                    on:click={
+                        let button_flap = Rc::clone(&flap);
+                        move |_| button_flap()
+                    }
                     title="Flap the bird"
                 >
                     <i class="bi bi-feather me-1"></i>
