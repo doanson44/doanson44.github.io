@@ -1,13 +1,12 @@
 #![allow(clippy::possible_missing_else)]
 use crate::domain::games::{
-    FlappyGame,
     blackjack_score, blackjack_should_hit, checkers_moves, chess_ai_move, chess_apply_move,
     chess_glyph, chess_has_move, chess_is_check, chess_legal_moves, chess_start,
     connect_four_ai_column, connect_four_drop, connect_four_winner, hangman_word, has_move_2048,
     lights_toggle, minesweeper_adjacent_mines, minesweeper_flood_reveal, puzzle_is_solved,
     puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given, sudoku_puzzle, sudoku_valid,
     tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage, ttt_best_move,
-    ttt_is_draw, ttt_winner, typing_words, wordle_check, wordle_word,
+    ttt_is_draw, ttt_winner, typing_words, wordle_check, wordle_word, FlappyGame,
 };
 use leptos::ev;
 use leptos::prelude::*;
@@ -1947,7 +1946,11 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             canvas.set_height(height);
         }
         let _ = context.set_transform(dpr, 0.0, 0.0, dpr, 0.0, 0.0);
-        draw_flappy(&context, &game.get_untracked(), animation_time.get_untracked());
+        draw_flappy(
+            &context,
+            &game.get_untracked(),
+            animation_time.get_untracked(),
+        );
     });
 
     let stop_loop = Rc::new(move || {
@@ -1985,7 +1988,11 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             *accumulated += frame_dt;
             while *accumulated >= 1.0 / 60.0 {
                 let mut next = game.get_untracked();
-                next.update(1.0 / 60.0, FlappyGame::GAP_MIN_Y + rand_f64() * (FlappyGame::GAP_MAX_Y - FlappyGame::GAP_MIN_Y));
+                next.update(
+                    1.0 / 60.0,
+                    FlappyGame::GAP_MIN_Y
+                        + rand_f64() * (FlappyGame::GAP_MAX_Y - FlappyGame::GAP_MIN_Y),
+                );
                 game.set(next);
                 score.set(next.score);
                 if next.game_over {
@@ -2126,7 +2133,11 @@ fn draw_flappy(context: &CanvasRenderingContext2d, game: &FlappyGame, time: f64)
     context.fill_rect(0.0, 0.0, width, height);
 
     context.set_fill_style_str("#BFE8F7");
-    for (x, y, radius) in [(55.0, 90.0, 28.0), (315.0, 125.0, 22.0), (235.0, 60.0, 18.0)] {
+    for (x, y, radius) in [
+        (55.0, 90.0, 28.0),
+        (315.0, 125.0, 22.0),
+        (235.0, 60.0, 18.0),
+    ] {
         context.begin_path();
         let _ = context.arc(x, y, radius, 0.0, std::f64::consts::TAU);
         context.fill();
