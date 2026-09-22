@@ -87,8 +87,7 @@ mod tests {
             compact: true,
         };
 
-        let result =
-            minimize_json_response(r#"{"items":[[1,2],[3,4]]}"#, &options).unwrap();
+        let result = minimize_json_response(r#"{"items":[[1,2],[3,4]]}"#, &options).unwrap();
 
         assert_eq!(result, r#"{"items":[[1]]}"#);
     }
