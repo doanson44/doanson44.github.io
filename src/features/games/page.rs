@@ -1929,11 +1929,11 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let animation_frame = RwSignal::new(None::<i32>);
     let animation_time = RwSignal::new(0.0f64);
 
-    let render = move || {
-        let Some(canvas) = canvas_ref.get() else {
+    let render = Rc::new(move || {
+        let Some(canvas) = canvas_ref.get_untracked() else {
             return;
         };
-        let canvas: HtmlCanvasElement = canvas.into();
+        let canvas: &HtmlCanvasElement = canvas.as_ref();
         let Some(context) = canvas_context(&canvas) else {
             return;
         };
@@ -1948,18 +1948,18 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         }
         let _ = context.set_transform(dpr, 0.0, 0.0, dpr, 0.0, 0.0);
         draw_flappy(&context, &game.get_untracked(), animation_time.get_untracked());
-    };
+    });
 
-    let stop_loop = move || {
+    let stop_loop = Rc::new(move || {
         if let Some(id) = animation_frame.get_untracked() {
             if let Some(w) = window() {
                 let _ = w.cancel_animation_frame(id);
             }
             animation_frame.set(None);
         }
-    };
+    });
 
-    let start_loop = move || {
+    let start_loop = Rc::new(move || {
         if animation_frame.get_untracked().is_some() {
             return;
         }
@@ -1987,14 +1987,16 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 let mut next = game.get_untracked();
                 next.update(1.0 / 60.0, FlappyGame::GAP_MIN_Y + rand_f64() * (FlappyGame::GAP_MAX_Y - FlappyGame::GAP_MIN_Y));
                 game.set(next);
+                score.set(next.score);
+                if next.game_over {
+                    status.set(format!("Game over — score {}", next.score));
+                }
                 *accumulated -= 1.0 / 60.0;
             }
             drop(accumulated);
 
             animation_time.set(now);
-            if let Some(current) = game.get_untracked().running.then_some(()) {
-                let _ = current;
-            } else {
+            if !game.get_untracked().running {
                 animation_frame.set(None);
                 render();
                 return;
@@ -2026,8 +2028,8 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         game.set(next);
         score.set(game.get_untracked().score);
         status.set("Flying".into());
-        render();
-        start_loop();
+        flap_render();
+        flap_start();
     };
 
     bind_keys(move |e: web_sys::KeyboardEvent| {
@@ -2042,24 +2044,22 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         }
     });
 
+    let reset_stop = Rc::clone(&stop_loop);
+    let reset_render = Rc::clone(&render);
     let reset = move || {
-        stop_loop();
+        reset_stop();
         game.set(FlappyGame::new(300.0));
         score.set(0);
         status.set("Ready".into());
         animation_time.set(0.0);
-        render();
+        reset_render();
     };
 
+    let initial_render = Rc::clone(&render);
     Effect::new(move |_| {
-        let current = game.get();
-        score.set(current.score);
-        if current.game_over {
-            status.set(format!("Game over — score {}", current.score));
-        }
+        let _ = canvas_ref.get();
+        initial_render();
     });
-
-    render();
 
     view! {
         <div class="mx-auto w-full max-w-md space-y-3">
