@@ -126,8 +126,15 @@ fn SearchResults(
 }
 
 #[component]
-fn ToolSection(#[prop(into)] title: Signal<String>, icon: &'static str, children: Children) -> impl IntoView {
-    let section_id = format!("section-{}", title.get_untracked().to_lowercase().replace(' ', "-"));
+fn ToolSection(
+    #[prop(into)] title: Signal<String>,
+    icon: &'static str,
+    children: Children,
+) -> impl IntoView {
+    let section_id = format!(
+        "section-{}",
+        title.get_untracked().to_lowercase().replace(' ', "-")
+    );
     let section_id2 = section_id.clone();
     view! {
         <section class="mb-10" aria-labelledby=section_id>
