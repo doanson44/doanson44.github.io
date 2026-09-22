@@ -299,6 +299,147 @@ pub fn tetris_clear_lines(board: &mut Vec<bool>, width: usize) -> usize {
     cleared
 }
 
+/// The result of advancing a Pong game by one simulation tick.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PongTickResult {
+    /// The rally is still active.
+    Rally,
+    /// The player scored a point.
+    PlayerScored,
+    /// The computer scored a point and the game ended.
+    ComputerScored,
+}
+
+/// Pure game state and rules for a single-player Pong match.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PongGame {
+    player_y: i32,
+    computer_y: i32,
+    ball_x: i32,
+    ball_y: i32,
+    ball_dx: i32,
+    ball_dy: i32,
+    score: u32,
+    game_over: bool,
+}
+
+impl PongGame {
+    /// Width of the logical playfield in cells.
+    pub const WIDTH: i32 = 20;
+    /// Height of the logical playfield in cells.
+    pub const HEIGHT: i32 = 10;
+    /// Number of cells occupied by each paddle.
+    pub const PADDLE_SIZE: i32 = 3;
+
+    /// Creates a new single-player Pong match.
+    pub fn new() -> Self {
+        Self {
+            player_y: 5,
+            computer_y: 5,
+            ball_x: 10,
+            ball_y: 5,
+            ball_dx: 1,
+            ball_dy: 1,
+            score: 0,
+            game_over: false,
+        }
+    }
+
+    /// Returns the player's paddle center.
+    pub fn player_y(&self) -> i32 {
+        self.player_y
+    }
+
+    /// Returns the computer's paddle center.
+    pub fn computer_y(&self) -> i32 {
+        self.computer_y
+    }
+
+    /// Returns the ball position.
+    pub fn ball_position(&self) -> (i32, i32) {
+        (self.ball_x, self.ball_y)
+    }
+
+    /// Returns the current player score.
+    pub fn score(&self) -> u32 {
+        self.score
+    }
+
+    /// Returns whether the match has ended.
+    pub fn is_game_over(&self) -> bool {
+        self.game_over
+    }
+
+    /// Moves the player's paddle by the requested number of cells.
+    pub fn move_player(&mut self, delta: i32) {
+        self.player_y = (self.player_y + delta).clamp(0, Self::HEIGHT - 1);
+    }
+
+    /// Advances the simulation by one fixed time step.
+    pub fn tick(&mut self) -> PongTickResult {
+        if self.game_over {
+            return PongTickResult::ComputerScored;
+        }
+
+        let mut next_x = self.ball_x + self.ball_dx;
+        let mut next_y = self.ball_y + self.ball_dy;
+
+        if !(0..Self::HEIGHT).contains(&next_y) {
+            self.ball_dy = -self.ball_dy;
+            next_y = self.ball_y + self.ball_dy;
+        }
+
+        self.computer_y = pong_ai_y(self.computer_y, next_y, Self::HEIGHT - 1);
+
+        if next_x <= 1 {
+            if Self::paddle_covers(self.player_y, next_y) {
+                next_x = 1;
+                self.ball_dx = self.ball_dx.abs();
+            } else {
+                self.game_over = true;
+                return PongTickResult::ComputerScored;
+            }
+        }
+
+        if next_x >= Self::WIDTH - 2 {
+            if Self::paddle_covers(self.computer_y, next_y) {
+                next_x = Self::WIDTH - 2;
+                self.ball_dx = -self.ball_dx.abs();
+            } else {
+                self.score = self.score.saturating_add(1);
+                self.reset_ball();
+                return PongTickResult::PlayerScored;
+            }
+        }
+
+        self.ball_x = next_x;
+        self.ball_y = next_y;
+        PongTickResult::Rally
+    }
+
+    /// Resets the match and score to the initial state.
+    pub fn reset(&mut self) {
+        *self = Self::new();
+    }
+
+    fn reset_ball(&mut self) {
+        self.ball_x = Self::WIDTH / 2;
+        self.ball_y = Self::HEIGHT / 2;
+        self.ball_dx = 1;
+        self.ball_dy = if self.ball_dy == 0 { 1 } else { self.ball_dy };
+    }
+
+    fn paddle_covers(center_y: i32, ball_y: i32) -> bool {
+        (ball_y - center_y).abs() <= Self::PADDLE_SIZE / 2
+    }
+}
+
+impl Default for PongGame {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub fn pong_ai_y(paddle_y: i32, ball_y: i32, max_y: i32) -> i32 {
     (paddle_y + (ball_y - paddle_y) / 2).clamp(0, max_y)
 }
