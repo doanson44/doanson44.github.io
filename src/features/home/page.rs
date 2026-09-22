@@ -36,8 +36,8 @@ pub fn HomePage() -> impl IntoView {
 fn HomeCard(
     #[prop(into)] href: String,
     icon: &'static str,
-    #[prop(into)] title: String,
-    #[prop(into)] description: String,
+    title_key: &'static str,
+    description_key: &'static str,
 ) -> impl IntoView {
     view! {
         <a
