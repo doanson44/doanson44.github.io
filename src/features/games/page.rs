@@ -2018,9 +2018,11 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         }
     });
 
-    let cleanup_stop = Rc::clone(&stop_loop);
     on_cleanup(move || {
-        cleanup_stop();
+        if let Some(id) = animation_frame.get_untracked() {
+            let _ = window().cancel_animation_frame(id);
+            animation_frame.set(None);
+        }
     });
 
     let flap_render = Rc::clone(&render);
