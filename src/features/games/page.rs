@@ -62,7 +62,7 @@ fn rand_usize(n: usize) -> usize {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum GameKind {
+pub(crate) enum GameKind {
     TwentyFortyEight,
     TicTacToe,
     Minesweeper,
@@ -134,7 +134,7 @@ impl GameKind {
         }
     }
 
-    fn from_slug(slug: &str) -> Option<Self> {
+    pub(crate) fn from_slug(slug: &str) -> Option<Self> {
         Self::all().into_iter().find(|game| game.slug() == slug)
     }
 
