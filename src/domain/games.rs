@@ -460,6 +460,8 @@ pub enum BreakoutTickResult {
     GameOver,
 }
 
+const BREAKOUT_BRICK_COUNT: usize = 24;
+
 /// Pure game state and rules for a single-player Breakout match.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BreakoutGame {
@@ -468,7 +470,7 @@ pub struct BreakoutGame {
     ball_y: i32,
     ball_dx: i32,
     ball_dy: i32,
-    bricks: [bool; Self::BRICK_COUNT],
+    bricks: [bool; BREAKOUT_BRICK_COUNT],
     score: u32,
     lives: u8,
     finished: bool,
@@ -486,7 +488,7 @@ impl BreakoutGame {
     /// Number of brick columns.
     pub const BRICK_COLS: usize = 6;
     /// Total number of bricks.
-    pub const BRICK_COUNT: usize = Self::BRICK_ROWS * Self::BRICK_COLS;
+    pub const BRICK_COUNT: usize = BREAKOUT_BRICK_COUNT;
     /// Initial number of lives.
     pub const INITIAL_LIVES: u8 = 3;
     /// Vertical position of the paddle in the playfield.
