@@ -882,6 +882,8 @@ impl FlappyGame {
     pub const BIRD_X: f64 = 90.0;
     /// Bird collision size in pixels.
     pub const BIRD_SIZE: f64 = 28.0;
+    /// Ground height in pixels.
+    pub const GROUND_HEIGHT: f64 = 48.0;
     /// Pipe width in pixels.
     pub const PIPE_WIDTH: f64 = 58.0;
     /// Vertical pipe gap in pixels.
@@ -980,7 +982,7 @@ impl FlappyGame {
         }
 
         if self.bird_y - Self::BIRD_SIZE * 0.5 <= 0.0
-            || self.bird_y + Self::BIRD_SIZE * 0.5 >= Self::HEIGHT
+            || self.bird_y + Self::BIRD_SIZE * 0.5 >= Self::HEIGHT - Self::GROUND_HEIGHT
             || self.collides_with_pipe()
         {
             self.running = false;
