@@ -1,5 +1,7 @@
 use leptos::prelude::*;
 
+use crate::i18n::*;
+
 /// Home page — platform landing page.
 ///
 /// Serves as the entry point for the doanson44.github.io platform,
@@ -15,15 +17,15 @@ pub fn HomePage() -> impl IntoView {
                         "doanson44.github.io"
                     </h1>
                     <p class="mb-8 text-lg text-[var(--text-secondary)]">
-                        "A personal web platform — developer tools, games, CV, and more. Built with Rust, Leptos, and WebAssembly."
+                        {move || t!(use_i18n(), home_tagline)}
                     </p>
                 </div>
 
                 <div class="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <HomeCard href="#/tools" icon="⚒" title="Tools" description="Developer utilities — Markdown Studio, JSON, JWT, and more." />
-                    <HomeCard href="#/games" icon="♟" title="Games" description="Small browser games and experiments." />
-                    <HomeCard href="#/cv" icon="●" title="CV" description="Public CV and portfolio." />
-                    <HomeCard href="#/socket" icon="↔" title="Socket" description="WebSocket and realtime playground." />
+                    <HomeCard href="#/tools" icon="⚒" title=move || t!(use_i18n(), nav_tools) description=move || t!(use_i18n(), home_tools_desc) />
+                    <HomeCard href="#/games" icon="♟" title=move || t!(use_i18n(), nav_games) description=move || t!(use_i18n(), home_games_desc) />
+                    <HomeCard href="#/cv" icon="●" title=move || t!(use_i18n(), nav_cv) description=move || t!(use_i18n(), home_cv_desc) />
+                    <HomeCard href="#/socket" icon="↔" title=move || t!(use_i18n(), nav_socket) description=move || t!(use_i18n(), home_socket_desc) />
                 </div>
             </div>
         </main>
@@ -34,8 +36,8 @@ pub fn HomePage() -> impl IntoView {
 fn HomeCard(
     #[prop(into)] href: String,
     icon: &'static str,
-    title: &'static str,
-    description: &'static str,
+    #[prop(into)] title: String,
+    #[prop(into)] description: String,
 ) -> impl IntoView {
     view! {
         <a
