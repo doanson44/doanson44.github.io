@@ -24,22 +24,22 @@ pub fn ToolsPage() -> impl IntoView {
                     fallback=move || view! { <SearchResults query=search.get() developer_tools=ToolId::all().collect() finance_tools=finance_tools() /> }
                 >
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_general)) icon="▦">
-                        <ToolCard href="#/tools/markdown" title="Markdown Studio" description=move || t_string!(i18n, tools_markdown_desc) />
-                        <ToolCard href="#/tools/json" title="JSON Formatter" description=move || t_string!(i18n, tools_json_desc) />
-                        <ToolCard href="#/tools/jwt" title="JWT Decoder" description=move || t_string!(i18n, tools_jwt_desc) />
-                        <ToolCard href="#/tools/base64" title="Base64 Encoder / Decoder" description=move || t_string!(i18n, tools_base64_desc) />
-                        <ToolCard href="#/tools/time" title="Time & Utilities" description=move || t_string!(i18n, tools_time_desc) />
-                        <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description=move || t_string!(i18n, tools_proxy_desc) />
+                        <ToolCard href="#/tools/markdown" title="Markdown Studio" description=t_string!(i18n, tools_markdown_desc).to_string() />
+                        <ToolCard href="#/tools/json" title="JSON Formatter" description=t_string!(i18n, tools_json_desc).to_string() />
+                        <ToolCard href="#/tools/jwt" title="JWT Decoder" description=t_string!(i18n, tools_jwt_desc).to_string() />
+                        <ToolCard href="#/tools/base64" title="Base64 Encoder / Decoder" description=t_string!(i18n, tools_base64_desc).to_string() />
+                        <ToolCard href="#/tools/time" title="Time & Utilities" description=t_string!(i18n, tools_time_desc).to_string() />
+                        <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description=t_string!(i18n, tools_proxy_desc).to_string() />
                     </ToolSection>
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_developer)) icon="</>">
                         {ToolId::all()
-                            .map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=move || localized_tool_description(tool) /> })
+                            .map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=localized_tool_description(tool) /> })
                             .collect_view()}
                     </ToolSection>
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_finance)) icon="$">
                         {finance_tools()
                             .into_iter()
-                            .map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=move || localized_finance_description(tool) /> })
+                            .map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=localized_finance_description(tool) /> })
                             .collect_view()}
                     </ToolSection>
                 </Show>
