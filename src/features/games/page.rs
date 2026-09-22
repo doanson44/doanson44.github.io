@@ -14,7 +14,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
-use wasm_bindgen::JsValue;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 use crate::i18n::*;
@@ -1936,9 +1935,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         let Some(context) = canvas_context(canvas) else {
             return;
         };
-        let dpr = window()
-            .map(|w| w.device_pixel_ratio().clamp(1.0, 2.5))
-            .unwrap_or(1.0);
+        let dpr = window().device_pixel_ratio().clamp(1.0, 2.5);
         let width = (FlappyGame::WIDTH * dpr).round() as u32;
         let height = (FlappyGame::HEIGHT * dpr).round() as u32;
         if canvas.width() != width || canvas.height() != height {
@@ -1955,9 +1952,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
     let stop_loop = Rc::new(move || {
         if let Some(id) = animation_frame.get_untracked() {
-            if let Some(w) = window() {
-                let _ = w.cancel_animation_frame(id);
-            }
+            let _ = window().cancel_animation_frame(id);
             animation_frame.set(None);
         }
     });
@@ -1967,9 +1962,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             return;
         }
 
-        let Some(w) = window() else {
-            return;
-        };
+        let w = window();
 
         let last_time = Rc::new(RefCell::new(None::<f64>));
         let accumulator = Rc::new(RefCell::new(0.0f64));
