@@ -28,8 +28,8 @@ pub fn Base64Page() -> impl IntoView {
                 <div class="ml-auto flex flex-nowrap gap-1">
                     <button type="button" class=button_style title="Encode text as Base64" on:click=move |_| state.encode()><span aria-hidden="true">"↑"</span><span class="ml-1 hidden lg:inline">{move || if i18n.get_locale() == Locale::vi { "Mã hóa" } else { "Encode" }}</span></button>
                     <button type="button" class=button_style title="Decode Base64 as UTF-8 text" on:click=move |_| state.decode()><span aria-hidden="true">"↓"</span><span class="ml-1 hidden lg:inline">{move || if i18n.get_locale() == Locale::vi { "Giải mã" } else { "Decode" }}</span></button>
-                    <button type="button" class=button_style title="Reset to sample text" on:click=move |_| state.reset()><span aria-hidden="true">"↶"</span><span class="ml-1 hidden lg:inline">{move || t!(i18n, common_reset)}</span></button>
-                    <button type="button" class=button_style title="Clear input and output" on:click=move |_| state.clear()><span aria-hidden="true">"×"</span><span class="ml-1 hidden lg:inline">{move || t!(i18n, common_clear)}</span></button>
+                    <button type="button" class=button_style title="Reset to sample text" on:click=move |_| state.reset()><span aria-hidden="true">"↶"</span><span class="ml-1 hidden lg:inline">{move || t_string!(i18n, common_reset)}</span></button>
+                    <button type="button" class=button_style title="Clear input and output" on:click=move |_| state.clear()><span aria-hidden="true">"×"</span><span class="ml-1 hidden lg:inline">{move || t_string!(i18n, common_clear)}</span></button>
                 </div>
             </div>
             {move || state.error.get().map(|error| view! { <div class="flex items-start gap-2 border-b border-red-400/40 bg-red-400/10 px-3 py-2 text-sm text-red-300" role="alert"><span aria-hidden="true">"⚠"</span><span>{error}</span></div> })}
@@ -40,7 +40,7 @@ pub fn Base64Page() -> impl IntoView {
                 <ToolDivider />
                 <ToolPanel side=ToolPanelSide::Second>
                     <div class="flex h-full flex-col overflow-hidden">
-                        <div class="flex items-center border-b border-[var(--border-color)] px-3 py-2"><span class="font-medium text-[var(--text-primary)]"><span class="mr-2" aria-hidden="true">"◈"</span>{move || if i18n.get_locale() == Locale::vi { "Đầu ra" } else { "Output" }}</span><button type="button" class=format!("{} ml-auto", button_style) title={move || t!(i18n, common_copy)} aria-label="Copy output" disabled=move || state.output.get().is_empty() on:click=copy_output><span aria-hidden="true">"⧉"</span></button></div>
+                        <div class="flex items-center border-b border-[var(--border-color)] px-3 py-2"><span class="font-medium text-[var(--text-primary)]"><span class="mr-2" aria-hidden="true">"◈"</span>{move || if i18n.get_locale() == Locale::vi { "Đầu ra" } else { "Output" }}</span><button type="button" class=format!("{} ml-auto", button_style) title={move || t_string!(i18n, common_copy)} aria-label="Copy output" disabled=move || state.output.get().is_empty() on:click=copy_output><span aria-hidden="true">"⧉"</span></button></div>
                         <div class="flex-1 overflow-auto p-3"><pre class="m-0 whitespace-pre-wrap"><code class="font-mono text-sm text-[var(--text-primary)]">{move || state.output.get()}</code></pre></div>
                     </div>
                 </ToolPanel>
