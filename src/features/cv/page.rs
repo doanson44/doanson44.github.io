@@ -3,6 +3,7 @@ use leptos::prelude::*;
 use super::components::{CvSection, EducationCard, ExperienceCard, SkillGroup};
 use super::data::{competencies, education, experiences, highlights, profile, skill_categories};
 use crate::infrastructure::browser::print_page;
+use crate::i18n::*;
 
 /// Public CV and technical portfolio page.
 #[component]
@@ -15,6 +16,7 @@ pub fn CvPage() -> impl IntoView {
     let education = education();
     let show_phone = RwSignal::new(false);
     let show_email = RwSignal::new(false);
+    let i18n = use_i18n();
 
     view! {
         <main class="flex flex-1 flex-col">
@@ -40,7 +42,7 @@ pub fn CvPage() -> impl IntoView {
                                             aria-label="Show phone number"
                                             on:click=move |_| show_phone.set(true)
                                         >
-                                            "Show phone"
+                                            {move || if i18n.get_locale() == Locale::vi { "Hiện số điện thoại" } else { "Show phone" }}
                                         </button>
                                     }
                                 >
@@ -63,7 +65,7 @@ pub fn CvPage() -> impl IntoView {
                                             aria-label="Show email address"
                                             on:click=move |_| show_email.set(true)
                                         >
-                                            "Show email"
+                                            {move || if i18n.get_locale() == Locale::vi { "Hiện email" } else { "Show email" }}
                                         </button>
                                     }
                                 >
@@ -81,11 +83,11 @@ pub fn CvPage() -> impl IntoView {
                     <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border-color)] pt-4">
                         <nav aria-label="CV sections">
                             <ul class="flex flex-wrap gap-2 text-sm">
-                                <li><a class="cv-nav-link" href="#cv-about">"About"</a></li>
-                                <li><a class="cv-nav-link" href="#cv-skills">"Skills"</a></li>
-                                <li><a class="cv-nav-link" href="#cv-experience">"Experience"</a></li>
-                                <li><a class="cv-nav-link" href="#cv-highlights">"Highlights"</a></li>
-                                <li><a class="cv-nav-link" href="#cv-education">"Education"</a></li>
+                                <li><a class="cv-nav-link" href="#cv-about">{move || if i18n.get_locale() == Locale::vi { "Giới thiệu" } else { "About" }}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-skills">{move || if i18n.get_locale() == Locale::vi { "Kỹ năng" } else { "Skills" }}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-experience">{move || if i18n.get_locale() == Locale::vi { "Kinh nghiệm" } else { "Experience" }}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-highlights">{move || if i18n.get_locale() == Locale::vi { "Điểm nổi bật" } else { "Highlights" }}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-education">{move || t!(i18n, cv_education)}</a></li>
                             </ul>
                         </nav>
 
@@ -97,13 +99,13 @@ pub fn CvPage() -> impl IntoView {
                             on:click=move |_| print_page()
                         >
                             <span aria-hidden="true">"↓"</span>
-                            "Download PDF"
+                            {move || if i18n.get_locale() == Locale::vi { "Tải PDF" } else { "Download PDF" }}
                         </button>
                     </div>
                 </header>
 
                 <div class="mt-12 space-y-12 sm:mt-16 sm:space-y-16">
-                    <CvSection id="cv-about" title="Core Competencies" eyebrow="What I do">
+                    <CvSection id="cv-about" title=move || t!(i18n, cv_competencies) eyebrow=move || if i18n.get_locale() == Locale::vi { "Tôi làm gì" } else { "What I do" }>
                         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             {competencies.into_iter().map(|item| view! {
                                 <div class="flex gap-3 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-4 py-3">
@@ -114,7 +116,7 @@ pub fn CvPage() -> impl IntoView {
                         </div>
                     </CvSection>
 
-                    <CvSection id="cv-skills" title="Technical Skills" eyebrow="Technology">
+                    <CvSection id="cv-skills" title=move || t!(i18n, cv_skills) eyebrow=move || if i18n.get_locale() == Locale::vi { "Công nghệ" } else { "Technology" }>
                         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {skills.into_iter().map(|category| view! {
                                 <SkillGroup category=category />
@@ -122,7 +124,7 @@ pub fn CvPage() -> impl IntoView {
                         </div>
                     </CvSection>
 
-                    <CvSection id="cv-experience" title="Professional Experience" eyebrow="Career">
+                    <CvSection id="cv-experience" title=move || t!(i18n, cv_experience) eyebrow=move || if i18n.get_locale() == Locale::vi { "Sự nghiệp" } else { "Career" }>
                         <div class="space-y-6">
                             {experiences.into_iter().map(|experience| view! {
                                 <ExperienceCard experience=experience />
@@ -130,7 +132,7 @@ pub fn CvPage() -> impl IntoView {
                         </div>
                     </CvSection>
 
-                    <CvSection id="cv-highlights" title="Selected Technical Highlights" eyebrow="Engineering focus">
+                    <CvSection id="cv-highlights" title=move || t!(i18n, cv_highlights) eyebrow=move || if i18n.get_locale() == Locale::vi { "Trọng tâm kỹ thuật" } else { "Engineering focus" }>
                         <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-6">
                             <ul class="grid gap-3 sm:grid-cols-2">
                                 {highlights.into_iter().map(|highlight| view! {
@@ -143,7 +145,7 @@ pub fn CvPage() -> impl IntoView {
                         </div>
                     </CvSection>
 
-                    <CvSection id="cv-education" title="Education" eyebrow="Academic background">
+                    <CvSection id="cv-education" title=move || t!(i18n, cv_education) eyebrow=move || if i18n.get_locale() == Locale::vi { "Học vấn" } else { "Academic background" }>
                         <div class="space-y-4">
                             {education.into_iter().map(|value| view! {
                                 <EducationCard value=value />
