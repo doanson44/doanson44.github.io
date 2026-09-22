@@ -6,6 +6,7 @@ use crate::application::services::proxy::ProxyService;
 use crate::domain::proxy::ResponseMinimizationOptions;
 use crate::infrastructure::proxy::ProxyApi;
 
+/// Reactive state for the HTTP proxy playground.
 #[derive(Clone, Copy)]
 pub struct ProxyState {
     service: ProxyService<ProxyApi>,
@@ -20,6 +21,7 @@ pub struct ProxyState {
 }
 
 impl ProxyState {
+    /// Creates the default proxy playground state.
     pub fn new() -> Self {
         Self {
             service: ProxyService::new(ProxyApi),
@@ -36,6 +38,7 @@ impl ProxyState {
         }
     }
 
+    /// Starts a GET request through the proxy.
     pub fn run(&self) {
         let target_url = self.target_url.get();
         if target_url.trim().is_empty() {
@@ -78,6 +81,7 @@ impl ProxyState {
         );
     }
 
+    /// Restores the default request and minimization options.
     pub fn reset(&self) {
         self.target_url
             .set("https://jsonplaceholder.typicode.com/posts".into());
