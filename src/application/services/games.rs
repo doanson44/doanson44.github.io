@@ -26,7 +26,6 @@ impl PongService {
     }
 }
 
-
 /// Application service for the single-player Breakout game.
 #[derive(Debug, Default)]
 pub struct BreakoutService;
