@@ -46,7 +46,7 @@ pub fn DeveloperToolPage(tool: ToolId) -> impl IntoView {
             {move || state.error.get().map(|error| view! { <div class="flex items-start gap-2 border-b border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">{error}</div> })}
             <ToolSplit initial_ratio=50>
                 <ToolPanel side=ToolPanelSide::First>
-                    {move || view! { <crate::components::editor::Editor source=state.source title={if tool == ToolId::Regex { "Pattern" } else { t!(i18n, common_input) }} placeholder=move || if i18n.get_locale() == Locale::vi { "Nhập dữ liệu..." } else { "Enter input..." } aria_label=title textarea_id="developer-input" on_change=Callback::new(move |s| state.set_source(tool, s)) /> }.into_any()}
+                    {move || view! { <crate::components::editor::Editor source=state.source title={if tool == ToolId::Regex { "Pattern" } else { "Input" }} placeholder="Enter input..." aria_label=title textarea_id="developer-input" on_change=Callback::new(move |s| state.set_source(tool, s)) /> }.into_any()}
                     {secondary_label.map(|label| view! {
                         <div class="shrink-0 border-t border-[var(--border-color)] p-2">
                             <label class="mb-1 block text-xs text-[var(--text-secondary)]" for="developer-secondary-input">{label}</label>
