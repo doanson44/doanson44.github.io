@@ -67,10 +67,7 @@ async fn fetch_text(target_url: &str) -> Result<String, String> {
         .map_err(|_| "Proxy response is invalid".to_string())?;
 
     if !response.ok() {
-        return Err(format!(
-            "Proxy request returned HTTP {}",
-            response.status()
-        ));
+        return Err(format!("Proxy request returned HTTP {}", response.status()));
     }
 
     JsFuture::from(

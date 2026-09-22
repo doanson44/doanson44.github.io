@@ -25,9 +25,7 @@ impl ProxyState {
     pub fn new() -> Self {
         Self {
             service: ProxyService::new(ProxyApi),
-            target_url: RwSignal::new(
-                "https://jsonplaceholder.typicode.com/posts".to_string(),
-            ),
+            target_url: RwSignal::new("https://jsonplaceholder.typicode.com/posts".to_string()),
             max_array_items: RwSignal::new("5".to_string()),
             max_string_chars: RwSignal::new("1000".to_string()),
             compact: RwSignal::new(false),
