@@ -20,8 +20,8 @@ use crate::features::tools::jwt::page::JwtPage;
 use crate::features::tools::markdown::page::MarkdownPage;
 use crate::features::tools::page::ToolsPage;
 use crate::features::tools::time::page::TimePage;
-use crate::infrastructure::funding_rate::FundingRateApi;
 use crate::i18n::I18nContextProvider;
+use crate::infrastructure::funding_rate::FundingRateApi;
 use crate::infrastructure::mexc_futures::MexcFuturesStream;
 
 #[component]
