@@ -2016,7 +2016,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 animation_frame.set(Some(id));
             }
         }
-    };
+    });
 
     let cleanup_stop = Rc::clone(&stop_loop);
     on_cleanup(move || {
