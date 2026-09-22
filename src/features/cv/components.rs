@@ -1,23 +1,24 @@
 use leptos::prelude::*;
 
 use super::data::{Education, Experience, SkillCategory};
+use crate::i18n::*;
 
 /// Renders a labelled CV section with semantic heading structure.
 #[component]
 pub fn CvSection(
     id: &'static str,
-    title: &'static str,
-    #[prop(optional)] eyebrow: Option<&'static str>,
+    title_key: &'static str,
+    #[prop(optional)] eyebrow_key: Option<&'static str>,
     children: Children,
 ) -> impl IntoView {
     view! {
         <section id=id class="cv-section scroll-mt-24">
             <div class="mb-6 flex items-end justify-between gap-4 border-b border-[var(--border-color)] pb-3">
                 <div>
-                    {eyebrow.map(|value| view! {
-                        <p class="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{value}</p>
+                    {eyebrow_key.map(|key| view! {
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">{move || localized_cv_text(key)}</p>
                     })}
-                    <h2 class="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">{title}</h2>
+                    <h2 class="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">{move || localized_cv_text(title_key)}</h2>
                 </div>
             </div>
             {children()}
@@ -120,5 +121,22 @@ pub fn EducationCard(value: Education) -> impl IntoView {
             </div>
             <p class="mt-3 text-sm text-[var(--text-secondary)]">"Major: "{value.major}</p>
         </article>
+    }
+}
+
+fn localized_cv_text(key: &str) -> String {
+    let i18n = use_i18n();
+    match key {
+        "competencies" => t!(i18n, cv_competencies).to_string(),
+        "skills" => t!(i18n, cv_skills).to_string(),
+        "experience" => t!(i18n, cv_experience).to_string(),
+        "highlights" => t!(i18n, cv_highlights).to_string(),
+        "education" => t!(i18n, cv_education).to_string(),
+        "what_i_do" => if i18n.get_locale() == Locale::vi { "Tôi làm gì".into() } else { "What I do".into() },
+        "technology" => if i18n.get_locale() == Locale::vi { "Công nghệ".into() } else { "Technology".into() },
+        "career" => if i18n.get_locale() == Locale::vi { "Sự nghiệp".into() } else { "Career".into() },
+        "engineering_focus" => if i18n.get_locale() == Locale::vi { "Trọng tâm kỹ thuật".into() } else { "Engineering focus".into() },
+        "academic_background" => if i18n.get_locale() == Locale::vi { "Học vấn".into() } else { "Academic background".into() },
+        _ => String::new(),
     }
 }
