@@ -1934,7 +1934,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             return;
         };
         let canvas: &HtmlCanvasElement = canvas.as_ref();
-        let Some(context) = canvas_context(&canvas) else {
+        let Some(context) = canvas_context(canvas) else {
             return;
         };
         let dpr = window()
@@ -2018,10 +2018,13 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         }
     };
 
+    let cleanup_stop = Rc::clone(&stop_loop);
     on_cleanup(move || {
-        stop_loop();
+        cleanup_stop();
     });
 
+    let flap_render = Rc::clone(&render);
+    let flap_start = Rc::clone(&start_loop);
     let flap = move || {
         let mut next = game.get_untracked();
         next.flap();
