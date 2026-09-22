@@ -10,6 +10,7 @@ use crate::domain::games::{
 };
 use leptos::ev;
 use leptos::prelude::*;
+use crate::i18n::*;
 use wasm_bindgen::JsCast;
 
 fn bind_keys(handler: impl Fn(web_sys::KeyboardEvent) + 'static) {
@@ -179,8 +180,9 @@ impl GameKind {
 #[component]
 pub fn GamesPage() -> impl IntoView {
     let selected = RwSignal::new(None::<GameKind>);
+    let i18n = use_i18n();
     view! { <main class="flex flex-1 flex-col px-4 py-8 sm:px-6 lg:px-8"><div class="mx-auto w-full max-w-7xl">
-        <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">"Arcade"</p><h1 class="mt-1 text-3xl font-bold text-[var(--text-primary)]">"Games"</h1><p class="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">"Twenty compact browser games — all client-side Rust/WASM, no server needed."</p></div><span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">"20 games"</span></div>
+        <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">"Arcade"</p><h1 class="mt-1 text-3xl font-bold text-[var(--text-primary)]">{move || t!(i18n, games_title)}</h1><p class="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">"Twenty compact browser games — all client-side Rust/WASM, no server needed."</p></div><span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">"20 games"</span></div>
         {move || match selected.get(){Some(game)=>view!{<GameView game on_back=move||selected.set(None) />}.into_any(),None=>view!{<GameGrid on_select=move|g|selected.set(Some(g))/>}.into_any()}}
     </div></main> }
 }
