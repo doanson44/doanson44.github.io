@@ -1,4 +1,5 @@
 #![allow(clippy::possible_missing_else)]
+use crate::application::services::PongService;
 use crate::domain::games::{
     blackjack_score, blackjack_should_hit, checkers_moves, chess_ai_move, chess_apply_move,
     chess_glyph, chess_has_move, chess_is_check, chess_legal_moves, chess_start,
@@ -6,7 +7,7 @@ use crate::domain::games::{
     lights_toggle, minesweeper_adjacent_mines, minesweeper_flood_reveal, puzzle_is_solved,
     puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given, sudoku_puzzle, sudoku_valid,
     tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage, ttt_best_move,
-    ttt_is_draw, ttt_winner, typing_words, wordle_check, wordle_word, FlappyGame,
+    ttt_is_draw, ttt_winner, typing_words, wordle_check, wordle_word, FlappyGame, PongGame,
 };
 use leptos::ev;
 use leptos::prelude::*;
@@ -1766,75 +1767,43 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Pong ──────────────────────────────────────────────────────────────────────
 
 fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let paddle_y = RwSignal::new(5i32);
-    let ai_y = RwSignal::new(5i32);
-    let ball = RwSignal::new((10i32, 5i32));
-    let ball_d = RwSignal::new((1i32, 1i32));
+    const width = PongGame::WIDTH as usize;
+    const height = PongGame::HEIGHT as usize;
+
+    let game = RwSignal::new(PongService::new_game());
     let running = RwSignal::new(false);
-    let game_over = RwSignal::new(false);
-    let max_y = 9i32;
 
     let step = move || {
-        if game_over.get() {
+        if !running.get() {
             return;
         }
-        let (bx, by) = ball.get();
-        let (dx, mut dy) = ball_d.get();
-        let mut new_bx = bx + dx;
-        let mut new_by = by + dy;
-        if new_by < 0 || new_by > max_y {
-            dy = -dy;
-            new_by = by;
-        }
 
-        let ai = crate::domain::games::pong_ai_y(ai_y.get(), new_by, max_y);
-        ai_y.set(ai);
-
-        if new_bx <= 1 {
-            let p = paddle_y.get();
-            if new_by >= p - 1 && new_by <= p + 1 {
-                new_bx = 1;
-                ball_d.set((-dx, dy));
-            } else {
+        match PongService::tick(&mut game.write()) {
+            crate::domain::games::PongTickResult::Rally => {}
+            crate::domain::games::PongTickResult::PlayerScored => {
+                score.set(game.get().score());
+                status.set(format!("You scored! {}", game.get().score()));
+            }
+            crate::domain::games::PongTickResult::ComputerScored => {
                 running.set(false);
-                game_over.set(true);
-                status.set("AI wins!".into());
-                return;
+                status.set(format!("Computer wins — score {}", game.get().score()));
             }
         }
-        if new_bx >= 18 {
-            let a = ai_y.get();
-            if new_by >= a - 1 && new_by <= a + 1 {
-                new_bx = 18;
-                ball_d.set((-dx, dy));
-            } else {
-                score.update(|s| *s += 1);
-                new_bx = 10;
-                status.set(format!("You scored! {}", score.get()));
-            }
-        }
-
-        ball.set((new_bx, new_by));
-        ball_d.set((
-            -ball_d.get().0.signum() * if new_bx == 1 || new_bx == 18 { -1 } else { 1 },
-            dy,
-        ));
     };
 
     let start = move || {
         if running.get() {
             return;
         }
-        if game_over.get() {
-            paddle_y.set(5);
-            ai_y.set(5);
-            ball.set((10, 5));
-            ball_d.set((1, 1));
+
+        if game.get().is_game_over() {
+            PongService::reset(&mut game.write());
             score.set(0);
-            game_over.set(false);
         }
+
         running.set(true);
         status.set("Rally!".into());
+
         leptos::task::spawn_local(async move {
             loop {
                 gloo_timers::future::TimeoutFuture::new(80).await;
@@ -1847,7 +1816,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     };
 
     let pause = move || {
-        if running.get() && !game_over.get() {
+        if running.get() && !game.get().is_game_over() {
             running.set(false);
             status.set("Paused — Space to resume".into());
         }
@@ -1861,14 +1830,17 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         }
     };
 
-    let nudge = move |delta: i32| {
-        paddle_y.update(|p| *p = (*p + delta).clamp(0, max_y));
+    let move_player = move |delta: i32| {
+        if !game.get().is_game_over() {
+            PongService::move_player(&mut game.write(), delta);
+        }
     };
 
     bind_keys(move |e: web_sys::KeyboardEvent| {
         if is_text_input(&e) {
             return;
         }
+
         match e.key().as_str() {
             " " => {
                 e.prevent_default();
@@ -1878,47 +1850,100 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             }
             "ArrowUp" | "w" | "W" => {
                 e.prevent_default();
-                nudge(-1);
+                move_player(-1);
             }
             "ArrowDown" | "s" | "S" => {
                 e.prevent_default();
-                nudge(1);
+                move_player(1);
             }
             _ => {}
         }
     });
 
     view! {
-        <div class="mx-auto max-w-lg space-y-2">
-            <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|toggle()>
-                {move || if game_over.get() { "New Game (Space)" } else if running.get() { "⏸ Pause (Space)" } else { "▶ Start (Space)" }}
-            </button>
-            {dpad(
-                move || nudge(-1),
-                move || {},
-                move || nudge(1),
-                move || {},
-            )}
-            <p class="text-center text-xs text-[var(--text-tertiary)]">"Space start/pause · ↑ ↓ / W S move paddle"</p>
-            <div class="relative h-48 rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] overflow-hidden">
-                <div class="absolute inset-y-0 left-0 w-3 flex items-center">
-                    <div class="h-12 w-full rounded-r bg-[var(--accent)] transition-all" style=move || format!("margin-top: {}%", paddle_y.get() * 10)></div>
-                </div>
-                <div class="absolute inset-y-0 right-0 w-3 flex items-center">
-                    <div class="h-12 w-full rounded-l bg-red-400 transition-all" style=move || format!("margin-top: {}%", ai_y.get() * 10)></div>
-                </div>
-                <div class="absolute w-3 h-3 rounded-full bg-white shadow" style=move || {
-                    let (bx, by) = ball.get();
-                    format!("left: {}%; top: {}%;", bx * 5, by * 10)
-                }></div>
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="h-full w-px border-dashed border border-[var(--border-color)] opacity-30"></div>
-                </div>
+        <div class="pong-container mx-auto w-100">
+            <div class="d-flex gap-2 mb-2">
+                <button
+                    type="button"
+                    class="btn btn-primary flex-grow-1"
+                    on:click=move |_| toggle()
+                >
+                    {move || if game.get().is_game_over() {
+                        "New Game (Space)"
+                    } else if running.get() {
+                        "Pause (Space)"
+                    } else {
+                        "Start (Space)"
+                    }}
+                </button>
+            </div>
+
+            <div class="d-flex justify-content-center gap-2 mb-3">
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary pong-control"
+                    title="Move paddle up"
+                    aria-label="Move paddle up"
+                    on:click=move |_| move_player(-1)
+                >
+                    "↑"
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary pong-control"
+                    title="Move paddle down"
+                    aria-label="Move paddle down"
+                    on:click=move |_| move_player(1)
+                >
+                    "↓"
+                </button>
+            </div>
+
+            <p class="text-center text-body-secondary small mb-2">
+                "One player · ↑ ↓ / W S · Space to start or pause"
+            </p>
+
+            <div
+                class="pong-board border border-secondary rounded overflow-hidden"
+                role="img"
+                aria-label="Single-player Pong game board"
+            >
+                {(0..height)
+                    .flat_map(|row| {
+                        (0..width).map(move |col| {
+                            view! {
+                                <div class=move || {
+                                    let current = game.get();
+                                    let (ball_x, ball_y) = current.ball_position();
+                                    let player = col == 0
+                                        && (row as i32 - current.player_y()).abs()
+                                            <= PongGame::PADDLE_SIZE / 2;
+                                    let computer = col == width - 1
+                                        && (row as i32 - current.computer_y()).abs()
+                                            <= PongGame::PADDLE_SIZE / 2;
+                                    let ball = col as i32 == ball_x && row as i32 == ball_y;
+
+                                    if ball {
+                                        "pong-cell pong-ball"
+                                    } else if player {
+                                        "pong-cell pong-paddle-player"
+                                    } else if computer {
+                                        "pong-cell pong-paddle-computer"
+                                    } else if col == width / 2 {
+                                        "pong-cell pong-center-line"
+                                    } else {
+                                        "pong-cell"
+                                    }
+                                }></div>
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                    })
+                    .collect_view()}
             </div>
         </div>
     }.into_any()
 }
-
 // ── Flappy ────────────────────────────────────────────────────────────────────
 
 fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
