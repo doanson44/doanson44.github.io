@@ -2,8 +2,8 @@ use leptos::prelude::*;
 
 use crate::components::tool_layout::{ToolDivider, ToolPanel, ToolPanelSide, ToolSplit};
 use crate::features::tools::base64::state::Base64State;
-use crate::infrastructure::browser::copy_to_clipboard;
 use crate::i18n::*;
+use crate::infrastructure::browser::copy_to_clipboard;
 
 /// Base64 encoder and decoder page.
 #[component]
