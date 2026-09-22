@@ -155,7 +155,7 @@ pub fn ToolDivider() -> impl IntoView {
         <div
             class="tool-divider"
             role="separator"
-            aria-label=move || t!(use_i18n(), tool_resize)
+            aria-label=move || t_string!(use_i18n(), tool_resize)
             tabindex="0"
             on:pointerdown=on_pointer_down
             on:pointermove=on_pointer_move
