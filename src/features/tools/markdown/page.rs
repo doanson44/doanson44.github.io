@@ -16,8 +16,6 @@ use crate::features::tools::markdown::state::MarkdownState;
 #[component]
 pub fn MarkdownPage() -> impl IntoView {
     let state = MarkdownState::new();
-    let i18n = use_i18n();
-
     Effect::new(move |_| {
         let content = state.source.get();
         if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
