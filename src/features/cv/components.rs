@@ -132,11 +132,41 @@ fn localized_cv_text(key: &str) -> String {
         "experience" => t!(i18n, cv_experience).to_string(),
         "highlights" => t!(i18n, cv_highlights).to_string(),
         "education" => t!(i18n, cv_education).to_string(),
-        "what_i_do" => if i18n.get_locale() == Locale::vi { "Tôi làm gì".into() } else { "What I do".into() },
-        "technology" => if i18n.get_locale() == Locale::vi { "Công nghệ".into() } else { "Technology".into() },
-        "career" => if i18n.get_locale() == Locale::vi { "Sự nghiệp".into() } else { "Career".into() },
-        "engineering_focus" => if i18n.get_locale() == Locale::vi { "Trọng tâm kỹ thuật".into() } else { "Engineering focus".into() },
-        "academic_background" => if i18n.get_locale() == Locale::vi { "Học vấn".into() } else { "Academic background".into() },
+        "what_i_do" => {
+            if i18n.get_locale() == Locale::vi {
+                "Tôi làm gì".into()
+            } else {
+                "What I do".into()
+            }
+        }
+        "technology" => {
+            if i18n.get_locale() == Locale::vi {
+                "Công nghệ".into()
+            } else {
+                "Technology".into()
+            }
+        }
+        "career" => {
+            if i18n.get_locale() == Locale::vi {
+                "Sự nghiệp".into()
+            } else {
+                "Career".into()
+            }
+        }
+        "engineering_focus" => {
+            if i18n.get_locale() == Locale::vi {
+                "Trọng tâm kỹ thuật".into()
+            } else {
+                "Engineering focus".into()
+            }
+        }
+        "academic_background" => {
+            if i18n.get_locale() == Locale::vi {
+                "Học vấn".into()
+            } else {
+                "Academic background".into()
+            }
+        }
         _ => String::new(),
     }
 }
