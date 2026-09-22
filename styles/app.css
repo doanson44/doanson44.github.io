@@ -482,3 +482,56 @@ body {
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
 }
+
+
+.pong-container {
+    max-width: 32rem;
+}
+
+.pong-board {
+    display: grid;
+    grid-template-columns: repeat(20, minmax(0, 1fr));
+    grid-template-rows: repeat(10, minmax(0, 1fr));
+    aspect-ratio: 2 / 1;
+    background: var(--bs-body-bg);
+}
+
+.pong-cell {
+    min-width: 0;
+    min-height: 0;
+    background: var(--bs-body-bg);
+}
+
+.pong-paddle-player {
+    background: var(--bs-primary);
+}
+
+.pong-paddle-computer {
+    background: var(--bs-danger);
+}
+
+.pong-ball {
+    background: var(--bs-body-color);
+    border-radius: 50%;
+    transform: scale(0.72);
+}
+
+.pong-center-line {
+    border-left: 1px dashed var(--bs-border-color);
+    opacity: 0.5;
+}
+
+.pong-control {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+@media (max-width: 576px) {
+    .pong-container {
+        max-width: 100%;
+    }
+
+    .pong-board {
+        aspect-ratio: 5 / 3;
+    }
+}
