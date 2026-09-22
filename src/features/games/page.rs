@@ -1,5 +1,6 @@
 #![allow(clippy::possible_missing_else)]
 use crate::domain::games::{
+    FlappyGame,
     blackjack_score, blackjack_should_hit, checkers_moves, chess_ai_move, chess_apply_move,
     chess_glyph, chess_has_move, chess_is_check, chess_legal_moves, chess_start,
     connect_four_ai_column, connect_four_drop, connect_four_winner, hangman_word, has_move_2048,
@@ -10,7 +11,12 @@ use crate::domain::games::{
 };
 use leptos::ev;
 use leptos::prelude::*;
+use std::cell::RefCell;
+use std::rc::Rc;
+use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
+use wasm_bindgen::JsValue;
+use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 use crate::i18n::*;
 
@@ -1918,70 +1924,110 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Flappy ────────────────────────────────────────────────────────────────────
 
 fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let bird_y: RwSignal<f64> = RwSignal::new(5.0);
-    let vel: RwSignal<f64> = RwSignal::new(0.0);
-    let pipes: RwSignal<Vec<(f64, f64)>> = RwSignal::new(vec![(20.0, 4.0), (30.0, 6.0)]);
-    let running = RwSignal::new(false);
-    let game_over = RwSignal::new(false);
-    let bird_x = 3.0f64;
+    let game = RwSignal::new(FlappyGame::new(300.0));
+    let canvas_ref = NodeRef::<leptos::html::Canvas>::new();
+    let animation_frame = RwSignal::new(None::<i32>);
+    let animation_time = RwSignal::new(0.0f64);
+
+    let render = move || {
+        let Some(canvas) = canvas_ref.get() else {
+            return;
+        };
+        let canvas: HtmlCanvasElement = canvas.into();
+        let Some(context) = canvas_context(&canvas) else {
+            return;
+        };
+        let dpr = window()
+            .map(|w| w.device_pixel_ratio().clamp(1.0, 2.5))
+            .unwrap_or(1.0);
+        let width = (FlappyGame::WIDTH * dpr).round() as u32;
+        let height = (FlappyGame::HEIGHT * dpr).round() as u32;
+        if canvas.width() != width || canvas.height() != height {
+            canvas.set_width(width);
+            canvas.set_height(height);
+        }
+        let _ = context.set_transform(dpr, 0.0, 0.0, dpr, 0.0, 0.0);
+        draw_flappy(&context, &game.get_untracked(), animation_time.get_untracked());
+    };
+
+    let stop_loop = move || {
+        if let Some(id) = animation_frame.get_untracked() {
+            if let Some(w) = window() {
+                let _ = w.cancel_animation_frame(id);
+            }
+            animation_frame.set(None);
+        }
+    };
+
+    let start_loop = move || {
+        if animation_frame.get_untracked().is_some() {
+            return;
+        }
+
+        let Some(w) = window() else {
+            return;
+        };
+
+        let last_time = Rc::new(RefCell::new(None::<f64>));
+        let accumulator = Rc::new(RefCell::new(0.0f64));
+        let callback = Rc::new(RefCell::new(None::<Closure<dyn FnMut(f64)>>));
+        let callback_ref = Rc::clone(&callback);
+        let last_time_ref = Rc::clone(&last_time);
+        let accumulator_ref = Rc::clone(&accumulator);
+
+        let frame = Closure::wrap(Box::new(move |now: f64| {
+            let mut last = last_time_ref.borrow_mut();
+            let previous = last.replace(now).unwrap_or(now);
+            let frame_dt = ((now - previous) / 1000.0).min(0.1);
+            drop(last);
+
+            let mut accumulated = accumulator_ref.borrow_mut();
+            *accumulated += frame_dt;
+            while *accumulated >= 1.0 / 60.0 {
+                let mut next = game.get_untracked();
+                next.update(1.0 / 60.0, FlappyGame::GAP_MIN_Y + rand_f64() * (FlappyGame::GAP_MAX_Y - FlappyGame::GAP_MIN_Y));
+                game.set(next);
+                *accumulated -= 1.0 / 60.0;
+            }
+            drop(accumulated);
+
+            animation_time.set(now);
+            if let Some(current) = game.get_untracked().running.then_some(()) {
+                let _ = current;
+            } else {
+                animation_frame.set(None);
+                render();
+                return;
+            }
+
+            render();
+            if let Some(cb) = callback_ref.borrow().as_ref() {
+                if let Ok(id) = w.request_animation_frame(cb.as_ref().unchecked_ref()) {
+                    animation_frame.set(Some(id));
+                }
+            }
+        }) as Box<dyn FnMut(f64)>);
+
+        *callback.borrow_mut() = Some(frame);
+        if let Some(cb) = callback.borrow().as_ref() {
+            if let Ok(id) = w.request_animation_frame(cb.as_ref().unchecked_ref()) {
+                animation_frame.set(Some(id));
+            }
+        }
+    };
+
+    on_cleanup(move || {
+        stop_loop();
+    });
 
     let flap = move || {
-        if game_over.get() {
-            bird_y.set(5.0);
-            vel.set(0.0);
-            pipes.set(vec![(20.0, 4.0), (30.0, 6.0)]);
-            running.set(false);
-            game_over.set(false);
-            score.set(0);
-        }
-        if !running.get() {
-            running.set(true);
-            status.set("Flap to fly!".into());
-            leptos::task::spawn_local(async move {
-                loop {
-                    gloo_timers::future::TimeoutFuture::new(50).await;
-                    if !running.get() {
-                        break;
-                    }
-                    let y = bird_y.get();
-                    let v = vel.get() + 0.3;
-                    let ny = (y + v).clamp(0.0, 11.0);
-                    bird_y.set(ny);
-                    vel.set(v);
-
-                    let mut ps = pipes.get();
-                    for p in &mut ps {
-                        p.0 -= 0.5;
-                    }
-                    ps.retain(|p| p.0 > -1.0);
-                    if ps.last().map(|p| p.0 < 15.0).unwrap_or(true) {
-                        ps.push((20.0, 2.0 + rand_f64() * 6.0));
-                    }
-
-                    let hit = ps.iter().any(|&(px, gap)| {
-                        (bird_x - px).abs() < 1.2 && (ny < gap - 2.0 || ny > gap + 2.0)
-                    });
-                    if ny >= 11.0 || hit {
-                        running.set(false);
-                        game_over.set(true);
-                        status.set(format!("💥 Crashed! Score: {}", score.get()));
-                        break;
-                    }
-
-                    let passed = ps
-                        .iter()
-                        .filter(|&&(px, _)| px < bird_x && px > bird_x - 0.6)
-                        .count();
-                    if passed > 0 {
-                        score.update(|s| *s += 1);
-                        status.set(format!("Score: {}", score.get()));
-                    }
-
-                    pipes.set(ps);
-                }
-            });
-        }
-        vel.set(-2.5);
+        let mut next = game.get_untracked();
+        next.flap();
+        game.set(next);
+        score.set(game.get_untracked().score);
+        status.set("Flying".into());
+        render();
+        start_loop();
     };
 
     bind_keys(move |e: web_sys::KeyboardEvent| {
@@ -1997,31 +2043,197 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     });
 
     let reset = move || {
-        bird_y.set(5.0);
-        vel.set(0.0);
-        pipes.set(vec![(20.0, 4.0), (30.0, 6.0)]);
-        running.set(false);
-        game_over.set(false);
+        stop_loop();
+        game.set(FlappyGame::new(300.0));
         score.set(0);
-        status.set("Tap to start".into());
+        status.set("Ready".into());
+        animation_time.set(0.0);
+        render();
     };
 
+    Effect::new(move |_| {
+        let current = game.get();
+        score.set(current.score);
+        if current.game_over {
+            status.set(format!("Game over — score {}", current.score));
+        }
+    });
+
+    render();
+
     view! {
-        <div class="mx-auto max-w-sm space-y-2">
-            <div class="relative h-64 cursor-pointer rounded-lg border border-[var(--border-color)] bg-gradient-to-b from-sky-400 to-sky-200 dark:from-sky-900 dark:to-sky-700 overflow-hidden"
-                on:click=move|_|flap()>
-                <div class="absolute text-2xl transition-all" style=move || format!("left: {}%; top: {}%; transform: translateY(-50%);", bird_x * 5.0, bird_y.get() * 8.0)>"🐦"</div>
-                {move || pipes.get().iter().map(|&(px, gap)| view! {
-                    <div>
-                        <div class="absolute bg-green-500 rounded" style=move || format!("left: calc({}% - 10px); top: 0; width: 20px; height: {}%;", px * 5.0, (gap - 2.0) * 8.0)></div>
-                        <div class="absolute bg-green-500 rounded" style=move || format!("left: calc({}% - 10px); bottom: 0; width: 20px; height: {}%;", px * 5.0, (12.0 - gap - 2.0) * 8.0)></div>
-                    </div>
-                }).collect_view()}
-                {move || if game_over.get() || !running.get() { view! { <div class="absolute inset-0 flex items-center justify-center text-white font-bold text-lg drop-shadow">{if game_over.get() { "💥 Click to retry" } else { "👆 Tap to fly!" }}</div> }.into_any() } else { view! { <div></div> }.into_any() }}
+        <div class="mx-auto w-full max-w-md space-y-3">
+            <div class="position-relative mx-auto overflow-hidden rounded-3 border border-secondary shadow-sm flappy-stage">
+                <canvas
+                    node_ref=canvas_ref
+                    width="400"
+                    height="600"
+                    class="d-block w-100 flappy-canvas"
+                    aria-label="Flappy game canvas. Press Space, ArrowUp, or tap the game to flap."
+                    role="img"
+                    on:pointerdown=move |ev: web_sys::PointerEvent| {
+                        ev.prevent_default();
+                        flap();
+                    }
+                >
+                    "Flappy game. Use Space, ArrowUp, or tap to flap. Avoid the pipes and ground."
+                </canvas>
             </div>
-            <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|reset()>"Reset"</button>
+            <div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
+                <button
+                    type="button"
+                    class="btn btn-primary btn-sm px-4"
+                    on:click=move |_| flap()
+                    title="Flap the bird"
+                >
+                    <i class="bi bi-feather me-1"></i>
+                    "Flap"
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    on:click=move |_| reset()
+                    title="Reset Flappy"
+                >
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    "Reset"
+                </button>
+            </div>
+            <p class="mb-0 text-center text-body-secondary small">
+                "Space / ↑ / W / tap to flap · avoid pipes and the ground"
+            </p>
         </div>
-    }.into_any()
+    }
+    .into_any()
+}
+
+fn canvas_context(canvas: &HtmlCanvasElement) -> Option<CanvasRenderingContext2d> {
+    canvas
+        .get_context("2d")
+        .ok()
+        .flatten()
+        .and_then(|value| value.dyn_into::<CanvasRenderingContext2d>().ok())
+}
+
+fn draw_flappy(context: &CanvasRenderingContext2d, game: &FlappyGame, time: f64) {
+    let width = FlappyGame::WIDTH;
+    let height = FlappyGame::HEIGHT;
+
+    context.set_fill_style_str("#87CEEB");
+    context.fill_rect(0.0, 0.0, width, height);
+
+    context.set_fill_style_str("#BFE8F7");
+    for (x, y, radius) in [(55.0, 90.0, 28.0), (315.0, 125.0, 22.0), (235.0, 60.0, 18.0)] {
+        context.begin_path();
+        let _ = context.arc(x, y, radius, 0.0, std::f64::consts::TAU);
+        context.fill();
+    }
+
+    for pipe in &game.pipes {
+        let gap_top = pipe.gap_y - FlappyGame::PIPE_GAP * 0.5;
+        let gap_bottom = pipe.gap_y + FlappyGame::PIPE_GAP * 0.5;
+        draw_pipe(context, pipe.x, 0.0, FlappyGame::PIPE_WIDTH, gap_top, true);
+        draw_pipe(
+            context,
+            pipe.x,
+            gap_bottom,
+            FlappyGame::PIPE_WIDTH,
+            height - gap_bottom,
+            false,
+        );
+    }
+
+    context.set_fill_style_str("#D9A441");
+    context.fill_rect(0.0, height - 48.0, width, 48.0);
+    context.set_fill_style_str("#A8792E");
+    for x in (0..width as usize).step_by(24) {
+        context.fill_rect(x as f64, height - 48.0, 12.0, 5.0);
+    }
+
+    let rotation = (game.bird_velocity / 620.0).clamp(-0.5, 1.0);
+    let wing = (time / 90.0).sin() * 5.0;
+    context.save();
+    context.translate(FlappyGame::BIRD_X, game.bird_y);
+    context.rotate(rotation);
+    context.set_fill_style_str("#F6D365");
+    context.begin_path();
+    let _ = context.ellipse(0.0, 0.0, 18.0, 14.0, 0.0, 0.0, std::f64::consts::TAU);
+    context.fill();
+
+    context.set_fill_style_str("#E9B949");
+    context.begin_path();
+    let _ = context.ellipse(-3.0, 6.0 + wing, 10.0, 5.0, 0.0, 0.0, std::f64::consts::TAU);
+    context.fill();
+
+    context.set_fill_style_str("#F28C28");
+    context.begin_path();
+    context.move_to(15.0, -2.0);
+    context.line_to(28.0, 3.0);
+    context.line_to(15.0, 7.0);
+    context.close_path();
+    context.fill();
+
+    context.set_fill_style_str("#FFFFFF");
+    context.begin_path();
+    let _ = context.arc(7.0, -6.0, 5.0, 0.0, std::f64::consts::TAU);
+    context.fill();
+    context.set_fill_style_str("#343A40");
+    context.begin_path();
+    let _ = context.arc(8.5, -6.0, 2.0, 0.0, std::f64::consts::TAU);
+    context.fill();
+    context.restore();
+
+    context.set_text_align("center");
+    context.set_text_baseline("top");
+    context.set_font("700 44px Inter, sans-serif");
+    context.set_fill_style_str("#FFFFFF");
+    context.set_shadow_color("rgba(52,58,64,0.55)");
+    context.set_shadow_blur(4.0);
+    let _ = context.fill_text(&game.score.to_string(), width * 0.5, 20.0);
+    context.set_shadow_blur(0.0);
+
+    if !game.running || game.game_over {
+        context.set_fill_style_str("rgba(33,37,41,0.45)");
+        context.fill_rect(0.0, 0.0, width, height - 48.0);
+        context.set_font("700 28px Inter, sans-serif");
+        context.set_fill_style_str("#FFFFFF");
+        context.set_text_baseline("middle");
+        let message = if game.game_over {
+            "Game over — tap to retry"
+        } else {
+            "Tap or press Space to start"
+        };
+        let _ = context.fill_text(message, width * 0.5, height * 0.5);
+    }
+}
+
+fn draw_pipe(
+    context: &CanvasRenderingContext2d,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    top: bool,
+) {
+    if height <= 0.0 {
+        return;
+    }
+
+    context.set_fill_style_str("#5FAF3D");
+    context.fill_rect(x, y, width, height);
+
+    context.set_fill_style_str("#7CCB57");
+    context.fill_rect(x + 7.0, y, 9.0, height);
+
+    let cap_height = 24.0;
+    let cap_y = if top { height - cap_height } else { y };
+    context.set_fill_style_str("#4C9631");
+    context.fill_rect(x - 5.0, cap_y, width + 10.0, cap_height);
+
+    context.set_stroke_style_str("#376E27");
+    context.set_line_width(2.0);
+    context.stroke_rect(x, y, width, height);
+    context.stroke_rect(x - 5.0, cap_y, width + 10.0, cap_height);
 }
 
 // ── Tetris ────────────────────────────────────────────────────────────────────
