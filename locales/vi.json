@@ -115,5 +115,6 @@
   "tools_desc_number_base": "Chuyển đổi số nguyên giữa nhị phân, bát phân, thập phân và thập lục phân.",
   "tools_desc_html_entity": "Mã hóa hoặc giải mã các HTML entity phổ biến.",
   "tools_desc_unicode_escape": "Escape hoặc unescape các code point Unicode.",
-  "tools_proxy_desc": "Gọi API JSON thông qua proxy và thu gọn response để hiển thị ngắn gọn."
+  "tools_proxy_desc": "Gọi API JSON thông qua proxy và thu gọn response để hiển thị ngắn gọn.",
+  "tools_calculator_suffix": "Máy tính"
 }
