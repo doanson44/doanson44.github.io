@@ -62,7 +62,7 @@ fn rand_usize(n: usize) -> usize {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum GameKind {
+pub enum GameKind {
     TwentyFortyEight,
     TicTacToe,
     Minesweeper,
