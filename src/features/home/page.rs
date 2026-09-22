@@ -17,7 +17,7 @@ pub fn HomePage() -> impl IntoView {
                         "doanson44.github.io"
                     </h1>
                     <p class="mb-8 text-lg text-[var(--text-secondary)]">
-                        {move || t!(use_i18n(), home_tagline)}
+                        {move || t_string!(use_i18n(), home_tagline)}
                     </p>
                 </div>
 
