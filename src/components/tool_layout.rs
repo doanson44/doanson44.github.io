@@ -1,4 +1,6 @@
 use leptos::prelude::*;
+
+use crate::i18n::*;
 use wasm_bindgen::JsCast;
 use web_sys::PointerEvent;
 
@@ -153,7 +155,7 @@ pub fn ToolDivider() -> impl IntoView {
         <div
             class="tool-divider"
             role="separator"
-            aria-label="Resize tool panels"
+            aria-label=move || t!(use_i18n(), tool_resize)
             tabindex="0"
             on:pointerdown=on_pointer_down
             on:pointermove=on_pointer_move
