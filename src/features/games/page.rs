@@ -10,8 +10,9 @@ use crate::domain::games::{
 };
 use leptos::ev;
 use leptos::prelude::*;
-use crate::i18n::*;
 use wasm_bindgen::JsCast;
+
+use crate::i18n::*;
 
 fn bind_keys(handler: impl Fn(web_sys::KeyboardEvent) + 'static) {
     let handle = window_event_listener(ev::keydown, handler);
