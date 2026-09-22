@@ -22,11 +22,13 @@ use crate::features::tools::page::ToolsPage;
 use crate::features::tools::time::page::TimePage;
 use crate::infrastructure::funding_rate::FundingRateApi;
 use crate::infrastructure::mexc_futures::MexcFuturesStream;
+use crate::i18n::I18nContextProvider;
 
 #[component]
 pub fn App() -> impl IntoView {
     let current_hash = create_hash_signal();
     view! {
+        <I18nContextProvider>
         <div class="app-container flex h-screen flex-col" id="app">
             <Navbar />
             <main class="app-main min-h-0 flex flex-1 overflow-auto">
@@ -34,6 +36,7 @@ pub fn App() -> impl IntoView {
             </main>
             <Footer />
         </div>
+        </I18nContextProvider>
     }
 }
 
