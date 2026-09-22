@@ -127,11 +127,11 @@ pub fn EducationCard(value: Education) -> impl IntoView {
 fn localized_cv_text(key: &str) -> String {
     let i18n = use_i18n();
     match key {
-        "competencies" => t!(i18n, cv_competencies).to_string(),
-        "skills" => t!(i18n, cv_skills).to_string(),
-        "experience" => t!(i18n, cv_experience).to_string(),
-        "highlights" => t!(i18n, cv_highlights).to_string(),
-        "education" => t!(i18n, cv_education).to_string(),
+        "competencies" => t_string!(i18n, cv_competencies),
+        "skills" => t_string!(i18n, cv_skills),
+        "experience" => t_string!(i18n, cv_experience),
+        "highlights" => t_string!(i18n, cv_highlights),
+        "education" => t_string!(i18n, cv_education),
         "what_i_do" => {
             if i18n.get_locale() == Locale::vi {
                 "Tôi làm gì".into()
