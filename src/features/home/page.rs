@@ -22,10 +22,10 @@ pub fn HomePage() -> impl IntoView {
                 </div>
 
                 <div class="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <HomeCard href="#/tools" icon="⚒" title=move || t!(use_i18n(), nav_tools) description=move || t!(use_i18n(), home_tools_desc) />
-                    <HomeCard href="#/games" icon="♟" title=move || t!(use_i18n(), nav_games) description=move || t!(use_i18n(), home_games_desc) />
-                    <HomeCard href="#/cv" icon="●" title=move || t!(use_i18n(), nav_cv) description=move || t!(use_i18n(), home_cv_desc) />
-                    <HomeCard href="#/socket" icon="↔" title=move || t!(use_i18n(), nav_socket) description=move || t!(use_i18n(), home_socket_desc) />
+                    <HomeCard href="#/tools" icon="⚒" title_key="tools" description_key="tools" />
+                    <HomeCard href="#/games" icon="♟" title_key="games" description_key="games" />
+                    <HomeCard href="#/cv" icon="●" title_key="cv" description_key="cv" />
+                    <HomeCard href="#/socket" icon="↔" title_key="socket" description_key="socket" />
                 </div>
             </div>
         </main>
@@ -45,8 +45,20 @@ fn HomeCard(
             class="group rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-6 text-center no-underline shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         >
             <div class="mb-4 text-4xl text-[var(--accent)]" aria-hidden="true">{icon}</div>
-            <h2 class="mb-2 text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
-            <p class="text-sm leading-6 text-[var(--text-secondary)]">{description}</p>
+            <h2 class="mb-2 text-lg font-semibold text-[var(--text-primary)]">{move || match title_key {
+                "tools" => t!(use_i18n(), nav_tools),
+                "games" => t!(use_i18n(), nav_games),
+                "cv" => t!(use_i18n(), nav_cv),
+                "socket" => t!(use_i18n(), nav_socket),
+                _ => "",
+            }}</h2>
+            <p class="text-sm leading-6 text-[var(--text-secondary)]">{move || match description_key {
+                "tools" => t!(use_i18n(), home_tools_desc),
+                "games" => t!(use_i18n(), home_games_desc),
+                "cv" => t!(use_i18n(), home_cv_desc),
+                "socket" => t!(use_i18n(), home_socket_desc),
+                _ => "",
+            }}</p>
         </a>
     }
 }
