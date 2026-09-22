@@ -4,6 +4,7 @@ use crate::components::tool_layout::{ToolDivider, ToolPanel, ToolPanelSide, Tool
 use crate::features::tools::proxy::state::ProxyState;
 use crate::infrastructure::browser::copy_to_clipboard;
 
+/// HTTP proxy playground with client-side response minimization.
 #[component]
 pub fn ProxyPage() -> impl IntoView {
     let state = ProxyState::new();

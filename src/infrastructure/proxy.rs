@@ -10,6 +10,9 @@ const PROXY_ENDPOINT: &str =
     "https://doanson44-forward-proxy.work-sontd.workers.dev/api/proxy";
 
 /// Browser adapter for the external CORS/forward proxy.
+///
+/// The remote proxy endpoint is intentionally kept outside the GitHub Pages
+/// application because GitHub Pages can only host the client-side WASM app.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ProxyApi;
 
