@@ -489,6 +489,8 @@ body {
 }
 
 .pong-board {
+    width: 100%;
+    min-height: 20rem;
     display: grid;
     grid-template-columns: repeat(20, minmax(0, 1fr));
     grid-template-rows: repeat(10, minmax(0, 1fr));
@@ -532,6 +534,7 @@ body {
     }
 
     .pong-board {
+        min-height: 16rem;
         aspect-ratio: 5 / 3;
     }
 }
