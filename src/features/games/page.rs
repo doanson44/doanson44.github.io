@@ -7,8 +7,8 @@ use crate::domain::games::{
     lights_toggle, minesweeper_adjacent_mines, minesweeper_flood_reveal, puzzle_is_solved,
     puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given, sudoku_puzzle, sudoku_valid,
     tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage, ttt_best_move,
-    BreakoutGame, BreakoutTickResult,
-    ttt_is_draw, ttt_winner, typing_words, wordle_check, wordle_word, FlappyGame, PongGame,
+    ttt_is_draw, ttt_winner, typing_words, wordle_check, wordle_word, BreakoutGame,
+    BreakoutTickResult, FlappyGame, PongGame,
 };
 use leptos::ev;
 use leptos::prelude::*;
