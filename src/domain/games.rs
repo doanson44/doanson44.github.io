@@ -488,7 +488,8 @@ impl BreakoutGame {
     pub const BRICK_COUNT: usize = Self::BRICK_ROWS * Self::BRICK_COLS;
     /// Initial number of lives.
     pub const INITIAL_LIVES: u8 = 3;
-    const PADDLE_Y: i32 = Self::HEIGHT - 2;
+    /// Vertical position of the paddle in the playfield.
+    pub const PADDLE_Y: i32 = Self::HEIGHT - 2;
     const BRICK_START_X: i32 = 3;
 
     /// Creates a new Breakout match.
