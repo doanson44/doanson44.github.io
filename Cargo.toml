@@ -5,6 +5,7 @@ edition = "2021"
 description = "A Rust-first, client-side Markdown Preview application with live editing and Mermaid diagram support"
 
 [lib]
+name = "markdown_studio_lib"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
