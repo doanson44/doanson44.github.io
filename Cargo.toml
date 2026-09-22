@@ -60,6 +60,8 @@ features = [
     "KeyboardEvent",
     "EventTarget",
     "HtmlInputElement",
+    "HtmlCanvasElement",
+    "CanvasRenderingContext2d",
 ]
 
 [profile.release]
