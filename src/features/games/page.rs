@@ -109,6 +109,35 @@ impl GameKind {
             Self::Blackjack,
         ]
     }
+    fn slug(self) -> &'static str {
+        match self {
+            Self::TwentyFortyEight => "2048",
+            Self::TicTacToe => "tic-tac-toe",
+            Self::Minesweeper => "minesweeper",
+            Self::Snake => "snake",
+            Self::Sudoku => "sudoku",
+            Self::ConnectFour => "connect-four",
+            Self::Memory => "memory",
+            Self::Typing => "typing",
+            Self::Wordle => "wordle",
+            Self::Hangman => "hangman",
+            Self::FifteenPuzzle => "15-puzzle",
+            Self::LightsOut => "lights-out",
+            Self::TowerDefense => "tower-defense",
+            Self::Breakout => "breakout",
+            Self::Pong => "pong",
+            Self::Flappy => "flappy",
+            Self::Tetris => "tetris",
+            Self::Chess => "chess",
+            Self::Checkers => "checkers",
+            Self::Blackjack => "blackjack",
+        }
+    }
+
+    fn from_slug(slug: &str) -> Option<Self> {
+        Self::all().into_iter().find(|game| game.slug() == slug)
+    }
+
     fn title(self) -> &'static str {
         match self {
             Self::TwentyFortyEight => "2048",
@@ -184,50 +213,110 @@ impl GameKind {
 }
 
 #[component]
-pub fn GamesPage() -> impl IntoView {
-    let selected = RwSignal::new(None::<GameKind>);
+pub fn GamesPage(game: Option<GameKind>) -> impl IntoView {
     let i18n = use_i18n();
-    view! { <main class="flex flex-1 flex-col px-4 py-8 sm:px-6 lg:px-8"><div class="mx-auto w-full max-w-7xl">
-        <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">"Arcade"</p><h1 class="mt-1 text-3xl font-bold text-[var(--text-primary)]">{move || t_string!(i18n, games_title)}</h1><p class="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">"Twenty compact browser games — all client-side Rust/WASM, no server needed."</p></div><span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">"20 games"</span></div>
-        {move || match selected.get(){Some(game)=>view!{<GameView game on_back=move||selected.set(None) />}.into_any(),None=>view!{<GameGrid on_select=move|g|selected.set(Some(g))/>}.into_any()}}
-    </div></main> }
+    view! {
+        <main class="flex flex-1 flex-col px-4 py-8 sm:px-6 lg:px-8">
+            <div class="mx-auto w-full max-w-7xl">
+                <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">"Arcade"</p>
+                        <h1 class="mt-1 text-3xl font-bold text-[var(--text-primary)]">
+                            {move || t_string!(i18n, games_title)}
+                        </h1>
+                        <p class="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
+                            "Twenty compact browser games — all client-side Rust/WASM, no server needed."
+                        </p>
+                    </div>
+                    <span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">
+                        "20 games"
+                    </span>
+                </div>
+                {match game {
+                    Some(game) => view! { <GameView game /> }.into_any(),
+                    None => view! { <GameGrid /> }.into_any(),
+                }}
+            </div>
+        </main>
+    }
 }
 
 #[component]
-fn GameGrid(on_select: impl Fn(GameKind) + Copy + 'static) -> impl IntoView {
-    view! { <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{GameKind::all().into_iter().map(|game|view!{
-    <button type="button" class="group flex min-h-40 flex-col rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" on:click=move |_|on_select(game)><span class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-color)] text-xs font-bold text-[var(--accent)]">{game.icon()}</span><span class="mt-4 text-base font-semibold text-[var(--text-primary)]">{move || localized_game_title(game)}</span><span class="mt-1 text-sm text-[var(--text-secondary)]">{move || localized_game_description(game)}</span><span class="mt-auto pt-4 text-xs font-medium text-[var(--accent)]">"Play →"</span></button>
-    }).collect_view()}</div> }
+fn GameGrid() -> impl IntoView {
+    view! {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {GameKind::all()
+                .into_iter()
+                .map(|game| {
+                    let href = format!("#/games/{}", game.slug());
+                    view! {
+                        <a
+                            href=href
+                            class="group flex min-h-40 flex-col rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                        >
+                            <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-color)] text-xs font-bold text-[var(--accent)]">
+                                {game.icon()}
+                            </span>
+                            <span class="mt-4 text-base font-semibold text-[var(--text-primary)]">
+                                {move || localized_game_title(game)}
+                            </span>
+                            <span class="mt-1 text-sm text-[var(--text-secondary)]">
+                                {move || localized_game_description(game)}
+                            </span>
+                            <span class="mt-auto pt-4 text-xs font-medium text-[var(--accent)]">"Play →"</span>
+                        </a>
+                    }
+                })
+                .collect_view()}
+        </div>
+    }
 }
 
 #[component]
-fn GameView(game: GameKind, on_back: impl Fn() + Copy + 'static) -> impl IntoView {
+fn GameView(game: GameKind) -> impl IntoView {
     let score = RwSignal::new(0u32);
     let status = RwSignal::new(String::from("Ready"));
-    view! { <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6"><div class="mb-5 flex flex-wrap items-center gap-3"><button type="button" class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" on:click=move |_|on_back()>"← All games"</button><div class="min-w-0 flex-1"><h2 class="text-xl font-bold text-[var(--text-primary)]">{game.title()}</h2><p class="text-sm text-[var(--text-secondary)]">{game.description()}</p></div><span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">{move||status.get()}</span></div>
-    {match game {
-        GameKind::TwentyFortyEight=>board_2048(score,status),
-        GameKind::TicTacToe=>board_ttt(score,status),
-        GameKind::Minesweeper=>board_mines(score,status),
-        GameKind::Snake=>board_snake(score,status),
-        GameKind::Sudoku=>board_sudoku(score,status),
-        GameKind::ConnectFour=>board_connect_four(score,status),
-        GameKind::Memory=>board_memory(score,status),
-        GameKind::Typing=>board_typing(score,status),
-        GameKind::Wordle=>board_wordle(score,status),
-        GameKind::Hangman=>board_hangman(score,status),
-        GameKind::FifteenPuzzle=>board_puzzle(score,status),
-        GameKind::LightsOut=>board_lights(score,status),
-        GameKind::TowerDefense=>board_tower(score,status),
-        GameKind::Breakout=>board_breakout(score,status),
-        GameKind::Pong=>board_pong(score,status),
-        GameKind::Flappy=>board_flappy(score,status),
-        GameKind::Tetris=>board_tetris(score,status),
-        GameKind::Chess=>board_chess(score,status),
-        GameKind::Checkers=>board_checkers(score,status),
-        GameKind::Blackjack=>board_blackjack(score,status),
-    }}
-    </section> }
+    view! {
+        <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6">
+            <div class="mb-5 flex flex-wrap items-center gap-3">
+                <a
+                    href="#/games"
+                    class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                >
+                    "← All games"
+                </a>
+                <div class="min-w-0 flex-1">
+                    <h2 class="text-xl font-bold text-[var(--text-primary)]">{game.title()}</h2>
+                    <p class="text-sm text-[var(--text-secondary)]">{game.description()}</p>
+                </div>
+                <span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">
+                    {move || status.get()}
+                </span>
+            </div>
+            {match game {
+                GameKind::TwentyFortyEight => board_2048(score, status),
+                GameKind::TicTacToe => board_ttt(score, status),
+                GameKind::Minesweeper => board_mines(score, status),
+                GameKind::Snake => board_snake(score, status),
+                GameKind::Sudoku => board_sudoku(score, status),
+                GameKind::ConnectFour => board_connect_four(score, status),
+                GameKind::Memory => board_memory(score, status),
+                GameKind::Typing => board_typing(score, status),
+                GameKind::Wordle => board_wordle(score, status),
+                GameKind::Hangman => board_hangman(score, status),
+                GameKind::FifteenPuzzle => board_puzzle(score, status),
+                GameKind::LightsOut => board_lights(score, status),
+                GameKind::TowerDefense => board_tower(score, status),
+                GameKind::Breakout => board_breakout(score, status),
+                GameKind::Pong => board_pong(score, status),
+                GameKind::Flappy => board_flappy(score, status),
+                GameKind::Tetris => board_tetris(score, status),
+                GameKind::Chess => board_chess(score, status),
+                GameKind::Checkers => board_checkers(score, status),
+                GameKind::Blackjack => board_blackjack(score, status),
+            }}
+        </section>
+    }
 }
 
 // ── 2048 ──────────────────────────────────────────────────────────────────────
