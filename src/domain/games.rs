@@ -968,7 +968,7 @@ impl FlappyGame {
         if self
             .pipes
             .last()
-            .is_none_or(|pipe| pipe.x < Self::WIDTH - Self::PIPE_SPACING)
+            .map_or(true, |pipe| pipe.x < Self::WIDTH - Self::PIPE_SPACING)
         {
             let x = self
                 .pipes
@@ -1012,6 +1012,36 @@ impl FlappyGame {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn flappy_flap_applies_upward_velocity() {
+        let mut game = FlappyGame::new(300.0);
+        game.flap();
+        assert!(game.running);
+        assert_eq!(game.bird_velocity, FlappyGame::FLAP_VELOCITY);
+    }
+
+    #[test]
+    fn flappy_scores_each_pipe_once() {
+        let mut game = FlappyGame::new(300.0);
+        game.flap();
+        game.pipes[0].x = -100.0;
+        game.update(1.0 / 60.0, 300.0);
+        assert_eq!(game.score, 1);
+    }
+
+    #[test]
+    fn flappy_detects_pipe_collision() {
+        let mut game = FlappyGame::new(145.0);
+        game.flap();
+        game.bird_y = 300.0;
+        game.pipes[0].x = FlappyGame::BIRD_X;
+        game.update(1.0 / 60.0, 300.0);
+        assert!(game.game_over);
+        assert!(!game.running);
+    }
+
+
     use super::*;
 
     #[test]
