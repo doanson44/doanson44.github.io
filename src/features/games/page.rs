@@ -190,7 +190,7 @@ pub fn GamesPage() -> impl IntoView {
 #[component]
 fn GameGrid(on_select: impl Fn(GameKind) + Copy + 'static) -> impl IntoView {
     view! { <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{GameKind::all().into_iter().map(|game|view!{
-    <button type="button" class="group flex min-h-40 flex-col rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" on:click=move |_|on_select(game)><span class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-color)] text-xs font-bold text-[var(--accent)]">{game.icon()}</span><span class="mt-4 text-base font-semibold text-[var(--text-primary)]">{game.title()}</span><span class="mt-1 text-sm text-[var(--text-secondary)]">{game.description()}</span><span class="mt-auto pt-4 text-xs font-medium text-[var(--accent)]">"Play →"</span></button>
+    <button type="button" class="group flex min-h-40 flex-col rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" on:click=move |_|on_select(game)><span class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-color)] text-xs font-bold text-[var(--accent)]">{game.icon()}</span><span class="mt-4 text-base font-semibold text-[var(--text-primary)]">{move || localized_game_title(game, i18n)}</span><span class="mt-1 text-sm text-[var(--text-secondary)]">{move || localized_game_description(game, i18n)}</span><span class="mt-auto pt-4 text-xs font-medium text-[var(--accent)]">"Play →"</span></button>
     }).collect_view()}</div> }
 }
 
@@ -2329,4 +2329,60 @@ fn board_chess(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             }>"New Game"</button>
         </div>
     }.into_any()
+}
+
+fn localized_game_title(game: GameKind, i18n: I18nContext) -> String {
+    if i18n.get_locale() == Locale::en {
+        return game.title().into();
+    }
+    match game {
+        GameKind::TwentyFortyEight => "2048".into(),
+        GameKind::TicTacToe => "Cờ Caro".into(),
+        GameKind::Minesweeper => "Dò mìn".into(),
+        GameKind::Snake => "Rắn".into(),
+        GameKind::Sudoku => "Sudoku".into(),
+        GameKind::ConnectFour => "Kết nối 4".into(),
+        GameKind::Memory => "Thẻ nhớ".into(),
+        GameKind::Typing => "Tốc độ gõ".into(),
+        GameKind::Wordle => "Wordle".into(),
+        GameKind::Hangman => "Đoán chữ".into(),
+        GameKind::FifteenPuzzle => "Xếp hình 15".into(),
+        GameKind::LightsOut => "Tắt đèn".into(),
+        GameKind::TowerDefense => "Phòng thủ tháp".into(),
+        GameKind::Breakout => "Phá gạch".into(),
+        GameKind::Pong => "Pong".into(),
+        GameKind::Flappy => "Flappy".into(),
+        GameKind::Tetris => "Tetris".into(),
+        GameKind::Chess => "Cờ vua".into(),
+        GameKind::Checkers => "Cờ đam".into(),
+        GameKind::Blackjack => "Blackjack".into(),
+    }
+}
+
+fn localized_game_description(game: GameKind, i18n: I18nContext) -> String {
+    if i18n.get_locale() == Locale::en {
+        return game.description().into();
+    }
+    match game {
+        GameKind::TwentyFortyEight => "Ghép các ô để đạt 2048.".into(),
+        GameKind::TicTacToe => "Đấu với AI trên bàn cờ 3×3.".into(),
+        GameKind::Minesweeper => "Mở các ô an toàn và tránh mìn.".into(),
+        GameKind::Snake => "Ăn mồi, lớn lên và tránh tường.".into(),
+        GameKind::Sudoku => "Hoàn thành bảng logic mà không lặp số.".into(),
+        GameKind::ConnectFour => "Xếp bốn quân liên tiếp trước AI.".into(),
+        GameKind::Memory => "Tìm tất cả các cặp giống nhau.".into(),
+        GameKind::Typing => "Gõ từ nhanh nhất có thể.".into(),
+        GameKind::Wordle => "Đoán từ 5 chữ cái trong 6 lượt.".into(),
+        GameKind::Hangman => "Đoán từ trước khi hình người hoàn tất.".into(),
+        GameKind::FifteenPuzzle => "Trượt các ô về đúng thứ tự số.".into(),
+        GameKind::LightsOut => "Tắt tất cả các đèn.".into(),
+        GameKind::TowerDefense => "Sống sót qua các đợt tấn công.".into(),
+        GameKind::Breakout => "Phá tất cả các khối bằng quả bóng.".into(),
+        GameKind::Pong => "Giữ bóng không đi qua phía của bạn.".into(),
+        GameKind::Flappy => "Đi qua các khoảng trống bằng những cú nhảy đúng lúc.".into(),
+        GameKind::Tetris => "Xóa các hàng bằng những khối rơi.".into(),
+        GameKind::Chess => "Chơi một bàn cờ vua cục bộ nhẹ.".into(),
+        GameKind::Checkers => "Ăn quân trên bàn cờ đam.".into(),
+        GameKind::Blackjack => "Đánh bại nhà cái mà không vượt quá 21.".into(),
+    }
 }
