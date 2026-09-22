@@ -80,6 +80,11 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
             return view! { <DeveloperToolPage tool=tool /> }.into_any();
         }
     }
+    if let Some(slug) = route.strip_prefix("/games/") {
+        if let Some(game) = crate::features::games::page::GameKind::from_slug(slug) {
+            return view! { <GamesPage game=Some(game) /> }.into_any();
+        }
+    }
     match route.as_str() {
         "/" => view! { <HomePage /> }.into_any(),
         "/tools" => view! { <ToolsPage /> }.into_any(),
@@ -89,7 +94,7 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools/base64" => view! { <Base64Page /> }.into_any(),
         "/tools/time" => view! { <TimePage /> }.into_any(),
         "/tools/proxy" => view! { <ProxyPage /> }.into_any(),
-        "/games" => view! { <GamesPage /> }.into_any(),
+        "/games" => view! { <GamesPage game=None /> }.into_any(),
         "/cv" => view! { <CvPage /> }.into_any(),
         "/socket" => view! {
             <SocketPage
