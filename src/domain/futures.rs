@@ -204,6 +204,19 @@ impl FuturesTickerMomentum {
         self.burst_score
     }
 
+    /// Returns the current same-direction return streak.
+    pub fn burst_streak(&self) -> usize {
+        let Some(&current) = self.recent_returns.back() else {
+            return 0;
+        };
+
+        self.recent_returns
+            .iter()
+            .rev()
+            .take_while(|value| value.signum() == current.signum())
+            .count()
+    }
+
     /// Returns whether the ticker is currently experiencing a burst.
     pub fn is_burst(&self) -> bool {
         self.burst_score >= 70
