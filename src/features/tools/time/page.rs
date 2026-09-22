@@ -8,10 +8,12 @@ use crate::application::services::time::TimeService;
 use crate::domain::time::{CountdownState, StopwatchState, TimestampDirection, TimestampUnit};
 use crate::features::tools::time::state::{ClockEntry, TimeState, TimeTab};
 use crate::infrastructure::time::{local_timezone, BrowserTimeProvider};
+use crate::i18n::*;
 
 #[component]
 pub fn TimePage() -> impl IntoView {
     let state = TimeState::new();
+    let i18n = use_i18n();
     let provider = BrowserTimeProvider;
     state.tick.set(provider.now_ms());
     let tick = state.tick;
@@ -34,8 +36,8 @@ pub fn TimePage() -> impl IntoView {
     view! {
         <div class="flex flex-grow flex-col overflow-hidden">
             <div class="flex shrink-0 flex-col border-b border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
-                <strong>"Time & Utilities"</strong>
-                <div class="text-sm text-[var(--text-secondary)]">"World clock, countdown, stopwatch, ruler, and timestamp conversion."</div>
+                <strong>{move || if i18n.get_locale() == Locale::vi { "Thời gian & Tiện ích" } else { "Time & Utilities" }}</strong>
+                <div class="text-sm text-[var(--text-secondary)]">{move || if i18n.get_locale() == Locale::vi { "Đồng hồ thế giới, đếm ngược, stopwatch, thước đo và chuyển đổi timestamp." } else { "World clock, countdown, stopwatch, ruler, and timestamp conversion." }}</div>
             </div>
             <div class="flex flex-grow flex-col overflow-hidden lg:flex-row">
                 <TimeNavigation state=state />
