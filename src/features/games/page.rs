@@ -213,7 +213,7 @@ impl GameKind {
 }
 
 #[component]
-pub fn GamesPage(game: Option<GameKind>) -> impl IntoView {
+pub(crate) fn GamesPage(game: Option<GameKind>) -> impl IntoView {
     let i18n = use_i18n();
     view! {
         <main class="flex flex-1 flex-col px-4 py-8 sm:px-6 lg:px-8">
