@@ -49,6 +49,7 @@ pub enum SocketFilter {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SocketSortMode {
     Momentum,
+    Price,
     TotalTicks,
     Funding,
     Change24h,
