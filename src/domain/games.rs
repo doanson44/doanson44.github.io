@@ -965,7 +965,7 @@ impl FlappyGame {
         if self
             .pipes
             .last()
-            .map_or(true, |pipe| pipe.x < Self::WIDTH - Self::PIPE_SPACING)
+            .is_none_or(|pipe| pipe.x < Self::WIDTH - Self::PIPE_SPACING)
         {
             let x = self
                 .pipes
