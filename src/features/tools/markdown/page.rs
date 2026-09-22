@@ -1,5 +1,7 @@
 use leptos::prelude::*;
 
+use crate::i18n::*;
+
 use crate::components::editor::Editor;
 use crate::components::preview::Preview;
 use crate::components::tool_layout::{ToolDivider, ToolPanel, ToolPanelSide, ToolSplit};
@@ -14,6 +16,7 @@ use crate::features::tools::markdown::state::MarkdownState;
 #[component]
 pub fn MarkdownPage() -> impl IntoView {
     let state = MarkdownState::new();
+    let i18n = use_i18n();
 
     Effect::new(move |_| {
         let content = state.source.get();
