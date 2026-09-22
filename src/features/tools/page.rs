@@ -113,7 +113,7 @@ fn SearchResults(
     let count = results.len();
     view! {
         <section aria-live="polite">
-            <div class="mb-3 text-sm text-[var(--text-secondary)]">{format!("{} {}", count, t!(i18n, tools_result_count))}</div>
+            <div class="mb-3 text-sm text-[var(--text-secondary)]">{format!("{} {}", count, t_string!(i18n, tools_result_count))}</div>
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {if results.is_empty() {
                     view! { <div class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4 text-sm text-[var(--text-secondary)]" role="status">{move || t_string!(i18n, tools_no_results)}</div> }.into_any()
