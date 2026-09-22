@@ -19,6 +19,7 @@ use crate::features::tools::json::page::JsonPage;
 use crate::features::tools::jwt::page::JwtPage;
 use crate::features::tools::markdown::page::MarkdownPage;
 use crate::features::tools::page::ToolsPage;
+use crate::features::tools::proxy::page::ProxyPage;
 use crate::features::tools::time::page::TimePage;
 use crate::i18n::I18nContextProvider;
 use crate::infrastructure::funding_rate::FundingRateApi;
@@ -87,6 +88,7 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools/jwt" => view! { <JwtPage /> }.into_any(),
         "/tools/base64" => view! { <Base64Page /> }.into_any(),
         "/tools/time" => view! { <TimePage /> }.into_any(),
+        "/tools/proxy" => view! { <ProxyPage /> }.into_any(),
         "/games" => view! { <GamesPage /> }.into_any(),
         "/cv" => view! { <CvPage /> }.into_any(),
         "/socket" => view! {
