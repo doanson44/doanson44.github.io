@@ -310,8 +310,8 @@ fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
 fn empty_state(mode: SocketViewMode) -> impl IntoView {
     let i18n = use_i18n();
     let text = move || match mode {
-        SocketViewMode::All => t!(i18n, socket_waiting),
-        SocketViewMode::PinnedOnly => t!(i18n, socket_no_pinned),
+        SocketViewMode::All => t_string!(i18n, socket_waiting),
+        SocketViewMode::PinnedOnly => t_string!(i18n, socket_no_pinned),
     };
     view! { <div class="flex h-full flex-col items-center justify-center py-5 text-[var(--text-secondary)]"><span class="mb-2 text-2xl" aria-hidden="true">"◌"</span><span>{text}</span></div> }
 }
