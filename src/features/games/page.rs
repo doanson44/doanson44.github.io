@@ -1,5 +1,5 @@
 #![allow(clippy::possible_missing_else)]
-use crate::application::services::games::PongService;
+use crate::application::services::games::{BreakoutService, PongService};
 use crate::domain::games::{
     blackjack_score, blackjack_should_hit, checkers_moves, chess_ai_move, chess_apply_move,
     chess_glyph, chess_has_move, chess_is_check, chess_legal_moves, chess_start,
@@ -7,6 +7,7 @@ use crate::domain::games::{
     lights_toggle, minesweeper_adjacent_mines, minesweeper_flood_reveal, puzzle_is_solved,
     puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given, sudoku_puzzle, sudoku_valid,
     tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage, ttt_best_move,
+    BreakoutGame, BreakoutTickResult,
     ttt_is_draw, ttt_winner, typing_words, wordle_check, wordle_word, FlappyGame, PongGame,
 };
 use leptos::ev;
@@ -1691,91 +1692,53 @@ fn board_tower(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Breakout ──────────────────────────────────────────────────────────────────
 
 fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let blocks: RwSignal<[bool; 30]> = RwSignal::new([true; 30]);
-    let ball_x = RwSignal::new(5i32);
-    let ball_y = RwSignal::new(8i32);
-    let ball_dx = RwSignal::new(1i32);
-    let ball_dy = RwSignal::new(-1i32);
-    let paddle = RwSignal::new(4i32);
+    let game = RwSignal::new(BreakoutService::new_game());
     let running = RwSignal::new(false);
-    let game_over = RwSignal::new(false);
-
-    let cols = 10i32;
-    let rows = 12i32;
 
     let step = move || {
-        if game_over.get() {
+        if !running.get() {
             return;
         }
-        let mut bx = ball_x.get() + ball_dx.get();
-        let mut by = ball_y.get() + ball_dy.get();
-        let mut dx = ball_dx.get();
-        let mut dy = ball_dy.get();
 
-        if bx < 0 || bx >= cols {
-            dx = -dx;
-            bx = ball_x.get();
-        }
-        if by < 0 {
-            dy = -dy;
-            by = 0;
-        }
-
-        if by >= rows - 1 {
-            let p = paddle.get();
-            if bx >= p && bx <= p + 2 {
-                dy = -dy;
-                by = rows - 2;
-            } else {
+        match BreakoutService::tick(&mut game.write()) {
+            BreakoutTickResult::Rally => {}
+            BreakoutTickResult::BrickHit => {
+                score.set(game.get().score());
+                status.set(format!("Brick hit · {} points", game.get().score()));
+            }
+            BreakoutTickResult::LifeLost => {
+                score.set(game.get().score());
+                status.set(format!("Life lost · {} lives left", game.get().lives()));
+            }
+            BreakoutTickResult::Won => {
                 running.set(false);
-                game_over.set(true);
-                status.set("💥 Ball lost!".into());
-                return;
+                score.set(game.get().score());
+                status.set("All bricks cleared!".into());
+            }
+            BreakoutTickResult::GameOver => {
+                running.set(false);
+                score.set(game.get().score());
+                status.set("Game over · press Space to restart".into());
             }
         }
-
-        if by < 5 {
-            let block_idx = (by * cols + bx) as usize;
-            let mut b = blocks.get();
-            if block_idx < 30 && b[block_idx] {
-                b[block_idx] = false;
-                blocks.set(b);
-                dy = -dy;
-                score.update(|s| *s += 1);
-                if b.iter().all(|&v| !v) {
-                    running.set(false);
-                    game_over.set(true);
-                    status.set("🎉 All blocks cleared!".into());
-                    return;
-                }
-            }
-        }
-
-        ball_x.set(bx);
-        ball_y.set(by);
-        ball_dx.set(dx);
-        ball_dy.set(dy);
     };
 
-    let start = move || {
+    let start_game = move || {
         if running.get() {
             return;
         }
-        if game_over.get() {
-            blocks.set([true; 30]);
-            ball_x.set(5);
-            ball_y.set(8);
-            ball_dx.set(1);
-            ball_dy.set(-1);
-            paddle.set(4);
+
+        if game.get().lives() == 0 || game.get().score() > 0 {
+            BreakoutService::reset(&mut game.write());
             score.set(0);
-            game_over.set(false);
         }
+
         running.set(true);
         status.set("Ball in play".into());
+
         leptos::task::spawn_local(async move {
             loop {
-                gloo_timers::future::TimeoutFuture::new(100).await;
+                gloo_timers::future::TimeoutFuture::new(80).await;
                 if !running.get() {
                     break;
                 }
@@ -1785,9 +1748,9 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     };
 
     let pause = move || {
-        if running.get() && !game_over.get() {
+        if running.get() {
             running.set(false);
-            status.set("Paused — Space to resume".into());
+            status.set("Paused · press Space to resume".into());
         }
     };
 
@@ -1795,18 +1758,19 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         if running.get() {
             pause();
         } else {
-            start();
+            start_game();
         }
     };
 
     let nudge = move |delta: i32| {
-        paddle.update(|p| *p = (*p + delta).clamp(0, cols - 3));
+        BreakoutService::move_paddle(&mut game.write(), delta);
     };
 
     bind_keys(move |e: web_sys::KeyboardEvent| {
         if is_text_input(&e) {
             return;
         }
+
         match e.key().as_str() {
             " " => {
                 e.prevent_default();
@@ -1827,27 +1791,82 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     });
 
     view! {
-        <div class="mx-auto max-w-sm space-y-2">
-            <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|toggle()>
-                {move || if game_over.get() { "New Game (Space)" } else if running.get() { "⏸ Pause (Space)" } else { "▶ Start (Space)" }}
-            </button>
-            {dpad(
-                move || {},
-                move || nudge(-1),
-                move || {},
-                move || nudge(1),
-            )}
-            <p class="text-center text-xs text-[var(--text-tertiary)]">"Space start/pause · ← → / A D move paddle"</p>
-            <div class="relative rounded-lg border border-[var(--border-color)] overflow-hidden bg-[var(--surface-hover)]" style="aspect-ratio: 10/12">
-                <div class="grid gap-0.5 p-1" style="grid-template-columns: repeat(10, 1fr)">
-                    {(0..30).map(|i| view! {
-                        <div class=move || if blocks.get()[i] { "aspect-square rounded bg-[var(--accent)] opacity-80" } else { "aspect-square" }></div>
-                    }).collect_view()}
-                </div>
-                <div class="relative" style="height: calc(100% - 30px)">
-                    <div class="absolute w-2 h-2 rounded-full bg-white" style=move || format!("left: calc({}% - 4px); top: calc({}% - 4px)", ball_x.get() * 10, (ball_y.get() - 5) * 100 / 7)></div>
-                    <div class="absolute h-2 rounded bg-[var(--accent)]" style=move || format!("left: calc({}% ); bottom: 4px; width: 30%", paddle.get() * 10)></div>
-                </div>
+        <div class="breakout-container mx-auto d-flex flex-column gap-3">
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <span class="badge bg-primary bg-opacity-25 text-primary-emphasis border border-primary-subtle">
+                    {move || format!("Score {}", game.get().score())}
+                </span>
+                <span class="badge bg-danger bg-opacity-25 text-danger-emphasis border border-danger-subtle">
+                    {move || format!("Lives {}", game.get().lives())}
+                </span>
+            </div>
+
+            <div class="breakout-board border border-secondary rounded-3 overflow-hidden"
+                role="application"
+                aria-label="Breakout game board">
+                {(0..(BreakoutGame::WIDTH * BreakoutGame::HEIGHT))
+                    .map(|i| {
+                        view! {
+                            <div
+                                class=move || {
+                                    let current = game.get();
+                                    let col = i % BreakoutGame::WIDTH;
+                                    let row = i / BreakoutGame::WIDTH;
+                                    let (ball_x, ball_y) = current.ball_position();
+
+                                    if ball_x == col && ball_y == row {
+                                        "breakout-cell breakout-ball"
+                                    } else if row == BreakoutGame::PADDLE_Y
+                                        && col >= current.paddle_x()
+                                        && col < current.paddle_x() + BreakoutGame::PADDLE_WIDTH
+                                    {
+                                        "breakout-cell breakout-paddle"
+                                    } else if row < BreakoutGame::BRICK_ROWS as i32
+                                        && col >= 3
+                                        && current.brick_active(
+                                            row as usize,
+                                            (col - 3) as usize,
+                                        )
+                                    {
+                                        "breakout-cell breakout-brick"
+                                    } else {
+                                        "breakout-cell"
+                                    }
+                                }
+                                aria-hidden="true"
+                            ></div>
+                        }
+                    })
+                    .collect_view()}
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+                <button
+                    type="button"
+                    class="btn btn-primary w-100"
+                    on:click=move |_| toggle()
+                >
+                    {move || {
+                        if game.get().lives() == 0 {
+                            "New Game (Space)"
+                        } else if running.get() {
+                            "Pause (Space)"
+                        } else {
+                            "Start (Space)"
+                        }
+                    }}
+                </button>
+
+                {dpad(
+                    move || {},
+                    move || nudge(-1),
+                    move || {},
+                    move || nudge(1),
+                )}
+
+                <p class="mb-0 text-center text-body-secondary small">
+                    "Space start/pause · ← → / A D move paddle"
+                </p>
             </div>
         </div>
     }.into_any()
