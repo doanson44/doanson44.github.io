@@ -263,7 +263,9 @@ pub fn MarketPage() -> impl IntoView {
                                 </button>
                             </header>
                             <div class="min-h-0 flex-1 overflow-auto p-4">
-                                <pre class="m-0 whitespace-pre-wrap break-words rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] p-3 text-xs leading-relaxed text-[var(--text-primary)]">{move || state.analysis_json.get().unwrap_or_default()}</pre>
+                                <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] p-4 text-sm leading-relaxed text-[var(--text-primary)]">
+                                    <pre class="m-0 whitespace-pre-wrap break-words font-sans">{move || state.analysis_text.get().unwrap_or_default()}</pre>
+                                </div>
                             </div>
                             <footer class="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--border-color)] px-4 py-3">
                                 <button
