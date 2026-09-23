@@ -237,13 +237,33 @@ pub struct PriceActionConfig {
 pub struct MarketStructureConfig {
     /// Enables structure analysis.
     pub enabled: bool,
-    /// Swing pivot lookback.
-    pub swing_lookback: usize,
-    /// Support/resistance lookback.
-    pub support_resistance_lookback: usize,
-    /// Support/resistance clustering tolerance in percent.
+    /// Swing-pivot settings.
+    #[serde(default)]
+    pub swing_detection: SwingDetectionConfig,
+    /// Support/resistance settings.
+    #[serde(default)]
+    pub support_resistance: SupportResistanceConfig,
+}
+
+/// Swing-pivot configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SwingDetectionConfig {
+    /// Pivot lookback.
+    #[serde(default = "default_swing_lookback")]
+    pub lookback: usize,
+}
+
+/// Support/resistance configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SupportResistanceConfig {
+    /// Historical lookback.
+    #[serde(default = "default_support_resistance_lookback")]
+    pub lookback: usize,
+    /// Cluster tolerance in percent.
+    #[serde(default = "default_cluster_tolerance")]
     pub cluster_tolerance_percent: f64,
-    /// Minimum touches for a level.
+    /// Minimum touches.
+    #[serde(default = "default_minimum_touches")]
     pub minimum_touches: usize,
 }
 
@@ -254,10 +274,31 @@ pub struct BreakoutConfig {
     pub enabled: bool,
     /// Breakout lookback.
     pub lookback_period: usize,
-    /// Enables volume confirmation.
-    pub volume_confirmation: bool,
-    /// Minimum volume ratio.
+    /// Volume-confirmation settings.
+    #[serde(default)]
+    pub volume_confirmation: VolumeConfirmationConfig,
+    /// Retest settings.
+    #[serde(default)]
+    pub retest_detection: RetestConfig,
+}
+
+/// Volume-confirmation configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VolumeConfirmationConfig {
+    /// Whether volume confirmation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Required volume ratio.
+    #[serde(default = "default_volume_ratio")]
     pub minimum_volume_ratio: f64,
+}
+
+/// Retest configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RetestConfig {
+    /// Whether retest detection is enabled.
+    #[serde(default)]
+    pub enabled: bool,
 }
 
 /// Complete analysis configuration.
@@ -576,6 +617,17 @@ pub struct AssetOutput {
     /// Timeframe.
     pub timeframe: String,
 }
+
+/// Validates the input and returns a normalized candle vector.
+fn default_swing_lookback() -> usize { 5 }
+
+fn default_support_resistance_lookback() -> usize { 120 }
+
+fn default_cluster_tolerance() -> f64 { 1.0 }
+
+fn default_minimum_touches() -> usize { 2 }
+
+fn default_volume_ratio() -> f64 { 1.5 }
 
 /// Validates the input and returns a normalized candle vector.
 pub fn validate_input(
