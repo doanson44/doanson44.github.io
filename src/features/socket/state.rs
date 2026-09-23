@@ -11,10 +11,13 @@ use wasm_bindgen::{closure::Closure, JsCast};
 
 use crate::application::{
     ports::{FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream},
-    services::FuturesMarketService,
+    services::{market::MarketService, FuturesMarketService, TechnicalAnalysisService},
 };
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
+use crate::domain::technical_analysis::AnalysisResult;
+use crate::infrastructure::market::MarketApi;
+use crate::infrastructure::browser;
 
 const UI_FLUSH_MS: i32 = 75;
 const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
@@ -70,6 +73,14 @@ pub struct SocketState {
     pub page_size: RwSignal<usize>,
     pub current_page: RwSignal<usize>,
     pub connection_status: RwSignal<FuturesConnectionStatus>,
+    pub analysis_loading: RwSignal<bool>,
+    pub analysis_json: RwSignal<Option<String>>,
+    pub analysis_result: RwSignal<Option<AnalysisResult>>,
+    pub analysis_symbol: RwSignal<Option<String>>,
+    pub analysis_timeframe: RwSignal<Option<String>>,
+    pub analysis_modal_open: RwSignal<bool>,
+    pub analysis_error: RwSignal<Option<String>>,
+    pub analysis_copied: RwSignal<bool>,
 }
 
 impl SocketState {
@@ -88,6 +99,14 @@ impl SocketState {
         let page_size = RwSignal::new(DEFAULT_PAGE_SIZE);
         let current_page = RwSignal::new(1usize);
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
+        let analysis_loading = RwSignal::new(false);
+        let analysis_json = RwSignal::new(None);
+        let analysis_result = RwSignal::new(None);
+        let analysis_symbol = RwSignal::new(None);
+        let analysis_timeframe = RwSignal::new(None);
+        let analysis_modal_open = RwSignal::new(false);
+        let analysis_error = RwSignal::new(None);
+        let analysis_copied = RwSignal::new(false);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
         if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
@@ -222,6 +241,14 @@ impl SocketState {
             page_size,
             current_page,
             connection_status,
+            analysis_loading,
+            analysis_json,
+            analysis_result,
+            analysis_symbol,
+            analysis_timeframe,
+            analysis_modal_open,
+            analysis_error,
+            analysis_copied,
         }
     }
 
@@ -252,6 +279,106 @@ impl SocketState {
     }
 
     /// Toggles a ticker pin.
+    /// Analyzes a MEXC Futures symbol at the requested timeframe.
+    pub fn analyze_symbol(&self, symbol: &str, timeframe: &str) {
+        self.run_analysis(symbol, timeframe, false);
+    }
+
+    /// Runs analysis and copies the resulting JSON to the clipboard.
+    pub fn copy_symbol_analysis(&self, symbol: &str, timeframe: &str) {
+        self.run_analysis(symbol, timeframe, true);
+    }
+
+    fn run_analysis(&self, symbol: &str, timeframe: &str, copy_result: bool) {
+        let symbol = symbol.trim().to_ascii_uppercase().replace('_', "");
+        let timeframe = timeframe.trim().to_ascii_uppercase();
+        if symbol.is_empty() || timeframe.is_empty() {
+            self.analysis_error.set(Some("A valid symbol and timeframe are required for analysis.".to_string()));
+            return;
+        }
+
+        self.analysis_loading.set(true);
+        self.analysis_error.set(None);
+        self.analysis_copied.set(false);
+        self.analysis_modal_open.set(false);
+        self.analysis_symbol.set(Some(symbol.clone()));
+        self.analysis_timeframe.set(Some(timeframe.clone()));
+
+        let analysis_loading = self.analysis_loading;
+        let analysis_json = self.analysis_json;
+        let analysis_result = self.analysis_result;
+        let analysis_modal_open = self.analysis_modal_open;
+        let analysis_error = self.analysis_error;
+        let analysis_copied = self.analysis_copied;
+        let api_symbol = symbol.clone();
+        let url = format!(
+            "https://api.mexc.com/api/v3/klines?symbol={api_symbol}&interval={}&limit=500",
+            match timeframe.as_str() {
+                "4H" => "4h",
+                "1D" => "1d",
+                _ => "1d",
+            }
+        );
+
+        MarketService::new(MarketApi).fetch_url(&url, Rc::new(move |result| {
+            analysis_loading.set(false);
+            match result.and_then(|raw| {
+                let input = TechnicalAnalysisService::mexc_klines_input(&raw, &api_symbol, &timeframe)?;
+                let config = TechnicalAnalysisService::default_crypto_config();
+                TechnicalAnalysisService::analyze(&input, &config, browser::now_iso8601())
+            }) {
+                Ok(result) => {
+                    let json = match serde_json::to_string_pretty(&result) {
+                        Ok(json) => json,
+                        Err(error) => {
+                            analysis_error.set(Some(format!("Failed to serialize analysis result: {error}")));
+                            return;
+                        }
+                    };
+                    analysis_json.set(Some(json.clone()));
+                    analysis_result.set(Some(result));
+                    analysis_error.set(None);
+                    analysis_modal_open.set(!copy_result);
+                    if copy_result {
+                        wasm_bindgen_futures::spawn_local(async move {
+                            match browser::copy_to_clipboard(&json).await {
+                                Ok(()) => analysis_copied.set(true),
+                                Err(message) => analysis_error.set(Some(message)),
+                            }
+                        });
+                    }
+                }
+                Err(message) => {
+                    analysis_json.set(None);
+                    analysis_result.set(None);
+                    analysis_modal_open.set(false);
+                    analysis_error.set(Some(message));
+                }
+            }
+        }));
+    }
+
+    pub fn close_analysis(&self) {
+        self.analysis_modal_open.set(false);
+    }
+
+    pub fn copy_analysis(&self) {
+        let Some(json) = self.analysis_json.get_untracked() else {
+            return;
+        };
+        let copied = self.analysis_copied;
+        let error = self.analysis_error;
+        wasm_bindgen_futures::spawn_local(async move {
+            match browser::copy_to_clipboard(&json).await {
+                Ok(()) => {
+                    copied.set(true);
+                    error.set(None);
+                }
+                Err(message) => error.set(Some(message)),
+            }
+        });
+    }
+
     pub fn toggle_pin(&self, symbol: &str) {
         let mut symbols = self.pinned_symbols.get_untracked();
         if let Some(index) = symbols.iter().position(|item| item == symbol) {
