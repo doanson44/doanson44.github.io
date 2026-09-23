@@ -176,7 +176,7 @@ mod tests {
     #[test]
     fn parses_price_history_for_requested_symbol() {
         let result = parse_price_history_response(
-            r#"[{"Symbol":"VNM","TradeDate":"2026-09-22T00:00:00","BasicPrice":60.3,"OpenPrice":60.4,"HighPrice":61.3,"LowPrice":60.3,"ClosePrice":61.2,"Volume":1774600,"Ceiling":64.5,"Floor":56.1,"TotalValue":108291390000},{"Symbol":"FPT","TradeDate":"2026-09-22T00:00:00","BasicPrice":100.0,"OpenPrice":100.0,"HighPrice":101.0,"LowPrice":99.0,"ClosePrice":100.5,"Volume":1000,"Ceiling":105.0,"Floor":95.0,"TotalValue":100000}]",
+            r#"[{"Symbol":"VNM","TradeDate":"2026-09-22T00:00:00","BasicPrice":60.3,"OpenPrice":60.4,"HighPrice":61.3,"LowPrice":60.3,"ClosePrice":61.2,"Volume":1774600,"Ceiling":64.5,"Floor":56.1,"TotalValue":108291390000},{"Symbol":"FPT","TradeDate":"2026-09-22T00:00:00","BasicPrice":100.0,"OpenPrice":100.0,"HighPrice":101.0,"LowPrice":99.0,"ClosePrice":100.5,"Volume":1000,"Ceiling":105.0,"Floor":95.0,"TotalValue":100000}]"#,
             "VNM",
         )
         .expect("valid price history should parse");
