@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::domain::trading::PortfolioSummary;
+use crate::domain::trading::{PositionSide, PortfolioSummary};
 use crate::features::socket::state::SocketState;
 use crate::i18n::*;
 
@@ -171,16 +171,18 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
     let fee_percent = RwSignal::new((snapshot.settings.fee_rate * 100.0).to_string());
     let leverage = RwSignal::new(snapshot.settings.leverage.to_string());
     let trade_allocation = RwSignal::new(snapshot.settings.trade_allocation_percent.to_string());
+    let position_side = RwSignal::new(snapshot.settings.position_side);
 
     let save = move |_| {
         let initial = initial_capital.get_untracked().trim().parse::<f64>();
         let fee = fee_percent.get_untracked().trim().parse::<f64>();
         let leverage = leverage.get_untracked().trim().parse::<f64>();
         let trade_allocation = trade_allocation.get_untracked().trim().parse::<f64>();
+        let side = position_side.get_untracked();
 
         match (initial, fee, leverage, trade_allocation) {
             (Ok(initial), Ok(fee), Ok(leverage), Ok(trade_allocation)) => {
-                state.save_settings(initial, fee, leverage, trade_allocation)
+                state.save_settings(initial, fee, leverage, trade_allocation, side)
             }
             _ => state
                 .trading_error
@@ -245,6 +247,32 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
                         />
                         <span class="mt-1 block text-xs text-[var(--text-secondary)]">
                             {move || t_string!(i18n, socket_trade_allocation_hint)}
+                        </span>
+                    </label>
+
+                    <label class="block text-sm">
+                        <span class="mb-1 block font-medium text-[var(--text-primary)]">
+                            {move || t_string!(i18n, socket_position_side)}
+                        </span>
+                        <select
+                            class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                            on:change=move |ev| {
+                                position_side.set(if event_target_value(&ev) == "short" {
+                                    PositionSide::Short
+                                } else {
+                                    PositionSide::Long
+                                });
+                            }
+                        >
+                            <option value="long" selected=move || position_side.get() == PositionSide::Long>
+                                {move || t_string!(i18n, socket_long)}
+                            </option>
+                            <option value="short" selected=move || position_side.get() == PositionSide::Short>
+                                {move || t_string!(i18n, socket_short)}
+                            </option>
+                        </select>
+                        <span class="mt-1 block text-xs text-[var(--text-secondary)]">
+                            {move || t_string!(i18n, socket_position_side_hint)}
                         </span>
                     </label>
 
