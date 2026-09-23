@@ -308,7 +308,8 @@ impl SocketState {
     pub fn reset_metrics(&self) {
         self.trading_error.set(None);
         self.trading_notice.set(None);
-        self.reset_metrics_request.update(|request| *request = request.wrapping_add(1));
+        self.reset_metrics_request
+            .update(|request| *request = request.wrapping_add(1));
     }
 
     /// Sets the page size and returns to the first page.
