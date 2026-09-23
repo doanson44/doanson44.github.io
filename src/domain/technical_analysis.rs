@@ -567,6 +567,246 @@ pub struct VolumeAnalysis {
     pub obv_trend: String,
 }
 
+/// Market-structure analysis.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MarketStructureAnalysis {
+    /// Current structure state.
+    pub state: String,
+    /// Latest swing points.
+    pub swing_points: SwingPoints,
+    /// Recent structure sequence.
+    pub structure_sequence: Vec<String>,
+    /// Break-of-structure result.
+    pub break_of_structure: StructureBreak,
+    /// Change-of-character result.
+    pub change_of_character: StructureBreak,
+}
+
+/// Latest swing points.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SwingPoints {
+    /// Latest confirmed swing high.
+    pub last_swing_high: Option<LevelPoint>,
+    /// Latest confirmed swing low.
+    pub last_swing_low: Option<LevelPoint>,
+}
+
+/// Timestamped price level.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LevelPoint {
+    /// Price.
+    pub price: f64,
+    /// Candle timestamp.
+    pub date: String,
+}
+
+/// Structure break result.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StructureBreak {
+    /// Whether a break was detected.
+    pub detected: bool,
+    /// Break direction.
+    pub direction: Option<String>,
+    /// Broken level.
+    pub level: Option<f64>,
+}
+
+/// Support/resistance analysis.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SupportResistanceAnalysis {
+    /// Support zones.
+    pub supports: Vec<PriceZone>,
+    /// Resistance zones.
+    pub resistances: Vec<PriceZone>,
+}
+
+/// Price zone.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PriceZone {
+    /// Zone bounds.
+    pub zone: ZoneBounds,
+    /// Normalized strength score.
+    pub strength: f64,
+    /// Number of touches.
+    pub touches: usize,
+}
+
+/// Zone bounds.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ZoneBounds {
+    /// Lower bound.
+    pub low: f64,
+    /// Upper bound.
+    pub high: f64,
+}
+
+/// Breakout analysis.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BreakoutAnalysis {
+    /// Breakout status.
+    pub status: String,
+    /// Relevant resistance level.
+    pub resistance_level: Option<f64>,
+    /// Breakout direction.
+    pub direction: Option<String>,
+    /// Distance to the relevant level in percent.
+    pub distance_percent: Option<f64>,
+    /// Whether volume confirms the breakout.
+    pub volume_confirmation: bool,
+    /// Retest result.
+    pub retest: RetestAnalysis,
+}
+
+/// Retest analysis.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RetestAnalysis {
+    /// Whether a retest was detected.
+    pub detected: bool,
+}
+
+/// Detected chart or candlestick pattern.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Pattern {
+    /// Pattern name.
+    pub name: String,
+    /// Pattern category.
+    #[serde(rename = "type")]
+    pub pattern_type: String,
+    /// Pattern lifecycle status.
+    pub status: String,
+    /// Detection confidence score.
+    pub confidence: f64,
+}
+
+/// Detected divergence.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Divergence {
+    /// Indicator name.
+    pub indicator: String,
+    /// Divergence direction.
+    pub direction: String,
+    /// Detection confidence score.
+    pub confidence: f64,
+}
+
+/// Market regime analysis.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RegimeAnalysis {
+    /// Trend regime.
+    pub trend: String,
+    /// Momentum regime.
+    pub momentum: String,
+    /// Volatility regime.
+    pub volatility: String,
+    /// Volume regime.
+    pub volume: String,
+    /// Overall regime.
+    pub overall: String,
+}
+
+/// Signal emitted by the interpretation engine.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Signal {
+    /// Stable signal identifier.
+    pub id: String,
+    /// Signal direction.
+    pub direction: String,
+    /// Signal category.
+    pub category: String,
+    /// Signal strength.
+    pub strength: String,
+    /// Human-readable evidence.
+    pub evidence: Vec<String>,
+}
+
+/// Conflicting evidence.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Conflict {
+    /// Stable conflict type.
+    #[serde(rename = "type")]
+    pub conflict_type: String,
+    /// Human-readable description.
+    pub description: String,
+}
+
+/// Scenario definition.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Scenario {
+    /// Scenario state.
+    pub status: String,
+    /// Optional trigger.
+    pub trigger: Option<ScenarioCondition>,
+    /// Confirmation conditions.
+    pub confirmation: Vec<String>,
+    /// Optional invalidation.
+    pub invalidation: Option<ScenarioCondition>,
+}
+
+/// Scenario condition.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ScenarioCondition {
+    /// Human-readable condition.
+    pub condition: String,
+}
+
+/// Range scenario.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RangeScenario {
+    /// Scenario state.
+    pub status: String,
+    /// Upper boundary.
+    pub upper_boundary: Option<f64>,
+    /// Lower boundary.
+    pub lower_boundary: Option<f64>,
+    /// Range condition.
+    pub condition: String,
+}
+
+/// All scenario outcomes.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ScenarioAnalysis {
+    /// Bullish scenario.
+    pub bullish: Scenario,
+    /// Bearish scenario.
+    pub bearish: Scenario,
+    /// Range scenario.
+    pub range: RangeScenario,
+}
+
+/// Key levels.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct KeyLevels {
+    /// Immediate support.
+    pub immediate_support: Option<f64>,
+    /// Major support.
+    pub major_support: Option<f64>,
+    /// Immediate resistance.
+    pub immediate_resistance: Option<f64>,
+}
+
+/// High-level engine summary.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EngineSummary {
+    /// Dominant market state.
+    pub dominant_state: String,
+    /// Trend state.
+    pub trend: String,
+    /// Momentum state.
+    pub momentum: String,
+    /// Structure state.
+    pub structure: String,
+    /// Whether volume confirms the current structure.
+    pub volume_confirmation: bool,
+    /// Volatility state.
+    pub volatility: String,
+    /// Most important level.
+    pub most_important_level: Option<f64>,
+    /// Most important confirmation.
+    pub most_important_confirmation: String,
+    /// Main risk.
+    pub main_risk: String,
+}
+
 /// Complete analysis result.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AnalysisResult {
@@ -590,6 +830,28 @@ pub struct AnalysisResult {
     pub volatility: VolatilityAnalysis,
     /// Volume.
     pub volume: VolumeAnalysis,
+    /// Market structure.
+    pub market_structure: MarketStructureAnalysis,
+    /// Support and resistance.
+    pub support_resistance: SupportResistanceAnalysis,
+    /// Breakout analysis.
+    pub breakout: BreakoutAnalysis,
+    /// Detected patterns.
+    pub patterns: Vec<Pattern>,
+    /// Detected divergences.
+    pub divergences: Vec<Divergence>,
+    /// Market regime.
+    pub regime: RegimeAnalysis,
+    /// Signals.
+    pub signals: Vec<Signal>,
+    /// Conflicting evidence.
+    pub conflicts: Vec<Conflict>,
+    /// Scenario analysis.
+    pub scenarios: ScenarioAnalysis,
+    /// Key levels.
+    pub key_levels: KeyLevels,
+    /// Engine summary.
+    pub engine_summary: EngineSummary,
 }
 
 /// Engine output metadata.
