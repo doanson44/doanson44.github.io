@@ -449,7 +449,7 @@ fn SocketAnalysisModal(
     i18n: leptos_i18n::I18nContext<Locale>,
 ) -> impl IntoView {
     view! {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bs-backdrop-bg)]/75 p-3" role="presentation">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] p-3" role="presentation">
             <div class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--surface)] shadow-lg" role="dialog" aria-modal="true" aria-label="Technical analysis">
                 <header class="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-color)] px-4 py-3">
                     <div>
