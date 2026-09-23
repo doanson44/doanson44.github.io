@@ -2412,7 +2412,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_invalid_ohlc() {
+    fn invalid_ohlc_is_skipped_without_blocking_analysis() {
         let mut input = AnalysisInput {
             schema_version: "1.0".to_string(),
             asset: Asset {
@@ -2433,9 +2433,14 @@ mod tests {
             recommended_candles: 2,
             maximum_candles: 10,
         };
-        let (_, quality) =
+        let (normalized, quality) =
             validate_input(&input, &requirements).expect("validation should return a report");
-        assert!(!quality.issues.is_empty());
-        assert!(!quality.sufficient_for_analysis);
+
+        assert_eq!(normalized.len(), 1);
+        assert!(quality
+            .issues
+            .iter()
+            .any(|item| item.code == "INVALID_OHLC"));
+        assert!(quality.sufficient_for_analysis);
     }
 }
