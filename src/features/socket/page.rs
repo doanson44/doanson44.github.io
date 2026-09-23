@@ -114,6 +114,9 @@ pub fn SocketPage(
                                             <SortHeader state=state mode=SocketSortMode::Symbol align="left">"Symbol" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Burst align="right">"Burst" </SortHeader>
+                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Price align="right">"Price" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
