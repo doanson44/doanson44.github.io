@@ -554,12 +554,13 @@ impl SocketState {
     }
 }
 
-fn save_ticker_cache(service: &FuturesMarketService) {
+fn save_ticker_cache(service: &Rc<RefCell<FuturesMarketService>>) {
     let Some(storage) = web_sys::window().and_then(|window| window.local_storage().ok().flatten())
     else {
         return;
     };
 
+    let service = service.borrow();
     let snapshot = service
         .export_momentum()
         .map(|(symbol, momentum)| CachedTickerMomentum {
