@@ -4,6 +4,7 @@ pub mod finance;
 pub mod games;
 pub mod json;
 pub mod jwt;
+pub mod market;
 pub mod proxy;
 pub mod time;
 
