@@ -44,6 +44,33 @@ pub fn SocketPage(
         }
     });
 
+    let paginated = Memo::new({
+        let visible = visible;
+        let page_size = state.page_size;
+        let current_page = state.current_page;
+        move |_| {
+            let items = visible.get();
+            let size = page_size.get().max(10);
+            let total_pages = items.len().div_ceil(size).max(1);
+            let page = current_page.get().clamp(1, total_pages);
+            let start = (page - 1) * size;
+            items.into_iter().skip(start).take(size).collect::<Vec<_>>()
+        }
+    });
+
+    Effect::new({
+        let visible = visible;
+        let current_page = state.current_page;
+        let page_size = state.page_size;
+        move |_| {
+            let total_pages = visible.get().len().div_ceil(page_size.get().max(10)).max(1);
+            let page = current_page.get();
+            if page > total_pages {
+                current_page.set(total_pages);
+            }
+        }
+    });
+
     view! {
         <div class="flex flex-grow flex-col overflow-hidden socket-page">
             <div class="flex flex-grow flex-col overflow-hidden px-4 py-3">
@@ -93,17 +120,18 @@ pub fn SocketPage(
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {move || visible.get().into_iter().map(|ticker| view! {
+                                    {move || paginated.get().into_iter().map(|ticker| view! {
                                         <TickerTableRow ticker=ticker state=state />
                                     }).collect_view()}
                                 </tbody>
                             </table>
                         </div>
                         <div class="flex flex-col gap-2 md:hidden">
-                            {move || visible.get().into_iter().map(|ticker| view! {
+                            {move || paginated.get().into_iter().map(|ticker| view! {
                                 <TickerMobileCard ticker=ticker state=state />
                             }).collect_view()}
                         </div>
+                        <PaginationControls state=state total_items=move || visible.get().len() />
                     </Show>
                 </div>
             </div>
@@ -112,6 +140,54 @@ pub fn SocketPage(
 }
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
+
+#[component]
+fn PaginationControls(
+    state: SocketState,
+    total_items: impl Fn() -> usize + 'static,
+) -> impl IntoView {
+    let total_pages = move || {
+        let size = state.page_size.get().max(10);
+        total_items().div_ceil(size).max(1)
+    };
+    let page = move || state.current_page.get().clamp(1, total_pages());
+
+    view! {
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                <label for="socket-page-size">"Items"</label>
+                <select
+                    id="socket-page-size"
+                    class="rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                    prop:value=move || state.page_size.get().to_string()
+                    on:change=move |ev| {
+                        let size = event_target_value(&ev).parse::<usize>().unwrap_or(10);
+                        state.set_page_size(size);
+                    }
+                >
+                    <option value="10">"10"</option>
+                    <option value="20">"20"</option>
+                    <option value="50">"50"</option>
+                </select>
+            </div>
+            <nav class="flex items-center gap-1" aria-label="Pagination">
+                <button
+                    type="button"
+                    class="rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                    disabled=move || page() <= 1
+                    on:click=move |_| state.set_page(page().saturating_sub(1))
+                >"Previous"</button>
+                <span class="px-2 text-sm text-[var(--text-secondary)]">{move || format!("{} / {}", page(), total_pages())}</span>
+                <button
+                    type="button"
+                    class="rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                    disabled=move || page() >= total_pages()
+                    on:click=move |_| state.set_page(page() + 1)
+                >"Next"</button>
+            </nav>
+        </div>
+    }
+}
 
 #[component]
 fn SortHeader(
