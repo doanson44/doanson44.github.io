@@ -50,6 +50,53 @@ impl TechnicalAnalysisService {
         })
     }
 
+    /// Builds a crypto Futures analysis input from an MEXC kline response.
+    pub fn mexc_klines_input(
+        raw: &str,
+        symbol: &str,
+        timeframe: &str,
+    ) -> Result<AnalysisInput, String> {
+        let history = crate::domain::market::parse_mexc_klines_response(raw, symbol)?;
+        let candles = history
+            .candles
+            .into_iter()
+            .map(|candle| Candle {
+                timestamp: candle.timestamp,
+                open: candle.open,
+                high: candle.high,
+                low: candle.low,
+                close: candle.close,
+                volume: candle.volume,
+                metadata: CandleMetadata {
+                    reference_price: None,
+                    ceiling: None,
+                    floor: None,
+                    total_value: candle.total_value,
+                },
+            })
+            .collect();
+
+        Ok(AnalysisInput {
+            schema_version: "1.0".to_string(),
+            asset: Asset {
+                symbol: symbol.trim().to_ascii_uppercase(),
+                asset_type: AssetType::Crypto,
+                exchange: "MEXC".to_string(),
+                currency: "USDT".to_string(),
+            },
+            market_data: MarketData {
+                timeframe: timeframe.to_string(),
+                timezone: "UTC".to_string(),
+                candles,
+            },
+        })
+    }
+
+    /// Returns the default daily crypto-analysis configuration used by Socket.
+    pub fn default_crypto_config() -> AnalysisConfig {
+        Self::default_stock_daily_config()
+    }
+
     /// Returns the default daily stock-analysis configuration used by the Market page.
     pub fn default_stock_daily_config() -> AnalysisConfig {
         AnalysisConfig {
@@ -463,6 +510,21 @@ mod tests {
                 candles,
             },
         }
+    }
+
+    #[test]
+    fn parses_mexc_klines_input() {
+        let input = TechnicalAnalysisService::mexc_klines_input(
+            r#"[[1782979200000,"60150.52","61421.05","60129.56","61372.97","2447.30963309",1782993600000,"149274811.89"]]"#,
+            "BTCUSDT",
+            "4H",
+        )
+        .expect("MEXC input should parse");
+
+        assert_eq!(input.asset.symbol, "BTCUSDT");
+        assert_eq!(input.market_data.timeframe, "4H");
+        assert_eq!(input.asset.asset_type, AssetType::Crypto);
+        assert_eq!(input.market_data.candles[0].close, 61372.97);
     }
 
     #[test]
