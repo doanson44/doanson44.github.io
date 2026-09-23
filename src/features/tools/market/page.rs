@@ -106,7 +106,7 @@ pub fn MarketPage() -> impl IntoView {
                     </h1>
                     <span class="text-xs text-[var(--text-secondary)]" aria-live="polite">
                         {move || if state.loading.get() {
-                            t_string!(i18n, common_loading)
+                            t_string!(i18n, common_loading).to_string()
                         } else {
                             format!("{} / {}", visible_stocks.get().len(), state.total_items.get())
                         }}
@@ -267,7 +267,7 @@ fn market_table_row(
 fn market_mobile_card(
     stock: MarketStock,
     state: MarketState,
-    i18n: leptos_i18n::I18nContext,
+    i18n: leptos_i18n::I18nContext<Locale>,
 ) -> impl IntoView {
     let change_class = change_class(stock.change_percent);
     let symbol = stock.symbol.clone();
@@ -322,7 +322,7 @@ fn pin_button(
     symbol: String,
     is_pinned: Memo<bool>,
     state: MarketState,
-    i18n: leptos_i18n::I18nContext,
+    i18n: leptos_i18n::I18nContext<Locale>,
 ) -> impl IntoView {
     view! {
         <button
@@ -343,7 +343,7 @@ fn mobile_sort_button(
     sort: RwSignal<MarketSort>,
     descending: RwSignal<bool>,
     on_sort: impl Fn(MarketSort) + Copy + 'static,
-    i18n: leptos_i18n::I18nContext,
+    i18n: leptos_i18n::I18nContext<Locale>,
 ) -> impl IntoView {
     view! {
         <button
@@ -392,7 +392,7 @@ fn sortable_header(
     sort: RwSignal<MarketSort>,
     descending: RwSignal<bool>,
     on_sort: impl Fn(MarketSort) + Copy + 'static,
-    i18n: leptos_i18n::I18nContext,
+    i18n: leptos_i18n::I18nContext<Locale>,
 ) -> impl IntoView {
     view! {
         <th class="px-3 py-2 font-medium" scope="col">
