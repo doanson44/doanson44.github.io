@@ -56,8 +56,7 @@ html,
 body {
     margin: 0;
     min-height: 100%;
-    height: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
     font-family: var(--ms-font-body);
     background: var(--ms-bg-primary);
     color: var(--ms-text-primary);
@@ -82,7 +81,27 @@ body {
 }
 
 .app-container {
+    min-height: 100vh;
+    min-height: 100dvh;
     background: var(--ms-bg-primary);
+}
+
+.app-main {
+    min-width: 0;
+}
+
+.app-main--flow {
+    overflow: visible;
+}
+
+.app-main--workspace {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.app-main--socket {
+    min-height: 0;
+    overflow: hidden;
 }
 
 #main-navbar {
@@ -391,6 +410,19 @@ body {
     color: var(--ms-accent-purple);
 }
 
+@media (max-width: 767.98px) {
+    .app-main--socket {
+        min-height: auto;
+        overflow: visible;
+    }
+
+    .app-main--socket .socket-page,
+    .app-main--socket .socket-page > div {
+        min-height: auto;
+        overflow: visible;
+    }
+}
+
 @media (max-width: 768px) {
     .toolbar {
         overflow-x: auto;
@@ -440,7 +472,11 @@ body {
     }
 
     .app-footer {
-        padding: 0.25rem 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.25rem 0.75rem;
+        padding: 0.375rem 0.5rem;
+        padding-bottom: calc(0.375rem + env(safe-area-inset-bottom));
         text-align: center;
     }
 }
