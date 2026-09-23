@@ -1230,12 +1230,18 @@ pub fn atr(candles: &[Candle], period: usize) -> Result<Vec<Option<f64>>, String
     Ok(output)
 }
 
+pub type BollingerBands = (
+    Vec<Option<f64>>,
+    Vec<Option<f64>>,
+    Vec<Option<f64>>,
+);
+
 /// Calculates Bollinger bands from a close-price series.
 pub fn bollinger(
     values: &[f64],
     period: usize,
     stddev: f64,
-) -> Result<(Vec<Option<f64>>, Vec<Option<f64>>, Vec<Option<f64>>), String> {
+) -> Result<BollingerBands, String> {
     validate_period(values, period)?;
     if !stddev.is_finite() || stddev <= 0.0 {
         return Err("Bollinger stddev must be positive and finite".to_string());
@@ -1660,16 +1666,16 @@ pub fn analyze(
         }
     };
     let key_levels = key_levels(&support_resistance);
-    let engine_summary = engine_summary(
-        &trend,
-        &momentum,
-        &market_structure,
-        &volume,
-        &regime,
-        &breakout,
-        &key_levels,
-        &conflicts,
-    );
+    let engine_summary = engine_summary(EngineSummaryInput {
+        trend: &trend,
+        momentum: &momentum,
+        structure: &market_structure,
+        volume: &volume,
+        regime: &regime,
+        breakout: &breakout,
+        levels: &key_levels,
+        conflicts: &conflicts,
+    });
 
     Ok(AnalysisResult {
         schema_version: config.schema_version.clone(),
@@ -2088,11 +2094,9 @@ fn regime_analysis(
     volatility: &VolatilityAnalysis,
     volume: &VolumeAnalysis,
 ) -> RegimeAnalysis {
-    let momentum_state = momentum.rsi.state.clone();
+    let momentum_state = input.momentum.rsi.state.clone();
     let volume_state = if volume.state == "above_average" {
         "expanding".to_string()
-    } else if volume.state == "below_average" {
-        "neutral".to_string()
     } else {
         "neutral".to_string()
     };
@@ -2104,7 +2108,7 @@ fn regime_analysis(
         "range".to_string()
     };
     RegimeAnalysis {
-        trend: trend.state.clone(),
+        trend: input.trend.state.clone(),
         momentum: momentum_state,
         volatility: volatility.state.clone(),
         volume: volume_state,
@@ -2240,24 +2244,29 @@ fn key_levels(levels: &SupportResistanceAnalysis) -> KeyLevels {
     }
 }
 
-fn engine_summary(
-    trend: &TrendAnalysis,
-    momentum: &MomentumAnalysis,
-    structure: &MarketStructureAnalysis,
-    volume: &VolumeAnalysis,
-    regime: &RegimeAnalysis,
-    breakout: &BreakoutAnalysis,
-    levels: &KeyLevels,
-    conflicts: &[Conflict],
-) -> EngineSummary {
-    let volume_confirmation = volume.ratio_vs_primary.is_some_and(|ratio| ratio >= 1.5);
-    let dominant_state = if trend.state == "bullish" && !volume_confirmation {
+struct EngineSummaryInput<'a> {
+    trend: &'a TrendAnalysis,
+    momentum: &'a MomentumAnalysis,
+    structure: &'a MarketStructureAnalysis,
+    volume: &'a VolumeAnalysis,
+    regime: &'a RegimeAnalysis,
+    breakout: &'a BreakoutAnalysis,
+    levels: &'a KeyLevels,
+    conflicts: &'a [Conflict],
+}
+
+fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
+    let volume_confirmation = input
+        .volume
+        .ratio_vs_primary
+        .is_some_and(|ratio| ratio >= 1.5);
+    let dominant_state = if input.trend.state == "bullish" && !volume_confirmation {
         "bullish_but_unconfirmed"
     } else {
-        regime.overall.as_str()
+        input.input.regime.overall.as_str()
     };
-    let most_important_level = breakout.resistance_level.or(levels.immediate_support);
-    let main_risk = conflicts
+    let most_important_level = input.breakout.resistance_level.or(input.levels.immediate_support);
+    let main_risk = input.conflicts
         .first()
         .map(|conflict| conflict.description.clone())
         .unwrap_or_else(|| "No dominant conflict detected.".to_string());
@@ -2266,11 +2275,11 @@ fn engine_summary(
         dominant_state: dominant_state.to_string(),
         trend: trend.state.clone(),
         momentum: momentum.rsi.state.clone(),
-        structure: structure.state.clone(),
+        structure: input.structure.state.clone(),
         volume_confirmation,
         volatility: "normal".to_string(),
         most_important_level,
-        most_important_confirmation: breakout
+        most_important_confirmation: input.breakout
             .resistance_level
             .map(|level| format!("Break above {level:.2} with volume expansion"))
             .unwrap_or_else(|| "Wait for a confirmed support/resistance level.".to_string()),
