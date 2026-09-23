@@ -224,6 +224,9 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
                         <span class="mt-1 block text-xs text-[var(--text-secondary)]">
                             {move || t_string!(i18n, socket_fee_hint)}
                         </span>
+                        <span class="mt-1 block text-xs text-[var(--text-secondary)]">
+                            {move || t_string!(i18n, socket_trade_size_hint)}
+                        </span>
                     </label>
 
                     <label class="block text-sm">
