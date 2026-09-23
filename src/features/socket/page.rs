@@ -73,22 +73,22 @@ pub fn SocketPage(
                                     <tr class="border-b border-[var(--border-color)] bg-[var(--surface-hover)] text-[var(--text-secondary)]">
                                         <th class="px-3 py-2 text-center font-medium" scope="col">"Pin"</th>
                                         <th class="px-3 py-2 font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Symbol align="left">"Symbol" </SortHeader />
+                                            <SortHeader state=state mode=SocketSortMode::Symbol align="left">"Symbol" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Price align="right">"Price" </SortHeader />
+                                            <SortHeader state=state mode=SocketSortMode::Price align="right">"Price" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Change24h align="right">"24h" </SortHeader />
+                                            <SortHeader state=state mode=SocketSortMode::Change24h align="right">"24h" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Funding align="right">{move || t_string!(i18n, socket_funding)} </SortHeader />
+                                            <SortHeader state=state mode=SocketSortMode::Funding align="right">{move || t_string!(i18n, socket_funding)} </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Momentum align="right">{move || t_string!(i18n, socket_momentum)} </SortHeader />
+                                            <SortHeader state=state mode=SocketSortMode::Momentum align="right">{move || t_string!(i18n, socket_momentum)} </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::TotalTicks align="right">{move || t_string!(i18n, socket_activity)} </SortHeader />
+                                            <SortHeader state=state mode=SocketSortMode::TotalTicks align="right">{move || t_string!(i18n, socket_activity)} </SortHeader>
                                         </th>
                                     </tr>
                                 </thead>
