@@ -226,18 +226,20 @@ pub fn MarketPage() -> impl IntoView {
                                 };
                                 let symbol = stock.symbol.clone();
                                 let pin_symbol = symbol.clone();
-                                let is_pinned = move || state.pinned_symbols.get().iter().any(|item| item == &symbol);
+                                let is_pinned = Memo::new(move |_| {
+                                    state.pinned_symbols.get().iter().any(|item| item == &symbol)
+                                });
                                 view! {
                                     <tr class="border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]">
                                         <td class="px-3 py-2 text-center">
                                             <button
                                                 type="button"
                                                 class="min-h-9 min-w-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                                                title=move || if is_pinned() { "Unpin stock" } else { "Pin stock" }
-                                                aria-label=move || if is_pinned() { "Unpin stock" } else { "Pin stock" }
+                                                title=move || if is_pinned.get() { "Unpin stock" } else { "Pin stock" }
+                                                aria-label=move || if is_pinned.get() { "Unpin stock" } else { "Pin stock" }
                                                 on:click=move |_| state.toggle_pin(&pin_symbol)
                                             >
-                                                {move || if is_pinned() { "★" } else { "☆" }}
+                                                {move || if is_pinned.get() { "★" } else { "☆" }}
                                             </button>
                                         </td>
                                         <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">{stock.symbol}</th>
