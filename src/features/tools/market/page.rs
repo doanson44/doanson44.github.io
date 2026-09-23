@@ -101,7 +101,7 @@ pub fn MarketPage() -> impl IntoView {
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="m-0 text-base font-semibold text-[var(--text-primary)]">
                         <span class="mr-2 text-[var(--accent)]" aria-hidden="true">"◈"</span>
-                        move || t_string!(i18n, nav_market)
+                        {move || t_string!(i18n, nav_market)}
                     </h1>
                     <span class="text-xs text-[var(--text-secondary)]" aria-live="polite">
                         {move || if state.loading.get() {
@@ -117,12 +117,12 @@ pub fn MarketPage() -> impl IntoView {
                         disabled=move || state.loading.get()
                         on:click=move |_| state.load()
                     >
-                        move || t_string!(i18n, market_refresh)
+                        {move || t_string!(i18n, market_refresh)}
                     </button>
                 </div>
 
                 <div class="flex flex-col gap-2 lg:flex-row lg:items-center">
-                    <label class="sr-only" for="market-search">move || t_string!(i18n, market_search)</label>
+                    <label class="sr-only" for="market-search">{move || t_string!(i18n, market_search)}</label>
                     <div class="relative flex-grow lg:max-w-md">
                         <input
                             id="market-search"
@@ -150,7 +150,7 @@ pub fn MarketPage() -> impl IntoView {
                         }}
                     </div>
 
-                    <label class="sr-only" for="market-filter">move || t_string!(i18n, market_filter)</label>
+                    <label class="sr-only" for="market-filter">{move || t_string!(i18n, market_filter)}</label>
                     <select
                         id="market-filter"
                         class="min-h-11 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/40"
@@ -163,15 +163,15 @@ pub fn MarketPage() -> impl IntoView {
                             });
                         }
                     >
-                        <option value="all">move || t_string!(i18n, market_all)</option>
-                        <option value="gainers">move || t_string!(i18n, market_gainers)</option>
-                        <option value="losers">move || t_string!(i18n, market_losers)</option>
-                        <option value="unchanged">move || t_string!(i18n, market_unchanged)</option>
+                        <option value="all">{move || t_string!(i18n, market_all)}</option>
+                        <option value="gainers">{move || t_string!(i18n, market_gainers)}</option>
+                        <option value="losers">{move || t_string!(i18n, market_losers)}</option>
+                        <option value="unchanged">{move || t_string!(i18n, market_unchanged)}</option>
                     </select>
 
                 </div>
 
-                <p class="m-0 text-sm text-[var(--text-secondary)]">move || t_string!(i18n, market_source)</p>
+                <p class="m-0 text-sm text-[var(--text-secondary)]">{move || t_string!(i18n, market_source)}</p>
             </header>
 
             {move || state.error.get().map(|error| view! {
@@ -183,17 +183,17 @@ pub fn MarketPage() -> impl IntoView {
             <div class="min-h-0 flex-grow overflow-auto p-3">
                 <div class="hidden overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)] md:block">
                     <table class="w-full min-w-[820px] border-collapse text-sm">
-                        <caption class="sr-only">move || t_string!(i18n, market_table_caption)</caption>
+                        <caption class="sr-only">{move || t_string!(i18n, market_table_caption)}</caption>
                         <thead>
                             <tr class="border-b border-[var(--border-color)] bg-[var(--surface-hover)] text-left text-[var(--text-secondary)]">
-                                <th class="px-3 py-2 font-medium" scope="col">"Pin"</th>
+                                <th class="px-3 py-2 font-medium" scope="col">{move || t_string!(i18n, market_pin)}</th>
                                 {sortable_header("symbol", MarketSort::Symbol, sort, descending, toggle_sort, i18n)}
                                 <th class="px-3 py-2 font-medium" scope="col">"Name"</th>
-                                {sortable_header("price", MarketSort::Price, sort, descending, toggle_sort)}
-                                <th class="px-3 py-2 text-right font-medium" scope="col">"Change"</th>
-                                {sortable_header("change_percent", MarketSort::ChangePercent, sort, descending, toggle_sort)}
-                                {sortable_header("volume", MarketSort::Volume, sort, descending, toggle_sort)}
-                                {sortable_header("market_cap", MarketSort::MarketCap, sort, descending, toggle_sort)}
+                                {sortable_header({move || t_string!(i18n, market_price)}, MarketSort::Price, sort, descending, toggle_sort)}
+                                <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, market_change)}</th>
+                                {sortable_header("change_percent", MarketSort::ChangePercent, sort, descending, toggle_sort, i18n)}
+                                {sortable_header({move || t_string!(i18n, market_volume)}, MarketSort::Volume, sort, descending, toggle_sort)}
+                                {sortable_header({move || t_string!(i18n, market_market_cap)}, MarketSort::MarketCap, sort, descending, toggle_sort)}
                             </tr>
                         </thead>
                         <tbody>
@@ -204,20 +204,20 @@ pub fn MarketPage() -> impl IntoView {
 
                 <div class="flex flex-col gap-2 md:hidden">
                     <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
-                        <span class="shrink-0 text-xs font-medium text-[var(--text-secondary)]">move || t_string!(i18n, market_sort)</span>
+                        <span class="shrink-0 text-xs font-medium text-[var(--text-secondary)]">{move || t_string!(i18n, market_sort)}</span>
                         <div class="flex flex-wrap justify-end gap-1">
-                            {mobile_sort_button("symbol", MarketSort::Symbol, sort, descending, toggle_sort)}
-                            {mobile_sort_button("price", MarketSort::Price, sort, descending, toggle_sort)}
-                            {mobile_sort_button("change_percent", MarketSort::ChangePercent, sort, descending, toggle_sort)}
-                            {mobile_sort_button("volume", MarketSort::Volume, sort, descending, toggle_sort)}
-                            {mobile_sort_button("market_cap", MarketSort::MarketCap, sort, descending, toggle_sort)}
+                            {mobile_sort_button("symbol", MarketSort::Symbol, sort, descending, toggle_sort, i18n)}
+                            {mobile_sort_button({move || t_string!(i18n, market_price)}, MarketSort::Price, sort, descending, toggle_sort)}
+                            {mobile_sort_button("change_percent", MarketSort::ChangePercent, sort, descending, toggle_sort, i18n)}
+                            {mobile_sort_button({move || t_string!(i18n, market_volume)}, MarketSort::Volume, sort, descending, toggle_sort)}
+                            {mobile_sort_button({move || t_string!(i18n, market_market_cap)}, MarketSort::MarketCap, sort, descending, toggle_sort)}
                         </div>
                     </div>
                     {move || visible_stocks.get().into_iter().map(|stock| market_mobile_card(stock, state, i18n)).collect_view()}
                 </div>
 
                 {move || if !state.loading.get() && state.error.get().is_none() && visible_stocks.get().is_empty() {
-                    view! { <div class="mt-3 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-4 text-sm text-[var(--text-secondary)]" role="status">move || t_string!(i18n, market_no_results)</div> }.into_any()
+                    view! { <div class="mt-3 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-4 text-sm text-[var(--text-secondary)]" role="status">{move || t_string!(i18n, market_no_results)}</div> }.into_any()
                 } else {
                     view! { <span></span> }.into_any()
                 }}
@@ -230,7 +230,11 @@ pub fn MarketPage() -> impl IntoView {
 }
 
 
-fn market_table_row(stock: MarketStock, state: MarketState, i18n: leptos_i18n::I18nContext) -> impl IntoView {
+fn market_table_row(
+    stock: MarketStock,
+    state: MarketState,
+    i18n: leptos_i18n::I18nContext,
+) -> impl IntoView {
     let change_class = change_class(stock.change_percent);
     let symbol = stock.symbol.clone();
     let pin_symbol = symbol.clone();
@@ -256,7 +260,11 @@ fn market_table_row(stock: MarketStock, state: MarketState, i18n: leptos_i18n::I
     }
 }
 
-fn market_mobile_card(stock: MarketStock, state: MarketState, i18n: leptos_i18n::I18nContext) -> impl IntoView {
+fn market_mobile_card(
+    stock: MarketStock,
+    state: MarketState,
+    i18n: leptos_i18n::I18nContext,
+) -> impl IntoView {
     let change_class = change_class(stock.change_percent);
     let symbol = stock.symbol.clone();
     let pin_symbol = symbol.clone();
@@ -282,19 +290,19 @@ fn market_mobile_card(stock: MarketStock, state: MarketState, i18n: leptos_i18n:
             </div>
             <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                 <div>
-                    <span class="block text-xs text-[var(--text-secondary)]">"Price"</span>
+                    <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(i18n, market_price)}</span>
                     <span class="font-semibold text-[var(--text-primary)]">{format_price(stock.price)}</span>
                 </div>
                 <div class="text-right">
-                    <span class="block text-xs text-[var(--text-secondary)]">"Change"</span>
+                    <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(i18n, market_change)}</span>
                     <span class=format!("font-medium {change_class}")>{format_price(stock.change)}</span>
                 </div>
                 <div>
-                    <span class="block text-xs text-[var(--text-secondary)]">"Volume"</span>
+                    <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(i18n, market_volume)}</span>
                     <span class="font-medium text-[var(--text-primary)]">{format_integer(stock.total_volume)}</span>
                 </div>
                 <div class="text-right">
-                    <span class="block text-xs text-[var(--text-secondary)]">"Market Cap"</span>
+                    <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(i18n, market_market_cap)}</span>
                     <span class="font-medium text-[var(--text-primary)]">{format_integer(stock.market_cap)}</span>
                 </div>
             </div>
@@ -302,13 +310,18 @@ fn market_mobile_card(stock: MarketStock, state: MarketState, i18n: leptos_i18n:
     }
 }
 
-fn pin_button(symbol: String, is_pinned: Memo<bool>, state: MarketState, i18n: leptos_i18n::I18nContext) -> impl IntoView {
+fn pin_button(
+    symbol: String,
+    is_pinned: Memo<bool>,
+    state: MarketState,
+    i18n: leptos_i18n::I18nContext,
+) -> impl IntoView {
     view! {
         <button
             type="button"
             class="min-h-11 min-w-11 shrink-0 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
             title=move || if is_pinned.get() { t_string!(i18n, market_unpin) } else { t_string!(i18n, market_pin) }
-            aria-label=move || if is_pinned.get() { "Unpin stock" } else { "Pin stock" }
+            aria-label=move || if is_pinned.get() { t_string!(i18n, market_unpin) } else { t_string!(i18n, market_pin) }
             on:click=move |_| state.toggle_pin(&symbol)
         >
             {move || if is_pinned.get() { "★" } else { "☆" }}
@@ -317,11 +330,12 @@ fn pin_button(symbol: String, is_pinned: Memo<bool>, state: MarketState, i18n: l
 }
 
 fn mobile_sort_button(
-    label: &'static str,
+    key: &'static str,
     selected: MarketSort,
     sort: RwSignal<MarketSort>,
     descending: RwSignal<bool>,
     on_sort: impl Fn(MarketSort) + Copy + 'static,
+    i18n: leptos_i18n::I18nContext,
 ) -> impl IntoView {
     view! {
         <button
@@ -353,17 +367,6 @@ fn change_class(change_percent: f64) -> &'static str {
     }
 }
 
-fn market_sort_label(i18n: leptos_i18n::I18nContext, key: &str) -> String {
-    match key {
-        "symbol" => t_string!(i18n, market_sort_label_symbol),
-        "price" => t_string!(i18n, market_sort_label_price),
-        "change_percent" => t_string!(i18n, market_sort_label_change_percent),
-        "volume" => t_string!(i18n, market_sort_label_volume),
-        "market_cap" => t_string!(i18n, market_sort_label_market_cap),
-        _ => t_string!(i18n, market_sort),
-    }
-}
-
 fn sortable_header(
     key: &'static str,
     selected: MarketSort,
@@ -381,7 +384,7 @@ fn sortable_header(
                     if sort.get() == selected {
                         format!("{} {} {}", t_string!(i18n, market_sort), market_sort_label(i18n, key), if descending.get() { t_string!(i18n, market_descending) } else { t_string!(i18n, market_ascending) })
                     } else {
-                        format!("Sort by {label}")
+                        format!("{} {}", t_string!(i18n, market_sort), market_sort_label(i18n, key))
                     }
                 }
                 on:click=move |_| on_sort(selected)
