@@ -15,7 +15,14 @@ impl TradingService {
             .load()
             .ok()
             .flatten()
-            .filter(|snapshot| snapshot.settings.initial_capital > 0.0)
+            .filter(|snapshot| {
+                snapshot.settings.initial_capital.is_finite()
+                    && snapshot.settings.initial_capital > 0.0
+                    && snapshot.settings.fee_rate.is_finite()
+                    && (0.0..=1.0).contains(&snapshot.settings.fee_rate)
+                    && snapshot.portfolio.cash.is_finite()
+                    && snapshot.portfolio.cash >= 0.0
+            })
             .unwrap_or_default()
     }
 
