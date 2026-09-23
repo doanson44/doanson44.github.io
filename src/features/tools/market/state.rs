@@ -129,8 +129,9 @@ impl MarketState {
                                 analysis_json.set(None);
                                 analysis_result.set(None);
                                 analysis_modal_open.set(false);
-                                analysis_error
-                                    .set(Some(format!("Failed to serialize analysis result: {error}")));
+                                analysis_error.set(Some(format!(
+                                    "Failed to serialize analysis result: {error}"
+                                )));
                                 return;
                             }
                         };
