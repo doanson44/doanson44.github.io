@@ -26,6 +26,7 @@
   "tools_jwt_desc": "Decode JWT header, payload, and signature locally.",
   "tools_base64_desc": "Encode and decode UTF-8 text as standard Base64 locally.",
   "tools_time_desc": "World clock, countdown, stopwatch, ruler, and timestamp utilities.",
+  "tools_market_desc": "View the latest market-stock data returned by CafeF.",
   "tools_result_count": "Results",
   "tools_no_results": "No tools found. Try another search term.",
   "tools_calculator": "{category} calculator.",
