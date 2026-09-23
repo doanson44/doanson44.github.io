@@ -242,39 +242,9 @@ impl SocketState {
         }
 
         let save_service = service.clone();
-        let save_callback = Closure::wrap(Box::new(move || {
-            if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten())
-            {
-                let snapshot = save_service
-                    .borrow()
-                    .export_momentum()
-                    .map(|(symbol, momentum)| CachedTickerMomentum {
-                        symbol: symbol.clone(),
-                        up_ticks: momentum.up_ticks,
-                        down_ticks: momentum.down_ticks,
-                    })
-                    .collect::<Vec<_>>();
-                if !snapshot.is_empty() {
-                    if let Ok(raw) = serde_json::to_string(&snapshot) {
-                        let _ = storage.set_item(TICKER_CACHE_KEY, &raw);
-                    }
-                }
-            }
-        }) as Box<dyn FnMut()>);
-
-        if let Some(window) = web_sys::window() {
-            if let Ok(handle) = window.set_interval_with_callback_and_timeout_and_arguments_0(
-                save_callback.as_ref().unchecked_ref(),
-                5000,
-            ) {
-                on_cleanup(move || {
-                    let _ = save_callback; // take ownership to keep alive until cleanup
-                    if let Some(window) = web_sys::window() {
-                        window.clear_interval_with_handle(handle);
-                    }
-                });
-            }
-        }
+        on_cleanup(move || {
+            save_ticker_cache(&save_service);
+        });
 
         Self {
             tickers,
@@ -581,6 +551,31 @@ impl SocketState {
                 Err(message) => error.set(Some(message)),
             }
         });
+    }
+}
+
+fn save_ticker_cache(service: &FuturesMarketService) {
+    let Some(storage) =
+        web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+    else {
+        return;
+    };
+
+    let snapshot = service
+        .export_momentum()
+        .map(|(symbol, momentum)| CachedTickerMomentum {
+            symbol: symbol.clone(),
+            up_ticks: momentum.up_ticks,
+            down_ticks: momentum.down_ticks,
+        })
+        .collect::<Vec<_>>();
+
+    if snapshot.is_empty() {
+        return;
+    }
+
+    if let Ok(raw) = serde_json::to_string(&snapshot) {
+        let _ = storage.set_item(TICKER_CACHE_KEY, &raw);
     }
 }
 
