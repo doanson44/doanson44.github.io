@@ -19,6 +19,8 @@ use crate::domain::futures::TrackedFuturesTicker;
 const UI_FLUSH_MS: i32 = 75;
 const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
 const PINNED_SYMBOLS_KEY: &str = "socket.pinned-symbols";
+const DEFAULT_PAGE_SIZE: usize = 10;
+const PAGE_SIZE_OPTIONS: [usize; 3] = [10, 20, 50];
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
@@ -73,6 +75,8 @@ pub struct SocketState {
     pub sort_direction: RwSignal<SocketSortDirection>,
     pub search_query: RwSignal<String>,
     pub pinned_symbols: RwSignal<Vec<String>>,
+    pub page_size: RwSignal<usize>,
+    pub current_page: RwSignal<usize>,
     pub connection_status: RwSignal<FuturesConnectionStatus>,
 }
 
@@ -90,6 +94,8 @@ impl SocketState {
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let search_query = RwSignal::new(String::new());
         let pinned_symbols = RwSignal::new(load_pinned_symbols());
+        let page_size = RwSignal::new(DEFAULT_PAGE_SIZE);
+        let current_page = RwSignal::new(1usize);
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
@@ -223,8 +229,21 @@ impl SocketState {
             sort_direction,
             search_query,
             pinned_symbols,
+            page_size,
+            current_page,
             connection_status,
         }
+    }
+
+    /// Sets the page size and returns to the first page.
+    pub fn set_page_size(&self, size: usize) {
+        self.page_size.set(size.max(DEFAULT_PAGE_SIZE));
+        self.current_page.set(1);
+    }
+
+    /// Moves to a page within the available range.
+    pub fn set_page(&self, page: usize) {
+        self.current_page.set(page.max(1));
     }
 
     /// Selects a sort column, toggling direction when already selected.
