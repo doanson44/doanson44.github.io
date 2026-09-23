@@ -91,6 +91,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Force a fresh build/deploy run for runtime verification.
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
