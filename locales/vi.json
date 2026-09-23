@@ -51,6 +51,7 @@
   "markdown_input": "Markdown",
   "markdown_output": "Kết quả",
   "socket_search": "Tìm kiếm symbol...",
+  "socket_analysis": "Phân tích",
   "socket_analyze_4h": "Phân tích 4H",
   "socket_analyze_1d": "Phân tích 1D",
   "socket_copy_4h": "Sao chép 4H",
