@@ -318,7 +318,7 @@ fn market_table_row(
             "border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]"
         }>
             <td class="px-3 py-2 text-center">{pin_button(pin_symbol, is_pinned, state, i18n)}</td>
-            <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">{stock.symbol}</th>
+            <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">{stock.symbol.clone()}</th>
             <td class="max-w-[28rem] px-3 py-2 text-[var(--text-secondary)]">{stock.name}</td>
             <td class="px-3 py-2 text-right font-medium text-[var(--text-primary)]">{format_price(stock.price)}</td>
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_price(stock.change)}</td>
@@ -355,7 +355,7 @@ fn market_mobile_card(
             <div class="flex items-start gap-2">
                 <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2">
-                        <h2 class="m-0 truncate text-base font-semibold text-[var(--text-primary)]">{stock.symbol}</h2>
+                        <h2 class="m-0 truncate text-base font-semibold text-[var(--text-primary)]">{stock.symbol.clone()}</h2>
                         <span class=format!("shrink-0 text-sm font-semibold {change_class}")>{format_percent(stock.change_percent)}</span>
                     </div>
                     <p class="m-0 mt-1 truncate text-xs text-[var(--text-secondary)]">{stock.name}</p>
