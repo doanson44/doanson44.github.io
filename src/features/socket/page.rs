@@ -140,7 +140,7 @@ pub fn SocketPage(
                                 <TickerMobileCard ticker=ticker state=state />
                             }).collect_view()}
                         </div>
-                        <PaginationControls state=state total_items=move || visible.get().len() />
+                        <PaginationControls state=state total_items=Memo::new(move |_| visible.get().len()) />
                     </Show>
                 </div>
             </div>
@@ -151,16 +151,13 @@ pub fn SocketPage(
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
 #[component]
-fn PaginationControls(
-    state: SocketState,
-    total_items: impl Fn() -> usize + 'static,
-) -> impl IntoView {
+fn PaginationControls(state: SocketState, total_items: Memo<usize>) -> impl IntoView {
     let total_pages = Memo::new(move |_| {
         let size = state.page_size.get();
         if size == usize::MAX {
             1
         } else {
-            total_items().div_ceil(size).max(1)
+            total_items.get().div_ceil(size).max(1)
         }
     });
     let page = Memo::new(move |_| state.current_page.get().clamp(1, total_pages.get()));
