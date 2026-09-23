@@ -24,7 +24,7 @@ pub fn SocketPage(
     let visible = Memo::new({
         let tickers = state.tickers;
         let view_mode = state.view_mode;
-            let sort_mode = state.sort_mode;
+        let sort_mode = state.sort_mode;
         let sort_direction = state.sort_direction;
         let search_query = state.search_query;
         let pinned_symbols = state.pinned_symbols;
@@ -342,7 +342,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
 fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
-    
+
     sort: SocketSortMode,
     direction: SocketSortDirection,
     pinned_symbols: Vec<String>,
