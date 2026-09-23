@@ -10,7 +10,7 @@ use crate::application::ports::{
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::features::socket::state::{
-    SocketFilter, SocketSortDirection, SocketSortMode, SocketState, SocketViewMode,
+ SocketSortDirection, SocketSortMode, SocketState, SocketViewMode,
 };
 
 /// Realtime Futures market ticker monitor page.
