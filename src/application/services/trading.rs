@@ -27,10 +27,7 @@ impl TradingService {
     }
 
     /// Persists the current trading snapshot.
-    pub fn save(
-        storage: &dyn TradingStorage,
-        snapshot: &TradingSnapshot,
-    ) -> Result<(), String> {
+    pub fn save(storage: &dyn TradingStorage, snapshot: &TradingSnapshot) -> Result<(), String> {
         storage.save(snapshot)
     }
 
