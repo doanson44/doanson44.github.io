@@ -21,6 +21,24 @@ impl MarketClient for MarketApi {
     }
 }
 
+impl MarketPinStore for MarketApi {
+    fn load(&self) -> Result<Vec<String>, String> {
+        let raw = crate::infrastructure::browser::storage_get(PIN_CACHE_KEY);
+        match raw {
+            Some(value) => serde_json::from_str(&value)
+                .map_err(|error| format!("Failed to decode market pin cache: {error}")),
+            None => Ok(Vec::new()),
+        }
+    }
+
+    fn save(&self, symbols: &[String]) -> Result<(), String> {
+        let value = serde_json::to_string(symbols)
+            .map_err(|error| format!("Failed to encode market pin cache: {error}"))?;
+        crate::infrastructure::browser::storage_set(PIN_CACHE_KEY, &value)
+            .map_err(|error| format!("Failed to store market pin cache: {error}"))
+    }
+}
+
 async fn fetch_market_data() -> Result<String, String> {
     let window = web_sys::window().ok_or_else(|| "Browser window is unavailable".to_string())?;
 
