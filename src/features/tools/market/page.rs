@@ -229,7 +229,6 @@ pub fn MarketPage() -> impl IntoView {
     }
 }
 
-
 fn market_table_row(
     stock: MarketStock,
     state: MarketState,
@@ -239,7 +238,11 @@ fn market_table_row(
     let symbol = stock.symbol.clone();
     let pin_symbol = symbol.clone();
     let is_pinned = Memo::new(move |_| {
-        state.pinned_symbols.get().iter().any(|item| item == &symbol)
+        state
+            .pinned_symbols
+            .get()
+            .iter()
+            .any(|item| item == &symbol)
     });
 
     view! {
