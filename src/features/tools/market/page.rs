@@ -25,7 +25,7 @@ pub fn MarketPage() -> impl IntoView {
                         on:click=move |_| state.load()
                     >"Refresh"</button>
                 </div>
-                <p class="m-0 text-sm text-[var(--text-secondary)]">"Market data supplied by CafeF and fetched through the platform proxy."</p>
+                <p class="m-0 text-sm text-[var(--text-secondary)]">"Market data supplied directly by CafeF."</p>
             </header>
 
             {move || state.error.get().map(|error| view! {
@@ -79,7 +79,7 @@ pub fn MarketPage() -> impl IntoView {
                     view! { <span></span> }.into_any()
                 }}
                 <div class="mt-3 text-xs text-[var(--text-secondary)]" role="note">
-                    {move || format!("API limit: {} · Displayed: {} · Total: {}", state.limit_applied.get(), state.displayed_items.get(), state.total_items.get())}
+                    {move || format!("Displayed: {} · Total: {}", state.displayed_items.get(), state.total_items.get())}
                 </div>
             </div>
         </div>
