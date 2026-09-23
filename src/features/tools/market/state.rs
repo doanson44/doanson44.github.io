@@ -4,12 +4,10 @@ use leptos::prelude::*;
 
 use crate::application::ports::MarketPinStore;
 use crate::application::services::market::MarketService;
-use crate::application::services::proxy::ProxyService;
 use crate::application::services::technical_analysis::TechnicalAnalysisService;
 use crate::domain::market::MarketStock;
 use crate::infrastructure::browser;
 use crate::infrastructure::market::MarketApi;
-use crate::infrastructure::proxy::ProxyApi;
 
 #[derive(Clone, Copy)]
 pub struct MarketState {
