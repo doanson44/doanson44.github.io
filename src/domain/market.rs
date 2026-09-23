@@ -39,8 +39,8 @@ struct CafeFMarketResponse {
 
 /// Parses a CafeF market-data response into normalized domain data.
 pub fn parse_market_response(raw: &str) -> Result<MarketResponse, String> {
-    let response: CafeFMarketResponse =
-        serde_json::from_str(raw).map_err(|error| format!("Invalid CafeF market response: {error}"))?;
+    let response: CafeFMarketResponse = serde_json::from_str(raw)
+        .map_err(|error| format!("Invalid CafeF market response: {error}"))?;
 
     if !response.success {
         return Err(response
@@ -82,10 +82,7 @@ mod tests {
             r#"{"Data":[],"Success":false,"Message":"Market data unavailable"}"#,
         );
 
-        assert_eq!(
-            result.unwrap_err(),
-            "Market data unavailable"
-        );
+        assert_eq!(result.unwrap_err(), "Market data unavailable");
     }
 
     #[test]
