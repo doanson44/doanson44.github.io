@@ -712,7 +712,7 @@ pub fn validate_input(
     };
 
     Ok((
-        candles.clone(),
+        candles,
         DataQualityReport {
             candles_received: received,
             candles_used: candles.len(),
@@ -968,7 +968,6 @@ pub fn analyze(
         })
         .collect::<Result<Vec<_>, String>>()?;
 
-    let ema9 = find_period(&ema_values, 9);
     let ema20 = find_period(&ema_values, 20);
     let ema50 = find_period(&ema_values, 50);
     let ema200 = find_period(&ema_values, 200);
@@ -1026,15 +1025,10 @@ pub fn analyze(
     let signal_current = signal_line.last().copied().flatten();
     let histogram = macd_current.zip(signal_current).map(|(a, b)| a - b);
     let previous_histogram = if macd_line.len() >= 2 {
-        macd_line[macd_line.len() - 2]
-            .partial_cmp(&0.0)
-            .map(|_| {
-                signal_line
-                    .get(signal_line.len() - 2)
-                    .and_then(|value| *value)
-                    .map(|signal| macd_line[macd_line.len() - 2] - signal)
-            })
-            .flatten()
+        signal_line
+            .get(signal_line.len() - 2)
+            .and_then(|value| *value)
+            .map(|signal| macd_line[macd_line.len() - 2] - signal)
     } else {
         None
     };
