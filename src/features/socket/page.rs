@@ -125,6 +125,7 @@ pub fn SocketPage(
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::TotalTicks align="right">{move || t_string!(i18n, socket_activity)} </SortHeader>
                                         </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">"Analysis"</th>
                                     </tr>
                                 </thead>
                                 <tbody>
