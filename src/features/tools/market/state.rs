@@ -87,8 +87,9 @@ impl MarketState {
     fn run_analysis(&self, symbol: &str, copy_result: bool) {
         let symbol = symbol.trim().to_ascii_uppercase();
         if symbol.is_empty() {
-            self.analysis_error
-                .set(Some("A market symbol is required for analysis.".to_string()));
+            self.analysis_error.set(Some(
+                "A market symbol is required for analysis.".to_string(),
+            ));
             return;
         }
 
