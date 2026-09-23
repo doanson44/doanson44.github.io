@@ -19,11 +19,7 @@ where
     }
 
     /// Fetches a response without modifying the returned body.
-    pub fn fetch_raw(
-        &self,
-        target_url: &str,
-        on_result: Rc<dyn Fn(Result<String, String>)>,
-    ) {
+    pub fn fetch_raw(&self, target_url: &str, on_result: Rc<dyn Fn(Result<String, String>)>) {
         self.client.fetch(target_url, on_result);
     }
 
