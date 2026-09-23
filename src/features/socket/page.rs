@@ -142,6 +142,19 @@ pub fn SocketPage(
                             </table>
                         </div>
                         <div class="flex flex-col gap-2 md:hidden">
+                            <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
+                                <span class="shrink-0 text-xs font-medium text-[var(--text-secondary)]">{move || t_string!(i18n, socket_sort)}</span>
+                                <div class="flex flex-wrap justify-end gap-1">
+                                    {socket_mobile_sort_button("symbol", SocketSortMode::Symbol, state, i18n)}
+                                    {socket_mobile_sort_button("burst", SocketSortMode::Burst, state, i18n)}
+                                    {socket_mobile_sort_button("momentum", SocketSortMode::Momentum, state, i18n)}
+                                    {socket_mobile_sort_button("price", SocketSortMode::Price, state, i18n)}
+                                    {socket_mobile_sort_button("change24h", SocketSortMode::Change24h, state, i18n)}
+                                    {socket_mobile_sort_button("funding", SocketSortMode::Funding, state, i18n)}
+                                    {socket_mobile_sort_button("activity", SocketSortMode::TotalTicks, state, i18n)}
+                                    {socket_mobile_sort_button("volume24h", SocketSortMode::Volume24h, state, i18n)}
+                                </div>
+                            </div>
                             {move || paginated.get().into_iter().map(|ticker| view! {
                                 <TickerMobileCard ticker=ticker state=state />
                             }).collect_view()}
@@ -255,6 +268,52 @@ fn SortHeader(
             <span>{children()}</span>
             <span aria-hidden="true">{indicator}</span>
         </button>
+    }
+}
+
+fn socket_mobile_sort_button(
+    key: &'static str,
+    selected: SocketSortMode,
+    state: SocketState,
+    i18n: leptos_i18n::I18nContext<Locale>,
+) -> impl IntoView {
+    view! {
+        <button
+            type="button"
+            class=move || if state.sort_mode.get() == selected {
+                "min-h-9 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 text-xs font-medium text-[var(--accent)]"
+            } else {
+                "min-h-9 rounded-md border border-[var(--border-color)] px-2 text-xs text-[var(--text-primary)] hover:bg-[var(--surface)]"
+            }
+            on:click=move |_| state.set_sort(selected)
+            aria-label=move || format!("{} {}", t_string!(i18n, socket_sort), socket_sort_label(i18n, key))
+        >
+            {move || if state.sort_mode.get() == selected {
+                format!("{} {}", socket_sort_label(i18n, key), match state.sort_direction.get() {
+                    SocketSortDirection::Ascending => "↑",
+                    SocketSortDirection::Descending => "↓",
+                })
+            } else {
+                socket_sort_label(i18n, key)
+            }}
+        </button>
+    }
+}
+
+fn socket_sort_label(
+    i18n: leptos_i18n::I18nContext<Locale>,
+    key: &'static str,
+) -> String {
+    match key {
+        "symbol" => "Symbol".to_string(),
+        "burst" => t_string!(i18n, socket_burst).to_string(),
+        "momentum" => t_string!(i18n, socket_momentum).to_string(),
+        "price" => t_string!(i18n, socket_price).to_string(),
+        "change24h" => t_string!(i18n, socket_change24h).to_string(),
+        "funding" => t_string!(i18n, socket_funding).to_string(),
+        "activity" => t_string!(i18n, socket_activity).to_string(),
+        "volume24h" => t_string!(i18n, socket_volume24h).to_string(),
+        _ => t_string!(i18n, socket_sort).to_string(),
     }
 }
 
