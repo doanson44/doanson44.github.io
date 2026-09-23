@@ -3,7 +3,6 @@ use std::rc::Rc;
 use crate::application::ports::MarketClient;
 use crate::domain::market::parse_market_response;
 
-const MARKET_URL: &str = "https://cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
 
 /// Application service for retrieving CafeF market data directly from CafeF.
 #[derive(Debug, Clone, Copy)]
