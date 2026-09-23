@@ -246,7 +246,7 @@ pub struct MarketStructureConfig {
 }
 
 /// Swing-pivot configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct SwingDetectionConfig {
     /// Pivot lookback.
     #[serde(default = "default_swing_lookback")]
@@ -254,7 +254,7 @@ pub struct SwingDetectionConfig {
 }
 
 /// Support/resistance configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct SupportResistanceConfig {
     /// Historical lookback.
     #[serde(default = "default_support_resistance_lookback")]
@@ -283,7 +283,7 @@ pub struct BreakoutConfig {
 }
 
 /// Volume-confirmation configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct VolumeConfirmationConfig {
     /// Whether volume confirmation is enabled.
     #[serde(default)]
@@ -294,7 +294,7 @@ pub struct VolumeConfirmationConfig {
 }
 
 /// Retest configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct RetestConfig {
     /// Whether retest detection is enabled.
     #[serde(default)]
@@ -618,7 +618,6 @@ pub struct AssetOutput {
     pub timeframe: String,
 }
 
-/// Validates the input and returns a normalized candle vector.
 fn default_swing_lookback() -> usize { 5 }
 
 fn default_support_resistance_lookback() -> usize { 120 }
@@ -1059,7 +1058,10 @@ pub fn analyze(
     };
 
     let stochastic_k = stochastic_k(&candles, config.indicators.momentum.stochastic.k_period)?;
-    let stochastic_d = sma(&stochastic_k, config.indicators.momentum.stochastic.d_period)?;
+    let stochastic_d = stochastic_d(
+        &stochastic_k,
+        config.indicators.momentum.stochastic.d_period,
+    )?;
     let k = stochastic_k.last().copied().flatten();
     let d = stochastic_d.last().copied().flatten();
     let momentum = MomentumAnalysis {
@@ -1286,6 +1288,27 @@ fn alignment_description(
         }
         _ => "No complete EMA20/EMA50/EMA200 alignment".to_string(),
     }
+}
+
+fn stochastic_d(
+    values: &[Option<f64>],
+    period: usize,
+) -> Result<Vec<Option<f64>>, String> {
+    if period == 0 {
+        return Err("Stochastic D period must be greater than zero".to_string());
+    }
+    let mut result = vec![None; values.len()];
+    for index in 0..values.len() {
+        if index + 1 < period {
+            continue;
+        }
+        let window = &values[index + 1 - period..=index];
+        if window.iter().all(Option::is_some) {
+            let sum = window.iter().filter_map(|value| *value).sum::<f64>();
+            result[index] = Some(sum / period as f64);
+        }
+    }
+    Ok(result)
 }
 
 fn stochastic_k(candles: &[Candle], period: usize) -> Result<Vec<Option<f64>>, String> {
