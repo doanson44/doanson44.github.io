@@ -1,5 +1,6 @@
 pub mod browser;
 pub mod funding_rate;
+pub mod market;
 pub mod mermaid;
 pub mod mexc_futures;
 pub mod proxy;
