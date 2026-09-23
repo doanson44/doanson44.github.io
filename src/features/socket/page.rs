@@ -346,9 +346,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                 </button>
             </td>
             <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">
-                <div class="flex items-center gap-2"><span class="font-mono">{symbol.clone()}</span>
-                    {if ticker.momentum.is_burst() { view! { <span class="rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]">"BURST"</span> }.into_any() } else { view! { <span></span> }.into_any() }}
-                </div>
+                <span class="font-mono">{symbol.clone()}</span>
             </th>
             <td class="px-3 py-2 text-left">
                 {if ticker.momentum.is_burst() {
@@ -391,9 +389,8 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
     view! {
         <article class=move || if is_pinned.get() { "rounded-lg border border-[var(--accent)]/60 bg-[var(--accent)]/5 p-3 shadow-sm" } else { "rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3 shadow-sm" }>
             <div class="flex items-start gap-2">
-                <div class="min-w-0 flex-1"><div class="flex items-center gap-2"><h3 class="m-0 truncate font-mono text-base font-semibold text-[var(--text-primary)]">{symbol.clone()}</h3>
-                    {if ticker.momentum.is_burst() { view! { <span class="shrink-0 rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]">"BURST"</span> }.into_any() } else { view! { <span></span> }.into_any() }}
-                </div><div class="mt-1 flex items-center gap-2"><span class="font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</span><span class=format!("font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</span></div></div>
+                <div class="min-w-0 flex-1"><h3 class="m-0 truncate font-mono text-base font-semibold text-[var(--text-primary)]">{symbol.clone()}</h3>
+                    <div class="mt-1 flex items-center gap-2"><span class="font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</span><span class=format!("font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</span></div></div>
                 <button type="button" class="min-h-11 min-w-11 shrink-0 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                     title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_title) }
                     aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria) } else { format!("Pin {}", symbol_aria) }
