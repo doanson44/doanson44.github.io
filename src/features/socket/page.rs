@@ -175,7 +175,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 <button type="button" class="min-h-11 min-w-11 shrink-0 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                     title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_title) }
                     aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria) } else { format!("Pin {}", symbol_aria) }
-                    on:click=move |_| state.toggle_pin(&symbol_click,0)}>
+                    on:click=move |_| state.toggle_pin(&symbol_click, 0)>
                     {move || if is_pinned.get() { "★" } else { "☆" }}
                 </button>
             </div>
