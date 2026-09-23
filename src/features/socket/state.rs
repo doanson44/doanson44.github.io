@@ -19,7 +19,7 @@ use crate::application::{
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::domain::technical_analysis::AnalysisResult;
-use crate::domain::trading::{PortfolioSummary, TradingSnapshot};
+use crate::domain::trading::{PortfolioSummary, PositionSide, TradingSnapshot};
 use crate::infrastructure::browser;
 use crate::infrastructure::proxy::ProxyApi;
 use crate::infrastructure::trading::LocalTradingStorage;
@@ -438,6 +438,7 @@ impl SocketState {
         fee_percent: f64,
         leverage: f64,
         trade_allocation_percent: f64,
+        position_side: PositionSide,
     ) {
         let fee_rate = fee_percent / 100.0;
         match TradingService::reset_with_settings(
@@ -445,6 +446,7 @@ impl SocketState {
             fee_rate,
             leverage,
             trade_allocation_percent,
+            position_side,
         ) {
             Ok(snapshot) => match TradingService::save(&LocalTradingStorage, &snapshot) {
                 Ok(()) => {
