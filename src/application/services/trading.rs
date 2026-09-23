@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::application::ports::TradingStorage;
 use crate::domain::trading::{
-    summarize_portfolio, Portfolio, PortfolioSummary, TradingSettings, TradingSnapshot,
+    summarize_portfolio, PositionSide, Portfolio, PortfolioSummary, TradingSettings, TradingSnapshot,
 };
 
 /// Application service for client-side paper trading.
