@@ -51,7 +51,9 @@ impl TradingService {
         if !leverage.is_finite() || !(1.0..=125.0).contains(&leverage) {
             return Err("Leverage must be between 1x and 125x.".to_string());
         }
-        if !trade_allocation_percent.is_finite() || !(0.1..=100.0).contains(&trade_allocation_percent) {
+        if !trade_allocation_percent.is_finite()
+            || !(0.1..=100.0).contains(&trade_allocation_percent)
+        {
             return Err("Trade allocation must be between 0.1% and 100%.".to_string());
         }
 
