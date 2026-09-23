@@ -6,7 +6,8 @@ use web_sys::{Request, RequestInit, RequestMode, Response};
 
 use crate::application::ports::{MarketClient, MarketPinStore};
 
-const MARKET_URL: &str = "https://m.cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
+const DESKTOP_MARKET_URL: &str = "https://cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
+const MOBILE_MARKET_URL: &str = "https://m.cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
 const PIN_CACHE_KEY: &str = "market.pinned-symbols.v1";
 
 /// Browser implementation of the direct CafeF market-data client.
@@ -46,7 +47,13 @@ async fn fetch_market_data() -> Result<String, String> {
     options.set_method("GET");
     options.set_mode(RequestMode::Cors);
 
-    let request = Request::new_with_str_and_init(MARKET_URL, &options)
+    let market_url = if crate::infrastructure::browser::is_mobile_device() {
+        MOBILE_MARKET_URL
+    } else {
+        DESKTOP_MARKET_URL
+    };
+
+    let request = Request::new_with_str_and_init(market_url, &options)
         .map_err(|error| format!("Failed to create market request: {}", js_error(&error)))?;
 
     let response = JsFuture::from(window.fetch_with_request(&request))
