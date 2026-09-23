@@ -23,10 +23,10 @@ impl TechnicalAnalysisService {
         config_json: &str,
         analysis_timestamp: impl Into<String>,
     ) -> Result<String, String> {
-        let input: AnalysisInput =
-            serde_json::from_str(input_json).map_err(|error| format!("Invalid analysis input JSON: {error}"))?;
-        let config: AnalysisConfig =
-            serde_json::from_str(config_json).map_err(|error| format!("Invalid analysis config JSON: {error}"))?;
+        let input: AnalysisInput = serde_json::from_str(input_json)
+            .map_err(|error| format!("Invalid analysis input JSON: {error}"))?;
+        let config: AnalysisConfig = serde_json::from_str(config_json)
+            .map_err(|error| format!("Invalid analysis config JSON: {error}"))?;
         let result = Self::analyze(&input, &config, analysis_timestamp)?;
         serde_json::to_string_pretty(&result)
             .map_err(|error| format!("Failed to serialize analysis result: {error}"))
@@ -37,12 +37,12 @@ impl TechnicalAnalysisService {
 mod tests {
     use super::*;
     use crate::domain::technical_analysis::{
-        Asset, AssetType, Candle, CandleMetadata, DataRequirements, EngineConfig, IndicatorConfig,
-        MarketData, MomentumConfig, MovingAverageConfig, PriceActionConfig, RsiConfig,
-        MacdConfig, StochasticConfig, VolatilityConfig, AtrConfig, BollingerConfig,
-        TrendStrengthConfig, AdxConfig, VolumeConfig, MarketStructureConfig, BreakoutConfig,
-        DataQualityConfig, DivergenceDetectionConfig, PatternDetectionConfig,
-        RegimeDetectionConfig, ScenarioEngineConfig, SignalEngineConfig,
+        AdxConfig, Asset, AssetType, AtrConfig, BollingerConfig, BreakoutConfig, Candle,
+        CandleMetadata, DataQualityConfig, DataRequirements, DivergenceDetectionConfig,
+        EngineConfig, IndicatorConfig, MacdConfig, MarketData, MarketStructureConfig,
+        MomentumConfig, MovingAverageConfig, PatternDetectionConfig, PriceActionConfig,
+        RegimeDetectionConfig, RsiConfig, ScenarioEngineConfig, SignalEngineConfig,
+        StochasticConfig, TrendStrengthConfig, VolatilityConfig, VolumeConfig,
     };
 
     fn config() -> AnalysisConfig {
@@ -186,8 +186,9 @@ mod tests {
 
     #[test]
     fn service_returns_analysis_result() {
-        let result = TechnicalAnalysisService::analyze(&input(), &config(), "2026-09-23T15:42:00+07:00")
-            .expect("analysis should succeed");
+        let result =
+            TechnicalAnalysisService::analyze(&input(), &config(), "2026-09-23T15:42:00+07:00")
+                .expect("analysis should succeed");
 
         assert_eq!(result.asset.symbol, "VNM");
         assert_eq!(result.data_quality.candles_used, 60);
@@ -200,12 +201,9 @@ mod tests {
         let input = serde_json::to_string(&input()).expect("input serialization should succeed");
         let config = serde_json::to_string(&config()).expect("config serialization should succeed");
 
-        let output = TechnicalAnalysisService::analyze_json(
-            &input,
-            &config,
-            "2026-09-23T15:42:00+07:00",
-        )
-        .expect("JSON analysis should succeed");
+        let output =
+            TechnicalAnalysisService::analyze_json(&input, &config, "2026-09-23T15:42:00+07:00")
+                .expect("JSON analysis should succeed");
 
         assert!(output.contains("\"technical-analysis-engine\""));
         assert!(output.contains("\"data_quality\""));
