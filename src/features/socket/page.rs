@@ -155,15 +155,15 @@ fn PaginationControls(
     state: SocketState,
     total_items: impl Fn() -> usize + 'static,
 ) -> impl IntoView {
-    let total_pages = move || {
+    let total_pages = Memo::new(move |_| {
         let size = state.page_size.get();
         if size == usize::MAX {
             1
         } else {
             total_items().div_ceil(size).max(1)
         }
-    };
-    let page = move || state.current_page.get().clamp(1, total_pages());
+    });
+    let page = Memo::new(move |_| state.current_page.get().clamp(1, total_pages.get()));
 
     view! {
         <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -193,15 +193,15 @@ fn PaginationControls(
                 <button
                     type="button"
                     class="rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                    disabled=move || page() <= 1
-                    on:click=move |_| state.set_page(page().saturating_sub(1))
+                    disabled=move || page.get() <= 1
+                    on:click=move |_| state.set_page(page.get().saturating_sub(1))
                 >"Previous"</button>
-                <span class="px-2 text-sm text-[var(--text-secondary)]">{move || format!("{} / {}", page(), total_pages())}</span>
+                <span class="px-2 text-sm text-[var(--text-secondary)]">{move || format!("{} / {}", page.get(), total_pages.get())}</span>
                 <button
                     type="button"
                     class="rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                    disabled=move || page() >= total_pages()
-                    on:click=move |_| state.set_page(page() + 1)
+                    disabled=move || page.get() >= total_pages.get()
+                    on:click=move |_| state.set_page(page.get() + 1)
                 >"Next"</button>
             </nav>
         </div>
