@@ -200,8 +200,13 @@ impl TechnicalAnalysisService {
         let result = Self::analyze(&input, &config, analysis_timestamp)?;
         let json = serde_json::to_string_pretty(&result)
             .map_err(|error| format!("Failed to serialize analysis result: {error}"))?;
-        let report = format_analysis_report(&result);
+        let report = Self::format_analysis_report(&result, "en");
         Ok((json, report))
+    }
+
+    /// Formats an analysis result for display in the requested language.
+    pub fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
+        format_analysis_report(result, language)
     }
 
     /// Analyzes typed market data with the supplied configuration.
@@ -239,23 +244,24 @@ fn format_optional(value: Option<f64>) -> String {
         .unwrap_or_else(|| "N/A".to_string())
 }
 
-fn format_analysis_report(result: &AnalysisResult) -> String {
+fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
+    let vi = language.eq_ignore_ascii_case("vi");
     let mut report = String::new();
     report.push_str(&format!(
         "{} ({}) — {}\\n",
         result.asset.symbol,
         match result.asset.asset_type {
-            crate::domain::technical_analysis::AssetType::Stock => "Stock",
-            crate::domain::technical_analysis::AssetType::Crypto => "Crypto",
+            crate::domain::technical_analysis::AssetType::Stock => if vi { "Cổ phiếu" } else { "Stock" },
+            crate::domain::technical_analysis::AssetType::Crypto => if vi { "Crypto" } else { "Crypto" },
         },
         result.asset.timeframe
     ));
     report.push_str(&format!(
-        "Analysis: {} {}\\n\\n",
+        if vi { "Phân tích: {} {}\\n\\n" } else { "Analysis: {} {}\\n\\n" },
         result.engine.name, result.engine.version
     ));
 
-    report.push_str("SUMMARY\\n");
+    report.push_str(if vi { "TỔNG QUAN\\n" } else { "SUMMARY\\n" });
     report.push_str(&format!(
         "• State: {}\\n",
         result.engine_summary.dominant_state
@@ -282,7 +288,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         result.engine_summary.main_risk
     ));
 
-    report.push_str("CURRENT PRICE\\n");
+    report.push_str(if vi { "GIÁ HIỆN TẠI\\n" } else { "CURRENT PRICE\\n" });
     report.push_str(&format!(
         "• Close: {} {}\\n• Change: {:.2} ({:.2}%)\\n• Volume: {:.0}\\n\\n",
         result.snapshot.close,
@@ -292,7 +298,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         result.snapshot.volume
     ));
 
-    report.push_str("TREND\\n");
+    report.push_str(if vi { "XU HƯỚNG\\n" } else { "TREND\\n" });
     report.push_str(&format!(
         "• State: {}\\n• Strength: {}\\n• Alignment: {}\\n",
         result.trend.state, result.trend.strength, result.trend.alignment.description
@@ -320,7 +326,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
             .join(", ")
     ));
 
-    report.push_str("MOMENTUM\\n");
+    report.push_str(if vi { "ĐỘNG LƯỢNG\\n" } else { "MOMENTUM\\n" });
     report.push_str(&format!(
         "• RSI: {} ({})\\n• MACD: {} / signal {} / histogram {} ({})\\n• Stochastic: K {} / D {} ({})\\n\\n",
         format_optional(result.momentum.rsi.value),
@@ -334,7 +340,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         result.momentum.stochastic.state
     ));
 
-    report.push_str("VOLATILITY & VOLUME\\n");
+    report.push_str(if vi { "BIẾN ĐỘNG & KHỐI LƯỢNG\\n" } else { "VOLATILITY & VOLUME\\n" });
     report.push_str(&format!(
         "• ATR: {} ({})\\n• Bollinger: lower {} / middle {} / upper {}\\n• Volume: {} ({})\\n• OBV: {}\\n\\n",
         format_optional(result.volatility.atr),
@@ -347,7 +353,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         format_optional(result.volume.obv)
     ));
 
-    report.push_str("MARKET STRUCTURE\\n");
+    report.push_str(if vi { "CẤU TRÚC THỊ TRƯỜNG\\n" } else { "MARKET STRUCTURE\\n" });
     report.push_str(&format!(
         "• State: {}\\n• Sequence: {}\\n• Last swing high: {}\\n• Last swing low: {}\\n\\n",
         result.market_structure.state,
@@ -372,7 +378,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
             .unwrap_or_else(|| "N/A".to_string())
     ));
 
-    report.push_str("SUPPORT / RESISTANCE\\n");
+    report.push_str(if vi { "HỖ TRỢ / KHÁNG CỰ\\n" } else { "SUPPORT / RESISTANCE\\n" });
     report.push_str(&format!(
         "• Immediate support: {}\\n• Major support: {}\\n• Immediate resistance: {}\\n\\n",
         format_optional(result.key_levels.immediate_support),
@@ -380,7 +386,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         format_optional(result.key_levels.immediate_resistance)
     ));
 
-    report.push_str("BREAKOUT\\n");
+    report.push_str(if vi { "BREAKOUT\\n" } else { "BREAKOUT\\n" });
     report.push_str(&format!(
         "• Status: {}\\n• Level: {}\\n• Direction: {}\\n• Volume confirmation: {}\\n\\n",
         result.breakout.status,
@@ -393,7 +399,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         }
     ));
 
-    report.push_str("REGIME\\n");
+    report.push_str(if vi { "CHẾ ĐỘ THỊ TRƯỜNG\\n" } else { "REGIME\\n" });
     report.push_str(&format!(
         "• Overall: {}\\n• Trend: {}\\n• Momentum: {}\\n• Volatility: {}\\n• Volume: {}\\n\\n",
         result.regime.overall,
@@ -403,7 +409,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         result.regime.volume
     ));
 
-    report.push_str("SIGNALS\\n");
+    report.push_str(if vi { "TÍN HIỆU\\n" } else { "SIGNALS\\n" });
     if result.signals.is_empty() {
         report.push_str("• None\\n");
     } else {
@@ -419,7 +425,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
     }
     report.push('\n');
 
-    report.push_str("PATTERNS & DIVERGENCES\\n");
+    report.push_str(if vi { "MÔ HÌNH & PHÂN KỲ\\n" } else { "PATTERNS & DIVERGENCES\\n" });
     if result.patterns.is_empty() {
         report.push_str("• Patterns: none\\n");
     } else {
@@ -446,7 +452,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
     }
     report.push('\n');
 
-    report.push_str("SCENARIOS\\n");
+    report.push_str(if vi { "KỊCH BẢN\\n" } else { "SCENARIOS\\n" });
     for (name, scenario) in [
         ("Bullish", &result.scenarios.bullish),
         ("Bearish", &result.scenarios.bearish),
@@ -464,7 +470,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         result.scenarios.range.status, result.scenarios.range.condition
     ));
 
-    report.push_str("DATA QUALITY\\n");
+    report.push_str(if vi { "CHẤT LƯỢNG DỮ LIỆU\\n" } else { "DATA QUALITY\\n" });
     report.push_str(&format!(
         "• Candles: {} used / {} received\\n• Minimum required: {}\\n• Sufficient: {}\\n",
         result.data_quality.candles_used,
