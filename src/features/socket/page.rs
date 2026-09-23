@@ -256,7 +256,6 @@ fn build_visible(
     let sort_fn = |left: &TrackedFuturesTicker, right: &TrackedFuturesTicker| {
         let cmp = match sort {
             SocketSortMode::Symbol => left.ticker.symbol.cmp(&right.ticker.symbol),
-
             SocketSortMode::Momentum => right
                 .momentum
                 .progress()
@@ -266,48 +265,48 @@ fn build_visible(
                 let left_price = left.ticker.last_price.unwrap_or(0.0);
                 let right_price = right.ticker.last_price.unwrap_or(0.0);
                 right_price
-                .partial_cmp(&left_price)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+                    .partial_cmp(&left_price)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
             }
             SocketSortMode::TotalTicks => {
                 let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
                 let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
                 right_total
-                .cmp(&left_total)
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+                    .cmp(&left_total)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
             }
             SocketSortMode::Funding => {
                 let left_funding = funding_rates
-                .as_ref()
-                .and_then(|r| r.get(&left.ticker.symbol))
-                .unwrap_or(0.0);
+                    .as_ref()
+                    .and_then(|r| r.get(&left.ticker.symbol))
+                    .unwrap_or(0.0);
                 let right_funding = funding_rates
-                .as_ref()
-                .and_then(|r| r.get(&right.ticker.symbol))
-                .unwrap_or(0.0);
+                    .as_ref()
+                    .and_then(|r| r.get(&right.ticker.symbol))
+                    .unwrap_or(0.0);
                 right_funding
-                .partial_cmp(&left_funding)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+                    .partial_cmp(&left_funding)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
             }
             SocketSortMode::Change24h => {
                 let left_change = left.ticker.change_24h.unwrap_or(0.0);
                 let right_change = right.ticker.change_24h.unwrap_or(0.0);
                 right_change
-                .partial_cmp(&left_change)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+                    .partial_cmp(&left_change)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
             }
             SocketSortMode::Volume24h => {
                 let left_vol = left.ticker.volume_24h.unwrap_or(0.0);
                 let right_vol = right.ticker.volume_24h.unwrap_or(0.0);
                 right_vol
-                .partial_cmp(&left_vol)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
+                    .partial_cmp(&left_vol)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
             }
-            };
+        };
 
         match direction {
             SocketSortDirection::Descending => cmp,
