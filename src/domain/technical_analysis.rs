@@ -1100,14 +1100,14 @@ pub fn validate_input(
     }
 
     let candles_used = candles.len();
+    let has_fatal_issue = issues
+        .iter()
+        .any(|item| item.code != "MAXIMUM_CANDLES_EXCEEDED");
     let sufficient_for_analysis = candles_used >= requirements.minimum_candles && !has_fatal_issue;
     let coverage = Coverage {
         from: candles.first().map(|candle| candle.timestamp.clone()),
         to: candles.last().map(|candle| candle.timestamp.clone()),
     };
-    let has_fatal_issue = issues
-        .iter()
-        .any(|item| item.code != "MAXIMUM_CANDLES_EXCEEDED");
 
     Ok((
         candles,
