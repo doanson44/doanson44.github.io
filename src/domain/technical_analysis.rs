@@ -1564,12 +1564,57 @@ pub fn analyze(
         &volume,
         &config.breakout_detection,
     );
-    let patterns = pattern_analysis(&market_structure);
-    let divergences = divergence_analysis(&candles, &rsi_values, &market_structure);
-    let regime = regime_analysis(&trend, &momentum, &volatility, &volume);
-    let signals = signal_analysis(&trend, &momentum, &volume);
+    let patterns = if config.pattern_detection.enabled {
+        pattern_analysis(&market_structure)
+    } else {
+        Vec::new()
+    };
+    let divergences = if config.divergence_detection.enabled {
+        divergence_analysis(&candles, &rsi_values, &market_structure)
+    } else {
+        Vec::new()
+    };
+    let regime = if config.regime_detection.enabled {
+        regime_analysis(&trend, &momentum, &volatility, &volume)
+    } else {
+        RegimeAnalysis {
+            trend: "disabled".to_string(),
+            momentum: "disabled".to_string(),
+            volatility: "disabled".to_string(),
+            volume: "disabled".to_string(),
+            overall: "disabled".to_string(),
+        }
+    };
+    let signals = if config.signal_engine.enabled {
+        signal_analysis(&trend, &momentum, &volume)
+    } else {
+        Vec::new()
+    };
     let conflicts = conflict_analysis(&trend, &volume);
-    let scenarios = scenario_analysis(&support_resistance, &breakout, &momentum);
+    let scenarios = if config.scenario_engine.enabled {
+        scenario_analysis(&support_resistance, &breakout, &momentum)
+    } else {
+        ScenarioAnalysis {
+            bullish: Scenario {
+                status: "disabled".to_string(),
+                trigger: None,
+                confirmation: Vec::new(),
+                invalidation: None,
+            },
+            bearish: Scenario {
+                status: "disabled".to_string(),
+                trigger: None,
+                confirmation: Vec::new(),
+                invalidation: None,
+            },
+            range: RangeScenario {
+                status: "disabled".to_string(),
+                upper_boundary: None,
+                lower_boundary: None,
+                condition: "Scenario engine disabled.".to_string(),
+            },
+        }
+    };
     let key_levels = key_levels(&support_resistance);
     let engine_summary = engine_summary(
         &trend,
