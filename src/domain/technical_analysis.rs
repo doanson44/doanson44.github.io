@@ -1230,18 +1230,10 @@ pub fn atr(candles: &[Candle], period: usize) -> Result<Vec<Option<f64>>, String
     Ok(output)
 }
 
-pub type BollingerBands = (
-    Vec<Option<f64>>,
-    Vec<Option<f64>>,
-    Vec<Option<f64>>,
-);
+pub type BollingerBands = (Vec<Option<f64>>, Vec<Option<f64>>, Vec<Option<f64>>);
 
 /// Calculates Bollinger bands from a close-price series.
-pub fn bollinger(
-    values: &[f64],
-    period: usize,
-    stddev: f64,
-) -> Result<BollingerBands, String> {
+pub fn bollinger(values: &[f64], period: usize, stddev: f64) -> Result<BollingerBands, String> {
     validate_period(values, period)?;
     if !stddev.is_finite() || stddev <= 0.0 {
         return Err("Bollinger stddev must be positive and finite".to_string());
@@ -2265,8 +2257,11 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
     } else {
         input.regime.overall.as_str()
     };
-    let most_important_level = input.breakout.resistance_level.or(input.levels.immediate_support);
-    let main_risk = input.conflicts
+    let most_important_level = input
+        .breakout
+        .resistance_level
+        .or(input.levels.immediate_support);
+    let main_risk = input
         .first()
         .map(|conflict| conflict.description.clone())
         .unwrap_or_else(|| "No dominant conflict detected.".to_string());
@@ -2279,7 +2274,8 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
         volume_confirmation,
         volatility: "normal".to_string(),
         most_important_level,
-        most_important_confirmation: input.breakout
+        most_important_confirmation: input
+            .breakout
             .resistance_level
             .map(|level| format!("Break above {level:.2} with volume expansion"))
             .unwrap_or_else(|| "Wait for a confirmed support/resistance level.".to_string()),
