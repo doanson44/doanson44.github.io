@@ -402,14 +402,6 @@ fn view_button_class(active: bool) -> &'static str {
     }
 }
 
-fn card_aria_label(
-    ticker: TrackedFuturesTicker,
-    pinned: bool,
-    funding_rate: Option<f64>,
-) -> String {
-    format!("{}, 24 hour change {}, price {}, funding rate {}, {} up ticks, {} down ticks, {} percent progress, {}", ticker.ticker.symbol, format_percent(ticker.ticker.change_24h), format_number(ticker.ticker.last_price), format_funding_rate(funding_rate), ticker.momentum.up_ticks, ticker.momentum.down_ticks, ticker.momentum.progress(), if pinned { "pinned" } else { "not pinned" })
-}
-
 fn change_class(value: Option<f64>) -> &'static str {
     match value {
         Some(value) if value > 0.0 => "text-[var(--success)]",
