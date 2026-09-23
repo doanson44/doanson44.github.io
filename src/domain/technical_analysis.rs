@@ -1100,6 +1100,8 @@ pub fn validate_input(
     }
 
     let candles_used = candles.len();
+    let sufficient_for_analysis =
+        candles_used >= requirements.minimum_candles && !has_fatal_issue;
     let coverage = Coverage {
         from: candles.first().map(|candle| candle.timestamp.clone()),
         to: candles.last().map(|candle| candle.timestamp.clone()),
@@ -1114,8 +1116,7 @@ pub fn validate_input(
             candles_received: received,
             candles_used,
             minimum_required: requirements.minimum_candles,
-            sufficient_for_analysis: candles.len() >= requirements.minimum_candles
-                && !has_fatal_issue,
+            sufficient_for_analysis,
             issues,
             coverage,
         },
