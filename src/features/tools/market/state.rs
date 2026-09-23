@@ -33,6 +33,7 @@ impl MarketState {
             displayed_items: RwSignal::new(0),
             error: RwSignal::new(None),
             loading: RwSignal::new(false),
+            pinned_symbols: RwSignal::new(Vec::new()),
         }
     }
 
