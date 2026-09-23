@@ -10,6 +10,10 @@
     --accent-success: #3fb950;
     --accent-warning: #d29922;
     --accent-danger: #f85149;
+    --success: var(--accent-success);
+    --warning: var(--accent-warning);
+    --danger: var(--accent-danger);
+    --overlay: rgba(13, 17, 23, 0.68);
 
     --ms-bg-primary: var(--bg-primary);
     --ms-bg-secondary: var(--surface);
@@ -38,6 +42,10 @@ html[data-theme="light"] {
     --accent-success: #1a7f37;
     --accent-warning: #9a6700;
     --accent-danger: #cf222e;
+    --success: var(--accent-success);
+    --warning: var(--accent-warning);
+    --danger: var(--accent-danger);
+    --overlay: rgba(31, 35, 40, 0.42);
 }
 
 html[data-theme="dark"] {
