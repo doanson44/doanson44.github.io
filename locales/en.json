@@ -92,6 +92,7 @@
   "socket_no_holdings": "No open positions",
   "socket_trading_fee": "Trading fee (% per transaction)",
   "socket_fee_hint": "Applied on both buy and sell transactions.",
+  "socket_trade_size_hint": "Each new buy uses 10% of available cash. Unpin sells the entire holding.",
   "socket_api_key": "API key",
   "socket_api_key_hint": "Reserved for future live trading. It is not used or stored in this paper-trading phase.",
   "socket_save_settings": "Save settings",
