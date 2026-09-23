@@ -243,7 +243,7 @@ impl SocketState {
 
         let save_service = SendWrapper::new(service.clone());
         on_cleanup(move || {
-            save_ticker_cache(&*save_service);
+            save_ticker_cache(&save_service);
         });
 
         Self {
