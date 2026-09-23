@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use crate::i18n::*;
 use leptos_i18n::t_string;
 
 use crate::domain::market::MarketStock;
@@ -232,7 +233,7 @@ pub fn MarketPage() -> impl IntoView {
 fn market_table_row(
     stock: MarketStock,
     state: MarketState,
-    i18n: leptos_i18n::I18nContext,
+    i18n: leptos_i18n::I18nContext<Locale>,
 ) -> impl IntoView {
     let change_class = change_class(stock.change_percent);
     let symbol = stock.symbol.clone();
@@ -293,7 +294,7 @@ fn market_mobile_card(
                     </div>
                     <p class="m-0 mt-1 truncate text-xs text-[var(--text-secondary)]">{stock.name}</p>
                 </div>
-                {pin_button(pin_symbol, is_pinned, state)}
+                {pin_button(pin_symbol, is_pinned, state, i18n)}
             </div>
             <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                 <div>
@@ -361,6 +362,17 @@ fn mobile_sort_button(
                 market_sort_label(i18n, key)
             }}
         </button>
+    }
+}
+
+fn market_sort_label(i18n: leptos_i18n::I18nContext<Locale>, key: &'static str) -> String {
+    match key {
+        "symbol" => t_string!(i18n, market_sort_label_symbol).to_string(),
+        "price" => t_string!(i18n, market_sort_label_price).to_string(),
+        "change_percent" => t_string!(i18n, market_sort_label_change_percent).to_string(),
+        "volume" => t_string!(i18n, market_sort_label_volume).to_string(),
+        "market_cap" => t_string!(i18n, market_sort_label_market_cap).to_string(),
+        _ => t_string!(i18n, market_sort).to_string(),
     }
 }
 
