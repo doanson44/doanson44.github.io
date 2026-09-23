@@ -1045,8 +1045,7 @@ pub fn validate_input(
                 format!("Candle {index} contains a non-finite value"),
             ));
         }
-        if candle.open <= 0.0 || candle.high <= 0.0 || candle.low <= 0.0 || candle.close <= 0.0
-        {
+        if candle.open <= 0.0 || candle.high <= 0.0 || candle.low <= 0.0 || candle.close <= 0.0 {
             issues.push(issue(
                 "INVALID_PRICE",
                 format!("Candle {index} contains a non-positive price"),
