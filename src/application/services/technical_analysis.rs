@@ -393,7 +393,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
             ));
         }
     }
-    report.push('\\n');
+    report.push('\n');
 
     report.push_str("PATTERNS & DIVERGENCES\\n");
     if result.patterns.is_empty() {
@@ -420,7 +420,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
             ));
         }
     }
-    report.push('\\n');
+    report.push('\n');
 
     report.push_str("SCENARIOS\\n");
     for (name, scenario) in [
