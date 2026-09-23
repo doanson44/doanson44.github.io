@@ -37,13 +37,6 @@ pub enum SocketViewMode {
     PinnedOnly,
 }
 
-/// Additional market filter for burst detection.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SocketFilter {
-    All,
-    Burst,
-}
-
 /// Socket ticker sort mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SocketSortMode {
