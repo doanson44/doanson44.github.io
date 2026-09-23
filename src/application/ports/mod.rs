@@ -82,3 +82,14 @@ pub trait MarketPinStore {
     /// Persists the symbols currently pinned by the user.
     fn save(&self, symbols: &[String]) -> Result<(), String>;
 }
+
+use crate::domain::trading::TradingSnapshot;
+
+/// Application port for persisting the client-side paper-trading snapshot.
+pub trait TradingStorage {
+    /// Loads the previously persisted paper-trading snapshot.
+    fn load(&self) -> Result<Option<TradingSnapshot>, String>;
+
+    /// Persists the current paper-trading snapshot.
+    fn save(&self, snapshot: &TradingSnapshot) -> Result<(), String>;
+}
