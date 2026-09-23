@@ -124,6 +124,11 @@ pub fn console_log(msg: &str) {
     web_sys::console::log_1(&msg.into());
 }
 
+/// Returns the current browser time as an ISO-8601 timestamp.
+pub fn now_iso8601() -> String {
+    js_sys::Date::new_0().to_iso_string().into()
+}
+
 /// Get an element by ID, returning a typed element.
 pub fn get_element_by_id<T: wasm_bindgen::JsCast>(id: &str) -> Option<T> {
     get_document().get_element_by_id(id)?.dyn_into::<T>().ok()
