@@ -401,9 +401,9 @@ impl SocketState {
     }
 
     /// Saves paper-trading settings and resets the paper portfolio.
-    pub fn save_settings(&self, initial_capital: f64, fee_percent: f64, leverage: f64) {
+    pub fn save_settings(&self, initial_capital: f64, fee_percent: f64, leverage: f64, trade_allocation_percent: f64) {
         let fee_rate = fee_percent / 100.0;
-        match TradingService::reset_with_settings(initial_capital, fee_rate, leverage) {
+        match TradingService::reset_with_settings(initial_capital, fee_rate, leverage, trade_allocation_percent) {
             Ok(snapshot) => match TradingService::save(&LocalTradingStorage, &snapshot) {
                 Ok(()) => {
                     self.trading_snapshot.set(snapshot);
