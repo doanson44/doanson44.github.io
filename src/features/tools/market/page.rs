@@ -179,7 +179,7 @@ pub fn MarketPage() -> impl IntoView {
             })}
 
             <div class="min-h-0 flex-grow overflow-auto p-3">
-                <div class="overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)]">
+                <div class="hidden overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)] md:block">
                     <table class="w-full min-w-[820px] border-collapse text-sm">
                         <caption class="sr-only">"CafeF market stock data"</caption>
                         <thead>
@@ -195,49 +195,25 @@ pub fn MarketPage() -> impl IntoView {
                             </tr>
                         </thead>
                         <tbody>
-                            {move || visible_stocks.get().into_iter().map(|stock| {
-                                let change_class = if stock.change_percent > 0.0 {
-                                    "text-[var(--success)]"
-                                } else if stock.change_percent < 0.0 {
-                                    "text-[var(--danger)]"
-                                } else {
-                                    "text-[var(--text-secondary)]"
-                                };
-                                let symbol = stock.symbol.clone();
-                                let pin_symbol = symbol.clone();
-                                let is_pinned = Memo::new(move |_| {
-                                    state.pinned_symbols.get().iter().any(|item| item == &symbol)
-                                });
-                                view! {
-                                    <tr class=move || if is_pinned.get() {
-                                        "border-b border-[var(--accent)]/50 bg-[var(--accent)]/5 last:border-b-0 hover:bg-[var(--surface-hover)]"
-                                    } else {
-                                        "border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]"
-                                    }>
-                                        <td class="px-3 py-2 text-center">
-                                            <button
-                                                type="button"
-                                                class="min-h-10 min-w-10 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                                                title=move || if is_pinned.get() { "Unpin stock" } else { "Pin stock" }
-                                                aria-label=move || if is_pinned.get() { "Unpin stock" } else { "Pin stock" }
-                                                on:click=move |_| state.toggle_pin(&pin_symbol)
-                                            >
-                                                {move || if is_pinned.get() { "★" } else { "☆" }}
-                                            </button>
-                                        </td>
-                                        <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">{stock.symbol}</th>
-                                        <td class="max-w-[28rem] px-3 py-2 text-[var(--text-secondary)]">{stock.name}</td>
-                                        <td class="px-3 py-2 text-right font-medium text-[var(--text-primary)]">{format_price(stock.price)}</td>
-                                        <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_price(stock.change)}</td>
-                                        <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(stock.change_percent)}</td>
-                                        <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.total_volume)}</td>
-                                        <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.market_cap)}</td>
-                                    </tr>
-                                }
-                            }).collect_view()}
+                            {move || visible_stocks.get().into_iter().map(|stock| market_table_row(stock, state)).collect_view()}
                         </tbody>
                     </table>
                 </div>
+
+                <div class="flex flex-col gap-2 md:hidden">
+                    <div class="flex items-center justify-between gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
+                        <span class="shrink-0 text-xs font-medium text-[var(--text-secondary)]">"Sort"</span>
+                        <div class="flex flex-wrap justify-end gap-1">
+                            {mobile_sort_button("Symbol", MarketSort::Symbol, sort, descending, toggle_sort)}
+                            {mobile_sort_button("Price", MarketSort::Price, sort, descending, toggle_sort)}
+                            {mobile_sort_button("Change %", MarketSort::ChangePercent, sort, descending, toggle_sort)}
+                            {mobile_sort_button("Volume", MarketSort::Volume, sort, descending, toggle_sort)}
+                            {mobile_sort_button("Market Cap", MarketSort::MarketCap, sort, descending, toggle_sort)}
+                        </div>
+                    </div>
+                    {move || visible_stocks.get().into_iter().map(|stock| market_mobile_card(stock, state)).collect_view()}
+                </div>
+
                 {move || if !state.loading.get() && state.error.get().is_none() && visible_stocks.get().is_empty() {
                     view! { <div class="mt-3 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-4 text-sm text-[var(--text-secondary)]" role="status">"No market data matches the current filters."</div> }.into_any()
                 } else {
@@ -248,6 +224,130 @@ pub fn MarketPage() -> impl IntoView {
                 </div>
             </div>
         </div>
+    }
+}
+
+
+fn market_table_row(stock: MarketStock, state: MarketState) -> impl IntoView {
+    let change_class = change_class(stock.change_percent);
+    let symbol = stock.symbol.clone();
+    let pin_symbol = symbol.clone();
+    let is_pinned = Memo::new(move |_| {
+        state.pinned_symbols.get().iter().any(|item| item == &symbol)
+    });
+
+    view! {
+        <tr class=move || if is_pinned.get() {
+            "border-b border-[var(--accent)]/50 bg-[var(--accent)]/5 last:border-b-0 hover:bg-[var(--surface-hover)]"
+        } else {
+            "border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]"
+        }>
+            <td class="px-3 py-2 text-center">{pin_button(pin_symbol, is_pinned, state)}</td>
+            <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">{stock.symbol}</th>
+            <td class="max-w-[28rem] px-3 py-2 text-[var(--text-secondary)]">{stock.name}</td>
+            <td class="px-3 py-2 text-right font-medium text-[var(--text-primary)]">{format_price(stock.price)}</td>
+            <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_price(stock.change)}</td>
+            <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(stock.change_percent)}</td>
+            <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.total_volume)}</td>
+            <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.market_cap)}</td>
+        </tr>
+    }
+}
+
+fn market_mobile_card(stock: MarketStock, state: MarketState) -> impl IntoView {
+    let change_class = change_class(stock.change_percent);
+    let symbol = stock.symbol.clone();
+    let pin_symbol = symbol.clone();
+    let is_pinned = Memo::new(move |_| {
+        state.pinned_symbols.get().iter().any(|item| item == &symbol)
+    });
+
+    view! {
+        <article class=move || if is_pinned.get() {
+            "rounded-lg border border-[var(--accent)]/60 bg-[var(--accent)]/5 p-3 shadow-sm"
+        } else {
+            "rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3 shadow-sm"
+        }>
+            <div class="flex items-start gap-2">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                        <h2 class="m-0 truncate text-base font-semibold text-[var(--text-primary)]">{stock.symbol}</h2>
+                        <span class=format!("shrink-0 text-sm font-semibold {change_class}")>{format_percent(stock.change_percent)}</span>
+                    </div>
+                    <p class="m-0 mt-1 truncate text-xs text-[var(--text-secondary)]">{stock.name}</p>
+                </div>
+                {pin_button(pin_symbol, is_pinned, state)}
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                <div>
+                    <span class="block text-xs text-[var(--text-secondary)]">"Price"</span>
+                    <span class="font-semibold text-[var(--text-primary)]">{format_price(stock.price)}</span>
+                </div>
+                <div class="text-right">
+                    <span class="block text-xs text-[var(--text-secondary)]">"Change"</span>
+                    <span class=format!("font-medium {change_class}")>{format_price(stock.change)}</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-[var(--text-secondary)]">"Volume"</span>
+                    <span class="font-medium text-[var(--text-primary)]">{format_integer(stock.total_volume)}</span>
+                </div>
+                <div class="text-right">
+                    <span class="block text-xs text-[var(--text-secondary)]">"Market Cap"</span>
+                    <span class="font-medium text-[var(--text-primary)]">{format_integer(stock.market_cap)}</span>
+                </div>
+            </div>
+        </article>
+    }
+}
+
+fn pin_button(symbol: String, is_pinned: Memo<bool>, state: MarketState) -> impl IntoView {
+    view! {
+        <button
+            type="button"
+            class="min-h-11 min-w-11 shrink-0 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+            title=move || if is_pinned.get() { "Unpin stock" } else { "Pin stock" }
+            aria-label=move || if is_pinned.get() { "Unpin stock" } else { "Pin stock" }
+            on:click=move |_| state.toggle_pin(&symbol)
+        >
+            {move || if is_pinned.get() { "★" } else { "☆" }}
+        </button>
+    }
+}
+
+fn mobile_sort_button(
+    label: &'static str,
+    selected: MarketSort,
+    sort: RwSignal<MarketSort>,
+    descending: RwSignal<bool>,
+    on_sort: impl Fn(MarketSort) + Copy + 'static,
+) -> impl IntoView {
+    view! {
+        <button
+            type="button"
+            class=move || if sort.get() == selected {
+                "min-h-9 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 text-xs font-medium text-[var(--accent)]"
+            } else {
+                "min-h-9 rounded-md border border-[var(--border-color)] px-2 text-xs text-[var(--text-primary)]"
+            }
+            on:click=move |_| on_sort(selected)
+            aria-label=move || format!("Sort by {label}")
+        >
+            {move || if sort.get() == selected {
+                format!("{label} {}", if descending.get() { "↓" } else { "↑" })
+            } else {
+                label.to_string()
+            }}
+        </button>
+    }
+}
+
+fn change_class(change_percent: f64) -> &'static str {
+    if change_percent > 0.0 {
+        "text-[var(--success)]"
+    } else if change_percent < 0.0 {
+        "text-[var(--danger)]"
+    } else {
+        "text-[var(--text-secondary)]"
     }
 }
 
