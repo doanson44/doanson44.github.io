@@ -12,6 +12,19 @@ pub const DEFAULT_LEVERAGE: f64 = 1.0;
 pub const DEFAULT_TRADE_ALLOCATION_PERCENT: f64 = 10.0;
 pub const MAX_LEVERAGE: f64 = 125.0;
 
+/// Configured direction for new paper-trading positions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PositionSide {
+    Long,
+    Short,
+}
+
+impl Default for PositionSide {
+    fn default() -> Self {
+        Self::Long
+    }
+}
+
 /// Paper-trading configuration that is safe to persist locally.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TradingSettings {
@@ -19,6 +32,8 @@ pub struct TradingSettings {
     pub fee_rate: f64,
     pub leverage: f64,
     pub trade_allocation_percent: f64,
+    #[serde(default)]
+    pub position_side: PositionSide,
 }
 
 impl Default for TradingSettings {
@@ -28,6 +43,7 @@ impl Default for TradingSettings {
             fee_rate: DEFAULT_FEE_RATE,
             leverage: DEFAULT_LEVERAGE,
             trade_allocation_percent: DEFAULT_TRADE_ALLOCATION_PERCENT,
+            position_side: PositionSide::Long,
         }
     }
 }
@@ -42,6 +58,7 @@ pub struct Position {
     pub entry_fee: f64,
     pub margin: f64,
     pub leverage: f64,
+    pub side: PositionSide,
 }
 
 /// The side of a paper-trading transaction.
@@ -124,6 +141,7 @@ impl Portfolio {
             entry_fee: fee,
             margin,
             leverage,
+            side: settings.position_side,
         });
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
@@ -160,7 +178,10 @@ impl Portfolio {
         let position = self.positions.remove(index);
         let value = position.quantity * price;
         let fee = value * settings.fee_rate;
-        let price_pnl = value - position.entry_value;
+        let price_pnl = match position.side {
+            PositionSide::Long => value - position.entry_value,
+            PositionSide::Short => position.entry_value - value,
+        };
         let realized_pnl = price_pnl - position.entry_fee - fee;
 
         self.cash += position.margin + price_pnl - fee;
@@ -232,7 +253,11 @@ pub fn summarize_portfolio(
             .copied()
             .unwrap_or(position.entry_price);
         let value = position.quantity * current_price;
-        let pnl = value - position.entry_value - position.entry_fee;
+        let price_pnl = match position.side {
+            PositionSide::Long => value - position.entry_value,
+            PositionSide::Short => position.entry_value - value,
+        };
+        let pnl = price_pnl - position.entry_fee;
 
         market_value += value;
         unrealized_pnl += pnl;
@@ -295,6 +320,7 @@ mod tests {
             fee_rate: 0.001,
             leverage: 1.0,
             trade_allocation_percent: 10.0,
+            position_side: PositionSide::Long,
         }
     }
 
@@ -320,6 +346,19 @@ mod tests {
 
         assert!(portfolio.positions.is_empty());
         assert!((portfolio.cash - 1009.7802197802198).abs() < 1e-9);
+        assert!((portfolio.realized_pnl - 9.7802197802198).abs() < 1e-9);
+    }
+
+    #[test]
+    fn short_position_profits_when_price_falls() {
+        let mut settings = settings();
+        settings.position_side = PositionSide::Short;
+        let mut portfolio = Portfolio::new(settings.initial_capital);
+
+        portfolio.buy(&settings, "BTC_USDT", 100.0, 1).unwrap();
+        portfolio.sell(&settings, "BTC_USDT", 90.0, 2).unwrap();
+
+        assert!(portfolio.positions.is_empty());
         assert!((portfolio.realized_pnl - 9.7802197802198).abs() < 1e-9);
     }
 
