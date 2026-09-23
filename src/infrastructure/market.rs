@@ -4,7 +4,7 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
 
-use crate::application::ports::MarketClient;
+use crate::application::ports::{MarketClient, MarketPinStore};
 
 const MARKET_URL: &str = "https://cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
 
