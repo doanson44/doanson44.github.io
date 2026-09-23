@@ -50,8 +50,8 @@ pub fn SocketPage(
         let current_page = state.current_page;
         move |_| {
             let items = visible.get();
-            let size = page_size.get().max(10);
-            let total_pages = items.len().div_ceil(size).max(1);
+            let size = page_size.get();
+            let total_pages = if size == usize::MAX { 1 } else { items.len().div_ceil(size).max(1) };
             let page = current_page.get().clamp(1, total_pages);
             let start = (page - 1) * size;
             items.into_iter().skip(start).take(size).collect::<Vec<_>>()
@@ -63,7 +63,8 @@ pub fn SocketPage(
         let current_page = state.current_page;
         let page_size = state.page_size;
         move |_| {
-            let total_pages = visible.get().len().div_ceil(page_size.get().max(10)).max(1);
+            let size = page_size.get();
+            let total_pages = if size == usize::MAX { 1 } else { visible.get().len().div_ceil(size).max(1) };
             let page = current_page.get();
             if page > total_pages {
                 current_page.set(total_pages);
@@ -147,8 +148,8 @@ fn PaginationControls(
     total_items: impl Fn() -> usize + 'static,
 ) -> impl IntoView {
     let total_pages = move || {
-        let size = state.page_size.get().max(10);
-        total_items().div_ceil(size).max(1)
+        let size = state.page_size.get();
+        if size == usize::MAX { 1 } else { total_items().div_ceil(size).max(1) }
     };
     let page = move || state.current_page.get().clamp(1, total_pages());
 
@@ -161,13 +162,19 @@ fn PaginationControls(
                     class="rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
                     prop:value=move || state.page_size.get().to_string()
                     on:change=move |ev| {
-                        let size = event_target_value(&ev).parse::<usize>().unwrap_or(10);
+                        let value = event_target_value(&ev);
+                        let size = if value == "all" {
+                            usize::MAX
+                        } else {
+                            value.parse::<usize>().unwrap_or(10)
+                        };
                         state.set_page_size(size);
                     }
                 >
                     <option value="10">"10"</option>
                     <option value="20">"20"</option>
                     <option value="50">"50"</option>
+                    <option value="all">"All"</option>
                 </select>
             </div>
             <nav class="flex items-center gap-1" aria-label="Pagination">
