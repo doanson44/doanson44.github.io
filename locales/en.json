@@ -91,6 +91,8 @@
   "socket_unrealized_pnl": "Unrealized P&L",
   "socket_no_holdings": "No open positions",
   "socket_trading_fee": "Trading fee (% per transaction)",
+  "socket_trade_allocation": "Capital per trade (%)",
+  "socket_trade_allocation_hint": "Percentage of available cash used as margin for each new pinned position.",
   "socket_leverage": "Leverage (x)",
   "socket_leverage_hint": "Each pin uses all available cash as margin. Leverage increases the position notional; 1x means no leverage.",
   "socket_fee_hint": "Applied on both buy and sell transactions.",
