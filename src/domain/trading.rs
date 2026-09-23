@@ -201,6 +201,7 @@ impl Portfolio {
 #[derive(Debug, Clone, PartialEq)]
 pub struct HoldingSummary {
     pub symbol: String,
+    pub side: PositionSide,
     pub quantity: f64,
     pub market_value: f64,
     pub pnl: f64,
@@ -259,6 +260,7 @@ pub fn summarize_portfolio(
         unrealized_pnl += pnl;
         holdings.push(HoldingSummary {
             symbol: position.symbol.clone(),
+            side: position.side,
             quantity: position.quantity,
             market_value: value,
             pnl,
