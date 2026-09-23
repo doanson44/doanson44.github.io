@@ -19,22 +19,42 @@ pub struct MarketStock {
     pub market_cap: f64,
 }
 
-/// The market response returned by the CafeF market-data endpoint.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+/// Normalized market data returned by the CafeF market-data endpoint.
+#[derive(Debug, Clone, PartialEq)]
 pub struct MarketResponse {
-    #[serde(rename = "totalItems")]
     pub total_items: usize,
-    #[serde(rename = "displayedItems")]
     pub displayed_items: usize,
-    #[serde(rename = "limitApplied")]
-    pub limit_applied: usize,
-    #[serde(rename = "data")]
     pub data: Vec<MarketStock>,
 }
 
-/// Parses a CafeF market-data response into domain data.
+#[derive(Debug, Deserialize)]
+struct CafeFMarketResponse {
+    #[serde(rename = "Data")]
+    data: Vec<MarketStock>,
+    #[serde(rename = "Success")]
+    success: bool,
+    #[serde(rename = "Message")]
+    message: Option<String>,
+}
+
+/// Parses a CafeF market-data response into normalized domain data.
 pub fn parse_market_response(raw: &str) -> Result<MarketResponse, String> {
-    serde_json::from_str(raw).map_err(|error| format!("Invalid CafeF market response: {error}"))
+    let response: CafeFMarketResponse =
+        serde_json::from_str(raw).map_err(|error| format!("Invalid CafeF market response: {error}"))?;
+
+    if !response.success {
+        return Err(response
+            .message
+            .unwrap_or_else(|| "CafeF market request was unsuccessful".to_string()));
+    }
+
+    let total_items = response.data.len();
+
+    Ok(MarketResponse {
+        total_items,
+        displayed_items: total_items,
+        data: response.data,
+    })
 }
 
 #[cfg(test)]
@@ -42,15 +62,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_market_response() {
+    fn parses_cafef_market_response() {
         let response = parse_market_response(
-            r#"{"totalItems":1,"displayedItems":1,"limitApplied":1,"data":[{"Symbol":"TCB","Result":17998400,"Color":1,"Price":33.05,"ChangePercent":2.32,"Change":0.75,"Name":"Techcombank","TotalVolume":17998400,"TotalValue":33.05,"MarketCap":234200245682699.97}]}"#,
-        ).expect("valid market response should parse");
+            r#"{"Data":[{"Symbol":"TCB","Result":17998400,"Color":1,"Price":33.05,"ChangePercent":2.32,"Change":0.75,"Name":"Techcombank","TotalVolume":17998400,"TotalValue":33.05,"MarketCap":234200245682699.97}],"Success":true,"Message":null}"#,
+        )
+        .expect("valid market response should parse");
+
         assert_eq!(response.total_items, 1);
+        assert_eq!(response.displayed_items, 1);
         assert_eq!(response.data[0].symbol, "TCB");
         assert_eq!(response.data[0].price, 33.05);
         assert_eq!(response.data[0].change_percent, 2.32);
         assert_eq!(response.data[0].total_volume, 17998400.0);
+    }
+
+    #[test]
+    fn rejects_unsuccessful_response() {
+        let result = parse_market_response(
+            r#"{"Data":[],"Success":false,"Message":"Market data unavailable"}"#,
+        );
+
+        assert_eq!(
+            result.unwrap_err(),
+            "Market data unavailable"
+        );
     }
 
     #[test]
