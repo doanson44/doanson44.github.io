@@ -269,14 +269,14 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
 }
 
 fn format_currency(value: f64) -> String {
-    format!("$ {value:.2}")
+    format!("{value:.2} USDT")
 }
 
 fn format_signed_currency(value: f64) -> String {
     if value >= 0.0 {
-        format!("+${value:.2}")
+        format!("+{value:.2} USDT")
     } else {
-        format!("-${:.2}", value.abs())
+        format!("-{:.2} USDT", value.abs())
     }
 }
 
