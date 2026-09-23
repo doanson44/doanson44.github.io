@@ -1023,7 +1023,23 @@ pub fn validate_input(
     let received = input.market_data.candles.len();
     let mut issues = Vec::new();
 
-    for (index, candle) in input.market_data.candles.iter().enumerate() {
+    let mut candles = input.market_data.candles.clone();
+    candles.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+
+    if received > requirements.maximum_candles {
+        issues.push(issue(
+            "MAXIMUM_CANDLES_EXCEEDED",
+            format!(
+                "Received {received} candles; maximum is {}",
+                requirements.maximum_candles
+            ),
+        ));
+        let start = received - requirements.maximum_candles;
+        candles = candles[start..].to_vec();
+    }
+
+    let mut valid_candles = Vec::with_capacity(candles.len());
+    for (index, candle) in candles.iter().enumerate() {
         if candle.timestamp.trim().is_empty() {
             issues.push(issue(
                 "MISSING_TIMESTAMP",
@@ -1051,17 +1067,20 @@ pub fn validate_input(
                 format!("Candle {index} contains a non-positive price"),
             ));
         }
-        if candle.high < candle.low
+
+        let invalid_ohlc = candle.high < candle.low
             || candle.high < candle.open
             || candle.high < candle.close
             || candle.low > candle.open
-            || candle.low > candle.close
-        {
+            || candle.low > candle.close;
+        if invalid_ohlc {
             issues.push(issue(
                 "INVALID_OHLC",
-                format!("Candle {index} violates OHLC bounds"),
+                format!("Candle {index} violates OHLC bounds; candle skipped"),
             ));
+            continue;
         }
+
         if candle.volume < 0.0 {
             issues.push(issue(
                 "INVALID_VOLUME",
@@ -1073,10 +1092,10 @@ pub fn validate_input(
                 format!("Candle {index} has zero volume"),
             ));
         }
-    }
 
-    let mut candles = input.market_data.candles.clone();
-    candles.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+        valid_candles.push(candle.clone());
+    }
+    candles = valid_candles;
 
     for pair in candles.windows(2) {
         if pair[0].timestamp == pair[1].timestamp {
@@ -1085,18 +1104,6 @@ pub fn validate_input(
                 format!("Duplicate candle timestamp: {}", pair[0].timestamp),
             ));
         }
-    }
-
-    if received > requirements.maximum_candles {
-        issues.push(issue(
-            "MAXIMUM_CANDLES_EXCEEDED",
-            format!(
-                "Received {received} candles; maximum is {}",
-                requirements.maximum_candles
-            ),
-        ));
-        let start = received - requirements.maximum_candles;
-        candles = candles[start..].to_vec();
     }
 
     let candles_used = candles.len();
