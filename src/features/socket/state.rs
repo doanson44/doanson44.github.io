@@ -11,7 +11,7 @@ use wasm_bindgen::{closure::Closure, JsCast};
 
 use crate::application::{
     ports::{FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream},
-    services::{market::MarketService, FuturesMarketService, TechnicalAnalysisService},
+    services::{market::MarketService, technical_analysis::TechnicalAnalysisService, FuturesMarketService},
 };
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
