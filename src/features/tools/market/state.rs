@@ -20,6 +20,7 @@ pub struct MarketState {
     pub pinned_symbols: RwSignal<Vec<String>>,
     pub analysis_loading: RwSignal<bool>,
     pub analysis_json: RwSignal<Option<String>>,
+    pub analysis_text: RwSignal<Option<String>>,
     pub analysis_symbol: RwSignal<Option<String>>,
     pub analysis_modal_open: RwSignal<bool>,
     pub analysis_error: RwSignal<Option<String>>,
@@ -44,6 +45,7 @@ impl MarketState {
             pinned_symbols: RwSignal::new(Vec::new()),
             analysis_loading: RwSignal::new(false),
             analysis_json: RwSignal::new(None),
+            analysis_text: RwSignal::new(None),
             analysis_symbol: RwSignal::new(None),
             analysis_modal_open: RwSignal::new(false),
             analysis_error: RwSignal::new(None),
@@ -99,6 +101,7 @@ impl MarketState {
 
         let analysis_loading = self.analysis_loading;
         let analysis_json = self.analysis_json;
+        let analysis_text = self.analysis_text;
         let analysis_modal_open = self.analysis_modal_open;
         let analysis_error = self.analysis_error;
         let analysis_copied = self.analysis_copied;
@@ -112,14 +115,15 @@ impl MarketState {
             Rc::new(move |result| {
                 analysis_loading.set(false);
                 match result.and_then(|raw| {
-                    TechnicalAnalysisService::analyze_price_history(
+                    TechnicalAnalysisService::analyze_price_history_report(
                         &raw,
                         &symbol,
                         browser::now_iso8601(),
                     )
                 }) {
-                    Ok(json) => {
+                    Ok((json, report)) => {
                         analysis_json.set(Some(json.clone()));
+                        analysis_text.set(Some(report));
                         analysis_modal_open.set(!copy_result);
                         analysis_error.set(None);
                         if copy_result {
@@ -133,6 +137,7 @@ impl MarketState {
                     }
                     Err(message) => {
                         analysis_json.set(None);
+                        analysis_text.set(None);
                         analysis_modal_open.set(false);
                         analysis_error.set(Some(message));
                     }
