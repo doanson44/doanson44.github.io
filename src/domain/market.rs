@@ -23,7 +23,7 @@ pub struct MarketStock {
 #[derive(Debug, Clone, PartialEq)]
 pub struct MarketPriceHistoryCandle {
     pub symbol: String,
-    pub trade_date: String,
+    pub timestamp: String,
     pub basic_price: f64,
     pub open: f64,
     pub high: f64,
@@ -47,7 +47,7 @@ struct CafeFPriceHistoryRecord {
     #[serde(rename = "Symbol")]
     symbol: String,
     #[serde(rename = "TradeDate")]
-    trade_date: String,
+    timestamp: String,
     #[serde(rename = "BasicPrice")]
     basic_price: f64,
     #[serde(rename = "OpenPrice")]
@@ -79,7 +79,7 @@ pub fn parse_price_history_response(raw: &str, symbol: &str) -> Result<MarketPri
         .filter(|record| record.symbol.eq_ignore_ascii_case(&requested_symbol))
         .map(|record| MarketPriceHistoryCandle {
             symbol: record.symbol,
-            trade_date: record.trade_date,
+            timestamp: record.timestamp,
             basic_price: record.basic_price,
             open: record.open,
             high: record.high,
@@ -92,7 +92,7 @@ pub fn parse_price_history_response(raw: &str, symbol: &str) -> Result<MarketPri
         })
         .collect::<Vec<_>>();
 
-    candles.sort_by(|left, right| left.trade_date.cmp(&right.trade_date));
+    candles.sort_by(|left, right| left.timestamp.cmp(&right.timestamp));
 
     if candles.is_empty() {
         return Err(format!(
@@ -183,6 +183,7 @@ mod tests {
         assert_eq!(result.symbol, "VNM");
         assert_eq!(result.candles.len(), 1);
         assert_eq!(result.candles[0].close, 61.2);
+        assert_eq!(result.candles[0].timestamp, "2026-09-22T00:00:00");
         assert_eq!(result.candles[0].volume, 1_774_600.0);
         assert_eq!(result.candles[0].ceiling, Some(64.5));
     }
