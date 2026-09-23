@@ -19,7 +19,7 @@ impl TechnicalAnalysisService {
             .candles
             .into_iter()
             .map(|candle| Candle {
-                timestamp: candle.trade_date,
+                timestamp: candle.timestamp,
                 open: candle.open,
                 high: candle.high,
                 low: candle.low,
