@@ -979,15 +979,25 @@ pub struct AssetOutput {
     pub timeframe: String,
 }
 
-fn default_swing_lookback() -> usize { 5 }
+fn default_swing_lookback() -> usize {
+    5
+}
 
-fn default_support_resistance_lookback() -> usize { 120 }
+fn default_support_resistance_lookback() -> usize {
+    120
+}
 
-fn default_cluster_tolerance() -> f64 { 1.0 }
+fn default_cluster_tolerance() -> f64 {
+    1.0
+}
 
-fn default_minimum_touches() -> usize { 2 }
+fn default_minimum_touches() -> usize {
+    2
+}
 
-fn default_volume_ratio() -> f64 { 1.5 }
+fn default_volume_ratio() -> f64 {
+    1.5
+}
 
 /// Validates the input and returns a normalized candle vector.
 pub fn validate_input(
@@ -1015,20 +1025,32 @@ pub fn validate_input(
 
     for (index, candle) in input.market_data.candles.iter().enumerate() {
         if candle.timestamp.trim().is_empty() {
-            issues.push(issue("MISSING_TIMESTAMP", format!("Candle {index} has no timestamp")));
+            issues.push(issue(
+                "MISSING_TIMESTAMP",
+                format!("Candle {index} has no timestamp"),
+            ));
         }
-        if ![candle.open, candle.high, candle.low, candle.close, candle.volume]
-            .iter()
-            .all(|value| value.is_finite())
+        if ![
+            candle.open,
+            candle.high,
+            candle.low,
+            candle.close,
+            candle.volume,
+        ]
+        .iter()
+        .all(|value| value.is_finite())
         {
-            issues.push(issue("INVALID_NUMBER", format!("Candle {index} contains a non-finite value")));
+            issues.push(issue(
+                "INVALID_NUMBER",
+                format!("Candle {index} contains a non-finite value"),
+            ));
         }
-        if candle.open <= 0.0
-            || candle.high <= 0.0
-            || candle.low <= 0.0
-            || candle.close <= 0.0
+        if candle.open <= 0.0 || candle.high <= 0.0 || candle.low <= 0.0 || candle.close <= 0.0
         {
-            issues.push(issue("INVALID_PRICE", format!("Candle {index} contains a non-positive price")));
+            issues.push(issue(
+                "INVALID_PRICE",
+                format!("Candle {index} contains a non-positive price"),
+            ));
         }
         if candle.high < candle.low
             || candle.high < candle.open
@@ -1036,12 +1058,21 @@ pub fn validate_input(
             || candle.low > candle.open
             || candle.low > candle.close
         {
-            issues.push(issue("INVALID_OHLC", format!("Candle {index} violates OHLC bounds")));
+            issues.push(issue(
+                "INVALID_OHLC",
+                format!("Candle {index} violates OHLC bounds"),
+            ));
         }
         if candle.volume < 0.0 {
-            issues.push(issue("INVALID_VOLUME", format!("Candle {index} has negative volume")));
+            issues.push(issue(
+                "INVALID_VOLUME",
+                format!("Candle {index} has negative volume"),
+            ));
         } else if candle.volume == 0.0 {
-            issues.push(issue("ZERO_VOLUME", format!("Candle {index} has zero volume")));
+            issues.push(issue(
+                "ZERO_VOLUME",
+                format!("Candle {index} has zero volume"),
+            ));
         }
     }
 
@@ -1083,7 +1114,8 @@ pub fn validate_input(
             candles_received: received,
             candles_used: candles.len(),
             minimum_required: requirements.minimum_candles,
-            sufficient_for_analysis: candles.len() >= requirements.minimum_candles && !has_fatal_issue,
+            sufficient_for_analysis: candles.len() >= requirements.minimum_candles
+                && !has_fatal_issue,
             issues,
             coverage,
         },
@@ -1269,7 +1301,9 @@ pub fn analyze(
 ) -> Result<AnalysisResult, String> {
     let (candles, data_quality) = validate_input(input, &config.data_requirements)?;
     if !data_quality.sufficient_for_analysis {
-        return Err("Market data does not satisfy the configured analysis requirements".to_string());
+        return Err(
+            "Market data does not satisfy the configured analysis requirements".to_string(),
+        );
     }
 
     let closes: Vec<f64> = candles.iter().map(|c| c.close).collect();
@@ -1368,9 +1402,17 @@ pub fn analyze(
     let rsi_current = rsi_values.last().copied().flatten();
     let rsi_analysis = RsiAnalysis {
         value: rsi_current,
-        state: rsi_current.map_or_else(|| "unavailable".to_string(), |value| {
-            if value >= 50.0 { "positive" } else { "negative" }.to_string()
-        }),
+        state: rsi_current.map_or_else(
+            || "unavailable".to_string(),
+            |value| {
+                if value >= 50.0 {
+                    "positive"
+                } else {
+                    "negative"
+                }
+                .to_string()
+            },
+        ),
         above_50: rsi_current.is_some_and(|value| value >= 50.0),
         overbought: rsi_current.is_some_and(|value| value >= 70.0),
         oversold: rsi_current.is_some_and(|value| value <= 30.0),
@@ -1498,7 +1540,10 @@ pub fn analyze(
             Ok(PeriodValue {
                 period: *period,
                 value: sma(
-                    &candles.iter().map(|candle| candle.volume).collect::<Vec<_>>(),
+                    &candles
+                        .iter()
+                        .map(|candle| candle.volume)
+                        .collect::<Vec<_>>(),
                     *period,
                 )?
                 .last()
@@ -1520,7 +1565,9 @@ pub fn analyze(
     } else {
         None
     };
-    let obv_current = obv_values.as_ref().and_then(|values| values.last().copied());
+    let obv_current = obv_values
+        .as_ref()
+        .and_then(|values| values.last().copied());
     let obv_trend = obv_values.as_ref().map_or_else(
         || "unavailable".to_string(),
         |values| {
@@ -1554,10 +1601,7 @@ pub fn analyze(
         &config.market_structure,
         &config.breakout_detection,
     );
-    let support_resistance = support_resistance_analysis(
-        &candles,
-        &config.market_structure,
-    );
+    let support_resistance = support_resistance_analysis(&candles, &config.market_structure);
     let breakout = breakout_analysis(
         latest,
         &support_resistance,
@@ -1831,15 +1875,17 @@ fn market_structure_analysis(
     }
 
     let state = match sequence.as_slice() {
-        sequence if sequence.iter().any(|value| value == "HH")
-            && sequence.iter().any(|value| value == "HL")
-            && !sequence.iter().any(|value| value == "LL") =>
+        sequence
+            if sequence.iter().any(|value| value == "HH")
+                && sequence.iter().any(|value| value == "HL")
+                && !sequence.iter().any(|value| value == "LL") =>
         {
             "higher_high_higher_low".to_string()
         }
-        sequence if sequence.iter().any(|value| value == "LH")
-            && sequence.iter().any(|value| value == "LL")
-            && !sequence.iter().any(|value| value == "HH") =>
+        sequence
+            if sequence.iter().any(|value| value == "LH")
+                && sequence.iter().any(|value| value == "LL")
+                && !sequence.iter().any(|value| value == "HH") =>
         {
             "lower_high_lower_low".to_string()
         }
@@ -1849,8 +1895,12 @@ fn market_structure_analysis(
     let latest = candles.last().map(|candle| candle.close);
     let last_high = highs.last().copied();
     let last_low = lows.last().copied();
-    let bullish_break = latest.zip(last_high).is_some_and(|(price, swing)| price > swing.price);
-    let bearish_break = latest.zip(last_low).is_some_and(|(price, swing)| price < swing.price);
+    let bullish_break = latest
+        .zip(last_high)
+        .is_some_and(|(price, swing)| price > swing.price);
+    let bearish_break = latest
+        .zip(last_low)
+        .is_some_and(|(price, swing)| price < swing.price);
     let bos = if breakout_config.enabled && bullish_break {
         StructureBreak {
             detected: true,
@@ -2200,17 +2250,13 @@ fn engine_summary(
     levels: &KeyLevels,
     conflicts: &[Conflict],
 ) -> EngineSummary {
-    let volume_confirmation = volume
-        .ratio_vs_primary
-        .is_some_and(|ratio| ratio >= 1.5);
+    let volume_confirmation = volume.ratio_vs_primary.is_some_and(|ratio| ratio >= 1.5);
     let dominant_state = if trend.state == "bullish" && !volume_confirmation {
         "bullish_but_unconfirmed"
     } else {
         regime.overall.as_str()
     };
-    let most_important_level = breakout
-        .resistance_level
-        .or(levels.immediate_support);
+    let most_important_level = breakout.resistance_level.or(levels.immediate_support);
     let main_risk = conflicts
         .first()
         .map(|conflict| conflict.description.clone())
@@ -2232,10 +2278,7 @@ fn engine_summary(
     }
 }
 
-fn stochastic_d(
-    values: &[Option<f64>],
-    period: usize,
-) -> Result<Vec<Option<f64>>, String> {
+fn stochastic_d(values: &[Option<f64>], period: usize) -> Result<Vec<Option<f64>>, String> {
     if period == 0 {
         return Err("Stochastic D period must be greater than zero".to_string());
     }
@@ -2342,7 +2385,8 @@ mod tests {
             recommended_candles: 2,
             maximum_candles: 10,
         };
-        let (_, quality) = validate_input(&input, &requirements).expect("validation should return a report");
+        let (_, quality) =
+            validate_input(&input, &requirements).expect("validation should return a report");
         assert!(!quality.issues.is_empty());
         assert!(!quality.sufficient_for_analysis);
     }
