@@ -1445,6 +1445,39 @@ pub fn analyze(
         obv_trend,
     };
 
+    let market_structure = market_structure_analysis(
+        &candles,
+        &config.market_structure,
+        &config.breakout_detection,
+    );
+    let support_resistance = support_resistance_analysis(
+        &candles,
+        &config.market_structure,
+    );
+    let breakout = breakout_analysis(
+        latest,
+        &support_resistance,
+        &volume,
+        &config.breakout_detection,
+    );
+    let patterns = pattern_analysis(&market_structure);
+    let divergences = divergence_analysis(&candles, &rsi_values, &market_structure);
+    let regime = regime_analysis(&trend, &momentum, &volatility, &volume);
+    let signals = signal_analysis(&trend, &momentum, &volume);
+    let conflicts = conflict_analysis(&trend, &volume);
+    let scenarios = scenario_analysis(&support_resistance, &breakout, &momentum);
+    let key_levels = key_levels(&support_resistance);
+    let engine_summary = engine_summary(
+        &trend,
+        &momentum,
+        &market_structure,
+        &volume,
+        &regime,
+        &breakout,
+        &key_levels,
+        &conflicts,
+    );
+
     Ok(AnalysisResult {
         schema_version: config.schema_version.clone(),
         engine: EngineOutput {
@@ -1466,6 +1499,17 @@ pub fn analyze(
         momentum,
         volatility,
         volume,
+        market_structure,
+        support_resistance,
+        breakout,
+        patterns,
+        divergences,
+        regime,
+        signals,
+        conflicts,
+        scenarios,
+        key_levels,
+        engine_summary,
     })
 }
 
@@ -1543,6 +1587,499 @@ fn alignment_description(
             "Price < EMA20 < EMA50 < EMA200".to_string()
         }
         _ => "No complete EMA20/EMA50/EMA200 alignment".to_string(),
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum SwingKind {
+    High,
+    Low,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Swing {
+    index: usize,
+    price: f64,
+    kind: SwingKind,
+}
+
+fn detect_swings(candles: &[Candle], lookback: usize) -> Vec<Swing> {
+    if lookback == 0 || candles.len() < lookback * 2 + 1 {
+        return Vec::new();
+    }
+
+    let mut swings = Vec::new();
+    for index in lookback..candles.len() - lookback {
+        let candle = &candles[index];
+        let left = &candles[index - lookback..index];
+        let right = &candles[index + 1..=index + lookback];
+        if left.iter().all(|item| candle.high > item.high)
+            && right.iter().all(|item| candle.high >= item.high)
+        {
+            swings.push(Swing {
+                index,
+                price: candle.high,
+                kind: SwingKind::High,
+            });
+        }
+        if left.iter().all(|item| candle.low < item.low)
+            && right.iter().all(|item| candle.low <= item.low)
+        {
+            swings.push(Swing {
+                index,
+                price: candle.low,
+                kind: SwingKind::Low,
+            });
+        }
+    }
+    swings.sort_by_key(|swing| swing.index);
+    swings
+}
+
+fn market_structure_analysis(
+    candles: &[Candle],
+    config: &MarketStructureConfig,
+    breakout_config: &BreakoutConfig,
+) -> MarketStructureAnalysis {
+    let swings = if config.enabled {
+        detect_swings(candles, config.swing_detection.lookback)
+    } else {
+        Vec::new()
+    };
+
+    let highs: Vec<Swing> = swings
+        .iter()
+        .copied()
+        .filter(|swing| swing.kind == SwingKind::High)
+        .collect();
+    let lows: Vec<Swing> = swings
+        .iter()
+        .copied()
+        .filter(|swing| swing.kind == SwingKind::Low)
+        .collect();
+
+    let mut sequence = Vec::new();
+    let mut previous_high = None;
+    let mut previous_low = None;
+    for swing in &swings {
+        match swing.kind {
+            SwingKind::High => {
+                if let Some(previous) = previous_high {
+                    sequence.push(if swing.price > previous { "HH" } else { "LH" }.to_string());
+                }
+                previous_high = Some(swing.price);
+            }
+            SwingKind::Low => {
+                if let Some(previous) = previous_low {
+                    sequence.push(if swing.price > previous { "HL" } else { "LL" }.to_string());
+                }
+                previous_low = Some(swing.price);
+            }
+        }
+    }
+    if sequence.len() > 4 {
+        sequence = sequence[sequence.len() - 4..].to_vec();
+    }
+
+    let state = match sequence.as_slice() {
+        sequence if sequence.iter().any(|value| value == "HH")
+            && sequence.iter().any(|value| value == "HL")
+            && !sequence.iter().any(|value| value == "LL") =>
+        {
+            "higher_high_higher_low".to_string()
+        }
+        sequence if sequence.iter().any(|value| value == "LH")
+            && sequence.iter().any(|value| value == "LL")
+            && !sequence.iter().any(|value| value == "HH") =>
+        {
+            "lower_high_lower_low".to_string()
+        }
+        _ => "range".to_string(),
+    };
+
+    let latest = candles.last().map(|candle| candle.close);
+    let last_high = highs.last().copied();
+    let last_low = lows.last().copied();
+    let bullish_break = latest.zip(last_high).is_some_and(|(price, swing)| price > swing.price);
+    let bearish_break = latest.zip(last_low).is_some_and(|(price, swing)| price < swing.price);
+    let bos = if breakout_config.enabled && bullish_break {
+        StructureBreak {
+            detected: true,
+            direction: Some("up".to_string()),
+            level: last_high.map(|swing| swing.price),
+        }
+    } else if breakout_config.enabled && bearish_break {
+        StructureBreak {
+            detected: true,
+            direction: Some("down".to_string()),
+            level: last_low.map(|swing| swing.price),
+        }
+    } else {
+        StructureBreak {
+            detected: false,
+            direction: None,
+            level: None,
+        }
+    };
+
+    MarketStructureAnalysis {
+        state,
+        swing_points: SwingPoints {
+            last_swing_high: last_high.map(|swing| LevelPoint {
+                price: swing.price,
+                date: candles[swing.index].timestamp.clone(),
+            }),
+            last_swing_low: last_low.map(|swing| LevelPoint {
+                price: swing.price,
+                date: candles[swing.index].timestamp.clone(),
+            }),
+        },
+        structure_sequence: sequence,
+        break_of_structure: bos.clone(),
+        change_of_character: StructureBreak {
+            detected: false,
+            direction: None,
+            level: None,
+        },
+    }
+}
+
+fn support_resistance_analysis(
+    candles: &[Candle],
+    config: &MarketStructureConfig,
+) -> SupportResistanceAnalysis {
+    if !config.enabled || candles.is_empty() {
+        return SupportResistanceAnalysis {
+            supports: Vec::new(),
+            resistances: Vec::new(),
+        };
+    }
+
+    let lookback = config.support_resistance.lookback.min(candles.len());
+    let start = candles.len() - lookback;
+    let recent = &candles[start..];
+    let swings = detect_swings(recent, config.swing_detection.lookback);
+    let tolerance = config.support_resistance.cluster_tolerance_percent / 100.0;
+    let mut supports = Vec::new();
+    let mut resistances = Vec::new();
+
+    for kind in [SwingKind::Low, SwingKind::High] {
+        let mut levels: Vec<f64> = swings
+            .iter()
+            .filter(|swing| swing.kind == kind)
+            .map(|swing| swing.price)
+            .collect();
+        levels.sort_by(|a, b| a.total_cmp(b));
+
+        let mut clusters: Vec<Vec<f64>> = Vec::new();
+        for level in levels {
+            if let Some(cluster) = clusters.last_mut() {
+                let reference = cluster.iter().sum::<f64>() / cluster.len() as f64;
+                if reference != 0.0 && (level - reference).abs() / reference <= tolerance {
+                    cluster.push(level);
+                    continue;
+                }
+            }
+            clusters.push(vec![level]);
+        }
+
+        for cluster in clusters {
+            if cluster.len() < config.support_resistance.minimum_touches {
+                continue;
+            }
+            let low = cluster.iter().copied().fold(f64::INFINITY, f64::min);
+            let high = cluster.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+            let strength = (cluster.len() as f64 / 5.0).min(1.0);
+            let zone = PriceZone {
+                zone: ZoneBounds { low, high },
+                strength,
+                touches: cluster.len(),
+            };
+            if kind == SwingKind::Low {
+                supports.push(zone);
+            } else {
+                resistances.push(zone);
+            }
+        }
+    }
+
+    supports.sort_by(|a, b| b.zone.high.total_cmp(&a.zone.high));
+    resistances.sort_by(|a, b| a.zone.low.total_cmp(&b.zone.low));
+    SupportResistanceAnalysis {
+        supports,
+        resistances,
+    }
+}
+
+fn breakout_analysis(
+    latest: &Candle,
+    levels: &SupportResistanceAnalysis,
+    volume: &VolumeAnalysis,
+    config: &BreakoutConfig,
+) -> BreakoutAnalysis {
+    let resistance = levels
+        .resistances
+        .iter()
+        .find(|level| level.zone.low > latest.close)
+        .map(|level| level.zone.low);
+    let Some(resistance_level) = resistance else {
+        return BreakoutAnalysis {
+            status: "none".to_string(),
+            resistance_level: None,
+            direction: None,
+            distance_percent: None,
+            volume_confirmation: false,
+            retest: RetestAnalysis { detected: false },
+        };
+    };
+
+    let distance_percent = if resistance_level == 0.0 {
+        None
+    } else {
+        Some((resistance_level - latest.close) / resistance_level * 100.0)
+    };
+    let ratio = volume.ratio_vs_primary.unwrap_or(0.0);
+    let confirmed = config.volume_confirmation.enabled
+        && ratio >= config.volume_confirmation.minimum_volume_ratio;
+    let status = if latest.close > resistance_level {
+        "broken"
+    } else if distance_percent.is_some_and(|distance| distance <= 2.0) {
+        "approaching"
+    } else {
+        "none"
+    };
+
+    BreakoutAnalysis {
+        status: status.to_string(),
+        resistance_level: Some(resistance_level),
+        direction: Some("up".to_string()),
+        distance_percent,
+        volume_confirmation: confirmed,
+        retest: RetestAnalysis { detected: false },
+    }
+}
+
+fn pattern_analysis(structure: &MarketStructureAnalysis) -> Vec<Pattern> {
+    if structure.state == "higher_high_higher_low" && structure.structure_sequence.len() >= 3 {
+        vec![Pattern {
+            name: "ascending_structure".to_string(),
+            pattern_type: "chart_pattern".to_string(),
+            status: "forming".to_string(),
+            confidence: 0.72,
+        }]
+    } else {
+        Vec::new()
+    }
+}
+
+fn divergence_analysis(
+    candles: &[Candle],
+    rsi_values: &[Option<f64>],
+    structure: &MarketStructureAnalysis,
+) -> Vec<Divergence> {
+    let _ = candles;
+    let _ = rsi_values;
+    let _ = structure;
+    Vec::new()
+}
+
+fn regime_analysis(
+    trend: &TrendAnalysis,
+    momentum: &MomentumAnalysis,
+    volatility: &VolatilityAnalysis,
+    volume: &VolumeAnalysis,
+) -> RegimeAnalysis {
+    let momentum_state = momentum.rsi.state.clone();
+    let volume_state = if volume.state == "above_average" {
+        "expanding".to_string()
+    } else if volume.state == "below_average" {
+        "neutral".to_string()
+    } else {
+        "neutral".to_string()
+    };
+    let overall = if trend.state == "bullish" && momentum_state == "positive" {
+        "bullish".to_string()
+    } else if trend.state == "bearish" && momentum_state == "negative" {
+        "bearish".to_string()
+    } else {
+        "range".to_string()
+    };
+    RegimeAnalysis {
+        trend: trend.state.clone(),
+        momentum: momentum_state,
+        volatility: volatility.state.clone(),
+        volume: volume_state,
+        overall,
+    }
+}
+
+fn signal_analysis(
+    trend: &TrendAnalysis,
+    momentum: &MomentumAnalysis,
+    volume: &VolumeAnalysis,
+) -> Vec<Signal> {
+    let mut signals = Vec::new();
+    if trend.state == "bullish" {
+        let mut evidence = Vec::new();
+        if trend.alignment.bullish {
+            evidence.push("Price above EMA20".to_string());
+            evidence.push("EMA20 above EMA50".to_string());
+            evidence.push("EMA50 above EMA200".to_string());
+        }
+        signals.push(Signal {
+            id: "SIG001".to_string(),
+            direction: "bullish".to_string(),
+            category: "trend".to_string(),
+            strength: if evidence.len() >= 3 {
+                "strong".to_string()
+            } else {
+                "moderate".to_string()
+            },
+            evidence,
+        });
+    }
+
+    if momentum.rsi.above_50 || momentum.macd.state == "bullish" {
+        let mut evidence = Vec::new();
+        if momentum.rsi.above_50 {
+            evidence.push("RSI above 50".to_string());
+        }
+        if momentum.macd.state == "bullish" {
+            evidence.push("MACD bullish".to_string());
+        }
+        if momentum.macd.histogram_direction == "increasing" {
+            evidence.push("MACD histogram increasing".to_string());
+        }
+        signals.push(Signal {
+            id: "SIG002".to_string(),
+            direction: "bullish".to_string(),
+            category: "momentum".to_string(),
+            strength: "moderate".to_string(),
+            evidence,
+        });
+    }
+
+    if volume.state == "below_average" {
+        signals.push(Signal {
+            id: "SIG003".to_string(),
+            direction: "bearish".to_string(),
+            category: "volume".to_string(),
+            strength: "moderate".to_string(),
+            evidence: vec!["Volume below primary moving average".to_string()],
+        });
+    }
+    signals
+}
+
+fn conflict_analysis(trend: &TrendAnalysis, volume: &VolumeAnalysis) -> Vec<Conflict> {
+    if trend.state == "bullish" && volume.state == "below_average" {
+        vec![Conflict {
+            conflict_type: "volume_price_mismatch".to_string(),
+            description: "Price structure is bullish but volume has not expanded.".to_string(),
+        }]
+    } else {
+        Vec::new()
+    }
+}
+
+fn scenario_analysis(
+    levels: &SupportResistanceAnalysis,
+    breakout: &BreakoutAnalysis,
+    momentum: &MomentumAnalysis,
+) -> ScenarioAnalysis {
+    let resistance = breakout.resistance_level;
+    let support = levels.supports.first().map(|level| level.zone.low);
+    let confirmation = vec![
+        "Volume expands above the configured confirmation ratio".to_string(),
+        "Price holds above the breakout level".to_string(),
+        "RSI remains above 50".to_string(),
+    ];
+    ScenarioAnalysis {
+        bullish: Scenario {
+            status: "possible".to_string(),
+            trigger: resistance.map(|level| ScenarioCondition {
+                condition: format!("Daily close above {level:.2}"),
+            }),
+            confirmation,
+            invalidation: support.map(|level| ScenarioCondition {
+                condition: format!("Daily close below {level:.2}"),
+            }),
+        },
+        bearish: Scenario {
+            status: "possible".to_string(),
+            trigger: support.map(|level| ScenarioCondition {
+                condition: format!("Daily close below {level:.2}"),
+            }),
+            confirmation: vec![
+                "Volume expansion".to_string(),
+                "RSI below 50".to_string(),
+                "Break of the recent higher low".to_string(),
+            ],
+            invalidation: resistance.map(|level| ScenarioCondition {
+                condition: format!("Price reclaims {level:.2}"),
+            }),
+        },
+        range: RangeScenario {
+            status: "possible".to_string(),
+            upper_boundary: resistance,
+            lower_boundary: support,
+            condition: if momentum.rsi.state == "positive" {
+                "Price remains inside the established range while momentum stays positive."
+                    .to_string()
+            } else {
+                "Price remains inside the established range.".to_string()
+            },
+        },
+    }
+}
+
+fn key_levels(levels: &SupportResistanceAnalysis) -> KeyLevels {
+    KeyLevels {
+        immediate_support: levels.supports.first().map(|level| level.zone.low),
+        major_support: levels.supports.get(1).map(|level| level.zone.low),
+        immediate_resistance: levels.resistances.first().map(|level| level.zone.high),
+    }
+}
+
+fn engine_summary(
+    trend: &TrendAnalysis,
+    momentum: &MomentumAnalysis,
+    structure: &MarketStructureAnalysis,
+    volume: &VolumeAnalysis,
+    regime: &RegimeAnalysis,
+    breakout: &BreakoutAnalysis,
+    levels: &KeyLevels,
+    conflicts: &[Conflict],
+) -> EngineSummary {
+    let volume_confirmation = volume
+        .ratio_vs_primary
+        .is_some_and(|ratio| ratio >= 1.5);
+    let dominant_state = if trend.state == "bullish" && !volume_confirmation {
+        "bullish_but_unconfirmed"
+    } else {
+        regime.overall.as_str()
+    };
+    let most_important_level = breakout
+        .resistance_level
+        .or(levels.immediate_support);
+    let main_risk = conflicts
+        .first()
+        .map(|conflict| conflict.description.clone())
+        .unwrap_or_else(|| "No dominant conflict detected.".to_string());
+
+    EngineSummary {
+        dominant_state: dominant_state.to_string(),
+        trend: trend.state.clone(),
+        momentum: momentum.rsi.state.clone(),
+        structure: structure.state.clone(),
+        volume_confirmation,
+        volatility: "normal".to_string(),
+        most_important_level,
+        most_important_confirmation: breakout
+            .resistance_level
+            .map(|level| format!("Break above {level:.2} with volume expansion"))
+            .unwrap_or_else(|| "Wait for a confirmed support/resistance level.".to_string()),
+        main_risk,
     }
 }
 
