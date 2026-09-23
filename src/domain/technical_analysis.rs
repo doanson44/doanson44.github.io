@@ -2086,7 +2086,7 @@ fn regime_analysis(
     volatility: &VolatilityAnalysis,
     volume: &VolumeAnalysis,
 ) -> RegimeAnalysis {
-    let momentum_state = input.momentum.rsi.state.clone();
+    let momentum_state = momentum.rsi.state.clone();
     let volume_state = if volume.state == "above_average" {
         "expanding".to_string()
     } else {
@@ -2100,7 +2100,7 @@ fn regime_analysis(
         "range".to_string()
     };
     RegimeAnalysis {
-        trend: input.trend.state.clone(),
+        trend: trend.state.clone(),
         momentum: momentum_state,
         volatility: volatility.state.clone(),
         volume: volume_state,
@@ -2262,6 +2262,7 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
         .resistance_level
         .or(input.levels.immediate_support);
     let main_risk = input
+        .conflicts
         .first()
         .map(|conflict| conflict.description.clone())
         .unwrap_or_else(|| "No dominant conflict detected.".to_string());
