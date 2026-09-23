@@ -3,7 +3,6 @@ use std::rc::Rc;
 use crate::application::ports::MarketClient;
 use crate::domain::market::parse_market_response;
 
-
 /// Application service for retrieving CafeF market data directly from CafeF.
 #[derive(Debug, Clone, Copy)]
 pub struct MarketService<C> {
