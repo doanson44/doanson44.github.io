@@ -46,6 +46,7 @@ pub enum SocketFilter {
 /// Socket ticker sort mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SocketSortMode {
+    Symbol,
     Momentum,
     Price,
     TotalTicks,
@@ -223,6 +224,21 @@ impl SocketState {
             search_query,
             pinned_symbols,
             connection_status,
+        }
+    }
+
+    /// Selects a sort column, toggling direction when already selected.
+    pub fn set_sort(&self, mode: SocketSortMode) {
+        if self.sort_mode.get_untracked() == mode {
+            self.sort_direction.update(|direction| {
+                *direction = match direction {
+                    SocketSortDirection::Ascending => SocketSortDirection::Descending,
+                    SocketSortDirection::Descending => SocketSortDirection::Ascending,
+                };
+            });
+        } else {
+            self.sort_mode.set(mode);
+            self.sort_direction.set(SocketSortDirection::Descending);
         }
     }
 
