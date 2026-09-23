@@ -64,33 +64,32 @@ pub fn SocketPage(
                         <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::All); state.filter.set(SocketFilter::Burst); }>{move || t_string!(i18n, socket_burst)}</button>
                         <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::PinnedOnly); state.filter.set(SocketFilter::All); }>{move || t_string!(i18n, socket_pinned)}</button>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <label class="text-sm text-[var(--text-secondary)]" for="socket-sort-mode">{move || t_string!(i18n, socket_sort)}</label>
-                        <select id="socket-sort-mode" class="rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Sort tickers by" prop:value=move || match state.sort_mode.get() { SocketSortMode::Momentum => "momentum", SocketSortMode::Price => "price", SocketSortMode::TotalTicks => "activity", SocketSortMode::Funding => "funding", SocketSortMode::Change24h => "change24h", SocketSortMode::Volume24h => "volume24h" } on:change=move |ev| {
-                            let val = event_target_value(&ev);
-                            state.sort_mode.set(match val.as_str() { "activity" => SocketSortMode::TotalTicks, "price" => SocketSortMode::Price, "funding" => SocketSortMode::Funding, "change24h" => SocketSortMode::Change24h, "volume24h" => SocketSortMode::Volume24h, _ => SocketSortMode::Momentum });
-                        }>
-                            <option value="momentum">{move || t_string!(use_i18n(), socket_momentum)}</option><option value="price">{move || t_string!(i18n, socket_price)}</option><option value="activity">{move || t_string!(i18n, socket_activity)}</option><option value="funding">{move || t_string!(use_i18n(), socket_funding)}</option><option value="change24h">{move || t_string!(i18n, socket_change24h)}</option><option value="volume24h">{move || t_string!(i18n, socket_volume24h)}</option>
-                        </select>
-                        <button type="button" class="rounded-md border border-[var(--border-color)] px-2 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=move || match state.sort_direction.get() { SocketSortDirection::Ascending => "Sort Ascending", SocketSortDirection::Descending => "Sort Descending" } on:click=move |_| state.sort_direction.update(|d| *d = match d { SocketSortDirection::Ascending => SocketSortDirection::Descending, SocketSortDirection::Descending => SocketSortDirection::Ascending })>
-                            {move || match state.sort_direction.get() { SocketSortDirection::Ascending => "↑", SocketSortDirection::Descending => "↓" }}
-                        </button>
-                    </div>
-                </div>
-                <div class="min-h-0 flex-grow overflow-auto" aria-live="polite">
+
                     <Show when=move || !visible.get().is_empty() fallback=move || empty_state(state.view_mode.get())>
                         <div class="hidden overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)] md:block">
                             <table class="w-full min-w-[900px] border-collapse text-sm">
                                 <caption class="sr-only">"Realtime Futures market tickers"</caption>
                                 <thead>
-                                    <tr class="border-b border-[var(--border-color)] bg-[var(--surface-hover)] text-left text-[var(--text-secondary)]">
+                                    <tr class="border-b border-[var(--border-color)] bg-[var(--surface-hover)] text-[var(--text-secondary)]">
                                         <th class="px-3 py-2 text-center font-medium" scope="col">"Pin"</th>
-                                        <th class="px-3 py-2 font-medium" scope="col">"Symbol"</th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">"Price"</th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">"24h"</th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_funding)}</th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_momentum)}</th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_activity)}</th>
+                                        <th class="px-3 py-2 font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Symbol label="Symbol" align="left" />
+                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Price label="Price" align="right" />
+                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Change24h label="24h" align="right" />
+                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Funding label=move || t_string!(i18n, socket_funding) align="right" />
+                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Momentum label=move || t_string!(i18n, socket_momentum) align="right" />
+                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::TotalTicks label=move || t_string!(i18n, socket_activity) align="right" />
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -113,6 +112,45 @@ pub fn SocketPage(
 }
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
+
+#[component]
+fn SortHeader(
+    state: SocketState,
+    mode: SocketSortMode,
+    label: impl IntoView + 'static,
+    align: &'static str,
+) -> impl IntoView {
+    let label = StoredValue::new(label);
+    let is_active = move || state.sort_mode.get() == mode;
+    let indicator = move || {
+        if !is_active() {
+            ""
+        } else {
+            match state.sort_direction.get() {
+                SocketSortDirection::Ascending => " ↑",
+                SocketSortDirection::Descending => " ↓",
+            }
+        }
+    };
+    let alignment = if align == "right" {
+        "ml-auto justify-end"
+    } else {
+        "justify-start"
+    };
+
+    view! {
+        <button
+            type="button"
+            class=format!("flex w-full items-center gap-1 rounded px-1 py-1 font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] {alignment}")
+            aria-label=move || format!("Sort by {}", if is_active() { "selected column" } else { "column" })
+            aria-pressed=move || is_active().to_string()
+            on:click=move |_| state.set_sort(mode)
+        >
+            <span>{move || label.get_value()}</span>
+            <span aria-hidden="true">{indicator}</span>
+        </button>
+    }
+}
 
 #[component]
 fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl IntoView {
@@ -216,20 +254,9 @@ fn build_visible(
 ) -> Vec<TrackedFuturesTicker> {
     let query = search_query.trim().to_uppercase();
     let sort_fn = |left: &TrackedFuturesTicker, right: &TrackedFuturesTicker| {
-        let cmp = if filter == SocketFilter::Burst {
-            right
-                .momentum
-                .burst_streak()
-                .cmp(&left.momentum.burst_streak())
-                .then_with(|| {
-                    right
-                        .momentum
-                        .burst_score()
-                        .cmp(&left.momentum.burst_score())
-                })
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
-        } else {
-            match sort {
+        let cmp = match sort {
+                SocketSortMode::Symbol => left.ticker.symbol.cmp(&right.ticker.symbol),
+
                 SocketSortMode::Momentum => right
                     .momentum
                     .progress()
@@ -280,16 +307,11 @@ fn build_visible(
                         .unwrap_or(std::cmp::Ordering::Equal)
                         .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
                 }
-            }
-        };
+            };
 
-        if filter == SocketFilter::Burst {
-            cmp
-        } else {
-            match direction {
-                SocketSortDirection::Descending => cmp,
-                SocketSortDirection::Ascending => cmp.reverse(),
-            }
+        match direction {
+            SocketSortDirection::Descending => cmp,
+            SocketSortDirection::Ascending => cmp.reverse(),
         }
     };
     let matches_filter = |item: &TrackedFuturesTicker| match filter {
