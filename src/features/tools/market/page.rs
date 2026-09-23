@@ -180,6 +180,11 @@ pub fn MarketPage() -> impl IntoView {
                     <span aria-hidden="true">"!"</span><span>{error}</span>
                 </div>
             })}
+            {move || state.analysis_error.get().map(|error| view! {
+                <div class="flex shrink-0 items-start gap-2 border-b border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">
+                    <span aria-hidden="true">"!"</span><span>{error}</span>
+                </div>
+            })}
 
             <div class="min-h-0 flex-grow overflow-auto p-3">
                 <div class="hidden overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)] md:block">
@@ -195,6 +200,7 @@ pub fn MarketPage() -> impl IntoView {
                                 {sortable_header("change_percent", MarketSort::ChangePercent, sort, descending, toggle_sort, i18n)}
                                 {sortable_header("volume", MarketSort::Volume, sort, descending, toggle_sort, i18n)}
                                 {sortable_header("market_cap", MarketSort::MarketCap, sort, descending, toggle_sort, i18n)}
+                                <th class="px-3 py-2 font-medium" scope="col">{move || t_string!(i18n, market_actions)}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -226,6 +232,65 @@ pub fn MarketPage() -> impl IntoView {
                     {move || format!("{}: {} · {}: {}", t_string!(i18n, market_displayed), visible_stocks.get().len(), t_string!(i18n, market_total), state.total_items.get())}
                 </div>
             </div>
+            {move || if state.analysis_modal_open.get() {
+                view! {
+                    <div
+                        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3"
+                        role="presentation"
+                        on:click=move |_| state.close_analysis()
+                    >
+                        <section
+                            class="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--surface)] shadow-xl"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="market-analysis-title"
+                            on:click=move |event| event.stop_propagation()
+                        >
+                            <header class="flex shrink-0 items-center gap-3 border-b border-[var(--border-color)] px-4 py-3">
+                                <div class="min-w-0 flex-1">
+                                    <h2 id="market-analysis-title" class="m-0 text-base font-semibold text-[var(--text-primary)]">
+                                        {move || format!("{} — {}", t_string!(i18n, market_analysis), state.analysis_symbol.get().unwrap_or_default())}
+                                    </h2>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="min-h-11 min-w-11 rounded-md border border-[var(--border-color)] px-2 text-xl text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                                    title=move || t_string!(i18n, common_close)
+                                    aria-label=move || t_string!(i18n, common_close)
+                                    on:click=move |_| state.close_analysis()
+                                >
+                                    "×"
+                                </button>
+                            </header>
+                            <div class="min-h-0 flex-1 overflow-auto p-4">
+                                <pre class="m-0 whitespace-pre-wrap break-words rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] p-3 text-xs leading-relaxed text-[var(--text-primary)]">{move || state.analysis_json.get().unwrap_or_default()}</pre>
+                            </div>
+                            <footer class="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--border-color)] px-4 py-3">
+                                <button
+                                    type="button"
+                                    class="min-h-11 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-3 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                                    on:click=move |_| state.copy_analysis()
+                                >
+                                    {move || if state.analysis_copied.get() {
+                                        t_string!(i18n, common_copied)
+                                    } else {
+                                        t_string!(i18n, market_copy_analysis)
+                                    }}
+                                </button>
+                                <button
+                                    type="button"
+                                    class="min-h-11 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                                    on:click=move |_| state.close_analysis()
+                                >
+                                    {move || t_string!(i18n, common_close)}
+                                </button>
+                            </footer>
+                        </section>
+                    </div>
+                }.into_any()
+            } else {
+                view! { <span></span> }.into_any()
+            }}
         </div>
     }
 }
@@ -260,6 +325,7 @@ fn market_table_row(
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(stock.change_percent)}</td>
             <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.total_volume)}</td>
             <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.market_cap)}</td>
+            <td class="px-3 py-2">{analysis_actions(stock.symbol.clone(), state, i18n)}</td>
         </tr>
     }
 }
@@ -314,7 +380,49 @@ fn market_mobile_card(
                     <span class="font-medium text-[var(--text-primary)]">{format_integer(stock.market_cap)}</span>
                 </div>
             </div>
+            <div class="mt-3 flex justify-end">
+                {analysis_actions(stock.symbol.clone(), state, i18n)}
+            </div>
         </article>
+    }
+}
+
+fn analysis_actions(
+    symbol: String,
+    state: MarketState,
+    i18n: leptos_i18n::I18nContext<Locale>,
+) -> impl IntoView {
+    let analyze_symbol = symbol.clone();
+    let copy_symbol = symbol;
+    view! {
+        <div class="flex flex-wrap gap-2">
+            <button
+                type="button"
+                class="min-h-10 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-3 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled=move || state.analysis_loading.get()
+                on:click=move |_| state.analyze_symbol(&analyze_symbol)
+            >
+                {move || if state.analysis_loading.get() {
+                    t_string!(i18n, common_loading)
+                } else {
+                    t_string!(i18n, market_analyze)
+                }}
+            </button>
+            <button
+                type="button"
+                class="min-h-10 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled=move || state.analysis_loading.get()
+                on:click=move |_| state.copy_symbol_analysis(&copy_symbol)
+            >
+                {move || if state.analysis_loading.get() {
+                    t_string!(i18n, common_loading)
+                } else if state.analysis_copied.get() {
+                    t_string!(i18n, common_copied)
+                } else {
+                    t_string!(i18n, common_copy)
+                }}
+            </button>
+        </div>
     }
 }
 
