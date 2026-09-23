@@ -272,7 +272,11 @@ fn market_mobile_card(
     let symbol = stock.symbol.clone();
     let pin_symbol = symbol.clone();
     let is_pinned = Memo::new(move |_| {
-        state.pinned_symbols.get().iter().any(|item| item == &symbol)
+        state
+            .pinned_symbols
+            .get()
+            .iter()
+            .any(|item| item == &symbol)
     });
 
     view! {
