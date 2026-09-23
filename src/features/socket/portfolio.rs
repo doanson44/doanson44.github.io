@@ -119,6 +119,7 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                             <thead>
                                 <tr class="border-b border-[var(--border-color)] text-left text-xs text-[var(--text-secondary)]">
                                     <th class="px-2 py-2 font-medium" scope="col">{move || t_string!(i18n, socket_symbol)}</th>
+                                    <th class="px-2 py-2 font-medium" scope="col">{move || t_string!(i18n, socket_position_side)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_quantity)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_market_value)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_pnl)}</th>
