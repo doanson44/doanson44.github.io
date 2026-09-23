@@ -86,7 +86,11 @@ impl Portfolio {
     ) -> Result<(), String> {
         validate_trade_inputs(settings, symbol, price)?;
 
-        if self.positions.iter().any(|position| position.symbol == symbol) {
+        if self
+            .positions
+            .iter()
+            .any(|position| position.symbol == symbol)
+        {
             return Err(format!("{symbol} is already held."));
         }
 
