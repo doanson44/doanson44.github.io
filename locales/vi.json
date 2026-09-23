@@ -91,6 +91,8 @@
   "socket_unrealized_pnl": "P&L chưa thực hiện",
   "socket_no_holdings": "Chưa có coin đang hold",
   "socket_trading_fee": "Phí giao dịch (% mỗi giao dịch)",
+  "socket_trade_allocation": "Vốn mỗi lệnh (%)",
+  "socket_trade_allocation_hint": "Tỷ lệ tiền mặt khả dụng được dùng làm margin cho mỗi vị thế mới khi ghim.",
   "socket_leverage": "Đòn bẩy (x)",
   "socket_leverage_hint": "Mỗi lần ghim dùng toàn bộ tiền mặt khả dụng làm margin. Đòn bẩy tăng giá trị vị thế; 1x là không dùng đòn bẩy.",
   "socket_fee_hint": "Áp dụng cho cả giao dịch mua và bán.",
