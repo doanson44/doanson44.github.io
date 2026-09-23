@@ -107,10 +107,7 @@ pub fn parse_price_history_response(raw: &str, symbol: &str) -> Result<MarketPri
 }
 
 /// Parses MEXC Futures kline data into normalized market history.
-pub fn parse_mexc_klines_response(
-    raw: &str,
-    symbol: &str,
-) -> Result<MarketPriceHistory, String> {
+pub fn parse_mexc_klines_response(raw: &str, symbol: &str) -> Result<MarketPriceHistory, String> {
     let rows: Vec<Vec<serde_json::Value>> = serde_json::from_str(raw)
         .map_err(|error| format!("Invalid MEXC kline response: {error}"))?;
     let requested_symbol = symbol.trim().to_ascii_uppercase();
@@ -146,11 +143,9 @@ pub fn parse_mexc_klines_response(
             volume: parse_number(5, "volume")?,
             ceiling: None,
             floor: None,
-            total_value: row.get(7).and_then(|value| {
-                value
-                    .as_str()
-                    .and_then(|text| text.parse::<f64>().ok())
-            }),
+            total_value: row
+                .get(7)
+                .and_then(|value| value.as_str().and_then(|text| text.parse::<f64>().ok())),
         });
     }
 
