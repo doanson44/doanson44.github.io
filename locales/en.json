@@ -51,6 +51,7 @@
   "markdown_input": "Markdown",
   "markdown_output": "Result",
   "socket_search": "Search symbol...",
+  "socket_analysis": "Analysis",
   "socket_analyze_4h": "Analyze 4H",
   "socket_analyze_1d": "Analyze 1D",
   "socket_copy_4h": "Copy 4H",
