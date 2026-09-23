@@ -1,11 +1,11 @@
 use crate::domain::technical_analysis::{
-    analyze, AdxConfig, AnalysisConfig, AnalysisInput, AnalysisResult, Asset, AssetType,
-    AtrConfig, BollingerConfig, BreakoutConfig, Candle, CandleMetadata, DataQualityConfig,
-    DataRequirements, DivergenceDetectionConfig, EngineConfig, IndicatorConfig, MacdConfig,
-    MarketData, MarketStructureConfig, MomentumConfig, MovingAverageConfig,
-    PatternDetectionConfig, PriceActionConfig, RegimeDetectionConfig, RetestConfig, RsiConfig,
-    ScenarioEngineConfig, SignalEngineConfig, StochasticConfig, SupportResistanceConfig,
-    SwingDetectionConfig, TrendStrengthConfig, VolumeConfig, VolumeConfirmationConfig,
+    analyze, AdxConfig, AnalysisConfig, AnalysisInput, AnalysisResult, Asset, AssetType, AtrConfig,
+    BollingerConfig, BreakoutConfig, Candle, CandleMetadata, DataQualityConfig, DataRequirements,
+    DivergenceDetectionConfig, EngineConfig, IndicatorConfig, MacdConfig, MarketData,
+    MarketStructureConfig, MomentumConfig, MovingAverageConfig, PatternDetectionConfig,
+    PriceActionConfig, RegimeDetectionConfig, RetestConfig, RsiConfig, ScenarioEngineConfig,
+    SignalEngineConfig, StochasticConfig, SupportResistanceConfig, SwingDetectionConfig,
+    TrendStrengthConfig, VolumeConfig, VolumeConfirmationConfig,
 };
 
 /// Application service for stock and crypto technical analysis.
@@ -13,10 +13,7 @@ pub struct TechnicalAnalysisService;
 
 impl TechnicalAnalysisService {
     /// Builds a stock daily analysis input from CafeF historical price data.
-    pub fn price_history_input(
-        raw: &str,
-        symbol: &str,
-    ) -> Result<AnalysisInput, String> {
+    pub fn price_history_input(raw: &str, symbol: &str) -> Result<AnalysisInput, String> {
         let history = crate::domain::market::parse_price_history_response(raw, symbol)?;
         let candles = history
             .candles
@@ -191,7 +188,6 @@ impl TechnicalAnalysisService {
         serde_json::to_string_pretty(&result)
             .map_err(|error| format!("Failed to serialize analysis result: {error}"))
     }
-
 
     /// Analyzes typed market data with the supplied configuration.
     pub fn analyze(
