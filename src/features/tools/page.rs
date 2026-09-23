@@ -29,6 +29,7 @@ pub fn ToolsPage() -> impl IntoView {
                         <ToolCard href="#/tools/jwt" title="JWT Decoder" description=Signal::derive(move || t_string!(i18n, tools_jwt_desc).to_string()) />
                         <ToolCard href="#/tools/base64" title="Base64 Encoder / Decoder" description=Signal::derive(move || t_string!(i18n, tools_base64_desc).to_string()) />
                         <ToolCard href="#/tools/time" title="Time & Utilities" description=Signal::derive(move || t_string!(i18n, tools_time_desc).to_string()) />
+                        <ToolCard href="#/tools/market" title="Market" description=Signal::derive(move || t_string!(i18n, tools_market_desc).to_string()) />
                         <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description=Signal::derive(move || t_string!(i18n, tools_proxy_desc).to_string()) />
                     </ToolSection>
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_developer)) icon="</>">
@@ -82,6 +83,11 @@ fn SearchResults(
             "#/tools/time",
             "Time & Utilities",
             "World clock, countdown, stopwatch, ruler, and timestamp utilities.",
+        ),
+        (
+            "#/tools/market",
+            "Market",
+            "View the latest market-stock data returned by CafeF.",
         ),
         (
             "#/tools/proxy",
