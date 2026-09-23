@@ -1,8 +1,8 @@
-use leptos::prelude::*;
 use crate::i18n::*;
+use leptos::prelude::*;
 use leptos_i18n::t_string;
 
-use crate::domain::market::MarketStock;
+use crate::domain::market/MarketStock;
 use crate::features::tools::market::state::MarketState;
 
 #[derive(Clone, Copy, PartialEq)]
