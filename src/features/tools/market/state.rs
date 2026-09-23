@@ -77,6 +77,14 @@ impl MarketState {
     }
 
     pub fn analyze_symbol(&self, symbol: &str) {
+        self.run_analysis(symbol, false);
+    }
+
+    pub fn copy_symbol_analysis(&self, symbol: &str) {
+        self.run_analysis(symbol, true);
+    }
+
+    fn run_analysis(&self, symbol: &str, copy_result: bool) {
         let symbol = symbol.trim().to_ascii_uppercase();
         if symbol.is_empty() {
             self.analysis_error
@@ -94,6 +102,7 @@ impl MarketState {
         let analysis_json = self.analysis_json;
         let analysis_modal_open = self.analysis_modal_open;
         let analysis_error = self.analysis_error;
+        let analysis_copied = self.analysis_copied;
         let url = format!(
             "https://cafefnew.mediacdn.vn/Images/Uploaded/DuLieuDownload/Liveboard/{}_PriceHistory.json",
             symbol
@@ -111,9 +120,17 @@ impl MarketState {
                     )
                 }) {
                     Ok(json) => {
-                        analysis_json.set(Some(json));
-                        analysis_modal_open.set(true);
+                        analysis_json.set(Some(json.clone()));
+                        analysis_modal_open.set(!copy_result);
                         analysis_error.set(None);
+                        if copy_result {
+                            wasm_bindgen_futures::spawn_local(async move {
+                                match browser::copy_to_clipboard(&json).await {
+                                    Ok(()) => analysis_copied.set(true),
+                                    Err(message) => analysis_error.set(Some(message)),
+                                }
+                            });
+                        }
                     }
                     Err(message) => {
                         analysis_json.set(None);
