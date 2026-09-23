@@ -453,6 +453,23 @@ mod tests {
     }
 
     #[test]
+    fn reset_metrics_clears_momentum_and_burst_history() {
+        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        momentum.observe_at(Some(100.02), Some(1_000));
+        momentum.observe_at(Some(100.04), Some(2_000));
+        momentum.observe_at(Some(100.08), Some(3_000));
+        momentum.observe_at(Some(100.20), Some(4_000));
+
+        momentum.reset_metrics();
+
+        assert_eq!(momentum.previous_price, Some(100.20));
+        assert_eq!(momentum.up_ticks, 0);
+        assert_eq!(momentum.down_ticks, 0);
+        assert_eq!(momentum.burst_score(), 0);
+        assert_eq!(momentum.burst_ticks(), 0);
+    }
+
+    #[test]
     fn burst_detects_a_sudden_acceleration() {
         let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
         momentum.observe_at(Some(100.02), Some(1_000));
