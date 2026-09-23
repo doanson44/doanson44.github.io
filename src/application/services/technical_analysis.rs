@@ -176,6 +176,70 @@ impl TechnicalAnalysisService {
         }
     }
 
+    /// Adapts the default stock configuration to the amount of available history.
+    ///
+    /// Short histories still produce a best-effort analysis. Indicators whose
+    /// configured periods exceed the available candles are reduced to the
+    /// available history instead of rejecting the entire analysis.
+    pub fn stock_daily_config_for_candles(candle_count: usize) -> AnalysisConfig {
+        let mut config = Self::default_stock_daily_config();
+        let available = candle_count.max(1);
+
+        config.data_requirements.minimum_candles =
+            config.data_requirements.minimum_candles.min(available);
+        config.data_requirements.recommended_candles =
+            config.data_requirements.recommended_candles.min(available);
+
+        for period in &mut config.indicators.moving_averages.sma {
+            *period = (*period).min(available).max(1);
+        }
+        for period in &mut config.indicators.moving_averages.ema {
+            *period = (*period).min(available).max(1);
+        }
+
+        config.indicators.momentum.rsi.period =
+            config.indicators.momentum.rsi.period.min(available).max(1);
+        config.indicators.momentum.macd.fast =
+            config.indicators.momentum.macd.fast.min(available).max(1);
+        config.indicators.momentum.macd.slow =
+            config.indicators.momentum.macd.slow.min(available).max(1);
+        config.indicators.momentum.macd.signal =
+            config.indicators.momentum.macd.signal.min(available).max(1);
+        config.indicators.momentum.stochastic.k_period =
+            config.indicators.momentum.stochastic.k_period.min(available).max(1);
+        config.indicators.momentum.stochastic.d_period =
+            config.indicators.momentum.stochastic.d_period.min(available).max(1);
+        config.indicators.momentum.stochastic.smooth =
+            config.indicators.momentum.stochastic.smooth.min(available).max(1);
+
+        config.indicators.volatility.atr.period =
+            config.indicators.volatility.atr.period.min(available).max(1);
+        config.indicators.volatility.bollinger_bands.period =
+            config.indicators.volatility.bollinger_bands.period.min(available).max(1);
+
+        for period in &mut config.indicators.volume.volume_average {
+            *period = (*period).min(available).max(1);
+        }
+
+        config.market_structure.swing_detection.lookback =
+            config.market_structure.swing_detection.lookback.min(available).max(1);
+        config.market_structure.support_resistance.lookback = config
+            .market_structure
+            .support_resistance
+            .lookback
+            .min(available)
+            .max(1);
+        config.breakout_detection.lookback_period =
+            config.breakout_detection.lookback_period.min(available).max(1);
+        config.divergence_detection.minimum_swing_distance = config
+            .divergence_detection
+            .minimum_swing_distance
+            .min(available)
+            .max(1);
+
+        config
+    }
+
     /// Analyzes CafeF historical price data with the default stock configuration.
     pub fn analyze_price_history(
         raw: &str,
@@ -183,7 +247,7 @@ impl TechnicalAnalysisService {
         analysis_timestamp: impl Into<String>,
     ) -> Result<String, String> {
         let input = Self::price_history_input(raw, symbol)?;
-        let config = Self::default_stock_daily_config();
+        let config = Self::stock_daily_config_for_candles(input.market_data.candles.len());
         let result = Self::analyze(&input, &config, analysis_timestamp)?;
         serde_json::to_string_pretty(&result)
             .map_err(|error| format!("Failed to serialize analysis result: {error}"))
