@@ -189,6 +189,21 @@ impl TechnicalAnalysisService {
             .map_err(|error| format!("Failed to serialize analysis result: {error}"))
     }
 
+    /// Analyzes CafeF history and returns both machine-readable JSON and a human-readable report.
+    pub fn analyze_price_history_report(
+        raw: &str,
+        symbol: &str,
+        analysis_timestamp: impl Into<String>,
+    ) -> Result<(String, String), String> {
+        let input = Self::price_history_input(raw, symbol)?;
+        let config = Self::default_stock_daily_config();
+        let result = Self::analyze(&input, &config, analysis_timestamp)?;
+        let json = serde_json::to_string_pretty(&result)
+            .map_err(|error| format!("Failed to serialize analysis result: {error}"))?;
+        let report = format_analysis_report(&result);
+        Ok((json, report))
+    }
+
     /// Analyzes typed market data with the supplied configuration.
     pub fn analyze(
         input: &AnalysisInput,
@@ -216,6 +231,233 @@ impl TechnicalAnalysisService {
         serde_json::to_string_pretty(&result)
             .map_err(|error| format!("Failed to serialize analysis result: {error}"))
     }
+
+}
+
+fn format_optional(value: Option<f64>) -> String {
+    value
+        .map(|number| format!("{number:.2}"))
+        .unwrap_or_else(|| "N/A".to_string())
+}
+
+fn format_analysis_report(result: &AnalysisResult) -> String {
+    let mut report = String::new();
+    report.push_str(&format!(
+        "{} ({}) — {}\\n",
+        result.asset.symbol, result.asset.asset_type.as_str(), result.asset.timeframe
+    ));
+    report.push_str(&format!(
+        "Analysis: {} {}\\n\\n",
+        result.engine.name, result.engine.version
+    ));
+
+    report.push_str("SUMMARY\\n");
+    report.push_str(&format!("• State: {}\\n", result.engine_summary.dominant_state));
+    report.push_str(&format!("• Trend: {}\\n", result.engine_summary.trend));
+    report.push_str(&format!("• Momentum: {}\\n", result.engine_summary.momentum));
+    report.push_str(&format!("• Structure: {}\\n", result.engine_summary.structure));
+    report.push_str(&format!(
+        "• Volume confirmation: {}\\n",
+        if result.engine_summary.volume_confirmation { "yes" } else { "no" }
+    ));
+    report.push_str(&format!("• Main risk: {}\\n\\n", result.engine_summary.main_risk));
+
+    report.push_str("CURRENT PRICE\\n");
+    report.push_str(&format!(
+        "• Close: {} {}\\n• Change: {:.2} ({:.2}%)\\n• Volume: {:.0}\\n\\n",
+        result.snapshot.close,
+        result.asset.currency,
+        result.snapshot.price_change.absolute,
+        result.snapshot.price_change.percent,
+        result.snapshot.volume
+    ));
+
+    report.push_str("TREND\\n");
+    report.push_str(&format!(
+        "• State: {}\\n• Strength: {}\\n• Alignment: {}\\n",
+        result.trend.state, result.trend.strength, result.trend.alignment.description
+    ));
+    report.push_str(&format!(
+        "• SMA: {}\\n",
+        result
+            .trend
+            .moving_averages
+            .sma
+            .iter()
+            .map(|item| format!("{}={}", item.period, format_optional(item.value)))
+            .collect::<Vec<_>>()
+            .join(", ")
+    ));
+    report.push_str(&format!(
+        "• EMA: {}\\n\\n",
+        result
+            .trend
+            .moving_averages
+            .ema
+            .iter()
+            .map(|item| format!("{}={}", item.period, format_optional(item.value)))
+            .collect::<Vec<_>>()
+            .join(", ")
+    ));
+
+    report.push_str("MOMENTUM\\n");
+    report.push_str(&format!(
+        "• RSI: {} ({})\\n• MACD: {} / signal {} / histogram {} ({})\\n• Stochastic: K {} / D {} ({})\\n\\n",
+        format_optional(result.momentum.rsi.value),
+        result.momentum.rsi.state,
+        format_optional(result.momentum.macd.macd),
+        format_optional(result.momentum.macd.signal),
+        format_optional(result.momentum.macd.histogram),
+        result.momentum.macd.state,
+        format_optional(result.momentum.stochastic.k),
+        format_optional(result.momentum.stochastic.d),
+        result.momentum.stochastic.state
+    ));
+
+    report.push_str("VOLATILITY & VOLUME\\n");
+    report.push_str(&format!(
+        "• ATR: {} ({})\\n• Bollinger: lower {} / middle {} / upper {}\\n• Volume: {} ({})\\n• OBV: {}\\n\\n",
+        format_optional(result.volatility.atr),
+        result.volatility.state,
+        format_optional(result.volatility.bollinger_bands.lower),
+        format_optional(result.volatility.bollinger_bands.middle),
+        format_optional(result.volatility.bollinger_bands.upper),
+        result.volume.current,
+        result.volume.state,
+        format_optional(result.volume.obv)
+    ));
+
+    report.push_str("MARKET STRUCTURE\\n");
+    report.push_str(&format!(
+        "• State: {}\\n• Sequence: {}\\n• Last swing high: {}\\n• Last swing low: {}\\n\\n",
+        result.market_structure.state,
+        if result.market_structure.structure_sequence.is_empty() {
+            "N/A".to_string()
+        } else {
+            result.market_structure.structure_sequence.join(" → ")
+        },
+        result
+            .market_structure
+            .swing_points
+            .last_swing_high
+            .as_ref()
+            .map(|point| format!("{:.2} ({})", point.price, point.date))
+            .unwrap_or_else(|| "N/A".to_string()),
+        result
+            .market_structure
+            .swing_points
+            .last_swing_low
+            .as_ref()
+            .map(|point| format!("{:.2} ({})", point.price, point.date))
+            .unwrap_or_else(|| "N/A".to_string())
+    ));
+
+    report.push_str("SUPPORT / RESISTANCE\\n");
+    report.push_str(&format!(
+        "• Immediate support: {}\\n• Major support: {}\\n• Immediate resistance: {}\\n\\n",
+        format_optional(result.key_levels.immediate_support),
+        format_optional(result.key_levels.major_support),
+        format_optional(result.key_levels.immediate_resistance)
+    ));
+
+    report.push_str("BREAKOUT\\n");
+    report.push_str(&format!(
+        "• Status: {}\\n• Level: {}\\n• Direction: {}\\n• Volume confirmation: {}\\n\\n",
+        result.breakout.status,
+        format_optional(result.breakout.resistance_level),
+        result.breakout.direction.as_deref().unwrap_or("N/A"),
+        if result.breakout.volume_confirmation { "yes" } else { "no" }
+    ));
+
+    report.push_str("REGIME\\n");
+    report.push_str(&format!(
+        "• Overall: {}\\n• Trend: {}\\n• Momentum: {}\\n• Volatility: {}\\n• Volume: {}\\n\\n",
+        result.regime.overall,
+        result.regime.trend,
+        result.regime.momentum,
+        result.regime.volatility,
+        result.regime.volume
+    ));
+
+    report.push_str("SIGNALS\\n");
+    if result.signals.is_empty() {
+        report.push_str("• None\\n");
+    } else {
+        for signal in &result.signals {
+            report.push_str(&format!(
+                "• {} — {} / {}\\n  Evidence: {}\\n",
+                signal.direction,
+                signal.category,
+                signal.strength,
+                signal.evidence.join(", ")
+            ));
+        }
+    }
+    report.push('\\n');
+
+    report.push_str("PATTERNS & DIVERGENCES\\n");
+    if result.patterns.is_empty() {
+        report.push_str("• Patterns: none\\n");
+    } else {
+        for pattern in &result.patterns {
+            report.push_str(&format!(
+                "• Pattern: {} ({}, confidence {:.0}%)\\n",
+                pattern.name,
+                pattern.status,
+                pattern.confidence * 100.0
+            ));
+        }
+    }
+    if result.divergences.is_empty() {
+        report.push_str("• Divergences: none\\n");
+    } else {
+        for divergence in &result.divergences {
+            report.push_str(&format!(
+                "• Divergence: {} {} (confidence {:.0}%)\\n",
+                divergence.indicator,
+                divergence.direction,
+                divergence.confidence * 100.0
+            ));
+        }
+    }
+    report.push('\\n');
+
+    report.push_str("SCENARIOS\\n");
+    for (name, scenario) in [
+        ("Bullish", &result.scenarios.bullish),
+        ("Bearish", &result.scenarios.bearish),
+    ] {
+        report.push_str(&format!("• {name}: {}\\n", scenario.status));
+        if let Some(trigger) = &scenario.trigger {
+            report.push_str(&format!("  Trigger: {}\\n", trigger.condition));
+        }
+        if let Some(invalidation) = &scenario.invalidation {
+            report.push_str(&format!("  Invalidation: {}\\n", invalidation.condition));
+        }
+    }
+    report.push_str(&format!(
+        "• Range: {} — {}\\n\\n",
+        result.scenarios.range.status, result.scenarios.range.condition
+    ));
+
+    report.push_str("DATA QUALITY\\n");
+    report.push_str(&format!(
+        "• Candles: {} used / {} received\\n• Minimum required: {}\\n• Sufficient: {}\\n",
+        result.data_quality.candles_used,
+        result.data_quality.candles_received,
+        result.data_quality.minimum_required,
+        if result.data_quality.sufficient_for_analysis { "yes" } else { "no" }
+    ));
+    if result.data_quality.issues.is_empty() {
+        report.push_str("• Issues: none\\n");
+    } else {
+        report.push_str("• Issues:\\n");
+        for issue in &result.data_quality.issues {
+            report.push_str(&format!("  - {}: {}\\n", issue.code, issue.description));
+        }
+    }
+
+    report
 }
 
 #[cfg(test)]
