@@ -12,14 +12,14 @@ use wasm_bindgen::{closure::Closure, JsCast};
 use crate::application::{
     ports::{FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream},
     services::{
-        market::MarketService, technical_analysis::TechnicalAnalysisService, FuturesMarketService,
+        proxy::ProxyService, technical_analysis::TechnicalAnalysisService, FuturesMarketService,
     },
 };
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::domain::technical_analysis::AnalysisResult;
 use crate::infrastructure::browser;
-use crate::infrastructure::market::MarketApi;
+use crate::infrastructure::proxy::ProxyApi;
 
 const UI_FLUSH_MS: i32 = 75;
 const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
@@ -324,7 +324,7 @@ impl SocketState {
             }
         );
 
-        MarketService::new(MarketApi).fetch_url(
+        ProxyService::new(ProxyApi).fetch_raw(
             &url,
             Rc::new(move |result| {
                 analysis_loading.set(false);
