@@ -318,8 +318,9 @@ impl SocketState {
             .get(symbol)
             .and_then(|ticker| ticker.ticker.last_price)
         else {
-            self.trading_error
-                .set(Some("A live market price is required to trade.".to_string()));
+            self.trading_error.set(Some(
+                "A live market price is required to trade.".to_string(),
+            ));
             return;
         };
 
@@ -537,7 +538,6 @@ impl SocketState {
             }
         });
     }
-
 }
 
 fn save_pinned_symbols(symbols: &[String]) {
