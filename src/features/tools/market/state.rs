@@ -15,6 +15,7 @@ pub struct MarketState {
     pub displayed_items: RwSignal<usize>,
     pub error: RwSignal<Option<String>>,
     pub loading: RwSignal<bool>,
+    pub pinned_symbols: RwSignal<Vec<String>>,
 }
 
 impl Default for MarketState {
