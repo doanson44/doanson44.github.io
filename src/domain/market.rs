@@ -106,6 +106,65 @@ pub fn parse_price_history_response(raw: &str, symbol: &str) -> Result<MarketPri
     })
 }
 
+/// Parses MEXC Futures kline data into normalized market history.
+pub fn parse_mexc_klines_response(
+    raw: &str,
+    symbol: &str,
+) -> Result<MarketPriceHistory, String> {
+    let rows: Vec<Vec<serde_json::Value>> = serde_json::from_str(raw)
+        .map_err(|error| format!("Invalid MEXC kline response: {error}"))?;
+    let requested_symbol = symbol.trim().to_ascii_uppercase();
+    if requested_symbol.is_empty() {
+        return Err("MEXC symbol cannot be empty".to_string());
+    }
+
+    let mut candles = Vec::with_capacity(rows.len());
+    for (index, row) in rows.into_iter().enumerate() {
+        if row.len() < 6 {
+            return Err(format!("MEXC kline row {index} has fewer than 6 fields"));
+        }
+        let timestamp = row[0]
+            .as_u64()
+            .ok_or_else(|| format!("MEXC kline row {index} has an invalid timestamp"))?;
+        let parse_number = |position: usize, name: &str| -> Result<f64, String> {
+            let value = row[position]
+                .as_str()
+                .ok_or_else(|| format!("MEXC kline row {index} has an invalid {name}"))?;
+            value
+                .parse::<f64>()
+                .map_err(|error| format!("MEXC kline row {index} has an invalid {name}: {error}"))
+        };
+
+        candles.push(MarketPriceHistoryCandle {
+            symbol: requested_symbol.clone(),
+            timestamp: timestamp.to_string(),
+            basic_price: 0.0,
+            open: parse_number(1, "open price")?,
+            high: parse_number(2, "high price")?,
+            low: parse_number(3, "low price")?,
+            close: parse_number(4, "close price")?,
+            volume: parse_number(5, "volume")?,
+            ceiling: None,
+            floor: None,
+            total_value: row.get(7).and_then(|value| {
+                value
+                    .as_str()
+                    .and_then(|text| text.parse::<f64>().ok())
+            }),
+        });
+    }
+
+    candles.sort_by(|left, right| left.timestamp.cmp(&right.timestamp));
+    if candles.is_empty() {
+        return Err("MEXC kline response is empty".to_string());
+    }
+
+    Ok(MarketPriceHistory {
+        symbol: requested_symbol,
+        candles,
+    })
+}
+
 /// Normalized market data returned by the CafeF market-data endpoint.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MarketResponse {
@@ -186,6 +245,25 @@ mod tests {
         assert_eq!(result.candles[0].timestamp, "2026-09-22T00:00:00");
         assert_eq!(result.candles[0].volume, 1_774_600.0);
         assert_eq!(result.candles[0].ceiling, Some(64.5));
+    }
+
+    #[test]
+    fn parses_mexc_klines_response() {
+        let result = parse_mexc_klines_response(
+            r#"[[1782979200000,"60150.52","61421.05","60129.56","61372.97","2447.30963309",1782993600000,"149274811.89"]]"#,
+            "BTCUSDT",
+        )
+        .expect("valid MEXC response should parse");
+
+        assert_eq!(result.symbol, "BTCUSDT");
+        assert_eq!(result.candles.len(), 1);
+        assert_eq!(result.candles[0].timestamp, "1782979200000");
+        assert_eq!(result.candles[0].open, 60150.52);
+        assert_eq!(result.candles[0].high, 61421.05);
+        assert_eq!(result.candles[0].low, 60129.56);
+        assert_eq!(result.candles[0].close, 61372.97);
+        assert_eq!(result.candles[0].volume, 2447.30963309);
+        assert_eq!(result.candles[0].total_value, Some(149274811.89));
     }
 
     #[test]
