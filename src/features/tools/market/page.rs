@@ -3,6 +3,7 @@ use leptos::prelude::*;
 use leptos_i18n::t_string;
 
 use crate::domain::market::MarketStock;
+use crate::application::services::technical_analysis::TechnicalAnalysisService;
 use crate::features::tools::market::state::MarketState;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -264,7 +265,12 @@ pub fn MarketPage() -> impl IntoView {
                             </header>
                             <div class="min-h-0 flex-1 overflow-auto p-4">
                                 <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] p-4 text-sm leading-relaxed text-[var(--text-primary)]">
-                                    <pre class="m-0 whitespace-pre-wrap break-words font-sans">{move || state.analysis_text.get().unwrap_or_default()}</pre>
+                                    <pre class="m-0 whitespace-pre-wrap break-words font-sans">{move || {
+                                        state.analysis_result.get().map(|result| {
+                                            let language = if i18n.get_locale() == Locale::vi { "vi" } else { "en" };
+                                            TechnicalAnalysisService::format_analysis_report(&result, language)
+                                        }).unwrap_or_default()
+                                    }}</pre>
                                 </div>
                             </div>
                             <footer class="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--border-color)] px-4 py-3">
