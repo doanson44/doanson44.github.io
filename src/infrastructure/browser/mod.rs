@@ -19,6 +19,22 @@ pub fn get_document() -> web_sys::Document {
         .expect("should have a document on window")
 }
 
+/// Detect whether the current browser identifies itself as a mobile device.
+pub fn is_mobile_device() -> bool {
+    let Some(window) = web_sys::window() else {
+        return false;
+    };
+
+    let user_agent = window.navigator().user_agent().unwrap_or_default();
+    let user_agent = user_agent.to_ascii_lowercase();
+
+    user_agent.contains("android")
+        || user_agent.contains("iphone")
+        || user_agent.contains("ipad")
+        || user_agent.contains("ipod")
+        || user_agent.contains("mobile")
+}
+
 /// Read a value from local browser storage.
 pub fn storage_get(key: &str) -> Option<String> {
     let storage = web_sys::window()?.local_storage().ok()??;
