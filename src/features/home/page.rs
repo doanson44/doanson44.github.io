@@ -21,8 +21,9 @@ pub fn HomePage() -> impl IntoView {
                     </p>
                 </div>
 
-                <div class="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                     <HomeCard href="#/tools" icon="⚒" title_key="tools" description_key="tools" />
+                    <HomeCard href="#/tools/market" icon="◈" title_key="market" description_key="market" />
                     <HomeCard href="#/games" icon="♟" title_key="games" description_key="games" />
                     <HomeCard href="#/cv" icon="●" title_key="cv" description_key="cv" />
                     <HomeCard href="#/socket" icon="↔" title_key="socket" description_key="socket" />
@@ -47,6 +48,7 @@ fn HomeCard(
             <div class="mb-4 text-4xl text-[var(--accent)]" aria-hidden="true">{icon}</div>
             <h2 class="mb-2 text-lg font-semibold text-[var(--text-primary)]">{move || match title_key {
                 "tools" => t_string!(use_i18n(), nav_tools),
+                "market" => t_string!(use_i18n(), nav_market),
                 "games" => t_string!(use_i18n(), nav_games),
                 "cv" => t_string!(use_i18n(), nav_cv),
                 "socket" => t_string!(use_i18n(), nav_socket),
@@ -54,6 +56,7 @@ fn HomeCard(
             }}</h2>
             <p class="text-sm leading-6 text-[var(--text-secondary)]">{move || match description_key {
                 "tools" => t_string!(use_i18n(), home_tools_desc),
+                "market" => t_string!(use_i18n(), tools_market_desc),
                 "games" => t_string!(use_i18n(), home_games_desc),
                 "cv" => t_string!(use_i18n(), home_cv_desc),
                 "socket" => t_string!(use_i18n(), home_socket_desc),
