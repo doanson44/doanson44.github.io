@@ -309,8 +309,8 @@ impl SocketState {
 
     /// Toggles a ticker pin and executes the corresponding paper trade.
     ///
-    /// Pinning buys the ticker with the default paper-trading allocation.
-    /// Unpinning sells the complete open position.
+    /// Pinning buys the ticker using all available paper-trading capital as margin.
+    /// Unpinning sells the complete leveraged position.
     pub fn toggle_pin(&self, symbol: &str) {
         let Some(price) = self
             .tickers
@@ -401,9 +401,9 @@ impl SocketState {
     }
 
     /// Saves paper-trading settings and resets the paper portfolio.
-    pub fn save_settings(&self, initial_capital: f64, fee_percent: f64) {
+    pub fn save_settings(&self, initial_capital: f64, fee_percent: f64, leverage: f64) {
         let fee_rate = fee_percent / 100.0;
-        match TradingService::reset_with_settings(initial_capital, fee_rate) {
+        match TradingService::reset_with_settings(initial_capital, fee_rate, leverage) {
             Ok(snapshot) => match TradingService::save(&LocalTradingStorage, &snapshot) {
                 Ok(()) => {
                     self.trading_snapshot.set(snapshot);
