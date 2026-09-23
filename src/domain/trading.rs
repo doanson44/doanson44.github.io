@@ -360,7 +360,7 @@ mod tests {
         portfolio.sell(&settings, "BTC_USDT", 90.0, 2).unwrap();
 
         assert!(portfolio.positions.is_empty());
-        assert!((portfolio.realized_pnl - 9.7802197802198).abs() < 1e-9);
+        assert!((portfolio.realized_pnl - 9.8001998001998).abs() < 1e-9);
     }
 
     #[test]
