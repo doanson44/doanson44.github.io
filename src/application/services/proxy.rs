@@ -18,6 +18,15 @@ where
         Self { client }
     }
 
+    /// Fetches a response without modifying the returned body.
+    pub fn fetch_raw(
+        &self,
+        target_url: &str,
+        on_result: Rc<dyn Fn(Result<String, String>)>,
+    ) {
+        self.client.fetch(target_url, on_result);
+    }
+
     /// Fetches a JSON response and applies the requested display minimization.
     pub fn request_json(
         &self,
