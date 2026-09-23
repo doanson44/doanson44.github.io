@@ -100,6 +100,14 @@ pub fn SocketPage(
                         <button
                             type="button"
                             class="min-h-9 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                            on:click=move |_| state.reset_metrics()
+                            title={move || t_string!(i18n, socket_reset_metrics)}
+                        >
+                            {move || t_string!(i18n, socket_reset_metrics)}
+                        </button>
+                        <button
+                            type="button"
+                            class="min-h-9 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                             on:click=move |_| state.open_settings()
                         >
                             {move || t_string!(i18n, socket_settings)}
