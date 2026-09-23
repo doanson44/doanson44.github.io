@@ -240,7 +240,7 @@ pub fn summarize_portfolio(
     prices: &HashMap<String, f64>,
 ) -> PortfolioSummary {
     let mut holdings = Vec::with_capacity(snapshot.portfolio.positions.len());
-    let mut market_value = 0.0;
+    let mut equity = snapshot.portfolio.cash;
     let mut unrealized_pnl = 0.0;
 
     for position in &snapshot.portfolio.positions {
@@ -255,7 +255,7 @@ pub fn summarize_portfolio(
         };
         let pnl = price_pnl - position.entry_fee;
 
-        market_value += value;
+        equity += position.margin + price_pnl;
         unrealized_pnl += pnl;
         holdings.push(HoldingSummary {
             symbol: position.symbol.clone(),
@@ -265,11 +265,11 @@ pub fn summarize_portfolio(
         });
     }
 
-    let equity = snapshot.portfolio.cash + market_value;
+    let total_pnl = snapshot.portfolio.realized_pnl + unrealized_pnl;
     PortfolioSummary {
         cash: snapshot.portfolio.cash,
         equity,
-        total_pnl: equity - snapshot.settings.initial_capital,
+        total_pnl,
         realized_pnl: snapshot.portfolio.realized_pnl,
         unrealized_pnl,
         holdings,
@@ -356,6 +356,26 @@ mod tests {
 
         assert!(portfolio.positions.is_empty());
         assert!((portfolio.realized_pnl - 9.8001998001998).abs() < 1e-9);
+    }
+
+    #[test]
+    fn summary_accounts_for_leverage_without_counting_borrowed_notional_as_equity() {
+        let mut settings = settings();
+        settings.leverage = 10.0;
+        let mut portfolio = Portfolio::new(settings.initial_capital);
+        portfolio.buy(&settings, "BTC_USDT", 100.0, 1).unwrap();
+
+        let snapshot = TradingSnapshot {
+            settings,
+            portfolio,
+        };
+        let prices = HashMap::from([("BTC_USDT".to_string(), 110.0)]);
+        let summary = summarize_portfolio(&snapshot, &prices);
+
+        assert!((summary.cash - 900.0).abs() < 1e-9);
+        assert!((summary.equity - 1098.019801980198).abs() < 1e-9);
+        assert!((summary.unrealized_pnl - 98.019801980198).abs() < 1e-9);
+        assert!((summary.total_pnl - 98.019801980198).abs() < 1e-9);
     }
 
     #[test]
