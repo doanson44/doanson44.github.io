@@ -109,7 +109,7 @@ impl MarketState {
             symbol
         );
 
-        ProxyService::new(ProxyApi).fetch_raw(
+        MarketService::new(MarketApi).fetch_url(
             &url,
             Rc::new(move |result| {
                 analysis_loading.set(false);
