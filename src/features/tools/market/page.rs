@@ -60,9 +60,7 @@ pub fn MarketPage() -> impl IntoView {
             let ordering = match selected_sort {
                 MarketSort::Symbol => left.symbol.cmp(&right.symbol),
                 MarketSort::Price => left.price.total_cmp(&right.price),
-                MarketSort::ChangePercent => {
-                    left.change_percent.total_cmp(&right.change_percent)
-                }
+                MarketSort::ChangePercent => left.change_percent.total_cmp(&right.change_percent),
                 MarketSort::Volume => left.total_volume.total_cmp(&right.total_volume),
                 MarketSort::MarketCap => left.market_cap.total_cmp(&right.market_cap),
             };
