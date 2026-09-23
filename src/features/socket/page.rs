@@ -282,7 +282,7 @@ fn SortHeader(
     let is_active = move || state.sort_mode.get() == mode;
     let indicator = move || {
         if !is_active() {
-            ""
+            " ↕"
         } else {
             match state.sort_direction.get() {
                 SocketSortDirection::Ascending => " ↑",
