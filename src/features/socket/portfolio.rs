@@ -30,6 +30,9 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                     <span class="rounded-md border border-[var(--border-color)] px-2 py-1">
                         {move || format!("{}: {:.1}x", t_string!(i18n, socket_leverage), state.trading_snapshot.get().settings.leverage)}
                     </span>
+                    <span class="rounded-md border border-[var(--border-color)] px-2 py-1">
+                        {move || format!("{}: {}", t_string!(i18n, socket_position_side), if state.trading_snapshot.get().settings.position_side == PositionSide::Long { t_string!(i18n, socket_long) } else { t_string!(i18n, socket_short) })}
+                    </span>
                 </div>
             </div>
 
