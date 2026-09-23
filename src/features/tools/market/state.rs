@@ -18,7 +18,9 @@ pub struct MarketState {
 }
 
 impl Default for MarketState {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MarketState {
