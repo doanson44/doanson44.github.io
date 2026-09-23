@@ -301,6 +301,87 @@ pub struct RetestConfig {
     pub enabled: bool,
 }
 
+/// Pattern-detection configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PatternDetectionConfig {
+    /// Whether pattern detection is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Whether candlestick patterns are enabled.
+    #[serde(default)]
+    pub candlestick_patterns: bool,
+    /// Chart-pattern names.
+    #[serde(default)]
+    pub chart_patterns: Vec<String>,
+}
+
+/// Divergence-detection configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DivergenceDetectionConfig {
+    /// Whether divergence detection is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Indicators to inspect.
+    #[serde(default)]
+    pub indicators: Vec<String>,
+    /// Minimum swing distance.
+    #[serde(default = "default_swing_lookback")]
+    pub minimum_swing_distance: usize,
+}
+
+/// Regime-detection configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RegimeDetectionConfig {
+    /// Whether regime detection is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Regime dimensions.
+    #[serde(default)]
+    pub dimensions: Vec<String>,
+}
+
+/// Scenario-engine configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ScenarioEngineConfig {
+    /// Whether scenario generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Scenario names.
+    #[serde(default)]
+    pub scenarios: Vec<String>,
+}
+
+/// Signal-engine configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SignalEngineConfig {
+    /// Whether signal generation is enabled.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Supported signal strength levels.
+    #[serde(default)]
+    pub signal_strength_levels: Vec<String>,
+}
+
+/// Data-quality configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DataQualityConfig {
+    /// Validate OHLCV values.
+    #[serde(default)]
+    pub validate_ohlcv: bool,
+    /// Detect missing candles.
+    #[serde(default)]
+    pub detect_missing_candles: bool,
+    /// Detect duplicate candles.
+    #[serde(default)]
+    pub detect_duplicate_candles: bool,
+    /// Detect invalid prices.
+    #[serde(default)]
+    pub detect_invalid_prices: bool,
+    /// Detect zero volume.
+    #[serde(default)]
+    pub detect_zero_volume: bool,
+}
+
 /// Complete analysis configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AnalysisConfig {
@@ -318,6 +399,24 @@ pub struct AnalysisConfig {
     pub market_structure: MarketStructureConfig,
     /// Breakout settings.
     pub breakout_detection: BreakoutConfig,
+    /// Pattern-detection settings.
+    #[serde(default)]
+    pub pattern_detection: PatternDetectionConfig,
+    /// Divergence-detection settings.
+    #[serde(default)]
+    pub divergence_detection: DivergenceDetectionConfig,
+    /// Regime-detection settings.
+    #[serde(default)]
+    pub regime_detection: RegimeDetectionConfig,
+    /// Scenario-engine settings.
+    #[serde(default)]
+    pub scenario_engine: ScenarioEngineConfig,
+    /// Signal-engine settings.
+    #[serde(default)]
+    pub signal_engine: SignalEngineConfig,
+    /// Data-quality settings.
+    #[serde(default)]
+    pub data_quality: DataQualityConfig,
 }
 
 /// Data-quality issue.
