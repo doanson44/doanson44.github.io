@@ -125,7 +125,6 @@ impl MarketState {
                     Ok(result) => {
                         let json = serde_json::to_string_pretty(&result)
                             .map_err(|error| format!("Failed to serialize analysis result: {error}"))?;
-                        let report = TechnicalAnalysisService::format_analysis_report(&result, "en");
                         analysis_json.set(Some(json.clone()));
                         analysis_result.set(Some(result));
                         analysis_modal_open.set(!copy_result);
