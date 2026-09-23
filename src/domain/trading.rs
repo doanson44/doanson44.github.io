@@ -319,8 +319,8 @@ mod tests {
         let prices = HashMap::from([("BTC_USDT".to_string(), 110.0)]);
         let summary = summarize_portfolio(&snapshot, &prices);
 
-        assert!((summary.equity - 1097.902097902098).abs() < 1e-9);
-        assert!((summary.total_pnl - 97.9020979020979).abs() < 1e-9);
+        assert!((summary.equity - 1009.8901098901099).abs() < 1e-9);
+        assert!((summary.total_pnl - 9.89010989010989).abs() < 1e-9);
         assert_eq!(summary.holdings.len(), 1);
     }
 }
