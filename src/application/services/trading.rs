@@ -20,6 +20,8 @@ impl TradingService {
                     && snapshot.settings.initial_capital > 0.0
                     && snapshot.settings.fee_rate.is_finite()
                     && (0.0..=1.0).contains(&snapshot.settings.fee_rate)
+                    && snapshot.settings.leverage.is_finite()
+                    && (1.0..=125.0).contains(&snapshot.settings.leverage)
                     && snapshot.portfolio.cash.is_finite()
                     && snapshot.portfolio.cash >= 0.0
             })
