@@ -244,7 +244,7 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
     let mut report = String::new();
     report.push_str(&format!(
         "{} ({}) — {}\\n",
-        result.asset.symbol, result.asset.asset_type.as_str(), result.asset.timeframe
+        result.asset.symbol, match result.asset.asset_type { crate::domain::technical_analysis::AssetType::Stock => "Stock", crate::domain::technical_analysis::AssetType::Crypto => "Crypto" }, result.asset.timeframe
     ));
     report.push_str(&format!(
         "Analysis: {} {}\\n\\n",
