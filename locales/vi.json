@@ -26,6 +26,7 @@
   "tools_jwt_desc": "Giải mã header, payload và signature của JWT ngay trên trình duyệt.",
   "tools_base64_desc": "Mã hóa và giải mã văn bản UTF-8 bằng Base64 ngay trên trình duyệt.",
   "tools_time_desc": "Đồng hồ thế giới, đếm ngược, stopwatch, thước đo và tiện ích timestamp.",
+  "tools_market_desc": "Xem dữ liệu cổ phiếu thị trường mới nhất từ CafeF.",
   "tools_result_count": "Kết quả",
   "tools_no_results": "Không tìm thấy công cụ. Hãy thử từ khóa khác.",
   "tools_calculator": "Máy tính {category}.",
