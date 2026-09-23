@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::domain::trading::{PositionSide, PortfolioSummary};
+use crate::domain::trading::{PortfolioSummary, PositionSide};
 use crate::features::socket::state::SocketState;
 use crate::i18n::*;
 
