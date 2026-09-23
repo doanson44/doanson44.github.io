@@ -231,7 +231,6 @@ impl TechnicalAnalysisService {
         serde_json::to_string_pretty(&result)
             .map_err(|error| format!("Failed to serialize analysis result: {error}"))
     }
-
 }
 
 fn format_optional(value: Option<f64>) -> String {
@@ -244,7 +243,12 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
     let mut report = String::new();
     report.push_str(&format!(
         "{} ({}) — {}\\n",
-        result.asset.symbol, match result.asset.asset_type { crate::domain::technical_analysis::AssetType::Stock => "Stock", crate::domain::technical_analysis::AssetType::Crypto => "Crypto" }, result.asset.timeframe
+        result.asset.symbol,
+        match result.asset.asset_type {
+            crate::domain::technical_analysis::AssetType::Stock => "Stock",
+            crate::domain::technical_analysis::AssetType::Crypto => "Crypto",
+        },
+        result.asset.timeframe
     ));
     report.push_str(&format!(
         "Analysis: {} {}\\n\\n",
@@ -252,15 +256,31 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
     ));
 
     report.push_str("SUMMARY\\n");
-    report.push_str(&format!("• State: {}\\n", result.engine_summary.dominant_state));
+    report.push_str(&format!(
+        "• State: {}\\n",
+        result.engine_summary.dominant_state
+    ));
     report.push_str(&format!("• Trend: {}\\n", result.engine_summary.trend));
-    report.push_str(&format!("• Momentum: {}\\n", result.engine_summary.momentum));
-    report.push_str(&format!("• Structure: {}\\n", result.engine_summary.structure));
+    report.push_str(&format!(
+        "• Momentum: {}\\n",
+        result.engine_summary.momentum
+    ));
+    report.push_str(&format!(
+        "• Structure: {}\\n",
+        result.engine_summary.structure
+    ));
     report.push_str(&format!(
         "• Volume confirmation: {}\\n",
-        if result.engine_summary.volume_confirmation { "yes" } else { "no" }
+        if result.engine_summary.volume_confirmation {
+            "yes"
+        } else {
+            "no"
+        }
     ));
-    report.push_str(&format!("• Main risk: {}\\n\\n", result.engine_summary.main_risk));
+    report.push_str(&format!(
+        "• Main risk: {}\\n\\n",
+        result.engine_summary.main_risk
+    ));
 
     report.push_str("CURRENT PRICE\\n");
     report.push_str(&format!(
@@ -366,7 +386,11 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         result.breakout.status,
         format_optional(result.breakout.resistance_level),
         result.breakout.direction.as_deref().unwrap_or("N/A"),
-        if result.breakout.volume_confirmation { "yes" } else { "no" }
+        if result.breakout.volume_confirmation {
+            "yes"
+        } else {
+            "no"
+        }
     ));
 
     report.push_str("REGIME\\n");
@@ -446,7 +470,11 @@ fn format_analysis_report(result: &AnalysisResult) -> String {
         result.data_quality.candles_used,
         result.data_quality.candles_received,
         result.data_quality.minimum_required,
-        if result.data_quality.sufficient_for_analysis { "yes" } else { "no" }
+        if result.data_quality.sufficient_for_analysis {
+            "yes"
+        } else {
+            "no"
+        }
     ));
     if result.data_quality.issues.is_empty() {
         report.push_str("• Issues: none\\n");
