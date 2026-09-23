@@ -118,38 +118,80 @@ pub struct MovingAverageConfig {
 /// Momentum configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MomentumConfig {
+    /// RSI settings.
+    pub rsi: RsiConfig,
+    /// MACD settings.
+    pub macd: MacdConfig,
+    /// Stochastic settings.
+    pub stochastic: StochasticConfig,
+}
+
+/// RSI configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RsiConfig {
     /// RSI period.
-    pub rsi: usize,
-    /// MACD fast period.
-    pub macd_fast: usize,
-    /// MACD slow period.
-    pub macd_slow: usize,
-    /// MACD signal period.
-    pub macd_signal: usize,
-    /// Stochastic K period.
-    pub stochastic_k: usize,
-    /// Stochastic D period.
-    pub stochastic_d: usize,
-    /// Stochastic smoothing period.
-    pub stochastic_smooth: usize,
+    pub period: usize,
+}
+
+/// MACD configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MacdConfig {
+    /// Fast EMA period.
+    pub fast: usize,
+    /// Slow EMA period.
+    pub slow: usize,
+    /// Signal EMA period.
+    pub signal: usize,
+}
+
+/// Stochastic configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StochasticConfig {
+    /// K period.
+    pub k_period: usize,
+    /// D period.
+    pub d_period: usize,
+    /// Smoothing period.
+    pub smooth: usize,
 }
 
 /// Volatility configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VolatilityConfig {
+    /// ATR settings.
+    pub atr: AtrConfig,
+    /// Bollinger-band settings.
+    pub bollinger_bands: BollingerConfig,
+}
+
+/// ATR configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AtrConfig {
     /// ATR period.
-    pub atr: usize,
+    pub period: usize,
+}
+
+/// Bollinger-band configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BollingerConfig {
     /// Bollinger period.
-    pub bollinger_period: usize,
-    /// Bollinger standard-deviation multiplier.
-    pub bollinger_stddev: f64,
+    pub period: usize,
+    /// Standard-deviation multiplier.
+    pub stddev: f64,
 }
 
 /// Trend-strength configuration.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrendStrengthConfig {
+    /// ADX settings.
+    pub adx: AdxConfig,
+}
+
+/// ADX configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdxConfig {
     /// ADX period.
-    pub adx: usize,
+    pub period: usize,
 }
 
 /// Volume configuration.
@@ -906,7 +948,7 @@ pub fn analyze(
         },
     };
 
-    let rsi_values = rsi(&closes, config.indicators.momentum.rsi)?;
+    let rsi_values = rsi(&closes, config.indicators.momentum.rsi.period)?;
     let rsi_current = rsi_values.last().copied().flatten();
     let rsi_analysis = RsiAnalysis {
         value: rsi_current,
@@ -918,8 +960,8 @@ pub fn analyze(
         oversold: rsi_current.is_some_and(|value| value <= 30.0),
     };
 
-    let fast = ema(&closes, config.indicators.momentum.macd_fast)?;
-    let slow = ema(&closes, config.indicators.momentum.macd_slow)?;
+    let fast = ema(&closes, config.indicators.momentum.macd.fast)?;
+    let slow = ema(&closes, config.indicators.momentum.macd.slow)?;
     let macd_line: Vec<f64> = fast
         .iter()
         .zip(slow.iter())
@@ -928,7 +970,7 @@ pub fn analyze(
             _ => 0.0,
         })
         .collect();
-    let signal_line = ema(&macd_line, config.indicators.momentum.macd_signal)?;
+    let signal_line = ema(&macd_line, config.indicators.momentum.macd.signal)?;
     let macd_current = macd_line.last().copied();
     let signal_current = signal_line.last().copied().flatten();
     let histogram = macd_current.zip(signal_current).map(|(a, b)| a - b);
@@ -964,8 +1006,8 @@ pub fn analyze(
         "none".to_string()
     };
 
-    let stochastic_k = stochastic_k(&candles, config.indicators.momentum.stochastic_k)?;
-    let stochastic_d = sma(&stochastic_k, config.indicators.momentum.stochastic_d)?;
+    let stochastic_k = stochastic_k(&candles, config.indicators.momentum.stochastic.k_period)?;
+    let stochastic_d = sma(&stochastic_k, config.indicators.momentum.stochastic.d_period)?;
     let k = stochastic_k.last().copied().flatten();
     let d = stochastic_d.last().copied().flatten();
     let momentum = MomentumAnalysis {
@@ -997,13 +1039,13 @@ pub fn analyze(
         },
     };
 
-    let atr_values = atr(&candles, config.indicators.volatility.atr)?;
+    let atr_values = atr(&candles, config.indicators.volatility.atr.period)?;
     let atr_current = atr_values.last().copied().flatten();
     let atr_percent = atr_current.map(|value| value / latest.close * 100.0);
     let (upper, middle, lower) = bollinger(
         &closes,
-        config.indicators.volatility.bollinger_period,
-        config.indicators.volatility.bollinger_stddev,
+        config.indicators.volatility.bollinger_bands.period,
+        config.indicators.volatility.bollinger_bands.stddev,
     )?;
     let upper_current = upper.last().copied().flatten();
     let middle_current = middle.last().copied().flatten();
