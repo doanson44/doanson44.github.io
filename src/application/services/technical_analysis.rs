@@ -105,6 +105,48 @@ mod tests {
                 volume_confirmation: Default::default(),
                 retest_detection: Default::default(),
             },
+            pattern_detection: PatternDetectionConfig {
+                enabled: true,
+                candlestick_patterns: true,
+                chart_patterns: vec!["ascending_structure".to_string()],
+            },
+            divergence_detection: DivergenceDetectionConfig {
+                enabled: true,
+                indicators: vec!["rsi".to_string()],
+                minimum_swing_distance: 5,
+            },
+            regime_detection: RegimeDetectionConfig {
+                enabled: true,
+                dimensions: vec![
+                    "trend".to_string(),
+                    "momentum".to_string(),
+                    "volatility".to_string(),
+                    "volume".to_string(),
+                ],
+            },
+            scenario_engine: ScenarioEngineConfig {
+                enabled: true,
+                scenarios: vec![
+                    "bullish".to_string(),
+                    "bearish".to_string(),
+                    "range".to_string(),
+                ],
+            },
+            signal_engine: SignalEngineConfig {
+                enabled: true,
+                signal_strength_levels: vec![
+                    "weak".to_string(),
+                    "moderate".to_string(),
+                    "strong".to_string(),
+                ],
+            },
+            data_quality: DataQualityConfig {
+                validate_ohlcv: true,
+                detect_missing_candles: true,
+                detect_duplicate_candles: true,
+                detect_invalid_prices: true,
+                detect_zero_volume: true,
+            },
         }
     }
 
