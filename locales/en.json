@@ -147,5 +147,10 @@
   "market_sort_label_market_cap": "Market Cap",
   "market_sort_label": "Sort field",
   "market_pin": "Pin stock",
-  "market_unpin": "Unpin stock"
+  "market_unpin": "Unpin stock",
+  "market_actions": "Actions",
+  "market_analyze": "Analyze",
+  "market_analysis": "Technical analysis",
+  "market_copy_analysis": "Copy analysis JSON",
+  "common_close": "Close"
 }
