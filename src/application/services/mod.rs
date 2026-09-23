@@ -192,6 +192,23 @@ mod tests {
     }
 
     #[test]
+    fn reset_metrics_clears_all_counters_without_creating_a_tick() {
+        let mut service = FuturesMarketService::new();
+        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
+        service.apply_batch(vec![update("BTC_USDT", 101.0)]);
+        service.apply_batch(vec![update("BTC_USDT", 102.0)]);
+
+        service.reset_metrics();
+        service.apply_batch(vec![update("BTC_USDT", 103.0)]);
+        let snapshot = service.snapshot();
+
+        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 1);
+        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.burst_score(), 0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.burst_ticks(), 0);
+    }
+
+    #[test]
     fn reconnect_rebaseline_does_not_create_a_tick() {
         let mut service = FuturesMarketService::new();
         service.apply_batch(vec![update("BTC_USDT", 100.0)]);
