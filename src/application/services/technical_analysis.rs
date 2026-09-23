@@ -263,20 +263,20 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "TỔNG QUAN\\n" } else { "SUMMARY\\n" });
     report.push_str(&format!(
-        "• State: {}\\n",
+        if vi { "• Trạng thái: {}\\n" } else { "• State: {}\\n" },
         result.engine_summary.dominant_state
     ));
-    report.push_str(&format!("• Trend: {}\\n", result.engine_summary.trend));
+    report.push_str(&format!(if vi { "• Xu hướng: {}\\n" } else { "• Trend: {}\\n" }, result.engine_summary.trend));
     report.push_str(&format!(
-        "• Momentum: {}\\n",
+        if vi { "• Động lượng: {}\\n" } else { "• Momentum: {}\\n" },
         result.engine_summary.momentum
     ));
     report.push_str(&format!(
-        "• Structure: {}\\n",
+        if vi { "• Cấu trúc: {}\\n" } else { "• Structure: {}\\n" },
         result.engine_summary.structure
     ));
     report.push_str(&format!(
-        "• Volume confirmation: {}\\n",
+        if vi { "• Xác nhận khối lượng: {}\\n" } else { "• Volume confirmation: {}\\n" },
         if result.engine_summary.volume_confirmation {
             "yes"
         } else {
@@ -284,13 +284,13 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
         }
     ));
     report.push_str(&format!(
-        "• Main risk: {}\\n\\n",
+        if vi { "• Rủi ro chính: {}\\n\\n" } else { "• Main risk: {}\\n\\n" },
         result.engine_summary.main_risk
     ));
 
     report.push_str(if vi { "GIÁ HIỆN TẠI\\n" } else { "CURRENT PRICE\\n" });
     report.push_str(&format!(
-        "• Close: {} {}\\n• Change: {:.2} ({:.2}%)\\n• Volume: {:.0}\\n\\n",
+        if vi { "• Đóng cửa: {} {}\\n• Thay đổi: {:.2} ({:.2}%)\\n• Khối lượng: {:.0}\\n\\n" } else { "• Close: {} {}\\n• Change: {:.2} ({:.2}%)\\n• Volume: {:.0}\\n\\n" },
         result.snapshot.close,
         result.asset.currency,
         result.snapshot.price_change.absolute,
@@ -300,11 +300,11 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "XU HƯỚNG\\n" } else { "TREND\\n" });
     report.push_str(&format!(
-        "• State: {}\\n• Strength: {}\\n• Alignment: {}\\n",
+        if vi { "• Trạng thái: {}\\n• Độ mạnh: {}\\n• Độ đồng thuận: {}\\n" } else { "• State: {}\\n• Strength: {}\\n• Alignment: {}\\n" },
         result.trend.state, result.trend.strength, result.trend.alignment.description
     ));
     report.push_str(&format!(
-        "• SMA: {}\\n",
+        if vi { "• SMA: {}\\n" } else { "• SMA: {}\\n" },
         result
             .trend
             .moving_averages
@@ -315,7 +315,7 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
             .join(", ")
     ));
     report.push_str(&format!(
-        "• EMA: {}\\n\\n",
+        if vi { "• EMA: {}\\n\\n" } else { "• EMA: {}\\n\\n" },
         result
             .trend
             .moving_averages
@@ -328,7 +328,7 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "ĐỘNG LƯỢNG\\n" } else { "MOMENTUM\\n" });
     report.push_str(&format!(
-        "• RSI: {} ({})\\n• MACD: {} / signal {} / histogram {} ({})\\n• Stochastic: K {} / D {} ({})\\n\\n",
+        if vi { "• RSI: {} ({})\\n• MACD: {} / tín hiệu {} / histogram {} ({})\\n• Stochastic: K {} / D {} ({})\\n\\n" } else { "• RSI: {} ({})\\n• MACD: {} / signal {} / histogram {} ({})\\n• Stochastic: K {} / D {} ({})\\n\\n" },
         format_optional(result.momentum.rsi.value),
         result.momentum.rsi.state,
         format_optional(result.momentum.macd.macd),
@@ -342,7 +342,7 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "BIẾN ĐỘNG & KHỐI LƯỢNG\\n" } else { "VOLATILITY & VOLUME\\n" });
     report.push_str(&format!(
-        "• ATR: {} ({})\\n• Bollinger: lower {} / middle {} / upper {}\\n• Volume: {} ({})\\n• OBV: {}\\n\\n",
+        if vi { "• ATR: {} ({})\\n• Bollinger: dưới {} / giữa {} / trên {}\\n• Khối lượng: {} ({})\\n• OBV: {}\\n\\n" } else { "• ATR: {} ({})\\n• Bollinger: lower {} / middle {} / upper {}\\n• Volume: {} ({})\\n• OBV: {}\\n\\n" },
         format_optional(result.volatility.atr),
         result.volatility.state,
         format_optional(result.volatility.bollinger_bands.lower),
@@ -355,7 +355,7 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "CẤU TRÚC THỊ TRƯỜNG\\n" } else { "MARKET STRUCTURE\\n" });
     report.push_str(&format!(
-        "• State: {}\\n• Sequence: {}\\n• Last swing high: {}\\n• Last swing low: {}\\n\\n",
+        if vi { "• Trạng thái: {}\\n• Chuỗi: {}\\n• Đỉnh swing gần nhất: {}\\n• Đáy swing gần nhất: {}\\n\\n" } else { "• State: {}\\n• Sequence: {}\\n• Last swing high: {}\\n• Last swing low: {}\\n\\n" },
         result.market_structure.state,
         if result.market_structure.structure_sequence.is_empty() {
             "N/A".to_string()
@@ -380,7 +380,7 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "HỖ TRỢ / KHÁNG CỰ\\n" } else { "SUPPORT / RESISTANCE\\n" });
     report.push_str(&format!(
-        "• Immediate support: {}\\n• Major support: {}\\n• Immediate resistance: {}\\n\\n",
+        if vi { "• Hỗ trợ gần: {}\\n• Hỗ trợ chính: {}\\n• Kháng cự gần: {}\\n\\n" } else { "• Immediate support: {}\\n• Major support: {}\\n• Immediate resistance: {}\\n\\n" },
         format_optional(result.key_levels.immediate_support),
         format_optional(result.key_levels.major_support),
         format_optional(result.key_levels.immediate_resistance)
@@ -388,7 +388,7 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "BREAKOUT\\n" } else { "BREAKOUT\\n" });
     report.push_str(&format!(
-        "• Status: {}\\n• Level: {}\\n• Direction: {}\\n• Volume confirmation: {}\\n\\n",
+        if vi { "• Trạng thái: {}\\n• Mức: {}\\n• Hướng: {}\\n• Xác nhận khối lượng: {}\\n\\n" } else { "• Status: {}\\n• Level: {}\\n• Direction: {}\\n• Volume confirmation: {}\\n\\n" },
         result.breakout.status,
         format_optional(result.breakout.resistance_level),
         result.breakout.direction.as_deref().unwrap_or("N/A"),
@@ -401,7 +401,7 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "CHẾ ĐỘ THỊ TRƯỜNG\\n" } else { "REGIME\\n" });
     report.push_str(&format!(
-        "• Overall: {}\\n• Trend: {}\\n• Momentum: {}\\n• Volatility: {}\\n• Volume: {}\\n\\n",
+        if vi { "• Tổng thể: {}\\n• Xu hướng: {}\\n• Động lượng: {}\\n• Biến động: {}\\n• Khối lượng: {}\\n\\n" } else { "• Overall: {}\\n• Trend: {}\\n• Momentum: {}\\n• Volatility: {}\\n• Volume: {}\\n\\n" },
         result.regime.overall,
         result.regime.trend,
         result.regime.momentum,
@@ -411,11 +411,11 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "TÍN HIỆU\\n" } else { "SIGNALS\\n" });
     if result.signals.is_empty() {
-        report.push_str("• None\\n");
+        report.push_str(if vi { "• Không có\\n" } else { "• None\\n" });
     } else {
         for signal in &result.signals {
             report.push_str(&format!(
-                "• {} — {} / {}\\n  Evidence: {}\\n",
+                if vi { "• {} — {} / {}\\n  Bằng chứng: {}\\n" } else { "• {} — {} / {}\\n  Evidence: {}\\n" },
                 signal.direction,
                 signal.category,
                 signal.strength,
@@ -427,11 +427,11 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
 
     report.push_str(if vi { "MÔ HÌNH & PHÂN KỲ\\n" } else { "PATTERNS & DIVERGENCES\\n" });
     if result.patterns.is_empty() {
-        report.push_str("• Patterns: none\\n");
+        report.push_str(if vi { "• Mô hình: không có\\n" } else { "• Patterns: none\\n" });
     } else {
         for pattern in &result.patterns {
             report.push_str(&format!(
-                "• Pattern: {} ({}, confidence {:.0}%)\\n",
+                if vi { "• Mô hình: {} ({}, độ tin cậy {:.0}%)\\n" } else { "• Pattern: {} ({}, confidence {:.0}%)\\n" },
                 pattern.name,
                 pattern.status,
                 pattern.confidence * 100.0
@@ -439,11 +439,11 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
         }
     }
     if result.divergences.is_empty() {
-        report.push_str("• Divergences: none\\n");
+        report.push_str(if vi { "• Phân kỳ: không có\\n" } else { "• Divergences: none\\n" });
     } else {
         for divergence in &result.divergences {
             report.push_str(&format!(
-                "• Divergence: {} {} (confidence {:.0}%)\\n",
+                if vi { "• Phân kỳ: {} {} (độ tin cậy {:.0}%)\\n" } else { "• Divergence: {} {} (confidence {:.0}%)\\n" },
                 divergence.indicator,
                 divergence.direction,
                 divergence.confidence * 100.0
@@ -457,22 +457,22 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
         ("Bullish", &result.scenarios.bullish),
         ("Bearish", &result.scenarios.bearish),
     ] {
-        report.push_str(&format!("• {name}: {}\\n", scenario.status));
+        report.push_str(&format!(if vi { "• {name}: {}\\n" } else { "• {name}: {}\\n" }, scenario.status));
         if let Some(trigger) = &scenario.trigger {
-            report.push_str(&format!("  Trigger: {}\\n", trigger.condition));
+            report.push_str(&format!(if vi { "  Điều kiện kích hoạt: {}\\n" } else { "  Trigger: {}\\n" }, trigger.condition));
         }
         if let Some(invalidation) = &scenario.invalidation {
-            report.push_str(&format!("  Invalidation: {}\\n", invalidation.condition));
+            report.push_str(&format!(if vi { "  Điều kiện vô hiệu: {}\\n" } else { "  Invalidation: {}\\n" }, invalidation.condition));
         }
     }
     report.push_str(&format!(
-        "• Range: {} — {}\\n\\n",
+        if vi { "• Đi ngang: {} — {}\\n\\n" } else { "• Range: {} — {}\\n\\n" },
         result.scenarios.range.status, result.scenarios.range.condition
     ));
 
     report.push_str(if vi { "CHẤT LƯỢNG DỮ LIỆU\\n" } else { "DATA QUALITY\\n" });
     report.push_str(&format!(
-        "• Candles: {} used / {} received\\n• Minimum required: {}\\n• Sufficient: {}\\n",
+        if vi { "• Nến: {} đã dùng / {} nhận được\\n• Tối thiểu yêu cầu: {}\\n• Đủ dữ liệu: {}\\n" } else { "• Candles: {} used / {} received\\n• Minimum required: {}\\n• Sufficient: {}\\n" },
         result.data_quality.candles_used,
         result.data_quality.candles_received,
         result.data_quality.minimum_required,
@@ -483,9 +483,9 @@ fn format_analysis_report(result: &AnalysisResult, language: &str) -> String {
         }
     ));
     if result.data_quality.issues.is_empty() {
-        report.push_str("• Issues: none\\n");
+        report.push_str(if vi { "• Vấn đề: không có\\n" } else { "• Issues: none\\n" });
     } else {
-        report.push_str("• Issues:\\n");
+        report.push_str(if vi { "• Vấn đề:\\n" } else { "• Issues:\\n" });
         for issue in &result.data_quality.issues {
             report.push_str(&format!("  - {}: {}\\n", issue.code, issue.description));
         }
