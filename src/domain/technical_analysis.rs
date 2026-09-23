@@ -941,6 +941,8 @@ pub fn validate_input(
         }
         if candle.volume < 0.0 {
             issues.push(issue("INVALID_VOLUME", format!("Candle {index} has negative volume")));
+        } else if candle.volume == 0.0 {
+            issues.push(issue("ZERO_VOLUME", format!("Candle {index} has zero volume")));
         }
     }
 
@@ -972,6 +974,9 @@ pub fn validate_input(
         from: candles.first().map(|candle| candle.timestamp.clone()),
         to: candles.last().map(|candle| candle.timestamp.clone()),
     };
+    let has_fatal_issue = issues
+        .iter()
+        .any(|item| item.code != "MAXIMUM_CANDLES_EXCEEDED");
 
     Ok((
         candles,
@@ -979,7 +984,7 @@ pub fn validate_input(
             candles_received: received,
             candles_used: candles.len(),
             minimum_required: requirements.minimum_candles,
-            sufficient_for_analysis: candles.len() >= requirements.minimum_candles && issues.is_empty(),
+            sufficient_for_analysis: candles.len() >= requirements.minimum_candles && !has_fatal_issue,
             issues,
             coverage,
         },
@@ -1735,7 +1740,7 @@ fn market_structure_analysis(
             }),
         },
         structure_sequence: sequence,
-        break_of_structure: bos.clone(),
+        break_of_structure: bos,
         change_of_character: StructureBreak {
             detected: false,
             direction: None,
