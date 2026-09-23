@@ -8,13 +8,17 @@ pub const DEFAULT_INITIAL_CAPITAL: f64 = 1_000.0;
 pub const DEFAULT_FEE_RATE: f64 = 0.001;
 
 /// Default quote-currency allocation for each new paper trade.
-pub const DEFAULT_TRADE_ALLOCATION_RATE: f64 = 0.10;
+pub const DEFAULT_LEVERAGE: f64 = 1.0;
+pub const DEFAULT_TRADE_ALLOCATION_PERCENT: f64 = 10.0;
+pub const MAX_LEVERAGE: f64 = 125.0;
 
 /// Paper-trading configuration that is safe to persist locally.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TradingSettings {
     pub initial_capital: f64,
     pub fee_rate: f64,
+    pub leverage: f64,
+    pub trade_allocation_percent: f64,
 }
 
 impl Default for TradingSettings {
@@ -22,6 +26,8 @@ impl Default for TradingSettings {
         Self {
             initial_capital: DEFAULT_INITIAL_CAPITAL,
             fee_rate: DEFAULT_FEE_RATE,
+            leverage: DEFAULT_LEVERAGE,
+            trade_allocation_percent: DEFAULT_TRADE_ALLOCATION_PERCENT,
         }
     }
 }
@@ -34,6 +40,8 @@ pub struct Position {
     pub entry_price: f64,
     pub entry_value: f64,
     pub entry_fee: f64,
+    pub margin: f64,
+    pub leverage: f64,
 }
 
 /// The side of a paper-trading transaction.
@@ -94,9 +102,13 @@ impl Portfolio {
             return Err(format!("{symbol} is already held."));
         }
 
-        let notional = self.cash * DEFAULT_TRADE_ALLOCATION_RATE;
+        let allocation_rate = settings.trade_allocation_percent / 100.0;
+        let allocated_cash = self.cash * allocation_rate;
+        let leverage = settings.leverage;
+        let margin = allocated_cash / (1.0 + leverage * settings.fee_rate);
+        let notional = margin * leverage;
         let fee = notional * settings.fee_rate;
-        let total_cost = notional + fee;
+        let total_cost = margin + fee;
 
         if notional <= 0.0 || total_cost > self.cash {
             return Err("Insufficient cash for the paper trade.".to_string());
@@ -110,6 +122,8 @@ impl Portfolio {
             entry_price: price,
             entry_value: notional,
             entry_fee: fee,
+            margin,
+            leverage,
         });
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
@@ -146,9 +160,10 @@ impl Portfolio {
         let position = self.positions.remove(index);
         let value = position.quantity * price;
         let fee = value * settings.fee_rate;
-        let realized_pnl = value - fee - position.entry_value - position.entry_fee;
+        let price_pnl = value - position.entry_value;
+        let realized_pnl = price_pnl - position.entry_fee - fee;
 
-        self.cash += value - fee;
+        self.cash += position.margin + price_pnl - fee;
         self.realized_pnl += realized_pnl;
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
@@ -257,6 +272,14 @@ fn validate_trade_inputs(
     if !settings.fee_rate.is_finite() || !(0.0..=1.0).contains(&settings.fee_rate) {
         return Err("Trading fee must be between 0% and 100%.".to_string());
     }
+    if !settings.leverage.is_finite() || !(1.0..=MAX_LEVERAGE).contains(&settings.leverage) {
+        return Err(format!("Leverage must be between 1x and {MAX_LEVERAGE:.0}x."));
+    }
+    if !settings.trade_allocation_percent.is_finite()
+        || !(0.1..=100.0).contains(&settings.trade_allocation_percent)
+    {
+        return Err("Trade allocation must be between 0.1% and 100%.".to_string());
+    }
     Ok(())
 }
 
@@ -268,6 +291,8 @@ mod tests {
         TradingSettings {
             initial_capital: 1_000.0,
             fee_rate: 0.001,
+            leverage: 1.0,
+            trade_allocation_percent: 10.0,
         }
     }
 
@@ -279,7 +304,7 @@ mod tests {
         portfolio.buy(&settings, "BTC_USDT", 100.0, 1).unwrap();
 
         assert_eq!(portfolio.positions.len(), 1);
-        assert!((portfolio.positions[0].quantity - 1.0).abs() < f64::EPSILON);
+        assert!((portfolio.positions[0].quantity - 0.999000999000999).abs() < 1e-9);
         assert!((portfolio.cash - 899.9).abs() < 1e-9);
     }
 
@@ -292,8 +317,8 @@ mod tests {
         portfolio.sell(&settings, "BTC_USDT", 110.0, 2).unwrap();
 
         assert!(portfolio.positions.is_empty());
-        assert!((portfolio.cash - 1097.8021978021978).abs() < 1e-9);
-        assert!((portfolio.realized_pnl - 97.8021978021978).abs() < 1e-9);
+        assert!((portfolio.cash - 1009.79).abs() < 1e-9);
+        assert!((portfolio.realized_pnl - 9.79).abs() < 1e-9);
     }
 
     #[test]
@@ -319,8 +344,8 @@ mod tests {
         let prices = HashMap::from([("BTC_USDT".to_string(), 110.0)]);
         let summary = summarize_portfolio(&snapshot, &prices);
 
-        assert!((summary.equity - 1009.8901098901099).abs() < 1e-9);
-        assert!((summary.total_pnl - 9.89010989010989).abs() < 1e-9);
+        assert!((summary.equity - 1009.79).abs() < 1e-9);
+        assert!((summary.total_pnl - 9.79).abs() < 1e-9);
         assert_eq!(summary.holdings.len(), 1);
     }
 }
