@@ -225,6 +225,7 @@ pub fn MarketPage() -> impl IntoView {
                                     "text-[var(--text-secondary)]"
                                 };
                                 let symbol = stock.symbol.clone();
+                                let pin_symbol = symbol.clone();
                                 let is_pinned = move || state.pinned_symbols.get().iter().any(|item| item == &symbol);
                                 view! {
                                     <tr class="border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]">
@@ -234,7 +235,7 @@ pub fn MarketPage() -> impl IntoView {
                                                 class="min-h-9 min-w-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                                                 title=move || if is_pinned() { "Unpin stock" } else { "Pin stock" }
                                                 aria-label=move || if is_pinned() { "Unpin stock" } else { "Pin stock" }
-                                                on:click=move |_| state.toggle_pin(&symbol)
+                                                on:click=move |_| state.toggle_pin(&pin_symbol)
                                             >
                                                 {move || if is_pinned() { "★" } else { "☆" }}
                                             </button>
