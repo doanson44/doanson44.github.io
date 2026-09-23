@@ -73,22 +73,22 @@ pub fn SocketPage(
                                     <tr class="border-b border-[var(--border-color)] bg-[var(--surface-hover)] text-[var(--text-secondary)]">
                                         <th class="px-3 py-2 text-center font-medium" scope="col">"Pin"</th>
                                         <th class="px-3 py-2 font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Symbol label="Symbol" align="left" />
+                                            <SortHeader state=state mode=SocketSortMode::Symbol align="left">"Symbol" </SortHeader />
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Price label="Price" align="right" />
+                                            <SortHeader state=state mode=SocketSortMode::Price align="right">"Price" </SortHeader />
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Change24h label="24h" align="right" />
+                                            <SortHeader state=state mode=SocketSortMode::Change24h align="right">"24h" </SortHeader />
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Funding label=move || t_string!(i18n, socket_funding) align="right" />
+                                            <SortHeader state=state mode=SocketSortMode::Funding align="right">{move || t_string!(i18n, socket_funding)} </SortHeader />
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Momentum label=move || t_string!(i18n, socket_momentum) align="right" />
+                                            <SortHeader state=state mode=SocketSortMode::Momentum align="right">{move || t_string!(i18n, socket_momentum)} </SortHeader />
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::TotalTicks label=move || t_string!(i18n, socket_activity) align="right" />
+                                            <SortHeader state=state mode=SocketSortMode::TotalTicks align="right">{move || t_string!(i18n, socket_activity)} </SortHeader />
                                         </th>
                                     </tr>
                                 </thead>
@@ -117,10 +117,9 @@ type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 fn SortHeader(
     state: SocketState,
     mode: SocketSortMode,
-    label: impl IntoView + 'static,
     align: &'static str,
+    children: Children,
 ) -> impl IntoView {
-    let label = StoredValue::new(label);
     let is_active = move || state.sort_mode.get() == mode;
     let indicator = move || {
         if !is_active() {
@@ -146,7 +145,7 @@ fn SortHeader(
             aria-pressed=move || is_active().to_string()
             on:click=move |_| state.set_sort(mode)
         >
-            <span>{move || label.get_value()}</span>
+            <span>{children()}</span>
             <span aria-hidden="true">{indicator}</span>
         </button>
     }
