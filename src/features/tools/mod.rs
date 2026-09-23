@@ -5,6 +5,7 @@ pub mod finance;
 pub mod json;
 pub mod jwt;
 pub mod markdown;
+pub mod market;
 pub mod page;
 pub mod proxy;
 pub mod time;
