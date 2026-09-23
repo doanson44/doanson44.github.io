@@ -79,6 +79,7 @@
   "socket_portfolio": "Portfolio",
   "socket_paper_trading": "Paper trading · client-side only",
   "socket_settings": "Settings",
+  "socket_reset_metrics": "Reset metrics",
   "socket_initial_capital": "Initial capital",
   "socket_cash": "Cash",
   "socket_equity": "Equity",
