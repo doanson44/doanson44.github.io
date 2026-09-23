@@ -58,6 +58,7 @@ pub struct Position {
     pub entry_fee: f64,
     pub margin: f64,
     pub leverage: f64,
+    #[serde(default)]
     pub side: PositionSide,
 }
 
