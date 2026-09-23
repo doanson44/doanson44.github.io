@@ -70,3 +70,12 @@ pub trait MarketClient {
     /// Fetches market data from the configured public endpoint.
     fn fetch(&self, on_result: Rc<dyn Fn(Result<String, String>)>);
 }
+
+/// Application port for persisting market ticker pins in browser storage.
+pub trait MarketPinStore {
+    /// Loads the symbols currently pinned by the user.
+    fn load(&self) -> Result<Vec<String>, String>;
+
+    /// Persists the symbols currently pinned by the user.
+    fn save(&self, symbols: &[String]) -> Result<(), String>;
+}
