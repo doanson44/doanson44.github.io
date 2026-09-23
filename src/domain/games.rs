@@ -443,8 +443,7 @@ impl Default for PongGame {
 pub fn pong_ai_y(paddle_y: i32, ball_y: i32, max_y: i32) -> i32 {
     (paddle_y + (ball_y - paddle_y) / 2).clamp(1, max_y)
 }
-
-/// The result of advancing a Breakout game by one simulation tick.
+\n/// The result of advancing a Breakout game by one simulation tick.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BreakoutTickResult {
     /// The ball is still in play.
@@ -557,7 +556,7 @@ impl BreakoutGame {
         let mut next_dx = self.ball_dx;
         let mut next_dy = self.ball_dy;
 
-        if next_x < 0 || next_x >= Self::WIDTH {
+        if !(0..Self::WIDTH).contains(&next_x) {
             next_dx = -next_dx;
             next_x = self.ball_x + next_dx;
         }
