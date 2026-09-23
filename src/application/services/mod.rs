@@ -79,6 +79,24 @@ impl FuturesMarketService {
         }
     }
 
+    /// Resets momentum, burst score, and tick history for all known tickers.
+    ///
+    /// Current market prices are preserved as baselines so the next live update
+    /// starts a fresh measurement window without creating a synthetic tick.
+    pub fn reset_metrics(&mut self) {
+        let baselines = self
+            .registry
+            .snapshot()
+            .map(|(symbol, ticker)| (symbol.clone(), ticker.last_price))
+            .collect::<Vec<_>>();
+
+        self.momentum.clear();
+        for (symbol, price) in baselines {
+            self.momentum
+                .insert(symbol, FuturesTickerMomentum::baseline(price));
+        }
+    }
+
     /// Re-baselines known tickers after reconnect without creating synthetic ticks.
     pub fn rebaseline(&mut self) {
         for (symbol, ticker) in self.registry.snapshot() {
