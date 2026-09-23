@@ -33,26 +33,46 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
             </div>
 
             <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                <PortfolioMetric
-                    label=move || t_string!(i18n, socket_initial_capital).to_string()
-                    value=move || format_currency(state.trading_snapshot.get().settings.initial_capital)
-                />
-                <PortfolioMetric
-                    label=move || t_string!(i18n, socket_cash).to_string()
-                    value=move || format_currency(summary.get().cash)
-                />
-                <PortfolioMetric
-                    label=move || t_string!(i18n, socket_equity).to_string()
-                    value=move || format_currency(summary.get().equity)
-                />
-                <PortfolioMetric
-                    label=move || t_string!(i18n, socket_pnl).to_string()
-                    value=move || format_signed_currency(summary.get().total_pnl)
-                />
-                <PortfolioMetric
-                    label=move || t_string!(i18n, socket_holdings).to_string()
-                    value=move || summary.get().holdings.len().to_string()
-                />
+                <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
+                    <div class="text-[11px] text-[var(--text-secondary)]">
+                        {move || t_string!(i18n, socket_initial_capital)}
+                    </div>
+                    <div class="mt-1 font-mono text-sm font-semibold text-[var(--text-primary)]">
+                        {move || format_currency(state.trading_snapshot.get().settings.initial_capital)}
+                    </div>
+                </div>
+                <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
+                    <div class="text-[11px] text-[var(--text-secondary)]">
+                        {move || t_string!(i18n, socket_cash)}
+                    </div>
+                    <div class="mt-1 font-mono text-sm font-semibold text-[var(--text-primary)]">
+                        {move || format_currency(summary.get().cash)}
+                    </div>
+                </div>
+                <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
+                    <div class="text-[11px] text-[var(--text-secondary)]">
+                        {move || t_string!(i18n, socket_equity)}
+                    </div>
+                    <div class="mt-1 font-mono text-sm font-semibold text-[var(--text-primary)]">
+                        {move || format_currency(summary.get().equity)}
+                    </div>
+                </div>
+                <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
+                    <div class="text-[11px] text-[var(--text-secondary)]">
+                        {move || t_string!(i18n, socket_pnl)}
+                    </div>
+                    <div class="mt-1 font-mono text-sm font-semibold text-[var(--text-primary)]">
+                        {move || format_signed_currency(summary.get().total_pnl)}
+                    </div>
+                </div>
+                <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
+                    <div class="text-[11px] text-[var(--text-secondary)]">
+                        {move || t_string!(i18n, socket_holdings)}
+                    </div>
+                    <div class="mt-1 font-mono text-sm font-semibold text-[var(--text-primary)]">
+                        {move || summary.get().holdings.len().to_string()}
+                    </div>
+                </div>
             </div>
 
             <div class="mt-3 border-t border-[var(--border-color)] pt-3">
@@ -131,19 +151,6 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
         } else {
             view! { <span></span> }.into_any()
         }}
-    }
-}
-
-#[component]
-fn PortfolioMetric(
-    label: impl Fn() -> String + 'static,
-    value: impl Fn() -> String + 'static,
-) -> impl IntoView {
-    view! {
-        <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
-            <div class="text-[11px] text-[var(--text-secondary)]">{label}</div>
-            <div class="mt-1 font-mono text-sm font-semibold text-[var(--text-primary)]">{value}</div>
-        </div>
     }
 }
 
