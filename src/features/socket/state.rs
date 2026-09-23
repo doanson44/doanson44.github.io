@@ -221,6 +221,7 @@ impl SocketState {
             sort_mode,
             sort_direction,
             search_query,
+            pinned_symbols,
             connection_status,
         }
     }
