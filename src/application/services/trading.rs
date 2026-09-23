@@ -22,6 +22,8 @@ impl TradingService {
                     && (0.0..=1.0).contains(&snapshot.settings.fee_rate)
                     && snapshot.settings.leverage.is_finite()
                     && (1.0..=125.0).contains(&snapshot.settings.leverage)
+                    && snapshot.settings.trade_allocation_percent.is_finite()
+                    && (0.1..=100.0).contains(&snapshot.settings.trade_allocation_percent)
                     && snapshot.portfolio.cash.is_finite()
                     && snapshot.portfolio.cash >= 0.0
             })
@@ -38,6 +40,7 @@ impl TradingService {
         initial_capital: f64,
         fee_rate: f64,
         leverage: f64,
+        trade_allocation_percent: f64,
     ) -> Result<TradingSnapshot, String> {
         if !initial_capital.is_finite() || initial_capital <= 0.0 {
             return Err("Initial capital must be greater than zero.".to_string());
@@ -48,11 +51,15 @@ impl TradingService {
         if !leverage.is_finite() || !(1.0..=125.0).contains(&leverage) {
             return Err("Leverage must be between 1x and 125x.".to_string());
         }
+        if !trade_allocation_percent.is_finite() || !(0.1..=100.0).contains(&trade_allocation_percent) {
+            return Err("Trade allocation must be between 0.1% and 100%.".to_string());
+        }
 
         let settings = TradingSettings {
             initial_capital,
             fee_rate,
             leverage,
+            trade_allocation_percent,
         };
         Ok(TradingSnapshot {
             portfolio: Portfolio::new(initial_capital),
@@ -124,11 +131,12 @@ mod tests {
 
     #[test]
     fn reset_with_settings_recreates_empty_portfolio() {
-        let snapshot = TradingService::reset_with_settings(2_000.0, 0.002, 5.0).unwrap();
+        let snapshot = TradingService::reset_with_settings(2_000.0, 0.002, 5.0, 25.0).unwrap();
 
         assert_eq!(snapshot.settings.initial_capital, 2_000.0);
         assert_eq!(snapshot.settings.fee_rate, 0.002);
         assert_eq!(snapshot.settings.leverage, 5.0);
+        assert_eq!(snapshot.settings.trade_allocation_percent, 25.0);
         assert!(snapshot.portfolio.positions.is_empty());
         assert_eq!(snapshot.portfolio.cash, 2_000.0);
     }
