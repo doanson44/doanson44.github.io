@@ -141,6 +141,15 @@ pub fn SocketPage(
                         </div>
                 </Show>
             </div>
+            {move || if state.analysis_modal_open.get() {
+                if let Some(result) = state.analysis_result.get() {
+                    view! { <SocketAnalysisModal state=state result=result i18n=i18n /> }.into_any()
+                } else {
+                    view! { <span></span> }.into_any()
+                }
+            } else {
+                view! { <span></span> }.into_any()
+            }}
         </div>
     }
 }
@@ -290,6 +299,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
             <td class="px-3 py-2 text-right"><div class="flex min-w-32 items-center justify-end gap-2"><progress class="socket-ticker-progress w-24" max="100" value=ticker.momentum.progress().to_string() aria-label="Momentum"></progress><span class="font-mono text-xs text-[var(--text-secondary)]">{format!("{}%",ticker.momentum.progress())}</span></div></td>
             <td class="px-3 py-2 text-right font-mono text-xs"><span class="text-[var(--success)]">{format!("↑ {}",ticker.momentum.up_ticks)}</span><span class="ml-2 text-[var(--danger)]">{format!("↓ {}",ticker.momentum.down_ticks)}</span></td>
+            <td class="px-3 py-2">{socket_analysis_actions(symbol.clone(), state)}</td>
         </tr>
     }
 }
@@ -328,6 +338,9 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                     {move || if is_pinned.get() { "★" } else { "☆" }}
                 </button>
             </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+                {socket_analysis_actions(symbol.clone(), state)}
+            </div>
             <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
                 <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_momentum)}</span><span class="font-mono text-[var(--text-primary)]">{format!("{}%",ticker.momentum.progress())}</span></div>
@@ -335,6 +348,102 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 <div class="text-right"><progress class="socket-ticker-progress mt-1 w-full" max="100" value=ticker.momentum.progress().to_string() aria-label="Momentum"></progress></div>
             </div>
         </article>
+    }
+}
+
+#[component]
+fn SocketAnalysisModal(
+    state: SocketState,
+    result: crate::domain::technical_analysis::AnalysisResult,
+    i18n: leptos_i18n::I18nContext<Locale>,
+) -> impl IntoView {
+    view! {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bs-backdrop-bg)]/75 p-3" role="presentation">
+            <div class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--surface)] shadow-lg" role="dialog" aria-modal="true" aria-label="Technical analysis">
+                <header class="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-color)] px-4 py-3">
+                    <div>
+                        <h2 class="m-0 text-lg font-semibold">{format!("{} · {}", result.asset.symbol, result.asset.timeframe)}</h2>
+                        <p class="m-0 mt-1 text-xs text-[var(--text-secondary)]">{result.engine.name.clone()}</p>
+                    </div>
+                    <button type="button" class="min-h-10 min-w-10 rounded-md border border-[var(--border-color)] px-2 text-lg text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=move || t_string!(i18n, common_close) aria-label=move || t_string!(i18n, common_close) on:click=move |_| state.close_analysis()>"×"</button>
+                </header>
+                <div class="min-h-0 overflow-y-auto p-4">
+                    <div class="grid gap-3 md:grid-cols-2">
+                        <section class="rounded-md border border-[var(--border-color)] p-3">
+                            <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_summary)}</h3>
+                            <p class="m-0">{format!("{} · {}", socket_analysis_term(i18n, &result.trend.state), socket_analysis_term(i18n, &result.trend.strength))}</p>
+                            <p class="m-0 mt-1 text-sm text-[var(--text-secondary)]">{format!("Close: {:.4} · RSI: {}", result.snapshot.close, result.momentum.rsi.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()))}</p>
+                        </section>
+                        <section class="rounded-md border border-[var(--border-color)] p-3">
+                            <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_signals)}</h3>
+                            {if result.signals.is_empty() {
+                                view! { <p class="m-0 text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_none)}</p> }.into_any()
+                            } else {
+                                view! { <ul class="m-0 pl-5">{result.signals.iter().map(|signal| view! { <li>{format!("{} — {} / {}", socket_analysis_term(i18n, &signal.direction), socket_analysis_term(i18n, &signal.category), socket_analysis_term(i18n, &signal.strength))}</li> }).collect_view()}</ul> }.into_any()
+                            }}
+                        </section>
+                        <section class="rounded-md border border-[var(--border-color)] p-3">
+                            <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_momentum_section)}</h3>
+                            <p class="m-0">{format!("RSI {} · MACD {} / {} / {}", result.momentum.rsi.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.momentum.macd.macd.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()), result.momentum.macd.signal.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()), result.momentum.macd.histogram.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()))}</p>
+                        </section>
+                        <section class="rounded-md border border-[var(--border-color)] p-3">
+                            <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_structure_section)}</h3>
+                            <p class="m-0">{if result.market_structure.structure_sequence.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.market_structure.structure_sequence.join(" → ") }}</p>
+                            <p class="m-0 mt-1 text-sm text-[var(--text-secondary)]">{format!("ATR: {} · Volume: {:.2}", result.volatility.atr.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()), result.volume.current)}</p>
+                        </section>
+                    </div>
+                    <section class="mt-3 rounded-md border border-[var(--border-color)] p-3">
+                        <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_data_quality)}</h3>
+                        <p class="m-0">{format!("{} / {} · {}", result.data_quality.candles_used, result.data_quality.candles_received, if result.data_quality.sufficient_for_analysis { t_string!(i18n, market_analysis_yes) } else { t_string!(i18n, market_analysis_no) })}</p>
+                    </section>
+                    <Show when=move || state.analysis_error.get().is_some()>
+                        <p class="m-0 mt-3 rounded-md border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]">{move || state.analysis_error.get().unwrap_or_default()}</p>
+                    </Show>
+                </div>
+                <footer class="flex shrink-0 justify-end gap-2 border-t border-[var(--border-color)] px-4 py-3">
+                    <button type="button" class="min-h-10 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.close_analysis()>{move || t_string!(i18n, common_close)}</button>
+                    <button type="button" class="min-h-10 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-3 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.copy_analysis()>{move || if state.analysis_copied.get() { t_string!(i18n, common_copied) } else { t_string!(i18n, common_copy) }}</button>
+                </footer>
+            </div>
+        </div>
+    }
+}
+
+fn socket_analysis_actions(symbol: String, state: SocketState) -> impl IntoView {
+    let symbol_4h = symbol.clone();
+    let symbol_1d = symbol.clone();
+    let symbol_copy_4h = symbol.clone();
+    let symbol_copy_1d = symbol;
+    let i18n = use_i18n();
+    view! {
+        <div class="flex flex-wrap gap-1">
+            <button type="button" class="min-h-9 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 py-1 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() on:click=move |_| state.analyze_symbol(&symbol_4h, "4H")>{move || t_string!(i18n, socket_analyze_4h)}</button>
+            <button type="button" class="min-h-9 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 py-1 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() on:click=move |_| state.analyze_symbol(&symbol_1d, "1D")>{move || t_string!(i18n, socket_analyze_1d)}</button>
+            <button type="button" class="min-h-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() on:click=move |_| state.copy_symbol_analysis(&symbol_copy_4h, "4H")>{move || t_string!(i18n, socket_copy_4h)}</button>
+            <button type="button" class="min-h-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() on:click=move |_| state.copy_symbol_analysis(&symbol_copy_1d, "1D")>{move || t_string!(i18n, socket_copy_1d)}</button>
+        </div>
+    }
+}
+
+fn socket_analysis_term(i18n: leptos_i18n::I18nContext<Locale>, value: &str) -> String {
+    match value {
+        "bullish" => t_string!(i18n, market_analysis_bullish).to_string(),
+        "bearish" => t_string!(i18n, market_analysis_bearish).to_string(),
+        "neutral" => t_string!(i18n, market_analysis_neutral).to_string(),
+        "positive" => t_string!(i18n, market_analysis_positive).to_string(),
+        "negative" => t_string!(i18n, market_analysis_negative).to_string(),
+        "weak" => t_string!(i18n, market_analysis_weak).to_string(),
+        "moderate" => t_string!(i18n, market_analysis_moderate).to_string(),
+        "strong" => t_string!(i18n, market_analysis_strong).to_string(),
+        "confirmed" => t_string!(i18n, market_analysis_confirmed).to_string(),
+        "possible" => t_string!(i18n, market_analysis_possible).to_string(),
+        "active" => t_string!(i18n, market_analysis_active).to_string(),
+        "invalidated" => t_string!(i18n, market_analysis_invalidated).to_string(),
+        "increasing" => t_string!(i18n, market_analysis_increasing).to_string(),
+        "decreasing" => t_string!(i18n, market_analysis_decreasing).to_string(),
+        "unavailable" => t_string!(i18n, market_analysis_unavailable).to_string(),
+        "none" => t_string!(i18n, market_analysis_none).to_string(),
+        _ => value.replace('_', " "),
     }
 }
 
