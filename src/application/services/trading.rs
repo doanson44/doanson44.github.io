@@ -135,14 +135,9 @@ mod tests {
 
     #[test]
     fn reset_with_settings_recreates_empty_portfolio() {
-        let snapshot = TradingService::reset_with_settings(
-            2_000.0,
-            0.002,
-            5.0,
-            25.0,
-            PositionSide::Short,
-        )
-        .unwrap();
+        let snapshot =
+            TradingService::reset_with_settings(2_000.0, 0.002, 5.0, 25.0, PositionSide::Short)
+                .unwrap();
 
         assert_eq!(snapshot.settings.initial_capital, 2_000.0);
         assert_eq!(snapshot.settings.fee_rate, 0.002);
