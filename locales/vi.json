@@ -147,5 +147,10 @@
   "market_sort_label_market_cap": "Vốn hóa",
   "market_sort_label": "Trường sắp xếp",
   "market_pin": "Ghim cổ phiếu",
-  "market_unpin": "Bỏ ghim cổ phiếu"
+  "market_unpin": "Bỏ ghim cổ phiếu",
+  "market_actions": "Thao tác",
+  "market_analyze": "Phân tích",
+  "market_analysis": "Phân tích kỹ thuật",
+  "market_copy_analysis": "Sao chép JSON phân tích",
+  "common_close": "Đóng"
 }
