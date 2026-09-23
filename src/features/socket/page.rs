@@ -125,7 +125,6 @@ const DEFAULT_LIMIT: usize = 10;
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
 #[component]
-#[component]
 fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl IntoView {
     let symbol=ticker.ticker.symbol.clone();
     let is_pinned=Memo::new({let pinned_slots=state.pinned_slots; let symbol=symbol.clone(); move |_| pinned_slots.get().iter().any(|slot| slot.as_deref()==Some(symbol.as_str()))});
@@ -187,51 +186,6 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 <div class="text-right"><progress class="socket-ticker-progress mt-1 w-full" max="100" value=ticker.momentum.progress().to_string() aria-label="Momentum"></progress></div>
             </div>
         </article>
-    }
-}
-
-fn TickerCard(
-    ticker: TrackedFuturesTicker,
-    state: SocketState,
-    visible: Memo<Vec<TrackedFuturesTicker>>,
-) -> impl IntoView {
-    let symbol = ticker.ticker.symbol.clone();
-    let ticker = Memo::new({
-        let tickers = state.tickers;
-        let symbol = symbol.clone();
-        move |_| tickers.get().get(&symbol).cloned()
-    });
-    let is_pinned = Memo::new({
-        let pinned_slots = state.pinned_slots;
-        let symbol = symbol.clone();
-        move |_| {
-            pinned_slots
-                .get()
-                .iter()
-                .any(|slot| slot.as_deref() == Some(symbol.as_str()))
-        }
-    });
-    let funding_rate = Memo::new({
-        let funding_rates = state.funding_rates;
-        let symbol = symbol.clone();
-        move |_| {
-            funding_rates
-                .get()
-                .and_then(|snapshot| snapshot.get(&symbol))
-        }
-    });
-
-    view! {
-        <button type="button" class=move || if is_pinned.get() { "socket-ticker-card rounded-lg border border-[var(--accent)] bg-[var(--surface)] text-left shadow-sm socket-ticker-card-pinned" } else { "socket-ticker-card rounded-lg border border-[var(--border-color)] bg-[var(--surface)] text-left shadow-sm" } title={let symbol_title = symbol.clone(); move || if is_pinned.get() { format!("Unpin {symbol_title}") } else { format!("Pin {symbol_title}") }} aria-label={let symbol_aria = symbol.clone(); move || ticker.get().map(|item| card_aria_label(item, is_pinned.get(), funding_rate.get())).unwrap_or_else(|| format!("{symbol_aria}, market data unavailable"))} on:click={let symbol = symbol.clone(); move |_| { let index = visible.get_untracked().iter().position(|item| item.ticker.symbol == symbol).unwrap_or(0); state.toggle_pin(&symbol, index); }}>
-            <div class="flex min-h-0 flex-col p-2">
-                <div class="flex items-start justify-between gap-2"><span class="truncate font-mono font-semibold">{symbol.clone()}</span><span aria-hidden="true" class="text-sm text-[var(--text-secondary)]">{move || if is_pinned.get() { "●" } else { "○" }}</span></div>
-                <div class="socket-ticker-price mt-1 flex items-center justify-between gap-2"><span class="truncate font-mono">{move || ticker.get().map(|item| format_number(item.ticker.last_price)).unwrap_or_else(|| "—".into())}</span>{move || ticker.get().filter(|item| item.momentum.is_burst()).map(|_| view! { <span class="shrink-0 rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]" aria-label="Burst detected">"BURST"</span> })}</div>
-                <div class="mt-1 flex items-center justify-between gap-2">{move || ticker.get().map(|item| view! { <span class=change_class(item.ticker.change_24h)>{format_percent(item.ticker.change_24h)}</span> }).unwrap_or_else(|| view! { <span class="text-[var(--text-secondary)]">{"—".to_string()}</span> })}<span class="font-mono text-xs text-[var(--text-secondary)]">{move || ticker.get().map(|item| format!("{}%", item.momentum.progress())).unwrap_or_else(|| "—".into())}</span></div>
-                <div class="mt-1 flex items-center justify-between gap-2 text-xs"><span class="text-[var(--text-secondary)]">{move || t_string!(use_i18n(), socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
-                <progress class="socket-ticker-progress mt-2 w-full" max="100" value=move || ticker.get().map(|item| item.momentum.progress().to_string()).unwrap_or_else(|| "0".into()) aria-label=move || t_string!(use_i18n(), socket_momentum)></progress>
-                <div class="mt-auto flex justify-between gap-2 pt-2 font-mono text-xs"><span class="text-[var(--success)]">{move || ticker.get().map(|item| format!("↑ {}", item.momentum.up_ticks)).unwrap_or_else(|| "↑ 0".into())}</span><span class="text-[var(--danger)]">{move || ticker.get().map(|item| format!("↓ {}", item.momentum.down_ticks)).unwrap_or_else(|| "↓ 0".into())}</span></div>
-            </div>
-        </button>
     }
 }
 
