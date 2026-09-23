@@ -241,9 +241,9 @@ impl SocketState {
             Err(error) => connection_status.set(FuturesConnectionStatus::Error(error)),
         }
 
-        let save_service = service.clone();
+        let save_service = SendWrapper::new(service.clone());
         on_cleanup(move || {
-            save_ticker_cache(&save_service);
+            save_ticker_cache(&*save_service);
         });
 
         Self {
