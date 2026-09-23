@@ -165,12 +165,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
     let is_pinned = Memo::new({
         let pinned_symbols = state.pinned_symbols;
         let symbol = symbol.clone();
-        move |_| {
-            pinned_symbols
-                .get()
-                .iter()
-                .any(|item| item == &symbol)
-        }
+        move |_| pinned_symbols.get().iter().any(|item| item == &symbol)
     });
     let funding_rate = Memo::new({
         let funding_rates = state.funding_rates;
