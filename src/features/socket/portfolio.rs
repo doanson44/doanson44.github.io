@@ -161,14 +161,18 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
     let initial_capital = RwSignal::new(snapshot.settings.initial_capital.to_string());
     let fee_percent = RwSignal::new((snapshot.settings.fee_rate * 100.0).to_string());
     let leverage = RwSignal::new(snapshot.settings.leverage.to_string());
+    let trade_allocation = RwSignal::new(snapshot.settings.trade_allocation_percent.to_string());
 
     let save = move |_| {
         let initial = initial_capital.get_untracked().trim().parse::<f64>();
         let fee = fee_percent.get_untracked().trim().parse::<f64>();
         let leverage = leverage.get_untracked().trim().parse::<f64>();
+        let trade_allocation = trade_allocation.get_untracked().trim().parse::<f64>();
 
-        match (initial, fee, leverage) {
-            (Ok(initial), Ok(fee), Ok(leverage)) => state.save_settings(initial, fee, leverage),
+        match (initial, fee, leverage, trade_allocation) {
+            (Ok(initial), Ok(fee), Ok(leverage), Ok(trade_allocation)) => {
+                state.save_settings(initial, fee, leverage, trade_allocation)
+            },
             _ => state
                 .trading_error
                 .set(Some("Enter valid numeric settings.".to_string())),
