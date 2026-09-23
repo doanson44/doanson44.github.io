@@ -297,10 +297,7 @@ pub fn MarketPage() -> impl IntoView {
     }
 }
 
-fn analysis_term(
-    i18n: leptos_i18n::I18nContext<Locale>,
-    value: &str,
-) -> String {
+fn analysis_term(i18n: leptos_i18n::I18nContext<Locale>, value: &str) -> String {
     match value.to_ascii_lowercase().as_str() {
         "bullish" => t_string!(i18n, market_analysis_bullish).to_string(),
         "bearish" => t_string!(i18n, market_analysis_bearish).to_string(),
