@@ -9,6 +9,7 @@ use crate::application::ports::{
 };
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
+use crate::features::socket::portfolio::PortfolioPanel;
 use crate::features::socket::state::{
     SocketSortDirection, SocketSortMode, SocketState, SocketViewMode,
 };
@@ -39,6 +40,16 @@ pub fn SocketPage(
                 funding_rates.get(),
                 search_query.get(),
             )
+        }
+    });
+
+    let portfolio_summary = Memo::new({
+        let tickers = state.tickers;
+        let trading_snapshot = state.trading_snapshot;
+        move |_| {
+            tickers.get();
+            trading_snapshot.get();
+            state.portfolio_summary()
         }
     });
 
@@ -84,11 +95,31 @@ pub fn SocketPage(
                         <h2 class="mb-1 text-xl font-semibold">{move || if i18n.get_locale() == Locale::vi { "Thị trường Futures" } else { "Futures Market" }}</h2>
                         <div class="text-sm text-[var(--text-secondary)]">{move || if i18n.get_locale() == Locale::vi { "Theo dõi momentum realtime kể từ khi mở trang" } else { "Realtime market momentum from the moment this page opens" }}</div>
                     </div>
-                    <div class="text-sm">{move || status_badge(state.connection_status.get())}</div>
+                    <div class="flex items-center gap-2 text-sm">
+                        {move || status_badge(state.connection_status.get())}
+                        <button
+                            type="button"
+                            class="min-h-9 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                            on:click=move |_| state.open_settings()
+                        >
+                            {move || t_string!(i18n, socket_settings)}
+                        </button>
+                    </div>
                 </header>
                 <Show when=move || state.analysis_error.get().is_some()>
                     <div class="mb-3 rounded-md border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]" role="alert">{move || state.analysis_error.get().unwrap_or_default()}</div>
                 </Show>
+                <Show when=move || state.trading_error.get().is_some()>
+                    <div class="mb-3 rounded-md border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]" role="alert">
+                        {move || state.trading_error.get().unwrap_or_default()}
+                    </div>
+                </Show>
+                <Show when=move || state.trading_notice.get().is_some()>
+                    <div class="mb-3 rounded-md border border-[var(--success)]/40 bg-[var(--success)]/10 p-3 text-sm text-[var(--success)]" role="status">
+                        {move || state.trading_notice.get().unwrap_or_default()}
+                    </div>
+                </Show>
+                <PortfolioPanel state=state summary=portfolio_summary />
                 <div class="mb-3 flex shrink-0 flex-wrap items-center gap-2">
                     <div class="flex w-full max-w-sm items-center md:mr-auto">
                         <label class="sr-only" for="socket-search">"Search symbol"</label>
@@ -339,8 +370,8 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
         <tr class=move || if is_pinned.get() { "border-b border-[var(--accent)]/50 bg-[var(--accent)]/5 last:border-b-0 hover:bg-[var(--surface-hover)]" } else { "border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]" }>
             <td class="px-3 py-2 text-center">
                 <button type="button" class="min-h-11 min-w-11 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                    title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_title) }
-                    aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria) } else { format!("Pin {}", symbol_aria) }
+                    title=move || if is_pinned.get() { format!("Sell + Unpin {}", symbol_title) } else { format!("Buy + Pin {}", symbol_title) }
+                    aria-label=move || if is_pinned.get() { format!("Sell + Unpin {}", symbol_aria) } else { format!("Buy + Pin {}", symbol_aria) }
                     on:click=move |_| state.toggle_pin(&symbol_click)>
                     {move || if is_pinned.get() { "★" } else { "☆" }}
                 </button>
