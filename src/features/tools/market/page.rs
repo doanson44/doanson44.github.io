@@ -16,7 +16,7 @@ pub fn MarketPage() -> impl IntoView {
                         "Market"
                     </h1>
                     <span class="text-xs text-[var(--text-secondary)]" aria-live="polite">
-                        {move || if state.loading.get() { "Loading..." } else { format!("{} / {}", state.displayed_items.get(), state.total_items.get()) }}
+                        {move || if state.loading.get() { "Loading...".to_string() } else { format!("{} / {}", state.displayed_items.get(), state.total_items.get()) }}
                     </span>
                     <button type="button"
                         class="ml-auto min-h-11 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40 disabled:cursor-not-allowed disabled:opacity-50"
