@@ -105,21 +105,16 @@ impl SocketState {
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let search_query = RwSignal::new(String::new());
-        let mut loaded_pins = load_pinned_symbols();
         let loaded_snapshot = TradingService::load(&LocalTradingStorage);
-        if loaded_snapshot.portfolio.positions.is_empty() {
-            loaded_pins.clear();
-        } else {
-            let held_symbols = loaded_snapshot
+        let pinned_symbols = RwSignal::new(
+            loaded_snapshot
                 .portfolio
                 .positions
                 .iter()
-                .map(|position| position.symbol.as_str())
-                .collect::<std::collections::HashSet<_>>();
-            loaded_pins.retain(|symbol| held_symbols.contains(symbol.as_str()));
-        }
-        let pinned_symbols = RwSignal::new(loaded_pins);
-
+                .map(|position| position.symbol.clone())
+                .collect::<Vec<_>>(),
+        );
+        save_pinned_symbols(&pinned_symbols.get_untracked());
         let page_size = RwSignal::new(DEFAULT_PAGE_SIZE);
         let current_page = RwSignal::new(1usize);
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
