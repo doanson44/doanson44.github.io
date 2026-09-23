@@ -27,9 +27,8 @@ pub fn SocketPage(
         let filter = state.filter;
         let sort_mode = state.sort_mode;
         let sort_direction = state.sort_direction;
-        let ticker_limit = state.ticker_limit;
         let search_query = state.search_query;
-        let pinned_slots = state.pinned_slots;
+        let pinned_symbols = state.pinned_symbols;
         let funding_rates = state.funding_rates;
         move |_| {
             build_visible(
@@ -38,8 +37,7 @@ pub fn SocketPage(
                 filter.get(),
                 sort_mode.get(),
                 sort_direction.get(),
-                ticker_limit.get(),
-                pinned_slots.get(),
+                pinned_symbols.get(),
                 funding_rates.get(),
                 search_query.get(),
             )
@@ -77,13 +75,6 @@ pub fn SocketPage(
                         <button type="button" class="rounded-md border border-[var(--border-color)] px-2 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=move || match state.sort_direction.get() { SocketSortDirection::Ascending => "Sort Ascending", SocketSortDirection::Descending => "Sort Descending" } on:click=move |_| state.sort_direction.update(|d| *d = match d { SocketSortDirection::Ascending => SocketSortDirection::Descending, SocketSortDirection::Descending => SocketSortDirection::Ascending })>
                             {move || match state.sort_direction.get() { SocketSortDirection::Ascending => "↑", SocketSortDirection::Descending => "↓" }}
                         </button>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <label class="text-sm text-[var(--text-secondary)]" for="socket-ticker-limit">{move || t_string!(i18n, socket_show)}</label>
-                        <select id="socket-ticker-limit" class="rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" aria-label="Number of dynamic tickers to show" prop:value=move || state.ticker_limit.get().to_string() on:change=move |ev| { let value = event_target_value(&ev).parse::<usize>().unwrap_or(DEFAULT_LIMIT); state.set_ticker_limit(value); }>
-                            {SocketState::limit_options().iter().map(|value| { let label = if *value == usize::MAX { "All".to_string() } else { value.to_string() }; view! { <option value=value.to_string()>{label}</option> } }).collect_view()}
-                        </select>
-                        <span class="text-sm text-[var(--text-secondary)]">{move || t_string!(i18n, socket_dynamic)}</span>
                     </div>
                 </div>
                 <div class="min-h-0 flex-grow overflow-auto" aria-live="polite">
@@ -128,7 +119,7 @@ type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl IntoView {
     let symbol = ticker.ticker.symbol.clone();
     let is_pinned = Memo::new({
-        let pinned_slots = state.pinned_slots;
+        let pinned_symbols = state.pinned_symbols;
         let symbol = symbol.clone();
         move |_| {
             pinned_slots
@@ -156,7 +147,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                 <button type="button" class="min-h-11 min-w-11 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                     title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_title) }
                     aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria) } else { format!("Pin {}", symbol_aria) }
-                    on:click=move |_| state.toggle_pin(&symbol_click, 0)>
+                    on:click=move |_| state.toggle_pin(&symbol_click)>
                     {move || if is_pinned.get() { "★" } else { "☆" }}
                 </button>
             </td>
@@ -178,7 +169,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
 fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl IntoView {
     let symbol = ticker.ticker.symbol.clone();
     let is_pinned = Memo::new({
-        let pinned_slots = state.pinned_slots;
+        let pinned_symbols = state.pinned_symbols;
         let symbol = symbol.clone();
         move |_| {
             pinned_slots
@@ -209,7 +200,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 <button type="button" class="min-h-11 min-w-11 shrink-0 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                     title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_title) }
                     aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria) } else { format!("Pin {}", symbol_aria) }
-                    on:click=move |_| state.toggle_pin(&symbol_click, 0)>
+                    on:click=move |_| state.toggle_pin(&symbol_click)>
                     {move || if is_pinned.get() { "★" } else { "☆" }}
                 </button>
             </div>
@@ -230,8 +221,7 @@ fn build_visible(
     filter: SocketFilter,
     sort: SocketSortMode,
     direction: SocketSortDirection,
-    limit: usize,
-    slots: Vec<Option<String>>,
+    pinned_symbols: Vec<String>,
     funding_rates: Option<FundingRateSnapshot>,
     search_query: String,
 ) -> Vec<TrackedFuturesTicker> {
@@ -319,17 +309,14 @@ fn build_visible(
         SocketFilter::Burst => item.momentum.is_burst(),
     };
 
-    let pinned_symbols = slots
-        .iter()
-        .filter_map(|slot| slot.as_deref())
-        .collect::<Vec<_>>();
+    let pinned_set = pinned_symbols.iter().collect::<std::collections::HashSet<_>>();
 
     if mode == SocketViewMode::PinnedOnly {
-        let mut pinned = slots
-            .iter()
-            .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)))
+        let mut pinned = all
+            .values()
             .filter(|item| matches_filter(item))
-            .filter(|item| !is_searching || item.ticker.symbol.contains(&query))
+            .filter(|item| item.ticker.symbol.contains(&query))
+            .filter(|item| pinned_set.contains(&item.ticker.symbol))
             .cloned()
             .collect::<Vec<_>>();
 
@@ -337,36 +324,23 @@ fn build_visible(
         return pinned;
     }
 
-    if is_searching {
-        let mut results = all
-            .values()
-            .filter(|item| matches_filter(item))
-            .filter(|item| item.ticker.symbol.contains(&query))
-            .cloned()
-            .collect::<Vec<_>>();
-        results.sort_unstable_by(sort_fn);
-        return results;
-    }
-
-    let pinned = slots
-        .iter()
-        .filter_map(|slot| slot.as_deref().and_then(|symbol| all.get(symbol)))
+    let mut pinned = all
+        .values()
+        .filter(|item| pinned_set.contains(&item.ticker.symbol))
         .filter(|item| matches_filter(item))
-        .filter(|item| !is_searching || item.ticker.symbol.contains(&query))
+        .filter(|item| item.ticker.symbol.contains(&query))
         .cloned()
         .collect::<Vec<_>>();
+    pinned.sort_unstable_by(sort_fn);
 
     let mut dynamic = all
         .values()
-        .filter(|item| !pinned_symbols.contains(&item.ticker.symbol.as_str()))
+        .filter(|item| !pinned_set.contains(&item.ticker.symbol))
         .filter(|item| matches_filter(item))
-        .filter(|item| !is_searching || item.ticker.symbol.contains(&query))
+        .filter(|item| item.ticker.symbol.contains(&query))
         .cloned()
         .collect::<Vec<_>>();
     dynamic.sort_unstable_by(sort_fn);
-
-    let dynamic_limit = limit.saturating_sub(pinned.len());
-    dynamic.truncate(dynamic_limit);
 
     let mut output = Vec::with_capacity(pinned.len() + dynamic.len());
     output.extend(pinned);
