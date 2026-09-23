@@ -31,9 +31,20 @@ pub fn App() -> impl IntoView {
     let current_hash = create_hash_signal();
     view! {
         <I18nContextProvider>
-        <div class="app-container flex h-screen flex-col" id="app">
+        <div class="app-container flex min-h-screen flex-col" id="app">
             <Navbar />
-            <main class="app-main min-h-0 flex flex-1 overflow-auto">
+            <main
+                class=move || {
+                    let route = current_hash.get();
+                    if is_workspace_route(&route) {
+                        "app-main app-main--workspace flex min-h-0 flex-1 flex-col overflow-hidden"
+                    } else if route == "/socket" {
+                        "app-main app-main--socket flex min-h-0 flex-1 flex-col overflow-hidden"
+                    } else {
+                        "app-main app-main--flow flex flex-1 flex-col"
+                    }
+                }
+            >
                 {move || render_page(current_hash.get())}
             </main>
             <Footer />
@@ -68,6 +79,10 @@ fn create_hash_signal() -> RwSignal<String> {
     }
     closure.forget();
     hash
+}
+
+fn is_workspace_route(route: &str) -> bool {
+    route.starts_with("/tools/") && route != "/tools"
 }
 
 fn render_page(route: String) -> leptos::prelude::AnyView {
