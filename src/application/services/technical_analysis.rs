@@ -41,6 +41,8 @@ mod tests {
         MarketData, MomentumConfig, MovingAverageConfig, PriceActionConfig, RsiConfig,
         MacdConfig, StochasticConfig, VolatilityConfig, AtrConfig, BollingerConfig,
         TrendStrengthConfig, AdxConfig, VolumeConfig, MarketStructureConfig, BreakoutConfig,
+        DataQualityConfig, DivergenceDetectionConfig, PatternDetectionConfig,
+        RegimeDetectionConfig, ScenarioEngineConfig, SignalEngineConfig,
     };
 
     fn config() -> AnalysisConfig {
