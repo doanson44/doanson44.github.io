@@ -172,7 +172,7 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
         match (initial, fee, leverage, trade_allocation) {
             (Ok(initial), Ok(fee), Ok(leverage), Ok(trade_allocation)) => {
                 state.save_settings(initial, fee, leverage, trade_allocation)
-            },
+            }
             _ => state
                 .trading_error
                 .set(Some("Enter valid numeric settings.".to_string())),
