@@ -596,3 +596,8 @@ body {
     }
 }
 
+
+
+.market-analysis-backdrop {
+    background: color-mix(in srgb, var(--ms-bg-primary) 55%, transparent);
+}
