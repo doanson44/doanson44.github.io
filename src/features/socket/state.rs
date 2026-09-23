@@ -220,9 +220,7 @@ impl SocketState {
             filter,
             sort_mode,
             sort_direction,
-            ticker_limit,
             search_query,
-            pinned_slots,
             connection_status,
         }
     }
