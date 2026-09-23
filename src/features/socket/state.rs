@@ -16,8 +16,8 @@ use crate::application::{
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::domain::technical_analysis::AnalysisResult;
-use crate::infrastructure::market::MarketApi;
 use crate::infrastructure::browser;
+use crate::infrastructure::market::MarketApi;
 
 const UI_FLUSH_MS: i32 = 75;
 const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
@@ -293,7 +293,9 @@ impl SocketState {
         let symbol = symbol.trim().to_ascii_uppercase().replace('_', "");
         let timeframe = timeframe.trim().to_ascii_uppercase();
         if symbol.is_empty() || timeframe.is_empty() {
-            self.analysis_error.set(Some("A valid symbol and timeframe are required for analysis.".to_string()));
+            self.analysis_error.set(Some(
+                "A valid symbol and timeframe are required for analysis.".to_string(),
+            ));
             return;
         }
 
@@ -320,42 +322,48 @@ impl SocketState {
             }
         );
 
-        MarketService::new(MarketApi).fetch_url(&url, Rc::new(move |result| {
-            analysis_loading.set(false);
-            match result.and_then(|raw| {
-                let input = TechnicalAnalysisService::mexc_klines_input(&raw, &api_symbol, &timeframe)?;
-                let config = TechnicalAnalysisService::default_crypto_config();
-                TechnicalAnalysisService::analyze(&input, &config, browser::now_iso8601())
-            }) {
-                Ok(result) => {
-                    let json = match serde_json::to_string_pretty(&result) {
-                        Ok(json) => json,
-                        Err(error) => {
-                            analysis_error.set(Some(format!("Failed to serialize analysis result: {error}")));
-                            return;
-                        }
-                    };
-                    analysis_json.set(Some(json.clone()));
-                    analysis_result.set(Some(result));
-                    analysis_error.set(None);
-                    analysis_modal_open.set(!copy_result);
-                    if copy_result {
-                        wasm_bindgen_futures::spawn_local(async move {
-                            match browser::copy_to_clipboard(&json).await {
-                                Ok(()) => analysis_copied.set(true),
-                                Err(message) => analysis_error.set(Some(message)),
+        MarketService::new(MarketApi).fetch_url(
+            &url,
+            Rc::new(move |result| {
+                analysis_loading.set(false);
+                match result.and_then(|raw| {
+                    let input =
+                        TechnicalAnalysisService::mexc_klines_input(&raw, &api_symbol, &timeframe)?;
+                    let config = TechnicalAnalysisService::default_crypto_config();
+                    TechnicalAnalysisService::analyze(&input, &config, browser::now_iso8601())
+                }) {
+                    Ok(result) => {
+                        let json = match serde_json::to_string_pretty(&result) {
+                            Ok(json) => json,
+                            Err(error) => {
+                                analysis_error.set(Some(format!(
+                                    "Failed to serialize analysis result: {error}"
+                                )));
+                                return;
                             }
-                        });
+                        };
+                        analysis_json.set(Some(json.clone()));
+                        analysis_result.set(Some(result));
+                        analysis_error.set(None);
+                        analysis_modal_open.set(!copy_result);
+                        if copy_result {
+                            wasm_bindgen_futures::spawn_local(async move {
+                                match browser::copy_to_clipboard(&json).await {
+                                    Ok(()) => analysis_copied.set(true),
+                                    Err(message) => analysis_error.set(Some(message)),
+                                }
+                            });
+                        }
+                    }
+                    Err(message) => {
+                        analysis_json.set(None);
+                        analysis_result.set(None);
+                        analysis_modal_open.set(false);
+                        analysis_error.set(Some(message));
                     }
                 }
-                Err(message) => {
-                    analysis_json.set(None);
-                    analysis_result.set(None);
-                    analysis_modal_open.set(false);
-                    analysis_error.set(Some(message));
-                }
-            }
-        }));
+            }),
+        );
     }
 
     pub fn close_analysis(&self) {
