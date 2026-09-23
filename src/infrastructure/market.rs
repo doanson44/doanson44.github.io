@@ -59,15 +59,24 @@ async fn fetch_market_url(target_url: &str) -> Result<String, String> {
     let response = JsFuture::from(window.fetch_with_request(&request))
         .await
         .map_err(|error| format!("Market request failed: {}", js_error(&error)))?;
-    let response: Response = response.dyn_into().map_err(|_| "Market response is invalid".to_string())?;
+    let response: Response = response
+        .dyn_into()
+        .map_err(|_| "Market response is invalid".to_string())?;
     if !response.ok() {
-        return Err(format!("CafeF market request returned HTTP {}", response.status()));
+        return Err(format!(
+            "CafeF market request returned HTTP {}",
+            response.status()
+        ));
     }
-    JsFuture::from(response.text().map_err(|error| format!("Failed to read market response: {}", js_error(&error)))?)
-        .await
-        .map_err(|error| format!("Failed to read market response: {}", js_error(&error)))?
-        .as_string()
-        .ok_or_else(|| "CafeF market response was not text".to_string())
+    JsFuture::from(
+        response
+            .text()
+            .map_err(|error| format!("Failed to read market response: {}", js_error(&error)))?,
+    )
+    .await
+    .map_err(|error| format!("Failed to read market response: {}", js_error(&error)))?
+    .as_string()
+    .ok_or_else(|| "CafeF market response was not text".to_string())
 }
 
 async fn fetch_market_data() -> Result<String, String> {
