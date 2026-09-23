@@ -235,7 +235,7 @@ pub fn MarketPage() -> impl IntoView {
             {move || if state.analysis_modal_open.get() {
                 view! {
                     <div
-                        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3"
+                        class="market-analysis-backdrop fixed inset-0 z-50 flex items-center justify-center p-3"
                         role="presentation"
                         on:click=move |_| state.close_analysis()
                     >
