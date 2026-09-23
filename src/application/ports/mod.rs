@@ -3,6 +3,7 @@ use std::rc::Rc;
 use crate::domain::document::MarkdownDocument;
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::FuturesTickerUpdate;
+use crate::domain::trading::TradingSnapshot;
 
 /// Port for document persistence.
 pub trait DocumentRepository {
@@ -83,7 +84,6 @@ pub trait MarketPinStore {
     fn save(&self, symbols: &[String]) -> Result<(), String>;
 }
 
-use crate::domain::trading::TradingSnapshot;
 
 /// Application port for persisting the client-side paper-trading snapshot.
 pub trait TradingStorage {
