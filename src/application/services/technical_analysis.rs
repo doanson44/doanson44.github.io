@@ -21,14 +21,14 @@ impl TechnicalAnalysisService {
         let candles = history
             .candles
             .into_iter()
-            .map(|candle| crate::domain::technical_analysis::Candle {
+            .map(|candle| Candle {
                 timestamp: candle.trade_date,
                 open: candle.open,
                 high: candle.high,
                 low: candle.low,
                 close: candle.close,
                 volume: candle.volume,
-                metadata: crate::domain::technical_analysis::CandleMetadata {
+                metadata: CandleMetadata {
                     reference_price: Some(candle.basic_price),
                     ceiling: candle.ceiling,
                     floor: candle.floor,
@@ -39,13 +39,13 @@ impl TechnicalAnalysisService {
 
         Ok(AnalysisInput {
             schema_version: "1.0".to_string(),
-            asset: crate::domain::technical_analysis::Asset {
+            asset: Asset {
                 symbol: symbol.trim().to_ascii_uppercase(),
-                asset_type: crate::domain::technical_analysis::AssetType::Stock,
+                asset_type: AssetType::Stock,
                 exchange: "HOSE".to_string(),
                 currency: "VND".to_string(),
             },
-            market_data: crate::domain::technical_analysis::MarketData {
+            market_data: MarketData {
                 timeframe: "1D".to_string(),
                 timezone: "Asia/Ho_Chi_Minh".to_string(),
                 candles,
