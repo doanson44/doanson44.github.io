@@ -204,8 +204,12 @@ impl FuturesTickerMomentum {
         self.burst_score
     }
 
-    /// Returns the current same-direction return streak.
-    pub fn burst_streak(&self) -> usize {
+    /// Returns the number of consecutive socket update ticks in the current burst.
+    pub fn burst_ticks(&self) -> usize {
+        if !self.is_burst() {
+            return 0;
+        }
+
         let Some(&current) = self.recent_returns.back() else {
             return 0;
         };
