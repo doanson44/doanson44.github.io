@@ -221,6 +221,12 @@ impl FuturesTickerMomentum {
             .count()
     }
 
+    /// Resets directional and burst metrics while preserving the current price baseline.
+    pub fn reset_metrics(&mut self) {
+        let previous_price = self.previous_price;
+        *self = Self::baseline(previous_price);
+    }
+
     /// Returns whether the ticker is currently experiencing a burst.
     pub fn is_burst(&self) -> bool {
         self.burst_score >= 70
