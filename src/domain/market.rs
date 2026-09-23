@@ -19,7 +19,6 @@ pub struct MarketStock {
     pub market_cap: f64,
 }
 
-
 /// One historical CafeF price record normalized for technical analysis.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MarketPriceHistoryCandle {
