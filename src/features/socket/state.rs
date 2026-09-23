@@ -540,26 +540,6 @@ impl SocketState {
 
 }
 
-fn load_pinned_symbols() -> Vec<String> {
-    let raw = web_sys::window()
-        .and_then(|window| window.local_storage().ok().flatten())
-        .and_then(|storage| storage.get_item(PINNED_SYMBOLS_KEY).ok().flatten());
-
-    if let Some(raw) = raw {
-        if let Ok(symbols) = serde_json::from_str::<Vec<String>>(&raw) {
-            return symbols;
-        }
-    }
-
-    // Migrate the previous slot-based format once.
-    web_sys::window()
-        .and_then(|window| window.local_storage().ok().flatten())
-        .and_then(|storage| storage.get_item("socket.pinned-slots").ok().flatten())
-        .and_then(|raw| serde_json::from_str::<Vec<Option<String>>>(&raw).ok())
-        .map(|slots| slots.into_iter().flatten().collect())
-        .unwrap_or_default()
-}
-
 fn save_pinned_symbols(symbols: &[String]) {
     if let Some(storage) =
         web_sys::window().and_then(|window| window.local_storage().ok().flatten())
