@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use leptos::prelude::*;
 
+use crate::application::ports::MarketPinStore;
 use crate::application::services::market::MarketService;
 use crate::domain::market::MarketStock;
 use crate::infrastructure::market::MarketApi;
