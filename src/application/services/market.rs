@@ -25,4 +25,8 @@ where
             on_result(result.and_then(|raw| parse_market_response(&raw)));
         }));
     }
+
+    pub fn fetch_url(&self, target_url: &str, on_result: Rc<dyn Fn(Result<String, String>)>) {
+        self.client.fetch_url(target_url, on_result);
+    }
 }
