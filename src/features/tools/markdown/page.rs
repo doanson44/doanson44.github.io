@@ -23,7 +23,7 @@ pub fn MarkdownPage() -> impl IntoView {
 
     view! {
         <main class="flex flex-1 flex-col overflow-hidden markdown-tool-page">
-            <Toolbar source=state.source toggle_preview=Callback::new(move |_| state.toggle_preview_only()) />
+            <Toolbar textarea_id="markdown-editor" source=state.source toggle_preview=Callback::new(move |_| state.toggle_preview_only()) />
             {move || {
                 if state.preview_only.get() {
                     view! {
@@ -34,7 +34,7 @@ pub fn MarkdownPage() -> impl IntoView {
                 } else {
                     view! {
                         <ToolSplit initial_ratio=50>
-                            <ToolPanel side=ToolPanelSide::First><Editor source=state.source /></ToolPanel>
+                            <ToolPanel side=ToolPanelSide::First><Editor textarea_id="markdown-editor" source=state.source /></ToolPanel>
                             <ToolDivider />
                             <ToolPanel side=ToolPanelSide::Second><Preview rendered=state.rendered /></ToolPanel>
                         </ToolSplit>
