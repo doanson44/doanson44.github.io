@@ -69,6 +69,9 @@ pub trait ProxyClient {
 pub trait MarketClient {
     /// Fetches market data from the configured public endpoint.
     fn fetch(&self, on_result: Rc<dyn Fn(Result<String, String>)>);
+
+    /// Fetches historical market data directly from a public endpoint.
+    fn fetch_url(&self, target_url: &str, on_result: Rc<dyn Fn(Result<String, String>)>);
 }
 
 /// Application port for persisting market ticker pins in browser storage.
