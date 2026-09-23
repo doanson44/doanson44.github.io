@@ -24,8 +24,7 @@ pub fn SocketPage(
     let visible = Memo::new({
         let tickers = state.tickers;
         let view_mode = state.view_mode;
-        let filter = state.filter;
-        let sort_mode = state.sort_mode;
+            let sort_mode = state.sort_mode;
         let sort_direction = state.sort_direction;
         let search_query = state.search_query;
         let pinned_symbols = state.pinned_symbols;
@@ -34,7 +33,6 @@ pub fn SocketPage(
             build_visible(
                 tickers.get(),
                 view_mode.get(),
-                filter.get(),
                 sort_mode.get(),
                 sort_direction.get(),
                 pinned_symbols.get(),
@@ -94,9 +92,8 @@ pub fn SocketPage(
                         <input id="socket-search" type="search" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" placeholder={move || t_string!(i18n, socket_search)} prop:value=move || state.search_query.get() on:input=move |ev| state.search_query.set(event_target_value(&ev)) />
                     </div>
                     <div class="flex" role="group" aria-label=move || t_string!(i18n, socket_view)>
-                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::All) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::All).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::All); state.filter.set(SocketFilter::All); }>{move || t_string!(i18n, socket_all)}</button>
-                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::All); state.filter.set(SocketFilter::Burst); }>{move || t_string!(i18n, socket_burst)}</button>
-                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::PinnedOnly); state.filter.set(SocketFilter::All); }>{move || t_string!(i18n, socket_pinned)}</button>
+                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All).to_string() on:click=move |_| state.view_mode.set(SocketViewMode::All)>{move || t_string!(i18n, socket_all)}</button>
+                        <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string() on:click=move |_| state.view_mode.set(SocketViewMode::PinnedOnly)>{move || t_string!(i18n, socket_pinned)}</button>
                     </div>
                 </div>
 
@@ -281,6 +278,13 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                     {if ticker.momentum.is_burst() { view! { <span class="rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]">"BURST"</span> }.into_any() } else { view! { <span></span> }.into_any() }}
                 </div>
             </th>
+            <td class="px-3 py-2 text-left">
+                {if ticker.momentum.is_burst() {
+                    view! { <span class="rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]">"BURST"</span> }.into_any()
+                } else {
+                    view! { <span class="text-[var(--text-secondary)]">"—"</span> }.into_any()
+                }}
+            </td>
             <td class="px-3 py-2 text-right font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</td>
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
@@ -338,7 +342,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
 fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
-    filter: SocketFilter,
+    
     sort: SocketSortMode,
     direction: SocketSortDirection,
     pinned_symbols: Vec<String>,
@@ -349,6 +353,11 @@ fn build_visible(
     let sort_fn = |left: &TrackedFuturesTicker, right: &TrackedFuturesTicker| {
         let cmp = match sort {
             SocketSortMode::Symbol => left.ticker.symbol.cmp(&right.ticker.symbol),
+            SocketSortMode::Burst => left
+                .momentum
+                .is_burst()
+                .cmp(&right.momentum.is_burst())
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
             SocketSortMode::Momentum => right
                 .momentum
                 .progress()
@@ -406,11 +415,6 @@ fn build_visible(
             SocketSortDirection::Ascending => cmp.reverse(),
         }
     };
-    let matches_filter = |item: &TrackedFuturesTicker| match filter {
-        SocketFilter::All => true,
-        SocketFilter::Burst => item.momentum.is_burst(),
-    };
-
     let pinned_set = pinned_symbols
         .iter()
         .collect::<std::collections::HashSet<_>>();
@@ -418,7 +422,6 @@ fn build_visible(
     if mode == SocketViewMode::PinnedOnly {
         let mut pinned = all
             .values()
-            .filter(|item| matches_filter(item))
             .filter(|item| item.ticker.symbol.contains(&query))
             .filter(|item| pinned_set.contains(&item.ticker.symbol))
             .cloned()
@@ -431,7 +434,6 @@ fn build_visible(
     let mut pinned = all
         .values()
         .filter(|item| pinned_set.contains(&item.ticker.symbol))
-        .filter(|item| matches_filter(item))
         .filter(|item| item.ticker.symbol.contains(&query))
         .cloned()
         .collect::<Vec<_>>();
