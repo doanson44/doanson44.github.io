@@ -28,6 +28,7 @@ pub fn MarketPage() -> impl IntoView {
     let sort = RwSignal::new(MarketSort::Symbol);
     let descending = RwSignal::new(false);
 
+    state.load_pins();
     state.load();
 
     let visible_stocks = Memo::new(move |_| {
@@ -35,6 +36,7 @@ pub fn MarketPage() -> impl IntoView {
         let selected_filter = filter.get();
         let selected_sort = sort.get();
         let is_descending = descending.get();
+        let pinned_symbols = state.pinned_symbols.get();
 
         let mut stocks: Vec<MarketStock> = state
             .stocks
@@ -57,6 +59,13 @@ pub fn MarketPage() -> impl IntoView {
             .collect();
 
         stocks.sort_by(|left, right| {
+            let left_pinned = pinned_symbols.iter().any(|symbol| symbol == &left.symbol);
+            let right_pinned = pinned_symbols.iter().any(|symbol| symbol == &right.symbol);
+            let pin_ordering = right_pinned.cmp(&left_pinned);
+            if pin_ordering != std::cmp::Ordering::Equal {
+                return pin_ordering;
+            }
+
             let ordering = match selected_sort {
                 MarketSort::Symbol => left.symbol.cmp(&right.symbol),
                 MarketSort::Price => left.price.total_cmp(&right.price),
@@ -192,10 +201,11 @@ pub fn MarketPage() -> impl IntoView {
 
             <div class="min-h-0 flex-grow overflow-auto p-3">
                 <div class="overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)]">
-                    <table class="w-full min-w-[760px] border-collapse text-sm">
+                    <table class="w-full min-w-[820px] border-collapse text-sm">
                         <caption class="sr-only">"CafeF market stock data"</caption>
                         <thead>
                             <tr class="border-b border-[var(--border-color)] bg-[var(--surface-hover)] text-left text-[var(--text-secondary)]">
+                                <th class="px-3 py-2 font-medium" scope="col">"Pin"</th>
                                 <th class="px-3 py-2 font-medium" scope="col">"Symbol"</th>
                                 <th class="px-3 py-2 font-medium" scope="col">"Name"</th>
                                 <th class="px-3 py-2 text-right font-medium" scope="col">"Price"</th>
@@ -214,8 +224,21 @@ pub fn MarketPage() -> impl IntoView {
                                 } else {
                                     "text-[var(--text-secondary)]"
                                 };
+                                let symbol = stock.symbol.clone();
+                                let is_pinned = move || state.pinned_symbols.get().iter().any(|item| item == &symbol);
                                 view! {
                                     <tr class="border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]">
+                                        <td class="px-3 py-2 text-center">
+                                            <button
+                                                type="button"
+                                                class="min-h-9 min-w-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                                                title=move || if is_pinned() { "Unpin stock" } else { "Pin stock" }
+                                                aria-label=move || if is_pinned() { "Unpin stock" } else { "Pin stock" }
+                                                on:click=move |_| state.toggle_pin(&symbol)
+                                            >
+                                                {move || if is_pinned() { "★" } else { "☆" }}
+                                            </button>
+                                        </td>
                                         <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">{stock.symbol}</th>
                                         <td class="max-w-[28rem] px-3 py-2 text-[var(--text-secondary)]">{stock.name}</td>
                                         <td class="px-3 py-2 text-right font-medium text-[var(--text-primary)]">{format_price(stock.price)}</td>
