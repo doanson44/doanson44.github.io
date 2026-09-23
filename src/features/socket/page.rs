@@ -101,6 +101,9 @@ pub fn SocketPage(
                 </div>
 
                 <Show when=move || !visible.get().is_empty() fallback=move || empty_state(state.view_mode.get())>
+                    <div class="mb-2">
+                        <PaginationControls state=state total_items=Memo::new(move |_| visible.get().len()) />
+                    </div>
                         <div class="hidden overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)] md:block">
                             <table class="w-full min-w-[900px] border-collapse text-sm">
                                 <caption class="sr-only">"Realtime Futures market tickers"</caption>
@@ -139,7 +142,6 @@ pub fn SocketPage(
                                 <TickerMobileCard ticker=ticker state=state />
                             }).collect_view()}
                         </div>
-                        <PaginationControls state=state total_items=Memo::new(move |_| visible.get().len()) />
                 </Show>
             </div>
         </div>
