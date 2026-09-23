@@ -380,8 +380,12 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                 <span class="font-mono">{symbol.clone()}</span>
             </th>
             <td class="px-3 py-2 text-left">
-                {if ticker.momentum.is_burst() {
-                    view! { <span class="rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]">"BURST"</span> }.into_any()
+                {if ticker.momentum.burst_ticks() > 0 {
+                    view! {
+                        <span class="font-mono text-[var(--warning)]">
+                            {format!("{} tick{}", ticker.momentum.burst_ticks(), if ticker.momentum.burst_ticks() == 1 { "" } else { "s" })}
+                        </span>
+                    }.into_any()
                 } else {
                     view! { <span class="text-[var(--text-secondary)]">"—"</span> }.into_any()
                 }}
@@ -555,8 +559,8 @@ fn build_visible(
             SocketSortMode::Symbol => left.ticker.symbol.cmp(&right.ticker.symbol),
             SocketSortMode::Burst => left
                 .momentum
-                .is_burst()
-                .cmp(&right.momentum.is_burst())
+                .burst_ticks()
+                .cmp(&right.momentum.burst_ticks())
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
             SocketSortMode::Momentum => right
                 .momentum
