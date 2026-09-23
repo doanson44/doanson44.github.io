@@ -273,7 +273,9 @@ fn validate_trade_inputs(
         return Err("Trading fee must be between 0% and 100%.".to_string());
     }
     if !settings.leverage.is_finite() || !(1.0..=MAX_LEVERAGE).contains(&settings.leverage) {
-        return Err(format!("Leverage must be between 1x and {MAX_LEVERAGE:.0}x."));
+        return Err(format!(
+            "Leverage must be between 1x and {MAX_LEVERAGE:.0}x."
+        ));
     }
     if !settings.trade_allocation_percent.is_finite()
         || !(0.1..=100.0).contains(&settings.trade_allocation_percent)
