@@ -4,6 +4,187 @@ use crate::domain::technical_analysis::{analyze, AnalysisConfig, AnalysisInput, 
 pub struct TechnicalAnalysisService;
 
 impl TechnicalAnalysisService {
+    /// Builds a stock daily analysis input from CafeF historical price data.
+    pub fn price_history_input(
+        raw: &str,
+        symbol: &str,
+    ) -> Result<AnalysisInput, String> {
+        let history = crate::domain::market::parse_price_history_response(raw, symbol)?;
+        let candles = history
+            .candles
+            .into_iter()
+            .map(|candle| crate::domain::technical_analysis::Candle {
+                timestamp: candle.trade_date,
+                open: candle.open,
+                high: candle.high,
+                low: candle.low,
+                close: candle.close,
+                volume: candle.volume,
+                metadata: crate::domain::technical_analysis::CandleMetadata {
+                    reference_price: Some(candle.basic_price),
+                    ceiling: candle.ceiling,
+                    floor: candle.floor,
+                    total_value: candle.total_value,
+                },
+            })
+            .collect();
+
+        Ok(AnalysisInput {
+            schema_version: "1.0".to_string(),
+            asset: crate::domain::technical_analysis::Asset {
+                symbol: symbol.trim().to_ascii_uppercase(),
+                asset_type: crate::domain::technical_analysis::AssetType::Stock,
+                exchange: "HOSE".to_string(),
+                currency: "VND".to_string(),
+            },
+            market_data: crate::domain::technical_analysis::MarketData {
+                timeframe: "1D".to_string(),
+                timezone: "Asia/Ho_Chi_Minh".to_string(),
+                candles,
+            },
+        })
+    }
+
+    /// Returns the default daily stock-analysis configuration used by the Market page.
+    pub fn default_stock_daily_config() -> AnalysisConfig {
+        AnalysisConfig {
+            schema_version: "1.0".to_string(),
+            engine: EngineConfig {
+                name: "technical-analysis-engine".to_string(),
+                version: "1.0.0".to_string(),
+            },
+            data_requirements: DataRequirements {
+                minimum_candles: 200,
+                recommended_candles: 500,
+                maximum_candles: 2000,
+            },
+            indicators: IndicatorConfig {
+                moving_averages: MovingAverageConfig {
+                    sma: vec![20, 50, 100, 200],
+                    ema: vec![9, 20, 50, 200],
+                },
+                momentum: MomentumConfig {
+                    rsi: RsiConfig { period: 14 },
+                    macd: MacdConfig {
+                        fast: 12,
+                        slow: 26,
+                        signal: 9,
+                    },
+                    stochastic: StochasticConfig {
+                        k_period: 14,
+                        d_period: 3,
+                        smooth: 3,
+                    },
+                },
+                volatility: VolatilityConfig {
+                    atr: AtrConfig { period: 14 },
+                    bollinger_bands: BollingerConfig {
+                        period: 20,
+                        stddev: 2.0,
+                    },
+                },
+                trend_strength: TrendStrengthConfig {
+                    adx: AdxConfig { period: 14 },
+                },
+                volume: VolumeConfig {
+                    obv: true,
+                    volume_average: vec![20, 50],
+                },
+            },
+            price_action: PriceActionConfig {
+                enabled: true,
+                candlestick_analysis: true,
+                gap_detection: true,
+                consecutive_move_detection: true,
+            },
+            market_structure: MarketStructureConfig {
+                enabled: true,
+                swing_detection: SwingDetectionConfig { lookback: 5 },
+                support_resistance: SupportResistanceConfig {
+                    lookback: 120,
+                    cluster_tolerance_percent: 1.0,
+                    minimum_touches: 2,
+                },
+            },
+            breakout_detection: BreakoutConfig {
+                enabled: true,
+                lookback_period: 20,
+                volume_confirmation: VolumeConfirmationConfig {
+                    enabled: true,
+                    minimum_volume_ratio: 1.5,
+                },
+                retest_detection: RetestConfig { enabled: true },
+            },
+            pattern_detection: PatternDetectionConfig {
+                enabled: true,
+                candlestick_patterns: true,
+                chart_patterns: vec![
+                    "double_top".to_string(),
+                    "double_bottom".to_string(),
+                    "head_and_shoulders".to_string(),
+                    "inverse_head_and_shoulders".to_string(),
+                    "ascending_triangle".to_string(),
+                    "descending_triangle".to_string(),
+                    "symmetrical_triangle".to_string(),
+                    "flag".to_string(),
+                    "pennant".to_string(),
+                    "cup_and_handle".to_string(),
+                ],
+            },
+            divergence_detection: DivergenceDetectionConfig {
+                enabled: true,
+                indicators: vec!["rsi".to_string(), "macd".to_string(), "obv".to_string()],
+                minimum_swing_distance: 5,
+            },
+            regime_detection: RegimeDetectionConfig {
+                enabled: true,
+                dimensions: vec![
+                    "trend".to_string(),
+                    "momentum".to_string(),
+                    "volatility".to_string(),
+                    "volume".to_string(),
+                ],
+            },
+            scenario_engine: ScenarioEngineConfig {
+                enabled: true,
+                scenarios: vec![
+                    "bullish".to_string(),
+                    "bearish".to_string(),
+                    "range".to_string(),
+                ],
+            },
+            signal_engine: SignalEngineConfig {
+                enabled: true,
+                signal_strength_levels: vec![
+                    "weak".to_string(),
+                    "moderate".to_string(),
+                    "strong".to_string(),
+                ],
+            },
+            data_quality: DataQualityConfig {
+                validate_ohlcv: true,
+                detect_missing_candles: true,
+                detect_duplicate_candles: true,
+                detect_invalid_prices: true,
+                detect_zero_volume: true,
+            },
+        }
+    }
+
+    /// Analyzes CafeF historical price data with the default stock configuration.
+    pub fn analyze_price_history(
+        raw: &str,
+        symbol: &str,
+        analysis_timestamp: impl Into<String>,
+    ) -> Result<String, String> {
+        let input = Self::price_history_input(raw, symbol)?;
+        let config = Self::default_stock_daily_config();
+        let result = Self::analyze(&input, &config, analysis_timestamp)?;
+        serde_json::to_string_pretty(&result)
+            .map_err(|error| format!("Failed to serialize analysis result: {error}"))
+    }
+
+
     /// Analyzes typed market data with the supplied configuration.
     pub fn analyze(
         input: &AnalysisInput,
