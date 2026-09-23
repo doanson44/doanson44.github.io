@@ -21,7 +21,6 @@ pub struct MarketState {
     pub pinned_symbols: RwSignal<Vec<String>>,
     pub analysis_loading: RwSignal<bool>,
     pub analysis_json: RwSignal<Option<String>>,
-    pub analysis_text: RwSignal<Option<String>>,
     pub analysis_result: RwSignal<Option<AnalysisResult>>,
     pub analysis_symbol: RwSignal<Option<String>>,
     pub analysis_modal_open: RwSignal<bool>,
@@ -47,7 +46,6 @@ impl MarketState {
             pinned_symbols: RwSignal::new(Vec::new()),
             analysis_loading: RwSignal::new(false),
             analysis_json: RwSignal::new(None),
-            analysis_text: RwSignal::new(None),
             analysis_result: RwSignal::new(None),
             analysis_symbol: RwSignal::new(None),
             analysis_modal_open: RwSignal::new(false),
@@ -104,7 +102,6 @@ impl MarketState {
 
         let analysis_loading = self.analysis_loading;
         let analysis_json = self.analysis_json;
-        let analysis_text = self.analysis_text;
         let analysis_result = self.analysis_result;
         let analysis_modal_open = self.analysis_modal_open;
         let analysis_error = self.analysis_error;
@@ -130,7 +127,6 @@ impl MarketState {
                             .map_err(|error| format!("Failed to serialize analysis result: {error}"))?;
                         let report = TechnicalAnalysisService::format_analysis_report(&result, "en");
                         analysis_json.set(Some(json.clone()));
-                        analysis_text.set(Some(report));
                         analysis_result.set(Some(result));
                         analysis_modal_open.set(!copy_result);
                         analysis_error.set(None);
@@ -145,7 +141,6 @@ impl MarketState {
                     }
                     Err(message) => {
                         analysis_json.set(None);
-                        analysis_text.set(None);
                         analysis_result.set(None);
                         analysis_modal_open.set(false);
                         analysis_error.set(Some(message));
