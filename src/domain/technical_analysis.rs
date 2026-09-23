@@ -302,7 +302,7 @@ pub struct RetestConfig {
 }
 
 /// Pattern-detection configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatternDetectionConfig {
     /// Whether pattern detection is enabled.
     #[serde(default)]
@@ -316,7 +316,7 @@ pub struct PatternDetectionConfig {
 }
 
 /// Divergence-detection configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct DivergenceDetectionConfig {
     /// Whether divergence detection is enabled.
     #[serde(default)]
@@ -330,7 +330,7 @@ pub struct DivergenceDetectionConfig {
 }
 
 /// Regime-detection configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegimeDetectionConfig {
     /// Whether regime detection is enabled.
     #[serde(default)]
@@ -341,7 +341,7 @@ pub struct RegimeDetectionConfig {
 }
 
 /// Scenario-engine configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScenarioEngineConfig {
     /// Whether scenario generation is enabled.
     #[serde(default)]
@@ -352,7 +352,7 @@ pub struct ScenarioEngineConfig {
 }
 
 /// Signal-engine configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalEngineConfig {
     /// Whether signal generation is enabled.
     #[serde(default)]
@@ -363,7 +363,7 @@ pub struct SignalEngineConfig {
 }
 
 /// Data-quality configuration.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataQualityConfig {
     /// Validate OHLCV values.
     #[serde(default)]
@@ -1099,6 +1099,7 @@ pub fn validate_input(
         candles = candles[start..].to_vec();
     }
 
+    let candles_used = candles.len();
     let coverage = Coverage {
         from: candles.first().map(|candle| candle.timestamp.clone()),
         to: candles.last().map(|candle| candle.timestamp.clone()),
@@ -1111,7 +1112,7 @@ pub fn validate_input(
         candles,
         DataQualityReport {
             candles_received: received,
-            candles_used: candles.len(),
+            candles_used,
             minimum_required: requirements.minimum_candles,
             sufficient_for_analysis: candles.len() >= requirements.minimum_candles
                 && !has_fatal_issue,
