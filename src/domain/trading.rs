@@ -13,16 +13,11 @@ pub const DEFAULT_TRADE_ALLOCATION_PERCENT: f64 = 10.0;
 pub const MAX_LEVERAGE: f64 = 125.0;
 
 /// Configured direction for new paper-trading positions.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum PositionSide {
+    #[default]
     Long,
     Short,
-}
-
-impl Default for PositionSide {
-    fn default() -> Self {
-        Self::Long
-    }
 }
 
 /// Paper-trading configuration that is safe to persist locally.
