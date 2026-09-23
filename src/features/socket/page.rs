@@ -98,8 +98,9 @@ pub fn SocketPage(
                         <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All && state.filter.get() == SocketFilter::Burst).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::All); state.filter.set(SocketFilter::Burst); }>{move || t_string!(i18n, socket_burst)}</button>
                         <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string() on:click=move |_| { state.view_mode.set(SocketViewMode::PinnedOnly); state.filter.set(SocketFilter::All); }>{move || t_string!(i18n, socket_pinned)}</button>
                     </div>
+                </div>
 
-                    <Show when=move || !visible.get().is_empty() fallback=move || empty_state(state.view_mode.get())>
+                <Show when=move || !visible.get().is_empty() fallback=move || empty_state(state.view_mode.get())>
                         <div class="hidden overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)] md:block">
                             <table class="w-full min-w-[900px] border-collapse text-sm">
                                 <caption class="sr-only">"Realtime Futures market tickers"</caption>
@@ -139,8 +140,7 @@ pub fn SocketPage(
                             }).collect_view()}
                         </div>
                         <PaginationControls state=state total_items=Memo::new(move |_| visible.get().len()) />
-                    </Show>
-                </div>
+                </Show>
             </div>
         </div>
     }
