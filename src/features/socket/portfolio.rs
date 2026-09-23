@@ -23,22 +23,31 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                         {move || t_string!(i18n, socket_paper_trading)}
                     </span>
                 </div>
-                <button
-                    type="button"
-                    class="min-h-9 rounded-md border border-[var(--border-color)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                    on:click=move |_| state.open_settings()
-                >
-                    {move || t_string!(i18n, socket_settings)}
-                </button>
+                <div class="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
+                    <span class="rounded-md border border-[var(--border-color)] px-2 py-1">
+                        {move || format!("{}: {:.1}%", t_string!(i18n, socket_trade_allocation), state.trading_snapshot.get().settings.trade_allocation_percent)}
+                    </span>
+                    <span class="rounded-md border border-[var(--border-color)] px-2 py-1">
+                        {move || format!("{}: {:.1}x", t_string!(i18n, socket_leverage), state.trading_snapshot.get().settings.leverage)}
+                    </span>
+                </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-6">
                 <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
                     <div class="text-[11px] text-[var(--text-secondary)]">
                         {move || t_string!(i18n, socket_initial_capital)}
                     </div>
                     <div class="mt-1 font-mono text-sm font-semibold text-[var(--text-primary)]">
                         {move || format_currency(state.trading_snapshot.get().settings.initial_capital)}
+                    </div>
+                </div>
+                <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
+                    <div class="text-[11px] text-[var(--text-secondary)]">
+                        {move || t_string!(i18n, socket_trade_allocation)}
+                    </div>
+                    <div class="mt-1 font-mono text-sm font-semibold text-[var(--text-primary)]">
+                        {move || format!("{:.1}%", state.trading_snapshot.get().settings.trade_allocation_percent)}
                     </div>
                 </div>
                 <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
@@ -223,6 +232,24 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
 
                     <label class="block text-sm">
                         <span class="mb-1 block font-medium text-[var(--text-primary)]">
+                            {move || t_string!(i18n, socket_trade_allocation)}
+                        </span>
+                        <input
+                            type="number"
+                            min="0.1"
+                            max="100"
+                            step="0.1"
+                            class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                            prop:value=move || trade_allocation.get()
+                            on:input=move |ev| trade_allocation.set(event_target_value(&ev))
+                        />
+                        <span class="mt-1 block text-xs text-[var(--text-secondary)]">
+                            {move || t_string!(i18n, socket_trade_allocation_hint)}
+                        </span>
+                    </label>
+
+                    <label class="block text-sm">
+                        <span class="mb-1 block font-medium text-[var(--text-primary)]">
                             {move || t_string!(i18n, socket_trading_fee)}
                         </span>
                         <input
@@ -238,7 +265,25 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
                             {move || t_string!(i18n, socket_fee_hint)}
                         </span>
                         <span class="mt-1 block text-xs text-[var(--text-secondary)]">
-                            {move || t_string!(i18n, socket_trade_size_hint)}
+                            {move || t_string!(i18n, socket_trade_allocation_hint)}
+                        </span>
+                    </label>
+
+                    <label class="block text-sm">
+                        <span class="mb-1 block font-medium text-[var(--text-primary)]">
+                            {move || t_string!(i18n, socket_leverage)}
+                        </span>
+                        <input
+                            type="number"
+                            min="1"
+                            max="125"
+                            step="0.1"
+                            class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                            prop:value=move || leverage.get()
+                            on:input=move |ev| leverage.set(event_target_value(&ev))
+                        />
+                        <span class="mt-1 block text-xs text-[var(--text-secondary)]">
+                            {move || t_string!(i18n, socket_leverage_hint)}
                         </span>
                     </label>
 
