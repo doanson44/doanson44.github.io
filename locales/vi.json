@@ -92,6 +92,7 @@
   "socket_no_holdings": "Chưa có coin đang hold",
   "socket_trading_fee": "Phí giao dịch (% mỗi giao dịch)",
   "socket_fee_hint": "Áp dụng cho cả giao dịch mua và bán.",
+  "socket_trade_size_hint": "Mỗi lần mua dùng 10% tiền mặt khả dụng. Bỏ ghim sẽ bán toàn bộ coin đang hold.",
   "socket_api_key": "API key",
   "socket_api_key_hint": "Dành cho giao dịch thật trong tương lai. Giai đoạn paper trading hiện tại không sử dụng hoặc lưu API key.",
   "socket_save_settings": "Lưu cài đặt",
