@@ -86,8 +86,18 @@ pub fn MarketPage() -> impl IntoView {
     }
 }
 
-fn format_price(value: f64) -> String { format!("{value:.2}") }
-fn format_percent(value: f64) -> String { format!("{value:+.2}%") }
+fn format_price(value: f64) -> String {
+    format!("{value:.2}")
+}
+
+fn format_percent(value: f64) -> String {
+    format!("{value:+.2}%")
+}
+
 fn format_integer(value: f64) -> String {
-    if value.fract() == 0.0 { format!("{value:.0}") } else { format!("{value:.2}") }
+    if value.fract() == 0.0 {
+        format!("{value:.0}")
+    } else {
+        format!("{value:.2}")
+    }
 }
