@@ -7,8 +7,8 @@ pub mod jwt;
 pub mod market;
 pub mod proxy;
 pub mod technical_analysis;
-pub mod trading;
 pub mod time;
+pub mod trading;
 
 use std::collections::HashMap;
 
