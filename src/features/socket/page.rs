@@ -126,10 +126,27 @@ type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
 #[component]
 fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl IntoView {
-    let symbol=ticker.ticker.symbol.clone();
-    let is_pinned=Memo::new({let pinned_slots=state.pinned_slots; let symbol=symbol.clone(); move |_| pinned_slots.get().iter().any(|slot| slot.as_deref()==Some(symbol.as_str()))});
-    let funding_rate=Memo::new({let funding_rates=state.funding_rates; let symbol=symbol.clone(); move |_| funding_rates.get().and_then(|snapshot| snapshot.get(&symbol))});
-    let change_class=change_class(ticker.ticker.change_24h);
+    let symbol = ticker.ticker.symbol.clone();
+    let is_pinned = Memo::new({
+        let pinned_slots = state.pinned_slots;
+        let symbol = symbol.clone();
+        move |_| {
+            pinned_slots
+                .get()
+                .iter()
+                .any(|slot| slot.as_deref() == Some(symbol.as_str()))
+        }
+    });
+    let funding_rate = Memo::new({
+        let funding_rates = state.funding_rates;
+        let symbol = symbol.clone();
+        move |_| {
+            funding_rates
+                .get()
+                .and_then(|snapshot| snapshot.get(&symbol))
+        }
+    });
+    let change_class = change_class(ticker.ticker.change_24h);
     let symbol_title = symbol.clone();
     let symbol_aria = symbol.clone();
     let symbol_click = symbol.clone();
@@ -159,10 +176,27 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
 
 #[component]
 fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl IntoView {
-    let symbol=ticker.ticker.symbol.clone();
-    let is_pinned=Memo::new({let pinned_slots=state.pinned_slots; let symbol=symbol.clone(); move |_| pinned_slots.get().iter().any(|slot| slot.as_deref()==Some(symbol.as_str()))});
-    let funding_rate=Memo::new({let funding_rates=state.funding_rates; let symbol=symbol.clone(); move |_| funding_rates.get().and_then(|snapshot| snapshot.get(&symbol))});
-    let change_class=change_class(ticker.ticker.change_24h);
+    let symbol = ticker.ticker.symbol.clone();
+    let is_pinned = Memo::new({
+        let pinned_slots = state.pinned_slots;
+        let symbol = symbol.clone();
+        move |_| {
+            pinned_slots
+                .get()
+                .iter()
+                .any(|slot| slot.as_deref() == Some(symbol.as_str()))
+        }
+    });
+    let funding_rate = Memo::new({
+        let funding_rates = state.funding_rates;
+        let symbol = symbol.clone();
+        move |_| {
+            funding_rates
+                .get()
+                .and_then(|snapshot| snapshot.get(&symbol))
+        }
+    });
+    let change_class = change_class(ticker.ticker.change_24h);
     let symbol_title = symbol.clone();
     let symbol_aria = symbol.clone();
     let symbol_click = symbol.clone();
