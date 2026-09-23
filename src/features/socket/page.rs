@@ -86,9 +86,34 @@ pub fn SocketPage(
                         <span class="text-sm text-[var(--text-secondary)]">{move || t_string!(i18n, socket_dynamic)}</span>
                     </div>
                 </div>
-                <div class="socket-grid flex-grow overflow-auto" aria-live="polite">
+                <div class="min-h-0 flex-grow overflow-auto" aria-live="polite">
                     <Show when=move || !visible.get().is_empty() fallback=move || empty_state(state.view_mode.get())>
-                        <For each=move || visible.get() key=|ticker| ticker.ticker.symbol.clone() children=move |ticker| view! { <TickerCard ticker=ticker state=state visible=visible /> } />
+                        <div class="hidden overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)] md:block">
+                            <table class="w-full min-w-[900px] border-collapse text-sm">
+                                <caption class="sr-only">"Realtime Futures market tickers"</caption>
+                                <thead>
+                                    <tr class="border-b border-[var(--border-color)] bg-[var(--surface-hover)] text-left text-[var(--text-secondary)]">
+                                        <th class="px-3 py-2 text-center font-medium" scope="col">"Pin"</th>
+                                        <th class="px-3 py-2 font-medium" scope="col">"Symbol"</th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">"Price"</th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">"24h"</th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_funding)}</th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_momentum)}</th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_activity)}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {move || visible.get().into_iter().map(|ticker| view! {
+                                        <TickerTableRow ticker=ticker state=state />
+                                    }).collect_view()}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex flex-col gap-2 md:hidden">
+                            {move || visible.get().into_iter().map(|ticker| view! {
+                                <TickerMobileCard ticker=ticker state=state />
+                            }).collect_view()}
+                        </div>
                     </Show>
                 </div>
             </div>
@@ -100,6 +125,65 @@ const DEFAULT_LIMIT: usize = 10;
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
 #[component]
+#[component]
+fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl IntoView {
+    let symbol=ticker.ticker.symbol.clone();
+    let is_pinned=Memo::new({let pinned_slots=state.pinned_slots; let symbol=symbol.clone(); move |_| pinned_slots.get().iter().any(|slot| slot.as_deref()==Some(symbol.as_str()))});
+    let funding_rate=Memo::new({let funding_rates=state.funding_rates; let symbol=symbol.clone(); move |_| funding_rates.get().and_then(|snapshot| snapshot.get(&symbol))});
+    let change_class=change_class(ticker.ticker.change_24h);
+    view! {
+        <tr class=move || if is_pinned.get() { "border-b border-[var(--accent)]/50 bg-[var(--accent)]/5 last:border-b-0 hover:bg-[var(--surface-hover)]" } else { "border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]" }>
+            <td class="px-3 py-2 text-center">
+                <button type="button" class="min-h-11 min-w-11 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                    title=move || if is_pinned.get() { format!("Unpin {}", symbol) } else { format!("Pin {}", symbol) }
+                    aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol) } else { format!("Pin {}", symbol) }
+                    on:click={let symbol=symbol.clone(); move |_| state.toggle_pin(&symbol,0)}>
+                    {move || if is_pinned.get() { "★" } else { "☆" }}
+                </button>
+            </td>
+            <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">
+                <div class="flex items-center gap-2"><span class="font-mono">{symbol.clone()}</span>
+                    {if ticker.momentum.is_burst() { view! { <span class="rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]">"BURST"</span> }.into_any() } else { view! { <span></span> }.into_any() }}
+                </div>
+            </th>
+            <td class="px-3 py-2 text-right font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</td>
+            <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
+            <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
+            <td class="px-3 py-2 text-right"><div class="flex min-w-32 items-center justify-end gap-2"><progress class="socket-ticker-progress w-24" max="100" value=ticker.momentum.progress().to_string() aria-label="Momentum"></progress><span class="font-mono text-xs text-[var(--text-secondary)]">{format!("{}%",ticker.momentum.progress())}</span></div></td>
+            <td class="px-3 py-2 text-right font-mono text-xs"><span class="text-[var(--success)]">{format!("↑ {}",ticker.momentum.up_ticks)}</span><span class="ml-2 text-[var(--danger)]">{format!("↓ {}",ticker.momentum.down_ticks)}</span></td>
+        </tr>
+    }
+}
+
+#[component]
+fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl IntoView {
+    let symbol=ticker.ticker.symbol.clone();
+    let is_pinned=Memo::new({let pinned_slots=state.pinned_slots; let symbol=symbol.clone(); move |_| pinned_slots.get().iter().any(|slot| slot.as_deref()==Some(symbol.as_str()))});
+    let funding_rate=Memo::new({let funding_rates=state.funding_rates; let symbol=symbol.clone(); move |_| funding_rates.get().and_then(|snapshot| snapshot.get(&symbol))});
+    let change_class=change_class(ticker.ticker.change_24h);
+    view! {
+        <article class=move || if is_pinned.get() { "rounded-lg border border-[var(--accent)]/60 bg-[var(--accent)]/5 p-3 shadow-sm" } else { "rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3 shadow-sm" }>
+            <div class="flex items-start gap-2">
+                <div class="min-w-0 flex-1"><div class="flex items-center gap-2"><h3 class="m-0 truncate font-mono text-base font-semibold text-[var(--text-primary)]">{symbol.clone()}</h3>
+                    {if ticker.momentum.is_burst() { view! { <span class="shrink-0 rounded-full border border-[var(--warning)]/50 bg-[var(--warning)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]">"BURST"</span> }.into_any() } else { view! { <span></span> }.into_any() }}
+                </div><div class="mt-1 flex items-center gap-2"><span class="font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</span><span class=format!("font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</span></div></div>
+                <button type="button" class="min-h-11 min-w-11 shrink-0 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                    title=move || if is_pinned.get() { format!("Unpin {}", symbol) } else { format!("Pin {}", symbol) }
+                    aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol) } else { format!("Pin {}", symbol) }
+                    on:click={let symbol=symbol.clone(); move |_| state.toggle_pin(&symbol,0)}>
+                    {move || if is_pinned.get() { "★" } else { "☆" }}
+                </button>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
+                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_momentum)}</span><span class="font-mono text-[var(--text-primary)]">{format!("{}%",ticker.momentum.progress())}</span></div>
+                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_activity)}</span><span class="font-mono text-xs"><span class="text-[var(--success)]">{format!("↑ {}",ticker.momentum.up_ticks)}</span><span class="ml-2 text-[var(--danger)]">{format!("↓ {}",ticker.momentum.down_ticks)}</span></span></div>
+                <div class="text-right"><progress class="socket-ticker-progress mt-1 w-full" max="100" value=ticker.momentum.progress().to_string() aria-label="Momentum"></progress></div>
+            </div>
+        </article>
+    }
+}
+
 fn TickerCard(
     ticker: TrackedFuturesTicker,
     state: SocketState,
