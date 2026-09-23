@@ -120,12 +120,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
     let is_pinned = Memo::new({
         let pinned_symbols = state.pinned_symbols;
         let symbol = symbol.clone();
-        move |_| {
-            pinned_symbols
-                .get()
-                .iter()
-                .any(|item| item == &symbol)
-        }
+        move |_| pinned_symbols.get().iter().any(|item| item == &symbol)
     });
     let funding_rate = Memo::new({
         let funding_rates = state.funding_rates;
@@ -307,7 +302,9 @@ fn build_visible(
         SocketFilter::Burst => item.momentum.is_burst(),
     };
 
-    let pinned_set = pinned_symbols.iter().collect::<std::collections::HashSet<_>>();
+    let pinned_set = pinned_symbols
+        .iter()
+        .collect::<std::collections::HashSet<_>>();
 
     if mode == SocketViewMode::PinnedOnly {
         let mut pinned = all
