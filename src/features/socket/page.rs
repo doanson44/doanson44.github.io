@@ -255,9 +255,9 @@ fn build_visible(
     let query = search_query.trim().to_uppercase();
     let sort_fn = |left: &TrackedFuturesTicker, right: &TrackedFuturesTicker| {
         let cmp = match sort {
-                SocketSortMode::Symbol => left.ticker.symbol.cmp(&right.ticker.symbol),
+            SocketSortMode::Symbol => left.ticker.symbol.cmp(&right.ticker.symbol),
 
-                SocketSortMode::Momentum => right
+            SocketSortMode::Momentum => right
                     .momentum
                     .progress()
                     .cmp(&left.momentum.progress())
