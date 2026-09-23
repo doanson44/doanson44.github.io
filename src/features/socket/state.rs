@@ -555,8 +555,7 @@ impl SocketState {
 }
 
 fn save_ticker_cache(service: &FuturesMarketService) {
-    let Some(storage) =
-        web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+    let Some(storage) = web_sys::window().and_then(|window| window.local_storage().ok().flatten())
     else {
         return;
     };
