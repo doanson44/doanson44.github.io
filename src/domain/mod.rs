@@ -10,4 +10,5 @@ pub mod jwt;
 pub mod markdown;
 pub mod market;
 pub mod proxy;
+pub mod technical_analysis;
 pub mod time;
