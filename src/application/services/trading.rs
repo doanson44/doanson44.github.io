@@ -41,6 +41,7 @@ impl TradingService {
         fee_rate: f64,
         leverage: f64,
         trade_allocation_percent: f64,
+        position_side: PositionSide,
     ) -> Result<TradingSnapshot, String> {
         if !initial_capital.is_finite() || initial_capital <= 0.0 {
             return Err("Initial capital must be greater than zero.".to_string());
@@ -62,6 +63,7 @@ impl TradingService {
             fee_rate,
             leverage,
             trade_allocation_percent,
+            position_side,
         };
         Ok(TradingSnapshot {
             portfolio: Portfolio::new(initial_capital),
@@ -133,12 +135,20 @@ mod tests {
 
     #[test]
     fn reset_with_settings_recreates_empty_portfolio() {
-        let snapshot = TradingService::reset_with_settings(2_000.0, 0.002, 5.0, 25.0).unwrap();
+        let snapshot = TradingService::reset_with_settings(
+            2_000.0,
+            0.002,
+            5.0,
+            25.0,
+            PositionSide::Short,
+        )
+        .unwrap();
 
         assert_eq!(snapshot.settings.initial_capital, 2_000.0);
         assert_eq!(snapshot.settings.fee_rate, 0.002);
         assert_eq!(snapshot.settings.leverage, 5.0);
         assert_eq!(snapshot.settings.trade_allocation_percent, 25.0);
+        assert_eq!(snapshot.settings.position_side, PositionSide::Short);
         assert!(snapshot.portfolio.positions.is_empty());
         assert_eq!(snapshot.portfolio.cash, 2_000.0);
     }
