@@ -45,7 +45,6 @@ pub fn SocketPage(
     });
 
     let paginated = Memo::new({
-        let visible = visible;
         let page_size = state.page_size;
         let current_page = state.current_page;
         move |_| {
@@ -63,7 +62,6 @@ pub fn SocketPage(
     });
 
     Effect::new({
-        let visible = visible;
         let current_page = state.current_page;
         let page_size = state.page_size;
         move |_| {
