@@ -86,6 +86,9 @@ pub fn SocketPage(
                     </div>
                     <div class="text-sm">{move || status_badge(state.connection_status.get())}</div>
                 </header>
+                <Show when=move || state.analysis_error.get().is_some()>
+                    <div class="mb-3 rounded-md border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-sm text-[var(--danger)]" role="alert">{move || state.analysis_error.get().unwrap_or_default()}</div>
+                </Show>
                 <div class="mb-3 flex shrink-0 flex-wrap items-center gap-2">
                     <div class="flex w-full max-w-sm items-center md:mr-auto">
                         <label class="sr-only" for="socket-search">"Search symbol"</label>
