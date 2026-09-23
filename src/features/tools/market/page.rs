@@ -189,11 +189,11 @@ pub fn MarketPage() -> impl IntoView {
                                 <th class="px-3 py-2 font-medium" scope="col">{move || t_string!(i18n, market_pin)}</th>
                                 {sortable_header("symbol", MarketSort::Symbol, sort, descending, toggle_sort, i18n)}
                                 <th class="px-3 py-2 font-medium" scope="col">"Name"</th>
-                                {sortable_header({move || t_string!(i18n, market_price)}, MarketSort::Price, sort, descending, toggle_sort)}
+                                {sortable_header("price", MarketSort::Price, sort, descending, toggle_sort, i18n)}
                                 <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, market_change)}</th>
                                 {sortable_header("change_percent", MarketSort::ChangePercent, sort, descending, toggle_sort, i18n)}
-                                {sortable_header({move || t_string!(i18n, market_volume)}, MarketSort::Volume, sort, descending, toggle_sort)}
-                                {sortable_header({move || t_string!(i18n, market_market_cap)}, MarketSort::MarketCap, sort, descending, toggle_sort)}
+                                {sortable_header("volume", MarketSort::Volume, sort, descending, toggle_sort, i18n)}
+                                {sortable_header("market_cap", MarketSort::MarketCap, sort, descending, toggle_sort, i18n)}
                             </tr>
                         </thead>
                         <tbody>
@@ -207,10 +207,10 @@ pub fn MarketPage() -> impl IntoView {
                         <span class="shrink-0 text-xs font-medium text-[var(--text-secondary)]">{move || t_string!(i18n, market_sort)}</span>
                         <div class="flex flex-wrap justify-end gap-1">
                             {mobile_sort_button("symbol", MarketSort::Symbol, sort, descending, toggle_sort, i18n)}
-                            {mobile_sort_button({move || t_string!(i18n, market_price)}, MarketSort::Price, sort, descending, toggle_sort)}
+                            {mobile_sort_button("price", MarketSort::Price, sort, descending, toggle_sort, i18n)}
                             {mobile_sort_button("change_percent", MarketSort::ChangePercent, sort, descending, toggle_sort, i18n)}
-                            {mobile_sort_button({move || t_string!(i18n, market_volume)}, MarketSort::Volume, sort, descending, toggle_sort)}
-                            {mobile_sort_button({move || t_string!(i18n, market_market_cap)}, MarketSort::MarketCap, sort, descending, toggle_sort)}
+                            {mobile_sort_button("volume", MarketSort::Volume, sort, descending, toggle_sort, i18n)}
+                            {mobile_sort_button("market_cap", MarketSort::MarketCap, sort, descending, toggle_sort, i18n)}
                         </div>
                     </div>
                     {move || visible_stocks.get().into_iter().map(|stock| market_mobile_card(stock, state, i18n)).collect_view()}
