@@ -300,10 +300,7 @@ fn socket_mobile_sort_button(
     }
 }
 
-fn socket_sort_label(
-    i18n: leptos_i18n::I18nContext<Locale>,
-    key: &'static str,
-) -> String {
+fn socket_sort_label(i18n: leptos_i18n::I18nContext<Locale>, key: &'static str) -> String {
     match key {
         "symbol" => "Symbol".to_string(),
         "burst" => t_string!(i18n, socket_burst).to_string(),
