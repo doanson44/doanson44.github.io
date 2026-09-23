@@ -20,7 +20,7 @@ const UI_FLUSH_MS: i32 = 75;
 const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
 const PINNED_SYMBOLS_KEY: &str = "socket.pinned-symbols";
 const DEFAULT_PAGE_SIZE: usize = 10;
-const PAGE_SIZE_OPTIONS: [usize; 3] = [10, 20, 50];
+const PAGE_SIZE_OPTIONS: [usize; 4] = [10, 20, 50, usize::MAX];
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
