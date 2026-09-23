@@ -225,7 +225,6 @@ fn build_visible(
     search_query: String,
 ) -> Vec<TrackedFuturesTicker> {
     let query = search_query.trim().to_uppercase();
-    let is_searching = !query.is_empty();
     let sort_fn = |left: &TrackedFuturesTicker, right: &TrackedFuturesTicker| {
         let cmp = if filter == SocketFilter::Burst {
             right
