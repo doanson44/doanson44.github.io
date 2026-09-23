@@ -230,11 +230,15 @@ pub fn MarketPage() -> impl IntoView {
                                     state.pinned_symbols.get().iter().any(|item| item == &symbol)
                                 });
                                 view! {
-                                    <tr class="border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]">
+                                    <tr class=move || if is_pinned.get() {
+                                        "border-b border-[var(--accent)]/50 bg-[var(--accent)]/5 last:border-b-0 hover:bg-[var(--surface-hover)]"
+                                    } else {
+                                        "border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]"
+                                    }>
                                         <td class="px-3 py-2 text-center">
                                             <button
                                                 type="button"
-                                                class="min-h-9 min-w-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                                                class="min-h-10 min-w-10 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
                                                 title=move || if is_pinned.get() { "Unpin stock" } else { "Pin stock" }
                                                 aria-label=move || if is_pinned.get() { "Unpin stock" } else { "Pin stock" }
                                                 on:click=move |_| state.toggle_pin(&pin_symbol)
