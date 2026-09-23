@@ -112,7 +112,7 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                     }
                 >
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[520px] text-sm">
+                        <table class="w-full min-w-[600px] text-sm">
                             <caption class="sr-only">
                                 {move || t_string!(i18n, socket_holdings)}
                             </caption>
@@ -133,12 +133,20 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                     } else {
                                         "text-[var(--text-primary)]"
                                     };
+                                    let side_label = if holding.side == PositionSide::Long {
+                                        t_string!(i18n, socket_long)
+                                    } else {
+                                        t_string!(i18n, socket_short)
+                                    };
 
                                     view! {
                                         <tr class="border-b border-[var(--border-color)] last:border-b-0">
                                             <th class="px-2 py-2 text-left font-mono font-medium text-[var(--text-primary)]" scope="row">
                                                 {holding.symbol}
                                             </th>
+                                            <td class="px-2 py-2 text-left text-xs font-medium text-[var(--text-secondary)]">
+                                                {side_label}
+                                            </td>
                                             <td class="px-2 py-2 text-right font-mono text-[var(--text-secondary)]">
                                                 {format_quantity(holding.quantity)}
                                             </td>
