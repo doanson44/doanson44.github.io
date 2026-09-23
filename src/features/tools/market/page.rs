@@ -297,6 +297,31 @@ pub fn MarketPage() -> impl IntoView {
     }
 }
 
+fn analysis_term(
+    i18n: leptos_i18n::I18nContext<Locale>,
+    value: &str,
+) -> String {
+    match value.to_ascii_lowercase().as_str() {
+        "bullish" => t_string!(i18n, market_analysis_bullish).to_string(),
+        "bearish" => t_string!(i18n, market_analysis_bearish).to_string(),
+        "neutral" => t_string!(i18n, market_analysis_neutral).to_string(),
+        "positive" => t_string!(i18n, market_analysis_positive).to_string(),
+        "negative" => t_string!(i18n, market_analysis_negative).to_string(),
+        "weak" => t_string!(i18n, market_analysis_weak).to_string(),
+        "moderate" => t_string!(i18n, market_analysis_moderate).to_string(),
+        "strong" => t_string!(i18n, market_analysis_strong).to_string(),
+        "confirmed" => t_string!(i18n, market_analysis_confirmed).to_string(),
+        "possible" => t_string!(i18n, market_analysis_possible).to_string(),
+        "active" => t_string!(i18n, market_analysis_active).to_string(),
+        "invalidated" => t_string!(i18n, market_analysis_invalidated).to_string(),
+        "increasing" => t_string!(i18n, market_analysis_increasing).to_string(),
+        "decreasing" => t_string!(i18n, market_analysis_decreasing).to_string(),
+        "unavailable" => t_string!(i18n, market_analysis_unavailable).to_string(),
+        "none" => t_string!(i18n, market_analysis_none).to_string(),
+        _ => value.to_string(),
+    }
+}
+
 fn market_analysis_view(
     result: crate::domain::technical_analysis::AnalysisResult,
     i18n: leptos_i18n::I18nContext<Locale>,
@@ -306,11 +331,11 @@ fn market_analysis_view(
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_summary)}</h3>
                 <dl class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_state)}</dt><dd class="m-0 font-medium">{result.engine_summary.dominant_state.clone()}</dd></div>
-                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_trend)}</dt><dd class="m-0 font-medium">{result.engine_summary.trend.clone()}</dd></div>
-                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_momentum)}</dt><dd class="m-0 font-medium">{result.engine_summary.momentum.clone()}</dd></div>
-                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_structure)}</dt><dd class="m-0 font-medium">{result.engine_summary.structure.clone()}</dd></div>
-                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_volume_confirmation)}</dt><dd class="m-0 font-medium">{if result.engine_summary.volume_confirmation { "Yes" } else { "No" }}</dd></div>
+                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_state)}</dt><dd class="m-0 font-medium">{analysis_term(i18n, &result.engine_summary.dominant_state)}</dd></div>
+                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_trend)}</dt><dd class="m-0 font-medium">{analysis_term(i18n, &result.engine_summary.trend)}</dd></div>
+                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_momentum)}</dt><dd class="m-0 font-medium">{analysis_term(i18n, &result.engine_summary.momentum)}</dd></div>
+                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_structure)}</dt><dd class="m-0 font-medium">{analysis_term(i18n, &result.engine_summary.structure)}</dd></div>
+                    <div><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_volume_confirmation)}</dt><dd class="m-0 font-medium">{if result.engine_summary.volume_confirmation { t_string!(i18n, market_analysis_yes) } else { t_string!(i18n, market_analysis_no) }}</dd></div>
                     <div class="sm:col-span-2"><dt class="text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_main_risk)}</dt><dd class="m-0">{result.engine_summary.main_risk.clone()}</dd></div>
                 </dl>
             </section>
@@ -324,7 +349,7 @@ fn market_analysis_view(
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_trend_section)}</h3>
-                <p class="m-0">{format!("{} · {} · {}", result.trend.state, result.trend.strength, result.trend.alignment.description)}</p>
+                <p class="m-0">{format!("{} · {} · {}", analysis_term(i18n, &result.trend.state), analysis_term(i18n, &result.trend.strength), result.trend.alignment.description)}</p>
                 <p class="m-0 mt-1 text-[var(--text-secondary)]">{format!("SMA: {} | EMA: {}", result.trend.moving_averages.sma.iter().map(|x| format!("{}={}", x.period, x.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()))).collect::<Vec<_>>().join(", "), result.trend.moving_averages.ema.iter().map(|x| format!("{}={}", x.period, x.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()))).collect::<Vec<_>>().join(", "))}</p>
             </section>
             <section>
@@ -345,18 +370,18 @@ fn market_analysis_view(
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_breakout)}</h3>
-                <p class="m-0">{format!("{} · {} · {}", result.breakout.status, result.breakout.direction.as_deref().unwrap_or("N/A"), if result.breakout.volume_confirmation { "Yes" } else { "No" })}</p>
+                <p class="m-0">{format!("{} · {} · {}", analysis_term(i18n, &result.breakout.status), result.breakout.direction.as_deref().map(|v| analysis_term(i18n, v)).unwrap_or_else(|| t_string!(i18n, market_analysis_na).to_string()), if result.breakout.volume_confirmation { t_string!(i18n, market_analysis_yes) } else { t_string!(i18n, market_analysis_no) })}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_regime)}</h3>
-                <p class="m-0">{format!("{} · {} · {} · {} · {}", result.regime.overall, result.regime.trend, result.regime.momentum, result.regime.volatility, result.regime.volume)}</p>
+                <p class="m-0">{format!("{} · {} · {} · {} · {}", analysis_term(i18n, &result.regime.overall), analysis_term(i18n, &result.regime.trend), analysis_term(i18n, &result.regime.momentum), analysis_term(i18n, &result.regime.volatility), analysis_term(i18n, &result.regime.volume))}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_signals)}</h3>
                 {if result.signals.is_empty() {
                     view! { <p class="m-0 text-[var(--text-secondary)]">{move || t_string!(i18n, market_analysis_none)}</p> }.into_any()
                 } else {
-                    view! { <ul class="mb-0 space-y-1 pl-5">{result.signals.into_iter().map(|signal| view! { <li>{format!("{} — {} / {}", signal.direction, signal.category, signal.strength)}</li> }).collect_view()}</ul> }.into_any()
+                    view! { <ul class="mb-0 space-y-1 pl-5">{result.signals.into_iter().map(|signal| view! { <li>{format!("{} — {} / {}", analysis_term(i18n, &signal.direction), analysis_term(i18n, &signal.category), analysis_term(i18n, &signal.strength))}</li> }).collect_view()}</ul> }.into_any()
                 }}
             </section>
             <section>
@@ -366,7 +391,7 @@ fn market_analysis_view(
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_scenarios)}</h3>
-                <p class="m-0">{format!("Bullish: {} · Bearish: {} · Range: {}", result.scenarios.bullish.status, result.scenarios.bearish.status, result.scenarios.range.status)}</p>
+                <p class="m-0">{format!("{}: {} · {}: {} · {}: {}", t_string!(i18n, market_analysis_bullish), analysis_term(i18n, &result.scenarios.bullish.status), t_string!(i18n, market_analysis_bearish), analysis_term(i18n, &result.scenarios.bearish.status), t_string!(i18n, market_analysis_range), analysis_term(i18n, &result.scenarios.range.status))}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_data_quality)}</h3>
