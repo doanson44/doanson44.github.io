@@ -205,32 +205,64 @@ impl TechnicalAnalysisService {
             config.indicators.momentum.macd.slow.min(available).max(1);
         config.indicators.momentum.macd.signal =
             config.indicators.momentum.macd.signal.min(available).max(1);
-        config.indicators.momentum.stochastic.k_period =
-            config.indicators.momentum.stochastic.k_period.min(available).max(1);
-        config.indicators.momentum.stochastic.d_period =
-            config.indicators.momentum.stochastic.d_period.min(available).max(1);
-        config.indicators.momentum.stochastic.smooth =
-            config.indicators.momentum.stochastic.smooth.min(available).max(1);
+        config.indicators.momentum.stochastic.k_period = config
+            .indicators
+            .momentum
+            .stochastic
+            .k_period
+            .min(available)
+            .max(1);
+        config.indicators.momentum.stochastic.d_period = config
+            .indicators
+            .momentum
+            .stochastic
+            .d_period
+            .min(available)
+            .max(1);
+        config.indicators.momentum.stochastic.smooth = config
+            .indicators
+            .momentum
+            .stochastic
+            .smooth
+            .min(available)
+            .max(1);
 
-        config.indicators.volatility.atr.period =
-            config.indicators.volatility.atr.period.min(available).max(1);
-        config.indicators.volatility.bollinger_bands.period =
-            config.indicators.volatility.bollinger_bands.period.min(available).max(1);
+        config.indicators.volatility.atr.period = config
+            .indicators
+            .volatility
+            .atr
+            .period
+            .min(available)
+            .max(1);
+        config.indicators.volatility.bollinger_bands.period = config
+            .indicators
+            .volatility
+            .bollinger_bands
+            .period
+            .min(available)
+            .max(1);
 
         for period in &mut config.indicators.volume.volume_average {
             *period = (*period).min(available).max(1);
         }
 
-        config.market_structure.swing_detection.lookback =
-            config.market_structure.swing_detection.lookback.min(available).max(1);
+        config.market_structure.swing_detection.lookback = config
+            .market_structure
+            .swing_detection
+            .lookback
+            .min(available)
+            .max(1);
         config.market_structure.support_resistance.lookback = config
             .market_structure
             .support_resistance
             .lookback
             .min(available)
             .max(1);
-        config.breakout_detection.lookback_period =
-            config.breakout_detection.lookback_period.min(available).max(1);
+        config.breakout_detection.lookback_period = config
+            .breakout_detection
+            .lookback_period
+            .min(available)
+            .max(1);
         config.divergence_detection.minimum_swing_distance = config
             .divergence_detection
             .minimum_swing_distance
