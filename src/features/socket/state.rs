@@ -314,7 +314,17 @@ impl SocketState {
         let analysis_modal_open = self.analysis_modal_open;
         let analysis_error = self.analysis_error;
         let analysis_copied = self.analysis_copied;
-        let api_symbol = symbol.clone();
+        // MEXC uses the base asset symbol without the numeric multiplier prefix
+        // for Kline requests (for example, 1000000BABYDOGE_USDT -> BABYDOGEUSDT).
+        let api_symbol = symbol
+            .trim_start_matches(|character: char| character.is_ascii_digit())
+            .to_string();
+        if api_symbol.is_empty() {
+            self.analysis_error.set(Some(
+                "The symbol does not contain a valid asset name.".to_string(),
+            ));
+            return;
+        }
         let url = format!(
             "https://api.mexc.com/api/v3/klines?symbol={api_symbol}&interval={}&limit=500",
             match timeframe.as_str() {
