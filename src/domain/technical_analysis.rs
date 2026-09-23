@@ -1113,7 +1113,6 @@ pub fn validate_input(
             "MISSING_TIMESTAMP"
                 | "INVALID_NUMBER"
                 | "INVALID_PRICE"
-                | "INVALID_OHLC"
                 | "INVALID_VOLUME"
                 | "DUPLICATE_CANDLE"
         )
