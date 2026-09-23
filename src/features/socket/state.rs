@@ -91,6 +91,7 @@ pub struct SocketState {
     pub trading_error: RwSignal<Option<String>>,
     pub trading_notice: RwSignal<Option<String>>,
     pub api_key: RwSignal<String>,
+    pub reset_metrics_request: RwSignal<u64>,
 }
 
 impl SocketState {
@@ -131,6 +132,7 @@ impl SocketState {
         let trading_error = RwSignal::new(None);
         let trading_notice = RwSignal::new(None);
         let api_key = RwSignal::new(String::new());
+        let reset_metrics_request = RwSignal::new(0u64);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
         if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
@@ -154,6 +156,26 @@ impl SocketState {
                 }
             }
         }
+
+        let reset_request = reset_metrics_request;
+        let reset_service = service.clone();
+        let reset_tickers = tickers;
+        let reset_initialized = Rc::new(Cell::new(false));
+        Effect::new(move |_| {
+            let _request = reset_request.get();
+            if !reset_initialized.replace(true) {
+                return;
+            }
+
+            reset_service.borrow_mut().reset_metrics();
+            reset_tickers.set(Rc::new(reset_service.borrow().snapshot()));
+
+            if let Some(storage) =
+                web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+            {
+                let _ = storage.remove_item(TICKER_CACHE_KEY);
+            }
+        });
 
         let flush_pending = Rc::new(Cell::new(false));
 
@@ -278,7 +300,15 @@ impl SocketState {
             trading_error,
             trading_notice,
             api_key,
+            reset_metrics_request,
         }
+    }
+
+    /// Resets Burst, Momentum, and directional tick counters for all known tickers.
+    pub fn reset_metrics(&self) {
+        self.trading_error.set(None);
+        self.trading_notice.set(None);
+        self.reset_metrics_request.update(|request| *request = request.wrapping_add(1));
     }
 
     /// Sets the page size and returns to the first page.
