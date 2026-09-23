@@ -64,3 +64,9 @@ pub trait ProxyClient {
     /// Fetches a target URL through the configured proxy and returns the response text.
     fn fetch(&self, target_url: &str, on_result: Rc<dyn Fn(Result<String, String>)>);
 }
+
+/// Application port for direct browser HTTP access to market data.
+pub trait MarketClient {
+    /// Fetches market data from the configured public endpoint.
+    fn fetch(&self, on_result: Rc<dyn Fn(Result<String, String>)>);
+}
