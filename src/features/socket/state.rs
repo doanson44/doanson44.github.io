@@ -16,11 +16,9 @@ use crate::application::{
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 
-const DEFAULT_LIMIT: usize = 10;
-const LIMIT_OPTIONS: [usize; 6] = [10, 20, 30, 50, 100, usize::MAX];
 const UI_FLUSH_MS: i32 = 75;
 const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
-const PINNED_SLOTS_KEY: &str = "socket.pinned-slots";
+const PINNED_SYMBOLS_KEY: &str = "socket.pinned-symbols";
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
@@ -72,9 +70,8 @@ pub struct SocketState {
     pub filter: RwSignal<SocketFilter>,
     pub sort_mode: RwSignal<SocketSortMode>,
     pub sort_direction: RwSignal<SocketSortDirection>,
-    pub ticker_limit: RwSignal<usize>,
     pub search_query: RwSignal<String>,
-    pub pinned_slots: RwSignal<Vec<Option<String>>>,
+    pub pinned_symbols: RwSignal<Vec<String>>,
     pub connection_status: RwSignal<FuturesConnectionStatus>,
 }
 
@@ -90,9 +87,8 @@ impl SocketState {
         let filter = RwSignal::new(SocketFilter::All);
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
-        let ticker_limit = RwSignal::new(DEFAULT_LIMIT);
         let search_query = RwSignal::new(String::new());
-        let pinned_slots = RwSignal::new(load_pinned_slots());
+        let pinned_symbols = RwSignal::new(load_pinned_symbols());
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
@@ -231,54 +227,45 @@ impl SocketState {
         }
     }
 
-    /// Sets the number of dynamic ticker cards rendered in the All view.
-    pub fn set_ticker_limit(&self, limit: usize) {
-        if LIMIT_OPTIONS.contains(&limit) {
-            self.ticker_limit.set(limit);
-        }
-    }
-
-    /// Returns the available dynamic ticker limit options.
-    pub fn limit_options() -> &'static [usize] {
-        &LIMIT_OPTIONS
-    }
-
-    /// Toggles a ticker pin while preserving its current rendered slot.
-    pub fn toggle_pin(&self, symbol: &str, current_index: usize) {
-        let mut slots = self.pinned_slots.get_untracked();
-        if let Some(index) = slots
-            .iter()
-            .position(|slot| slot.as_deref() == Some(symbol))
-        {
-            slots[index] = None;
-            while slots.last().is_some_and(Option::is_none) {
-                slots.pop();
-            }
+    /// Toggles a ticker pin.
+    pub fn toggle_pin(&self, symbol: &str) {
+        let mut symbols = self.pinned_symbols.get_untracked();
+        if let Some(index) = symbols.iter().position(|item| item == symbol) {
+            symbols.remove(index);
         } else {
-            if slots.len() <= current_index {
-                slots.resize(current_index + 1, None);
-            }
-            slots[current_index] = Some(symbol.to_owned());
+            symbols.push(symbol.to_owned());
         }
-        self.pinned_slots.set(slots.clone());
-        save_pinned_slots(&slots);
+        self.pinned_symbols.set(symbols.clone());
+        save_pinned_symbols(&symbols);
     }
 }
 
-fn load_pinned_slots() -> Vec<Option<String>> {
+fn load_pinned_symbols() -> Vec<String> {
+    let raw = web_sys::window()
+        .and_then(|window| window.local_storage().ok().flatten())
+        .and_then(|storage| storage.get_item(PINNED_SYMBOLS_KEY).ok().flatten());
+
+    if let Some(raw) = raw {
+        if let Ok(symbols) = serde_json::from_str::<Vec<String>>(&raw) {
+            return symbols;
+        }
+    }
+
+    // Migrate the previous slot-based format once.
     web_sys::window()
         .and_then(|window| window.local_storage().ok().flatten())
-        .and_then(|storage| storage.get_item(PINNED_SLOTS_KEY).ok().flatten())
+        .and_then(|storage| storage.get_item("socket.pinned-slots").ok().flatten())
         .and_then(|raw| serde_json::from_str::<Vec<Option<String>>>(&raw).ok())
+        .map(|slots| slots.into_iter().flatten().collect())
         .unwrap_or_default()
 }
 
-fn save_pinned_slots(slots: &[Option<String>]) {
+fn save_pinned_symbols(symbols: &[String]) {
     if let Some(storage) =
         web_sys::window().and_then(|window| window.local_storage().ok().flatten())
     {
-        if let Ok(raw) = serde_json::to_string(slots) {
-            let _ = storage.set_item(PINNED_SLOTS_KEY, &raw);
+        if let Ok(raw) = serde_json::to_string(symbols) {
+            let _ = storage.set_item(PINNED_SYMBOLS_KEY, &raw);
         }
     }
 }
