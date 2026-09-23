@@ -6,8 +6,10 @@ use web_sys::{Request, RequestInit, RequestMode, Response};
 
 use crate::application::ports::{MarketClient, MarketPinStore};
 
-const DESKTOP_MARKET_URL: &str = "https://cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
-const MOBILE_MARKET_URL: &str = "https://m.cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
+const DESKTOP_MARKET_URL: &str =
+    "https://cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
+const MOBILE_MARKET_URL: &str =
+    "https://m.cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
 const PIN_CACHE_KEY: &str = "market.pinned-symbols.v1";
 
 /// Browser implementation of the direct CafeF market-data client.
