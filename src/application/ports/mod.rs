@@ -84,7 +84,6 @@ pub trait MarketPinStore {
     fn save(&self, symbols: &[String]) -> Result<(), String>;
 }
 
-
 /// Application port for persisting the client-side paper-trading snapshot.
 pub trait TradingStorage {
     /// Loads the previously persisted paper-trading snapshot.
