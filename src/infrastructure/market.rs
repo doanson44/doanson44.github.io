@@ -6,8 +6,7 @@ use web_sys::{Request, RequestInit, RequestMode, Response};
 
 use crate::application::ports::MarketClient;
 
-const MARKET_URL: &str =
-    "https://cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
+const MARKET_URL: &str = "https://cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
 
 /// Browser implementation of the direct CafeF market-data client.
 #[derive(Debug, Default, Clone, Copy)]
