@@ -1100,9 +1100,17 @@ pub fn validate_input(
     }
 
     let candles_used = candles.len();
-    let has_fatal_issue = issues
-        .iter()
-        .any(|item| item.code != "MAXIMUM_CANDLES_EXCEEDED");
+    let has_fatal_issue = issues.iter().any(|item| {
+        matches!(
+            item.code.as_str(),
+            "MISSING_TIMESTAMP"
+                | "INVALID_NUMBER"
+                | "INVALID_PRICE"
+                | "INVALID_OHLC"
+                | "INVALID_VOLUME"
+                | "DUPLICATE_CANDLE"
+        )
+    });
     let sufficient_for_analysis = candles_used >= requirements.minimum_candles && !has_fatal_issue;
     let coverage = Coverage {
         from: candles.first().map(|candle| candle.timestamp.clone()),
@@ -2367,6 +2375,34 @@ mod tests {
     fn rsi_rises_after_positive_move() {
         let result = rsi(&[1.0, 2.0, 3.0, 4.0], 2).expect("valid RSI");
         assert_eq!(result[2], Some(100.0));
+    }
+
+    #[test]
+    fn zero_volume_does_not_block_analysis() {
+        let mut input = AnalysisInput {
+            schema_version: "1.0".to_string(),
+            asset: Asset {
+                symbol: "TEST".to_string(),
+                asset_type: AssetType::Stock,
+                exchange: "TEST".to_string(),
+                currency: "USD".to_string(),
+            },
+            market_data: MarketData {
+                timeframe: "1D".to_string(),
+                timezone: "UTC".to_string(),
+                candles: candles(&[10.0, 11.0]),
+            },
+        };
+        input.market_data.candles[0].volume = 0.0;
+        let requirements = DataRequirements {
+            minimum_candles: 1,
+            recommended_candles: 2,
+            maximum_candles: 10,
+        };
+        let (_, quality) =
+            validate_input(&input, &requirements).expect("validation should return a report");
+        assert!(quality.issues.iter().any(|item| item.code == "ZERO_VOLUME"));
+        assert!(quality.sufficient_for_analysis);
     }
 
     #[test]
