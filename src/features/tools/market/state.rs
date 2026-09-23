@@ -37,6 +37,29 @@ impl MarketState {
         }
     }
 
+    pub fn load_pins(&self) {
+        match MarketApi.load() {
+            Ok(symbols) => self.pinned_symbols.set(symbols),
+            Err(message) => self.error.set(Some(message)),
+        }
+    }
+
+    pub fn toggle_pin(&self, symbol: &str) {
+        let mut symbols = self.pinned_symbols.get_untracked();
+        if let Some(index) = symbols.iter().position(|item| item == symbol) {
+            symbols.remove(index);
+        } else {
+            symbols.push(symbol.to_string());
+        }
+
+        if let Err(message) = MarketApi.save(&symbols) {
+            self.error.set(Some(message));
+            return;
+        }
+
+        self.pinned_symbols.set(symbols);
+    }
+
     pub fn load(&self) {
         self.loading.set(true);
         self.error.set(None);
