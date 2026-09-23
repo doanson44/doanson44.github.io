@@ -2249,7 +2249,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     }
                     title="Flap the bird"
                 >
-                    <i class="bi bi-feather me-1"></i>
+                    <span class="mr-1" aria-hidden="true">"↗"</span>
                     "Flap"
                 </button>
                 <button
@@ -2258,7 +2258,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     on:click=move |_| reset()
                     title="Reset Flappy"
                 >
-                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    <span class="mr-1" aria-hidden="true">"↻"</span>
                     "Reset"
                 </button>
             </div>
