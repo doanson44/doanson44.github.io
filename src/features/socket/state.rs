@@ -12,14 +12,17 @@ use wasm_bindgen::{closure::Closure, JsCast};
 use crate::application::{
     ports::{FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream},
     services::{
-        proxy::ProxyService, technical_analysis::TechnicalAnalysisService, FuturesMarketService,
+        proxy::ProxyService, technical_analysis::TechnicalAnalysisService, trading::TradingService,
+        FuturesMarketService,
     },
 };
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::domain::technical_analysis::AnalysisResult;
+use crate::domain::trading::{PortfolioSummary, TradingSnapshot};
 use crate::infrastructure::browser;
 use crate::infrastructure::proxy::ProxyApi;
+use crate::infrastructure::trading::LocalTradingStorage;
 
 const UI_FLUSH_MS: i32 = 75;
 const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
@@ -83,6 +86,11 @@ pub struct SocketState {
     pub analysis_modal_open: RwSignal<bool>,
     pub analysis_error: RwSignal<Option<String>>,
     pub analysis_copied: RwSignal<bool>,
+    pub trading_snapshot: RwSignal<TradingSnapshot>,
+    pub settings_open: RwSignal<bool>,
+    pub trading_error: RwSignal<Option<String>>,
+    pub trading_notice: RwSignal<Option<String>>,
+    pub api_key: RwSignal<String>,
 }
 
 impl SocketState {
@@ -97,7 +105,21 @@ impl SocketState {
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let search_query = RwSignal::new(String::new());
-        let pinned_symbols = RwSignal::new(load_pinned_symbols());
+        let mut loaded_pins = load_pinned_symbols();
+        let loaded_snapshot = TradingService::load(&LocalTradingStorage);
+        if loaded_snapshot.portfolio.positions.is_empty() {
+            loaded_pins.clear();
+        } else {
+            let held_symbols = loaded_snapshot
+                .portfolio
+                .positions
+                .iter()
+                .map(|position| position.symbol.as_str())
+                .collect::<std::collections::HashSet<_>>();
+            loaded_pins.retain(|symbol| held_symbols.contains(symbol.as_str()));
+        }
+        let pinned_symbols = RwSignal::new(loaded_pins);
+
         let page_size = RwSignal::new(DEFAULT_PAGE_SIZE);
         let current_page = RwSignal::new(1usize);
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
@@ -109,6 +131,11 @@ impl SocketState {
         let analysis_modal_open = RwSignal::new(false);
         let analysis_error = RwSignal::new(None);
         let analysis_copied = RwSignal::new(false);
+        let trading_snapshot = RwSignal::new(loaded_snapshot);
+        let settings_open = RwSignal::new(false);
+        let trading_error = RwSignal::new(None);
+        let trading_notice = RwSignal::new(None);
+        let api_key = RwSignal::new(String::new());
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
         if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
@@ -251,6 +278,11 @@ impl SocketState {
             analysis_modal_open,
             analysis_error,
             analysis_copied,
+            trading_snapshot,
+            settings_open,
+            trading_error,
+            trading_notice,
+            api_key,
         }
     }
 
@@ -280,7 +312,119 @@ impl SocketState {
         }
     }
 
-    /// Toggles a ticker pin.
+    /// Toggles a ticker pin and executes the corresponding paper trade.
+    ///
+    /// Pinning buys the ticker with the default paper-trading allocation.
+    /// Unpinning sells the complete open position.
+    pub fn toggle_pin(&self, symbol: &str) {
+        let Some(price) = self
+            .tickers
+            .get_untracked()
+            .get(symbol)
+            .and_then(|ticker| ticker.ticker.last_price)
+        else {
+            self.trading_error
+                .set(Some("A live market price is required to trade.".to_string()));
+            return;
+        };
+
+        self.trading_error.set(None);
+        self.trading_notice.set(None);
+
+        let snapshot = self.trading_snapshot.get_untracked();
+        let timestamp_ms = js_sys::Date::now() as i64;
+        let is_pinned = self
+            .pinned_symbols
+            .get_untracked()
+            .iter()
+            .any(|item| item == symbol);
+
+        let next_snapshot = if is_pinned {
+            TradingService::sell(&snapshot, symbol, price, timestamp_ms)
+        } else {
+            TradingService::buy(&snapshot, symbol, price, timestamp_ms)
+        };
+
+        let Ok(next_snapshot) = next_snapshot else {
+            self.trading_error.set(Some(
+                next_snapshot
+                    .err()
+                    .unwrap_or_else(|| "Paper trade failed.".to_string()),
+            ));
+            return;
+        };
+
+        if let Err(message) = TradingService::save(&LocalTradingStorage, &next_snapshot) {
+            self.trading_error.set(Some(message));
+            return;
+        }
+
+        let mut symbols = self.pinned_symbols.get_untracked();
+        if is_pinned {
+            symbols.retain(|item| item != symbol);
+            self.trading_notice
+                .set(Some(format!("Sold {symbol} at market price.")));
+        } else {
+            symbols.push(symbol.to_owned());
+            self.trading_notice
+                .set(Some(format!("Bought {symbol} at market price.")));
+        }
+
+        self.pinned_symbols.set(symbols);
+        self.trading_snapshot.set(next_snapshot);
+    }
+
+    /// Returns the current portfolio valuation using the latest socket prices.
+    pub fn portfolio_summary(&self) -> PortfolioSummary {
+        let prices = self
+            .tickers
+            .get_untracked()
+            .iter()
+            .filter_map(|(symbol, ticker)| {
+                ticker
+                    .ticker
+                    .last_price
+                    .filter(|price| price.is_finite() && *price > 0.0)
+                    .map(|price| (symbol.clone(), price))
+            })
+            .collect::<HashMap<_, _>>();
+
+        TradingService::summarize(&self.trading_snapshot.get_untracked(), &prices)
+    }
+
+    /// Opens the paper-trading settings panel.
+    pub fn open_settings(&self) {
+        self.trading_error.set(None);
+        self.trading_notice.set(None);
+        self.settings_open.set(true);
+    }
+
+    /// Closes the paper-trading settings panel.
+    pub fn close_settings(&self) {
+        self.settings_open.set(false);
+    }
+
+    /// Saves paper-trading settings and resets the paper portfolio.
+    pub fn save_settings(&self, initial_capital: f64, fee_percent: f64) {
+        let fee_rate = fee_percent / 100.0;
+        match TradingService::reset_with_settings(initial_capital, fee_rate) {
+            Ok(snapshot) => match TradingService::save(&LocalTradingStorage, &snapshot) {
+                Ok(()) => {
+                    self.trading_snapshot.set(snapshot);
+                    self.pinned_symbols.set(Vec::new());
+                    save_pinned_symbols(&[]);
+                    self.trading_error.set(None);
+                    self.trading_notice.set(Some(
+                        "Trading settings saved. The paper portfolio was reset.".to_string(),
+                    ));
+                    self.settings_open.set(false);
+                }
+                Err(message) => self.trading_error.set(Some(message)),
+            },
+            Err(message) => self.trading_error.set(Some(message)),
+        }
+    }
+
     /// Analyzes a MEXC Futures symbol at the requested timeframe.
     pub fn analyze_symbol(&self, symbol: &str, timeframe: &str) {
         self.run_analysis(symbol, timeframe, false);
@@ -399,16 +543,6 @@ impl SocketState {
         });
     }
 
-    pub fn toggle_pin(&self, symbol: &str) {
-        let mut symbols = self.pinned_symbols.get_untracked();
-        if let Some(index) = symbols.iter().position(|item| item == symbol) {
-            symbols.remove(index);
-        } else {
-            symbols.push(symbol.to_owned());
-        }
-        self.pinned_symbols.set(symbols.clone());
-        save_pinned_symbols(&symbols);
-    }
 }
 
 fn load_pinned_symbols() -> Vec<String> {
