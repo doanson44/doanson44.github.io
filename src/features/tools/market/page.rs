@@ -28,6 +28,15 @@ pub fn MarketPage() -> impl IntoView {
     let sort = RwSignal::new(MarketSort::Symbol);
     let descending = RwSignal::new(false);
 
+    let toggle_sort = move |selected: MarketSort| {
+        if sort.get_untracked() == selected {
+            descending.update(|value| *value = !*value);
+        } else {
+            sort.set(selected);
+            descending.set(false);
+        }
+    };
+
     state.load_pins();
     state.load();
 
@@ -158,36 +167,6 @@ pub fn MarketPage() -> impl IntoView {
                         <option value="unchanged">"Unchanged"</option>
                     </select>
 
-                    <label class="sr-only" for="market-sort">"Sort market stocks"</label>
-                    <select
-                        id="market-sort"
-                        class="min-h-11 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/40"
-                        on:change=move |event| {
-                            sort.set(match event_target_value(&event).as_str() {
-                                "price" => MarketSort::Price,
-                                "change" => MarketSort::ChangePercent,
-                                "volume" => MarketSort::Volume,
-                                "market_cap" => MarketSort::MarketCap,
-                                _ => MarketSort::Symbol,
-                            });
-                        }
-                    >
-                        <option value="symbol">"Sort: Symbol"</option>
-                        <option value="price">"Sort: Price"</option>
-                        <option value="change">"Sort: Change %"</option>
-                        <option value="volume">"Sort: Volume"</option>
-                        <option value="market_cap">"Sort: Market Cap"</option>
-                    </select>
-
-                    <button
-                        type="button"
-                        class="min-h-11 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                        title="Toggle sort direction"
-                        aria-label="Toggle sort direction"
-                        on:click=move |_| descending.update(|value| *value = !*value)
-                    >
-                        {move || if descending.get() { "↓" } else { "↑" }}
-                    </button>
                 </div>
 
                 <p class="m-0 text-sm text-[var(--text-secondary)]">"Market data supplied directly by CafeF."</p>
@@ -206,13 +185,13 @@ pub fn MarketPage() -> impl IntoView {
                         <thead>
                             <tr class="border-b border-[var(--border-color)] bg-[var(--surface-hover)] text-left text-[var(--text-secondary)]">
                                 <th class="px-3 py-2 font-medium" scope="col">"Pin"</th>
-                                <th class="px-3 py-2 font-medium" scope="col">"Symbol"</th>
+                                {sortable_header("Symbol", MarketSort::Symbol, sort, descending, toggle_sort)}
                                 <th class="px-3 py-2 font-medium" scope="col">"Name"</th>
-                                <th class="px-3 py-2 text-right font-medium" scope="col">"Price"</th>
+                                {sortable_header("Price", MarketSort::Price, sort, descending, toggle_sort)}
                                 <th class="px-3 py-2 text-right font-medium" scope="col">"Change"</th>
-                                <th class="px-3 py-2 text-right font-medium" scope="col">"Change %"</th>
-                                <th class="px-3 py-2 text-right font-medium" scope="col">"Volume"</th>
-                                <th class="px-3 py-2 text-right font-medium" scope="col">"Market Cap"</th>
+                                {sortable_header("Change %", MarketSort::ChangePercent, sort, descending, toggle_sort)}
+                                {sortable_header("Volume", MarketSort::Volume, sort, descending, toggle_sort)}
+                                {sortable_header("Market Cap", MarketSort::MarketCap, sort, descending, toggle_sort)}
                             </tr>
                         </thead>
                         <tbody>
@@ -269,6 +248,38 @@ pub fn MarketPage() -> impl IntoView {
                 </div>
             </div>
         </div>
+    }
+}
+
+fn sortable_header(
+    label: &'static str,
+    selected: MarketSort,
+    sort: RwSignal<MarketSort>,
+    descending: RwSignal<bool>,
+    on_sort: impl Fn(MarketSort) + Copy + 'static,
+) -> impl IntoView {
+    view! {
+        <th class="px-3 py-2 font-medium" scope="col">
+            <button
+                type="button"
+                class="flex min-h-9 items-center gap-1 rounded px-1 text-left hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                aria-label=move || {
+                    if sort.get() == selected {
+                        format!("Sort by {label} {}", if descending.get() { "descending" } else { "ascending" })
+                    } else {
+                        format!("Sort by {label}")
+                    }
+                }
+                on:click=move |_| on_sort(selected)
+            >
+                <span>{label}</span>
+                {move || if sort.get() == selected {
+                    view! { <span aria-hidden="true">{if descending.get() { "↓" } else { "↑" }}</span> }.into_any()
+                } else {
+                    view! { <span class="text-[var(--text-secondary)] opacity-50" aria-hidden="true">"↕"</span> }.into_any()
+                }}
+            </button>
+        </th>
     }
 }
 
