@@ -2263,7 +2263,7 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
     let dominant_state = if input.trend.state == "bullish" && !volume_confirmation {
         "bullish_but_unconfirmed"
     } else {
-        input.input.regime.overall.as_str()
+        input.regime.overall.as_str()
     };
     let most_important_level = input.breakout.resistance_level.or(input.levels.immediate_support);
     let main_risk = input.conflicts
@@ -2273,8 +2273,8 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
 
     EngineSummary {
         dominant_state: dominant_state.to_string(),
-        trend: trend.state.clone(),
-        momentum: momentum.rsi.state.clone(),
+        trend: input.trend.state.clone(),
+        momentum: input.momentum.rsi.state.clone(),
         structure: input.structure.state.clone(),
         volume_confirmation,
         volatility: "normal".to_string(),
