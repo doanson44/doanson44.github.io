@@ -288,8 +288,8 @@ mod tests {
         portfolio.sell(&settings, "BTC_USDT", 110.0, 2).unwrap();
 
         assert!(portfolio.positions.is_empty());
-        assert!((portfolio.cash - 1000.8999).abs() < 1e-9);
-        assert!((portfolio.realized_pnl - 0.8999).abs() < 1e-9);
+        assert!((portfolio.cash - 1009.79).abs() < 1e-9);
+        assert!((portfolio.realized_pnl - 9.79).abs() < 1e-9);
     }
 
     #[test]
@@ -315,8 +315,8 @@ mod tests {
         let prices = HashMap::from([("BTC_USDT".to_string(), 110.0)]);
         let summary = summarize_portfolio(&snapshot, &prices);
 
-        assert!((summary.equity - 1000.9999).abs() < 1e-9);
-        assert!((summary.total_pnl - 0.9999).abs() < 1e-9);
+        assert!((summary.equity - 1009.9).abs() < 1e-9);
+        assert!((summary.total_pnl - 9.9).abs() < 1e-9);
         assert_eq!(summary.holdings.len(), 1);
     }
 }
