@@ -5,7 +5,7 @@ use crate::domain::technical_analysis::{
     MarketStructureConfig, MomentumConfig, MovingAverageConfig, PatternDetectionConfig,
     PriceActionConfig, RegimeDetectionConfig, RetestConfig, RsiConfig, ScenarioEngineConfig,
     SignalEngineConfig, StochasticConfig, SupportResistanceConfig, SwingDetectionConfig,
-    TrendStrengthConfig, VolumeConfig, VolumeConfirmationConfig,
+    TrendStrengthConfig, VolatilityConfig, VolumeConfig, VolumeConfirmationConfig,
 };
 
 /// Application service for stock and crypto technical analysis.
