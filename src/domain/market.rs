@@ -19,6 +19,94 @@ pub struct MarketStock {
     pub market_cap: f64,
 }
 
+
+/// One historical CafeF price record normalized for technical analysis.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MarketPriceHistoryCandle {
+    pub symbol: String,
+    pub trade_date: String,
+    pub basic_price: f64,
+    pub open: f64,
+    pub high: f64,
+    pub low: f64,
+    pub close: f64,
+    pub volume: f64,
+    pub ceiling: Option<f64>,
+    pub floor: Option<f64>,
+    pub total_value: Option<f64>,
+}
+
+/// Historical price data returned by CafeF for one symbol.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MarketPriceHistory {
+    pub symbol: String,
+    pub candles: Vec<MarketPriceHistoryCandle>,
+}
+
+#[derive(Debug, Deserialize)]
+struct CafeFPriceHistoryRecord {
+    #[serde(rename = "Symbol")]
+    symbol: String,
+    #[serde(rename = "TradeDate")]
+    trade_date: String,
+    #[serde(rename = "BasicPrice")]
+    basic_price: f64,
+    #[serde(rename = "OpenPrice")]
+    open: f64,
+    #[serde(rename = "HighPrice")]
+    high: f64,
+    #[serde(rename = "LowPrice")]
+    low: f64,
+    #[serde(rename = "ClosePrice")]
+    close: f64,
+    #[serde(rename = "Volume")]
+    volume: f64,
+    #[serde(rename = "Ceiling")]
+    ceiling: Option<f64>,
+    #[serde(rename = "Floor")]
+    floor: Option<f64>,
+    #[serde(rename = "TotalValue")]
+    total_value: Option<f64>,
+}
+
+/// Parses CafeF historical price data into normalized domain data.
+pub fn parse_price_history_response(raw: &str, symbol: &str) -> Result<MarketPriceHistory, String> {
+    let records: Vec<CafeFPriceHistoryRecord> = serde_json::from_str(raw)
+        .map_err(|error| format!("Invalid CafeF price-history response: {error}"))?;
+
+    let requested_symbol = symbol.trim().to_ascii_uppercase();
+    let mut candles = records
+        .into_iter()
+        .filter(|record| record.symbol.eq_ignore_ascii_case(&requested_symbol))
+        .map(|record| MarketPriceHistoryCandle {
+            symbol: record.symbol,
+            trade_date: record.trade_date,
+            basic_price: record.basic_price,
+            open: record.open,
+            high: record.high,
+            low: record.low,
+            close: record.close,
+            volume: record.volume,
+            ceiling: record.ceiling,
+            floor: record.floor,
+            total_value: record.total_value,
+        })
+        .collect::<Vec<_>>();
+
+    candles.sort_by(|left, right| left.trade_date.cmp(&right.trade_date));
+
+    if candles.is_empty() {
+        return Err(format!(
+            "CafeF price history does not contain symbol {requested_symbol}"
+        ));
+    }
+
+    Ok(MarketPriceHistory {
+        symbol: requested_symbol,
+        candles,
+    })
+}
+
 /// Normalized market data returned by the CafeF market-data endpoint.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MarketResponse {
