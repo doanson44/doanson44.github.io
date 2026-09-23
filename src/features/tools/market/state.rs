@@ -4,11 +4,11 @@ use leptos::prelude::*;
 
 use crate::application::services::market::MarketService;
 use crate::domain::market::MarketStock;
-use crate::infrastructure::proxy::ProxyApi;
+use crate::infrastructure::market::MarketApi;
 
 #[derive(Clone, Copy)]
 pub struct MarketState {
-    service: MarketService<ProxyApi>,
+    service: MarketService<MarketApi>,
     pub stocks: RwSignal<Vec<MarketStock>>,
     pub total_items: RwSignal<usize>,
     pub displayed_items: RwSignal<usize>,
@@ -26,7 +26,7 @@ impl Default for MarketState {
 impl MarketState {
     pub fn new() -> Self {
         Self {
-            service: MarketService::new(ProxyApi),
+            service: MarketService::new(MarketApi),
             stocks: RwSignal::new(Vec::new()),
             total_items: RwSignal::new(0),
             displayed_items: RwSignal::new(0),
