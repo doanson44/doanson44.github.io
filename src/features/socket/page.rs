@@ -112,7 +112,6 @@ pub fn SocketPage(
     }
 }
 
-const DEFAULT_LIMIT: usize = 10;
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
 #[component]
@@ -122,10 +121,10 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
         let pinned_symbols = state.pinned_symbols;
         let symbol = symbol.clone();
         move |_| {
-            pinned_slots
+            pinned_symbols
                 .get()
                 .iter()
-                .any(|slot| slot.as_deref() == Some(symbol.as_str()))
+                .any(|item| item == &symbol)
         }
     });
     let funding_rate = Memo::new({
@@ -172,10 +171,10 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
         let pinned_symbols = state.pinned_symbols;
         let symbol = symbol.clone();
         move |_| {
-            pinned_slots
+            pinned_symbols
                 .get()
                 .iter()
-                .any(|slot| slot.as_deref() == Some(symbol.as_str()))
+                .any(|item| item == &symbol)
         }
     });
     let funding_rate = Memo::new({
