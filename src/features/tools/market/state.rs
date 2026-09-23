@@ -116,18 +116,11 @@ impl MarketState {
             Rc::new(move |result| {
                 analysis_loading.set(false);
                 match result.and_then(|raw| {
-                    {
-                        let input = TechnicalAnalysisService::price_history_input(&raw, &symbol)?;
-                        let config =
-                            TechnicalAnalysisService::stock_daily_config_for_candles(
-                                input.market_data.candles.len(),
-                            );
-                        TechnicalAnalysisService::analyze(
-                            &input,
-                            &config,
-                            browser::now_iso8601(),
-                        )
-                    }
+                    let input = TechnicalAnalysisService::price_history_input(&raw, &symbol)?;
+                    let config = TechnicalAnalysisService::stock_daily_config_for_candles(
+                        input.market_data.candles.len(),
+                    );
+                    TechnicalAnalysisService::analyze(&input, &config, browser::now_iso8601())
                 }) {
                     Ok(result) => {
                         let json = match serde_json::to_string_pretty(&result) {
