@@ -41,6 +41,7 @@ pub enum SocketViewMode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SocketSortMode {
     Symbol,
+    Burst,
     Momentum,
     Price,
     TotalTicks,
