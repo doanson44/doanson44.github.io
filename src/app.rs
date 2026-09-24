@@ -120,7 +120,7 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
             return view! { <GamesPage game=Some(game) /> }.into_any();
         }
     }
-    match route.as_str() {
+    if let Some(card_id) = route.strip_prefix("/cv/review/") {\n        return view! { <CvReviewPage card_id=Some(card_id.to_string()) /> }.into_any();\n    }\n\n    match route.as_str() {
         "/" => view! { <HomePage /> }.into_any(),
         "/tools" => view! { <ToolsPage /> }.into_any(),
         "/tools/markdown" => view! { <MarkdownPage /> }.into_any(),
@@ -132,7 +132,7 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools/proxy" => view! { <ProxyPage /> }.into_any(),
         "/games" => view! { <GamesPage game=None /> }.into_any(),
         "/cv" => view! { <CvPage /> }.into_any(),
-        "/cv/review" => view! { <CvReviewPage /> }.into_any(),
+        "/cv/review" => view! { <CvReviewPage card_id=None /> }.into_any(),
         "/socket" => view! {
             <SocketPage
                 stream=Rc::new(MexcFuturesStream)
