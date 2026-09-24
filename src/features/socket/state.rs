@@ -25,19 +25,11 @@ use crate::infrastructure::proxy::ProxyApi;
 use crate::infrastructure::trading::LocalTradingStorage;
 
 const UI_FLUSH_MS: i32 = 75;
-const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
 const PINNED_SYMBOLS_KEY: &str = "socket.pinned-symbols";
 const POSITION_SIDE_CACHE_KEY: &str = "socket.position-side";
 const DEFAULT_PAGE_SIZE: usize = 10;
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct CachedTickerMomentum {
-    symbol: String,
-    up_ticks: u64,
-    down_ticks: u64,
-}
 
 /// Socket ticker view mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -104,7 +96,7 @@ impl SocketState {
         let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
         let funding_rates = RwSignal::new_local(None);
         let view_mode = RwSignal::new(SocketViewMode::All);
-        let sort_mode = RwSignal::new(SocketSortMode::Momentum);
+        let sort_mode = RwSignal::new(SocketSortMode::Ranking);
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let search_query = RwSignal::new(String::new());
         let mut loaded_snapshot = TradingService::load(&LocalTradingStorage);
@@ -139,27 +131,6 @@ impl SocketState {
         let reset_metrics_request = RwSignal::new(0u64);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
-        if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
-            if let Some(raw) = storage.get_item(TICKER_CACHE_KEY).ok().flatten() {
-                if let Ok(snapshot) = serde_json::from_str::<Vec<CachedTickerMomentum>>(&raw) {
-                    let cached = snapshot
-                        .into_iter()
-                        .map(|item| (item.symbol, item.up_ticks, item.down_ticks));
-                    service.borrow_mut().restore_momentum(cached);
-                } else if let Ok(old_snapshot) =
-                    serde_json::from_str::<HashMap<String, TrackedFuturesTicker>>(&raw)
-                {
-                    let cached = old_snapshot.into_iter().map(|(symbol, tracked)| {
-                        (
-                            symbol,
-                            tracked.momentum.up_ticks,
-                            tracked.momentum.down_ticks,
-                        )
-                    });
-                    service.borrow_mut().restore_momentum(cached);
-                }
-            }
-        }
 
         let reset_request = reset_metrics_request;
         let reset_service = service.clone();
@@ -174,11 +145,6 @@ impl SocketState {
             reset_service.borrow_mut().reset_metrics();
             reset_tickers.set(Rc::new(reset_service.borrow().snapshot()));
 
-            if let Some(storage) =
-                web_sys::window().and_then(|window| window.local_storage().ok().flatten())
-            {
-                let _ = storage.remove_item(TICKER_CACHE_KEY);
-            }
         });
 
         let flush_pending = Rc::new(Cell::new(false));
@@ -245,11 +211,6 @@ impl SocketState {
             Err(error) => connection_status.set(FuturesConnectionStatus::Error(error)),
         }
 
-        let save_service = SendWrapper::new(service.clone());
-        on_cleanup(move || {
-            save_ticker_cache(&save_service);
-        });
-
         Self {
             tickers,
             funding_rates,
@@ -278,7 +239,7 @@ impl SocketState {
         }
     }
 
-    /// Resets Burst, Momentum, and directional tick counters for all known tickers.
+    /// Resets the short-term ranking history for all known tickers.
     pub fn reset_metrics(&self) {
         self.trading_error.set(None);
         self.trading_notice.set(None);
@@ -607,31 +568,6 @@ impl SocketState {
                 Err(message) => error.set(Some(message)),
             }
         });
-    }
-}
-
-fn save_ticker_cache(service: &Rc<RefCell<FuturesMarketService>>) {
-    let Some(storage) = web_sys::window().and_then(|window| window.local_storage().ok().flatten())
-    else {
-        return;
-    };
-
-    let service = service.borrow();
-    let snapshot = service
-        .export_momentum()
-        .map(|(symbol, momentum)| CachedTickerMomentum {
-            symbol: symbol.clone(),
-            up_ticks: momentum.up_ticks,
-            down_ticks: momentum.down_ticks,
-        })
-        .collect::<Vec<_>>();
-
-    if snapshot.is_empty() {
-        return;
-    }
-
-    if let Ok(raw) = serde_json::to_string(&snapshot) {
-        let _ = storage.set_item(TICKER_CACHE_KEY, &raw);
     }
 }
 
