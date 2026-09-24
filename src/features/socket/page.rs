@@ -449,17 +449,44 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
     let symbol_title = symbol.clone();
     let symbol_aria = symbol.clone();
     let symbol_click = symbol.clone();
+    let trade_symbol = symbol.clone();
+    let trade_label = symbol.clone();
+    let is_held = Memo::new({
+        let trading_snapshot = state.trading_snapshot;
+        let symbol = symbol.clone();
+        move |_| {
+            trading_snapshot
+                .get()
+                .portfolio
+                .positions
+                .iter()
+                .any(|position| position.symbol == symbol)
+        }
+    });
     view! {
         <article class=move || if is_pinned.get() { "rounded-lg border border-[var(--accent)]/60 bg-[var(--accent)]/5 p-3 shadow-sm" } else { "rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3 shadow-sm" }>
             <div class="flex items-start gap-2">
                 <div class="min-w-0 flex-1"><h3 class="m-0 truncate font-mono text-base font-semibold text-[var(--text-primary)]">{symbol.clone()}</h3>
                     <div class="mt-1 flex items-center gap-2"><span class="font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</span><span class=format!("font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</span></div></div>
-                <button type="button" class="min-h-11 min-w-11 shrink-0 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                    title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_title) }
-                    aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria) } else { format!("Pin {}", symbol_aria) }
-                    on:click=move |_| state.toggle_pin(&symbol_click)>
-                    {move || if is_pinned.get() { "★" } else { "☆" }}
-                </button>
+                <div class="flex shrink-0 items-center gap-1">
+                    <button type="button" class="min-h-11 min-w-11 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                        title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_aria) }
+                        aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria) } else { format!("Pin {}", symbol_aria) }
+                        on:click=move |_| state.toggle_pin(&symbol_click)>
+                        {move || if is_pinned.get() { "★" } else { "☆" }}
+                    </button>
+                    <button type="button" class="min-h-11 rounded-md border border-[var(--success)]/60 px-3 text-xs font-bold text-[var(--success)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--success)]/40"
+                        title=move || format!("Trade {}", trade_label)
+                        aria-label=move || format!("Trade {}", trade_label)
+                        on:click=move |_| state.trade(&trade_symbol)>
+                        {move || {
+                            let snapshot = state.trading_snapshot.get();
+                            if is_held.get() {
+                                if snapshot.portfolio.positions.iter().find(|position| position.symbol == trade_symbol).map(|position| position.side) == Some(crate::domain::trading::PositionSide::Short) { "BUY" } else { "SELL" }
+                            } else if snapshot.settings.position_side == crate::domain::trading::PositionSide::Short { "SELL" } else { "BUY" }
+                        }}
+                    </button>
+                </div>
             </div>
             <div class="mt-3 flex flex-wrap gap-2">
                 {socket_analysis_actions(symbol.clone(), state)}
