@@ -153,6 +153,9 @@ pub fn SocketPage(
                                             <SortHeader state=state mode=SocketSortMode::Symbol align="left">"Symbol" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Ranking align="right">{move || t_string!(i18n, socket_ranking)} </SortHeader>
+                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Price align="right">"Price" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
@@ -160,9 +163,6 @@ pub fn SocketPage(
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Funding align="right">{move || t_string!(i18n, socket_funding)} </SortHeader>
-                                        </th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Ranking align="right">{move || t_string!(i18n, socket_ranking)} </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_direction)}</th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_change1m)}</th>
