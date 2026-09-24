@@ -39,19 +39,12 @@ struct PriceSample {
 ///
 /// The score favors fast, directional moves that are sustained over several
 /// minutes instead of counting individual socket ticks.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FuturesTickerRanking {
     #[serde(default)]
     samples: VecDeque<PriceSample>,
 }
 
-impl Default for FuturesTickerRanking {
-    fn default() -> Self {
-        Self {
-            samples: VecDeque::new(),
-        }
-    }
-}
 
 impl FuturesTickerRanking {
     /// Creates an empty ranking history.
