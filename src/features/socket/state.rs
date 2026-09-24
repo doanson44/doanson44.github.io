@@ -108,7 +108,8 @@ impl SocketState {
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let search_query = RwSignal::new(String::new());
         let mut loaded_snapshot = TradingService::load(&LocalTradingStorage);
-        let position_side = load_position_side().unwrap_or(loaded_snapshot.settings.position_side);
+        let position_side =
+            load_position_side().unwrap_or(loaded_snapshot.settings.position_side);
         save_position_side(position_side);
         loaded_snapshot.settings.position_side = position_side;
         let pinned_symbols = RwSignal::new(
@@ -644,7 +645,6 @@ fn save_pinned_symbols(symbols: &[String]) {
         }
     }
 }
-
 
 fn load_position_side() -> Option<PositionSide> {
     let storage = web_sys::window()?.local_storage().ok().flatten()?;
