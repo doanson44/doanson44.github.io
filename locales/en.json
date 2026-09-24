@@ -58,7 +58,6 @@
   "socket_copy_1d": "Copy 1D",
   "socket_view": "Ticker view",
   "socket_all": "All",
-  "socket_burst": "Burst",
   "socket_pinned": "Pinned only",
   "socket_sort": "Sort by",
   "socket_show": "Show",
@@ -269,5 +268,8 @@
   "cv_review_explanation": "Understand it",
   "cv_review_example": "Example",
   "cv_review_interview_tip": "Interview tip",
-  "cv_review_back_to_list": "Back to list"
+  "cv_review_back_to_list": "Back to list",
+  "socket_ranking": "Ranking",
+  "socket_change1m": "1m",
+  "socket_change3m": "3m"
 }
