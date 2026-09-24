@@ -17,7 +17,7 @@ use crate::domain::futures::{
 };
 use crate::domain::markdown::{render_markdown, RenderedMarkdown};
 
-/// Application service that owns live Futures market state and session-local momentum.
+/// Application service that owns live Futures market state and short-term ranking.
 #[derive(Debug, Default)]
 pub struct FuturesMarketService {
     registry: FuturesTickerRegistry,
@@ -57,7 +57,7 @@ impl FuturesMarketService {
                     symbol.clone(),
                     TrackedFuturesTicker {
                         ticker: ticker.clone(),
-                        momentum,
+                        ranking,
                     },
                 )
             })
@@ -85,8 +85,8 @@ impl FuturesMarketService {
     /// Re-baselines known tickers after reconnect without creating synthetic ticks.
     pub fn rebaseline(&mut self) {
         for (symbol, ticker) in self.registry.snapshot() {
-            if let Some(momentum) = self.ranking.get_mut(symbol) {
-                *momentum = FuturesTickerRanking::baseline(ticker.last_price);
+            if let Some(ranking) = self.ranking.get_mut(symbol) {
+                *ranking = FuturesTickerRanking::baseline(ticker.last_price);
             }
         }
     }
@@ -134,7 +134,7 @@ mod tests {
         service.apply_batch(vec![update("BTC_USDT", 100.0)]);
         let snapshot = service.snapshot();
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.ranking_score(), 0);
+        assert_eq!(snapshot["BTC_USDT"].ranking.ranking_score(), 0);
     }
 
     #[test]
@@ -147,7 +147,7 @@ mod tests {
         ]);
         let snapshot = service.snapshot();
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.ranking_score(), 0);
+        assert_eq!(snapshot["BTC_USDT"].ranking.ranking_score(), 0);
     }
 
     #[test]
@@ -171,9 +171,9 @@ mod tests {
             }]);
         }
 
-        let ranking = service.snapshot()["BTC_USDT"].momentum.ranking_score();
+        let ranking = service.snapshot()["BTC_USDT"].ranking.ranking_score();
         assert!(ranking >= 70, "ranking should identify a strong move: {ranking}");
-        assert_eq!(service.snapshot()["BTC_USDT"].momentum.ranking_direction(), 1);
+        assert_eq!(service.snapshot()["BTC_USDT"].ranking.ranking_direction(), 1);
     }
 
     #[test]
@@ -208,7 +208,7 @@ mod tests {
             updated_at_ms: Some(120_000),
         }]);
 
-        assert_eq!(service.snapshot()["BTC_USDT"].momentum.ranking_score(), 0);
+        assert_eq!(service.snapshot()["BTC_USDT"].ranking.ranking_score(), 0);
     }
 
     #[test]
@@ -242,7 +242,7 @@ mod tests {
             updated_at_ms: Some(120_000),
         }]);
 
-        assert_eq!(service.snapshot()["BTC_USDT"].momentum.ranking_score(), 0);
+        assert_eq!(service.snapshot()["BTC_USDT"].ranking.ranking_score(), 0);
     }
 
 }
