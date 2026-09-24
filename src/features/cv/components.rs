@@ -183,17 +183,6 @@ fn localized_cv_text(key: &str) -> String {
     }
 }
 
-
-fn format_major_label(major: &str) -> String {
-    let i18n = use_i18n();
-    if i18n.get_locale() == Locale::vi {
-        format!("Chuyên ngành: {major}")
-    } else {
-        format!("Major: {major}")
-    }
-}
-
-
 fn format_major_label(major: &str) -> String {
     let i18n = use_i18n();
     if i18n.get_locale() == Locale::vi {
