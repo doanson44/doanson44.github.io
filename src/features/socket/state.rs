@@ -37,6 +37,14 @@ pub enum SocketViewMode {
     PinnedOnly,
 }
 
+/// Socket ticker direction filter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketDirectionFilter {
+    All,
+    Long,
+    Short,
+}
+
 /// Socket ticker sort mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SocketSortMode {
@@ -64,6 +72,7 @@ pub struct SocketState {
     pub tickers: RwSignal<MarketSnapshot, LocalStorage>,
     pub funding_rates: RwSignal<Option<FundingRateSnapshot>, LocalStorage>,
     pub view_mode: RwSignal<SocketViewMode>,
+    pub direction_filter: RwSignal<SocketDirectionFilter>,
     pub sort_mode: RwSignal<SocketSortMode>,
     pub sort_direction: RwSignal<SocketSortDirection>,
     pub search_query: RwSignal<String>,
@@ -96,6 +105,7 @@ impl SocketState {
         let tickers = RwSignal::new_local(Rc::new(HashMap::new()));
         let funding_rates = RwSignal::new_local(None);
         let view_mode = RwSignal::new(SocketViewMode::All);
+        let direction_filter = RwSignal::new(SocketDirectionFilter::All);
         let sort_mode = RwSignal::new(SocketSortMode::Ranking);
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let search_query = RwSignal::new(String::new());
@@ -213,6 +223,7 @@ impl SocketState {
             tickers,
             funding_rates,
             view_mode,
+            direction_filter,
             sort_mode,
             sort_direction,
             search_query,
@@ -254,6 +265,12 @@ impl SocketState {
     /// Moves to a page within the available range.
     pub fn set_page(&self, page: usize) {
         self.current_page.set(page.max(1));
+    }
+
+    /// Sets the market direction filter.
+    pub fn set_direction_filter(&self, filter: SocketDirectionFilter) {
+        self.direction_filter.set(filter);
+        self.current_page.set(1);
     }
 
     /// Selects a sort column, toggling direction when already selected.
