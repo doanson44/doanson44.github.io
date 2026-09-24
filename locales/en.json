@@ -264,5 +264,9 @@
   "cv_review_not_understood": "Not understood",
   "cv_review_mark_understood": "Mark as understood",
   "cv_review_mark_not_understood": "Mark as not understood",
+  "cv_review_quick_answer": "Quick answer",
+  "cv_review_explanation": "Understand it",
+  "cv_review_example": "Example",
+  "cv_review_interview_tip": "Interview tip",
   "cv_review_back_to_list": "Back to list"
 }
