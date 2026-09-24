@@ -120,7 +120,11 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
             return view! { <GamesPage game=Some(game) /> }.into_any();
         }
     }
-    if let Some(card_id) = route.strip_prefix("/cv/review/") {\n        return view! { <CvReviewPage card_id=Some(card_id.to_string()) /> }.into_any();\n    }\n\n    match route.as_str() {
+    if let Some(card_id) = route.strip_prefix("/cv/review/") {
+        return view! { <CvReviewPage card_id=Some(card_id.to_string()) /> }.into_any();
+    }
+
+    match route.as_str() {
         "/" => view! { <HomePage /> }.into_any(),
         "/tools" => view! { <ToolsPage /> }.into_any(),
         "/tools/markdown" => view! { <MarkdownPage /> }.into_any(),
