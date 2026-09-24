@@ -155,11 +155,11 @@ mod tests {
         let mut service = FuturesMarketService::new();
         for (timestamp, price) in [
             (0, 100.0),
-            (1_000, 100.8),
-            (2_000, 101.7),
-            (3_000, 102.8),
-            (4_000, 104.0),
-            (5_000, 105.5),
+            (15_000, 100.8),
+            (30_000, 101.7),
+            (45_000, 102.8),
+            (60_000, 104.0),
+            (300_000, 105.5),
         ] {
             service.apply_batch(vec![FuturesTickerUpdate {
                 symbol: "BTC_USDT".into(),
