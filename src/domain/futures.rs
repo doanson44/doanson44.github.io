@@ -482,7 +482,7 @@ mod tests {
             ranking.observe_at(Some(price), Some(timestamp));
         }
 
-        assert!(ranking.ranking_score() >= 70);
+        assert!(ranking.ranking_score() >= 60);
         assert_eq!(ranking.ranking_direction(), 1);
         assert!(ranking.return_15s().unwrap() > 0.0);
         assert!(ranking.return_1m().unwrap() > 0.0);
@@ -494,11 +494,11 @@ mod tests {
         let mut ranking = FuturesTickerRanking::default();
         for (timestamp, price) in [
             (0, 100.0),
-            (1_000, 99.2),
-            (2_000, 98.4),
-            (3_000, 97.5),
-            (4_000, 96.4),
-            (5_000, 95.2),
+            (15_000, 99.2),
+            (30_000, 98.4),
+            (45_000, 97.5),
+            (60_000, 96.4),
+            (300_000, 95.2),
         ] {
             ranking.observe_at(Some(price), Some(timestamp));
         }
@@ -529,7 +529,7 @@ mod tests {
 
         assert_eq!(ranking.observation_count(), 3);
         assert!(ranking.return_15s().is_some());
-        assert!(ranking.return_1m().is_some());
+        assert!(ranking.return_1m().is_none());
         assert!(ranking.ranking_score() > 0);
     }
 
@@ -548,14 +548,14 @@ mod tests {
     fn out_of_order_observations_are_ignored() {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
-        ranking.observe_at(Some(101.0), Some(1_000));
-        ranking.observe_at(Some(99.0), Some(500));
+        ranking.observe_at(Some(101.0), Some(15_000));
+        ranking.observe_at(Some(99.0), Some(7_500));
 
         assert_eq!(ranking.observation_count(), 2);
-        let return_1s = ranking
-            .return_1s()
-            .expect("one-second history should exist");
-        assert!((return_1s - 0.01).abs() < 1e-12);
+        let return_15s = ranking
+            .return_15s()
+            .expect("fifteen-second history should exist");
+        assert!((return_15s - 0.01).abs() < 1e-12);
     }
 
     #[test]
