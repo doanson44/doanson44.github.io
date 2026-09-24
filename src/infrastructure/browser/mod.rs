@@ -92,6 +92,11 @@ pub fn scroll_to_element(id: &str) {
     }
 }
 
+/// Scroll the document to its top edge.
+pub fn scroll_to_top() {
+    get_window().scroll_to_with_x_and_y(0.0, 0.0);
+}
+
 /// Copy the rendered preview as rich HTML with a plain-text fallback.
 pub async fn copy_preview_as_html(element_id: &str) -> Result<(), String> {
     match copy_preview_as_html_js(element_id).await {
