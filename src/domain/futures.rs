@@ -385,142 +385,104 @@ mod tests {
 
     #[test]
     fn first_price_is_a_baseline() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
-        momentum.observe(Some(100.0));
+        let mut ranking = FuturesTickerRanking::baseline(None);
+        ranking.observe_at(Some(100.0), Some(0));
 
-        assert_eq!(momentum.up_ticks, 0);
-        assert_eq!(momentum.down_ticks, 0);
-        assert_eq!(momentum.progress(), 0);
+        assert_eq!(ranking.ranking_score(), 0);
+        assert_eq!(ranking.ranking_direction(), 0);
     }
 
     #[test]
-    fn cached_counts_restore_without_a_previous_price() {
-        let mut momentum = FuturesTickerRanking::from_cached_counts(4, 2);
-        momentum.observe(Some(100.0));
+    fn ranking_requires_one_and_three_minute_history() {
+        let mut ranking = FuturesTickerRanking::default();
+        ranking.observe_at(Some(100.0), Some(0));
+        ranking.observe_at(Some(100.5), Some(60_000));
+        assert_eq!(ranking.ranking_score(), 0);
 
-        assert_eq!(momentum.up_ticks, 4);
-        assert_eq!(momentum.down_ticks, 2);
-        assert_eq!(momentum.previous_price, Some(100.0));
+        ranking.observe_at(Some(101.0), Some(180_000));
+        assert!(ranking.ranking_score() > 0);
+        assert_eq!(ranking.ranking_direction(), 1);
     }
 
     #[test]
-    fn price_changes_update_directional_ticks() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
-        momentum.observe(Some(101.0));
-        momentum.observe(Some(102.0));
-        momentum.observe(Some(101.0));
-        momentum.observe(Some(101.0));
-
-        assert_eq!(momentum.up_ticks, 2);
-        assert_eq!(momentum.down_ticks, 1);
-        assert_eq!(momentum.net_ticks(), 1);
-        assert_eq!(momentum.progress(), 1);
-    }
-
-    #[test]
-    fn momentum_is_capped_at_100_and_drops_when_direction_reverses() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(0.0));
-        for price in 1..=101 {
-            momentum.observe(Some(price as f64));
+    fn ranking_detects_a_fast_directional_move() {
+        let mut ranking = FuturesTickerRanking::default();
+        for (timestamp, price) in [
+            (0, 100.0),
+            (60_000, 100.8),
+            (120_000, 101.7),
+            (180_000, 102.8),
+            (240_000, 104.0),
+            (300_000, 105.5),
+        ] {
+            ranking.observe_at(Some(price), Some(timestamp));
         }
 
-        assert_eq!(momentum.progress(), 100);
-
-        momentum.observe(Some(102.0));
-        assert_eq!(momentum.progress(), 100);
-
-        momentum.observe(Some(101.0));
-        assert_eq!(momentum.progress(), 98);
+        assert!(ranking.ranking_score() >= 70);
+        assert_eq!(ranking.ranking_direction(), 1);
+        assert!(ranking.return_1m().unwrap() > 0.0);
+        assert!(ranking.return_3m().unwrap() > 0.0);
+        assert!(ranking.trend_efficiency_3m().unwrap() > 0.9);
     }
 
     #[test]
-    fn momentum_uses_a_rolling_window() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(0.0));
-        for price in 1..=101 {
-            momentum.observe(Some(price as f64));
+    fn ranking_handles_a_fast_downward_move() {
+        let mut ranking = FuturesTickerRanking::default();
+        for (timestamp, price) in [
+            (0, 100.0),
+            (60_000, 99.2),
+            (120_000, 98.4),
+            (180_000, 97.5),
+            (240_000, 96.4),
+            (300_000, 95.2),
+        ] {
+            ranking.observe_at(Some(price), Some(timestamp));
         }
 
-        assert_eq!(momentum.up_ticks, 100);
-        assert_eq!(momentum.down_ticks, 0);
-        assert_eq!(momentum.progress(), 100);
-
-        momentum.observe(Some(100.0));
-        assert_eq!(momentum.up_ticks, 99);
-        assert_eq!(momentum.down_ticks, 1);
-        assert_eq!(momentum.progress(), 98);
+        assert!(ranking.ranking_score() >= 70);
+        assert_eq!(ranking.ranking_direction(), -1);
     }
 
     #[test]
-    fn reset_metrics_clears_momentum_and_burst_history() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
-        momentum.observe_at(Some(100.02), Some(1_000));
-        momentum.observe_at(Some(100.04), Some(2_000));
-        momentum.observe_at(Some(100.08), Some(3_000));
-        momentum.observe_at(Some(100.20), Some(4_000));
+    fn reset_keeps_only_the_current_baseline() {
+        let mut ranking = FuturesTickerRanking::default();
+        ranking.observe_at(Some(100.0), Some(0));
+        ranking.observe_at(Some(101.0), Some(60_000));
+        ranking.observe_at(Some(102.0), Some(120_000));
 
-        momentum.reset_metrics();
+        ranking.reset_metrics();
 
-        assert_eq!(momentum.previous_price, Some(100.20));
-        assert_eq!(momentum.up_ticks, 0);
-        assert_eq!(momentum.down_ticks, 0);
-        assert_eq!(momentum.burst_score(), 0);
-        assert_eq!(momentum.burst_ticks(), 0);
+        assert_eq!(ranking.observation_count(), 1);
+        assert_eq!(ranking.ranking_score(), 0);
     }
 
     #[test]
-    fn burst_detects_a_sudden_acceleration() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
-        momentum.observe_at(Some(100.02), Some(1_000));
-        momentum.observe_at(Some(100.04), Some(2_000));
-        momentum.observe_at(Some(100.08), Some(3_000));
-        momentum.observe_at(Some(100.20), Some(4_000));
+    fn observations_are_bounded_to_five_minutes() {
+        let mut ranking = FuturesTickerRanking::default();
+        ranking.observe_at(Some(100.0), Some(0));
+        ranking.observe_at(Some(101.0), Some(300_000));
+        ranking.observe_at(Some(102.0), Some(600_000));
 
-        assert!(momentum.is_burst());
-        assert!(momentum.burst_score() >= 70);
+        assert_eq!(ranking.observation_count(), 2);
+        assert_eq!(ranking.return_5m(), Some(0.0));
     }
 
     #[test]
-    fn burst_score_decays_instead_of_resetting() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
-        momentum.observe_at(Some(100.02), Some(1_000));
-        momentum.observe_at(Some(100.04), Some(2_000));
-        momentum.observe_at(Some(100.08), Some(3_000));
-        momentum.observe_at(Some(100.20), Some(4_000));
+    fn out_of_order_observations_are_ignored() {
+        let mut ranking = FuturesTickerRanking::default();
+        ranking.observe_at(Some(100.0), Some(1_000));
+        ranking.observe_at(Some(101.0), Some(2_000));
+        ranking.observe_at(Some(99.0), Some(1_500));
 
-        let initial = momentum.burst_score();
-        momentum.observe_at(Some(100.21), Some(5_000));
-
-        assert!(momentum.burst_score() < initial);
-        assert!(momentum.burst_score() > 0);
+        assert_eq!(ranking.observation_count(), 2);
+        assert_eq!(ranking.return_1m(), Some(0.01));
     }
 
     #[test]
-    fn burst_does_not_trigger_on_steady_moves() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
-        momentum.observe_at(Some(100.02), Some(1_000));
-        momentum.observe_at(Some(100.04), Some(2_000));
-        momentum.observe_at(Some(100.06), Some(3_000));
-        momentum.observe_at(Some(100.08), Some(4_000));
-
-        assert!(!momentum.is_burst());
+    fn missing_price_does_not_create_an_observation() {
+        let mut ranking = FuturesTickerRanking::default();
+        ranking.observe_at(None, Some(1_000));
+        assert_eq!(ranking.observation_count(), 0);
     }
 
-    #[test]
-    fn burst_requires_timestamped_observations() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
-        momentum.observe(Some(100.02));
-        momentum.observe(Some(100.20));
-
-        assert_eq!(momentum.burst_score(), 0);
-        assert!(!momentum.is_burst());
-    }
-
-    #[test]
-    fn missing_price_does_not_create_a_tick() {
-        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
-        momentum.observe(None);
-        assert_eq!(momentum.up_ticks, 0);
-        assert_eq!(momentum.down_ticks, 0);
-        assert_eq!(momentum.previous_price, Some(100.0));
-    }
 }
