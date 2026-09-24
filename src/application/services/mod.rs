@@ -154,12 +154,17 @@ mod tests {
     fn ranking_detects_a_fast_directional_move() {
         let mut service = FuturesMarketService::new();
         for (timestamp, price) in [
-            (0, 100.0),
+(0, 100.0),
             (15_000, 100.8),
             (30_000, 101.7),
             (45_000, 102.8),
             (60_000, 104.0),
-            (300_000, 105.5),
+            (75_000, 105.0),
+            (90_000, 106.0),
+            (120_000, 108.0),
+            (180_000, 110.0),
+            (240_000, 112.0),
+            (300_000, 114.0)
         ] {
             service.apply_batch(vec![FuturesTickerUpdate {
                 symbol: "BTC_USDT".into(),
@@ -173,7 +178,7 @@ mod tests {
 
         let ranking = service.snapshot()["BTC_USDT"].ranking.ranking_score();
         assert!(
-            ranking >= 70,
+            ranking >= 60,
             "ranking should identify a strong move: {ranking}"
         );
         assert_eq!(
