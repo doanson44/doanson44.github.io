@@ -120,10 +120,10 @@ fn list_view(
 
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {cards
-                .into_iter()
+                .iter()
                 .enumerate()
                 .map(|(index, card)| {
-                    let id = card.id.clone();
+                    let id = card.id;
                     let is_understood = understood.contains(id);
                     view! {
                         <a
