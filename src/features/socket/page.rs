@@ -153,9 +153,6 @@ pub fn SocketPage(
                                             <SortHeader state=state mode=SocketSortMode::Symbol align="left">"Symbol" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Ranking align="right">{move || t_string!(i18n, socket_ranking)} </SortHeader>
-                                        </th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Price align="right">"Price" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
@@ -167,9 +164,8 @@ pub fn SocketPage(
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Ranking align="right">{move || t_string!(i18n, socket_ranking)} </SortHeader>
                                         </th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::TotalTicks align="right">{move || t_string!(i18n, socket_activity)} </SortHeader>
-                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_change1m)}</th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_change3m)}</th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_analysis)}</th>
                                     </tr>
                                 </thead>
@@ -186,11 +182,9 @@ pub fn SocketPage(
                                 <div class="flex flex-wrap justify-end gap-1">
                                     {socket_mobile_sort_button("symbol", SocketSortMode::Symbol, state, i18n)}
                                     {socket_mobile_sort_button("ranking", SocketSortMode::Ranking, state, i18n)}
-                                    {}
                                     {socket_mobile_sort_button("price", SocketSortMode::Price, state, i18n)}
                                     {socket_mobile_sort_button("change24h", SocketSortMode::Change24h, state, i18n)}
                                     {socket_mobile_sort_button("funding", SocketSortMode::Funding, state, i18n)}
-                                    {socket_mobile_sort_button("activity", SocketSortMode::TotalTicks, state, i18n)}
                                     {socket_mobile_sort_button("volume24h", SocketSortMode::Volume24h, state, i18n)}
                                 </div>
                             </div>
@@ -346,7 +340,6 @@ fn socket_sort_label(i18n: leptos_i18n::I18nContext<Locale>, key: &'static str) 
         "price" => t_string!(i18n, socket_price).to_string(),
         "change24h" => t_string!(i18n, socket_change24h).to_string(),
         "funding" => t_string!(i18n, socket_funding).to_string(),
-        "activity" => t_string!(i18n, socket_activity).to_string(),
         "volume24h" => t_string!(i18n, socket_volume24h).to_string(),
         _ => t_string!(i18n, socket_sort).to_string(),
     }
@@ -624,13 +617,6 @@ fn build_visible(
                     .unwrap_or(std::cmp::Ordering::Equal)
                     .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
             }
-            SocketSortMode::TotalTicks => {
-                let left_total = left.momentum.up_ticks + left.momentum.down_ticks;
-                let right_total = right.momentum.up_ticks + right.momentum.down_ticks;
-                right_total
-                    .cmp(&left_total)
-                    .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol))
-            }
             SocketSortMode::Funding => {
                 let left_funding = funding_rates
                     .as_ref()
@@ -764,6 +750,12 @@ fn format_number(value: Option<f64>) -> String {
 }
 
 fn format_percent(value: Option<f64>) -> String {
+    value
+        .map(|number| format!("{number:+.2}%", number = number * 100.0))
+        .unwrap_or_else(|| "—".into())
+}
+
+fn format_short_percent(value: Option<f64>) -> String {
     value
         .map(|number| format!("{number:+.2}%", number = number * 100.0))
         .unwrap_or_else(|| "—".into())
