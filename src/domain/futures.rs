@@ -189,11 +189,15 @@ impl FuturesTickerRanking {
 
     fn return_over(&self, window_ms: u64) -> Option<f64> {
         let current = self.samples.back()?;
-        let cutoff = current.timestamp_ms.saturating_sub(window_ms);
+        if current.timestamp_ms < window_ms {
+            return None;
+        }
+        let cutoff = current.timestamp_ms - window_ms;
         let base = self
             .samples
             .iter()
-            .find(|sample| sample.timestamp_ms >= cutoff)?;
+            .rev()
+            .find(|sample| sample.timestamp_ms <= cutoff)?;
         if base.price <= 0.0 {
             return None;
         }
@@ -470,12 +474,13 @@ mod tests {
     #[test]
     fn out_of_order_observations_are_ignored() {
         let mut ranking = FuturesTickerRanking::default();
-        ranking.observe_at(Some(100.0), Some(1_000));
-        ranking.observe_at(Some(101.0), Some(2_000));
-        ranking.observe_at(Some(99.0), Some(1_500));
+        ranking.observe_at(Some(100.0), Some(0));
+        ranking.observe_at(Some(101.0), Some(60_000));
+        ranking.observe_at(Some(99.0), Some(30_000));
 
         assert_eq!(ranking.observation_count(), 2);
-        assert_eq!(ranking.return_1m(), Some(0.01));
+        let return_1m = ranking.return_1m().expect("one-minute history should exist");
+        assert!((return_1m - 0.01).abs() < 1e-12);
     }
 
     #[test]
