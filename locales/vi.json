@@ -248,5 +248,17 @@
   "market_analysis_yes": "Có",
   "market_analysis_no": "Không",
   "market_analysis_na": "N/A",
-  "market_analysis_range": "Đi ngang"
+  "market_analysis_range": "Đi ngang",
+  "cv_review": "Ôn tập",
+  "cv_review_label": "Interview Review",
+  "cv_review_title": "Ôn tập kiến thức phỏng vấn",
+  "cv_review_description": "Ôn tập theo tài liệu ENGLISH.md / TIENG-VIET.md. Mỗi thẻ tương ứng với một chủ đề trong tài liệu; hãy tự trả lời trước khi lật thẻ.",
+  "cv_review_back": "Quay lại CV",
+  "cv_review_question": "Câu hỏi",
+  "cv_review_answer": "Đáp án",
+  "cv_review_reveal": "Hiện đáp án",
+  "cv_review_previous": "Trước",
+  "cv_review_next": "Tiếp",
+  "cv_review_empty": "Không có thẻ ôn tập."
+
 }
