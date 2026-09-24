@@ -72,21 +72,31 @@ impl TradingService {
         })
     }
 
-    /// Executes a paper buy at the supplied market price.
+    /// Opens a paper position using the configured long or short side.
+    pub fn open(
+        snapshot: &TradingSnapshot,
+        symbol: &str,
+        price: f64,
+        timestamp_ms: i64,
+    ) -> Result<TradingSnapshot, String> {
+        let mut next = snapshot.clone();
+        next.portfolio
+            .open(&next.settings, symbol, price, timestamp_ms)?;
+        Ok(next)
+    }
+
+    /// Executes a paper buy/open action for compatibility with existing callers.
     pub fn buy(
         snapshot: &TradingSnapshot,
         symbol: &str,
         price: f64,
         timestamp_ms: i64,
     ) -> Result<TradingSnapshot, String> {
-        let mut next = snapshot.clone();
-        next.portfolio
-            .buy(&next.settings, symbol, price, timestamp_ms)?;
-        Ok(next)
+        Self::open(snapshot, symbol, price, timestamp_ms)
     }
 
-    /// Executes a paper sell for the complete open position.
-    pub fn sell(
+    /// Closes the complete open paper position.
+    pub fn close(
         snapshot: &TradingSnapshot,
         symbol: &str,
         price: f64,
@@ -94,8 +104,18 @@ impl TradingService {
     ) -> Result<TradingSnapshot, String> {
         let mut next = snapshot.clone();
         next.portfolio
-            .sell(&next.settings, symbol, price, timestamp_ms)?;
+            .close(&next.settings, symbol, price, timestamp_ms)?;
         Ok(next)
+    }
+
+    /// Executes a paper sell/close action for compatibility with existing callers.
+    pub fn sell(
+        snapshot: &TradingSnapshot,
+        symbol: &str,
+        price: f64,
+        timestamp_ms: i64,
+    ) -> Result<TradingSnapshot, String> {
+        Self::close(snapshot, symbol, price, timestamp_ms)
     }
 
     /// Calculates portfolio metrics from the latest market prices.
