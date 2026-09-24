@@ -27,6 +27,7 @@ use crate::infrastructure::trading::LocalTradingStorage;
 const UI_FLUSH_MS: i32 = 75;
 const TICKER_CACHE_KEY: &str = "socket.tickers-cache";
 const PINNED_SYMBOLS_KEY: &str = "socket.pinned-symbols";
+const POSITION_SIDE_CACHE_KEY: &str = "socket.position-side";
 const DEFAULT_PAGE_SIZE: usize = 10;
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
@@ -106,7 +107,10 @@ impl SocketState {
         let sort_mode = RwSignal::new(SocketSortMode::Momentum);
         let sort_direction = RwSignal::new(SocketSortDirection::Descending);
         let search_query = RwSignal::new(String::new());
-        let loaded_snapshot = TradingService::load(&LocalTradingStorage);
+        let mut loaded_snapshot = TradingService::load(&LocalTradingStorage);
+        let position_side = load_position_side().unwrap_or(loaded_snapshot.settings.position_side);
+        save_position_side(position_side);
+        loaded_snapshot.settings.position_side = position_side;
         let pinned_symbols = RwSignal::new(
             loaded_snapshot
                 .portfolio
@@ -438,9 +442,9 @@ impl SocketState {
         fee_percent: f64,
         leverage: f64,
         trade_allocation_percent: f64,
-        position_side: PositionSide,
     ) {
         let fee_rate = fee_percent / 100.0;
+        let position_side = self.trading_snapshot.get_untracked().settings.position_side;
         match TradingService::reset_with_settings(
             initial_capital,
             fee_rate,
@@ -461,6 +465,28 @@ impl SocketState {
                 }
                 Err(message) => self.trading_error.set(Some(message)),
             },
+            Err(message) => self.trading_error.set(Some(message)),
+        }
+    }
+
+    /// Sets the side used for new paper-trading positions and persists it locally.
+    pub fn set_position_side(&self, side: PositionSide) {
+        let mut snapshot = self.trading_snapshot.get_untracked();
+        snapshot.settings.position_side = side;
+
+        match TradingService::save(&LocalTradingStorage, &snapshot) {
+            Ok(()) => {
+                save_position_side(side);
+                self.trading_snapshot.set(snapshot);
+                self.trading_error.set(None);
+                self.trading_notice.set(Some(format!(
+                    "Order side set to {}.",
+                    match side {
+                        PositionSide::Long => "Long",
+                        PositionSide::Short => "Short",
+                    }
+                )));
+            }
             Err(message) => self.trading_error.set(Some(message)),
         }
     }
@@ -616,5 +642,27 @@ fn save_pinned_symbols(symbols: &[String]) {
         if let Ok(raw) = serde_json::to_string(symbols) {
             let _ = storage.set_item(PINNED_SYMBOLS_KEY, &raw);
         }
+    }
+}
+
+
+fn load_position_side() -> Option<PositionSide> {
+    let storage = web_sys::window()?.local_storage().ok().flatten()?;
+    match storage.get_item(POSITION_SIDE_CACHE_KEY).ok().flatten()?.as_str() {
+        "short" => Some(PositionSide::Short),
+        "long" => Some(PositionSide::Long),
+        _ => None,
+    }
+}
+
+fn save_position_side(side: PositionSide) {
+    if let Some(storage) =
+        web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+    {
+        let value = match side {
+            PositionSide::Long => "long",
+            PositionSide::Short => "short",
+        };
+        let _ = storage.set_item(POSITION_SIDE_CACHE_KEY, value);
     }
 }
