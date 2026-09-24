@@ -69,11 +69,7 @@ pub fn profile(locale: Locale) -> Profile {
 pub fn competencies(locale: Locale) -> Vec<Competency> {
     vec![
         Competency {
-            name: if locale == Locale::vi {
-                "Backend Engineering"
-            } else {
-                "Backend Engineering"
-            },
+            name: "Backend Engineering",
         },
         Competency {
             name: if locale == Locale::vi {
