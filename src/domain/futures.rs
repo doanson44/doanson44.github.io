@@ -86,10 +86,11 @@ impl FuturesTickerRanking {
             price,
         });
         let cutoff = timestamp_ms.saturating_sub(RANKING_WINDOW_MS);
-        while self
-            .samples
-            .front()
-            .is_some_and(|sample| sample.timestamp_ms < cutoff)
+        while self.samples.len() > 1
+            && self
+                .samples
+                .get(1)
+                .is_some_and(|sample| sample.timestamp_ms < cutoff)
         {
             self.samples.pop_front();
         }
@@ -453,6 +454,19 @@ mod tests {
 
         assert_eq!(ranking.observation_count(), 1);
         assert_eq!(ranking.ranking_score(), 0);
+    }
+
+    #[test]
+    fn sparse_observations_keep_a_baseline_for_windowed_returns() {
+        let mut ranking = FuturesTickerRanking::default();
+        ranking.observe_at(Some(100.0), Some(0));
+        ranking.observe_at(Some(101.0), Some(4_000));
+        ranking.observe_at(Some(102.0), Some(8_000));
+
+        assert_eq!(ranking.observation_count(), 2);
+        assert!(ranking.return_1s().is_some());
+        assert!(ranking.return_3s().is_some());
+        assert!(ranking.ranking_score() > 0);
     }
 
     #[test]
