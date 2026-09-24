@@ -154,7 +154,7 @@ fn list_view(
                                 {card.question}
                             </p>
                             <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                                {card.quick_answer}
+                                {card.simple_explanation}
                             </p>
                         </a>
                     }
@@ -222,6 +222,15 @@ fn detail_view(
                         </p>
                         <p class="mt-3 whitespace-pre-line text-base font-medium leading-7 text-[var(--text-primary)]">
                             {card.quick_answer}
+                        </p>
+                    </section>
+
+                    <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
+                            {t_string!(i18n, cv_review_simple)}
+                        </p>
+                        <p class="mt-3 whitespace-pre-line text-base leading-7 text-[var(--text-primary)]">
+                            {card.simple_explanation}
                         </p>
                     </section>
 
