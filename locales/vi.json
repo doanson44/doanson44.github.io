@@ -271,5 +271,6 @@
   "cv_review_back_to_list": "Quay lại danh sách",
   "socket_ranking": "Xếp hạng",
   "socket_change1m": "1m",
-  "socket_change3m": "3m"
+  "socket_change3m": "3m",
+  "socket_direction": "Hướng"
 }
