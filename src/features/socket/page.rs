@@ -403,16 +403,17 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">
                 <span class="font-mono">{symbol.clone()}</span>
             </th>
-            <td class="px-3 py-2 text-left">
-                <span class="font-mono font-semibold text-[var(--accent)]">
-                    {ticker.momentum.ranking_score()}
-                </span>
+            <td class="px-3 py-2 text-right">
+                <div class="flex min-w-28 items-center justify-end gap-2">
+                    <progress class="socket-ticker-progress w-20" max="100" value=ticker.momentum.ranking_score().to_string() aria-label="Ranking"></progress>
+                    <span class="font-mono font-semibold text-[var(--accent)]">{ticker.momentum.ranking_score()}</span>
+                </div>
             </td>
             <td class="px-3 py-2 text-right font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</td>
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
-            <td class="px-3 py-2 text-right"><div class="flex min-w-32 items-center justify-end gap-2"><progress class="socket-ticker-progress w-24" max="100" value=ticker.momentum.ranking_score().to_string() aria-label="Momentum"></progress><span class="font-mono text-xs text-[var(--text-secondary)]">{format!("{}%",ticker.momentum.progress())}</span></div></td>
-            <td class="px-3 py-2 text-right font-mono text-xs"><span>{format!("{} obs", ticker.momentum.observation_count())}</span></td>
+            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.momentum.return_1m())}</td>
+            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.momentum.return_3m())}</td>
             <td class="px-3 py-2">{socket_analysis_actions(symbol.clone(), state)}</td>
         </tr>
     }
@@ -480,9 +481,9 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
             </div>
             <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
-                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_momentum)}</span><span class="font-mono text-[var(--text-primary)]">{format!("{}%",ticker.momentum.progress())}</span></div>
-                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_activity)}</span><span class="font-mono text-xs"><span class="text-[var(--success)]">{format!("↑ {}",ticker.momentum.up_ticks)}</span><span class="ml-2 text-[var(--danger)]">{format!("↓ {}",ticker.momentum.down_ticks)}</span></span></div>
-                <div class="text-right"><progress class="socket-ticker-progress mt-1 w-full" max="100" value=ticker.momentum.progress().to_string() aria-label="Momentum"></progress></div>
+                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_ranking)}</span><span class="font-mono text-[var(--accent)]">{ticker.momentum.ranking_score()}</span></div>
+                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change1m)}</span><span class="font-mono">{format_short_percent(ticker.momentum.return_1m())}</span></div>
+                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change3m)}</span><span class="font-mono">{format_short_percent(ticker.momentum.return_3m())}</span></div>
             </div>
         </article>
     }
