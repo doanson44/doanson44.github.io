@@ -8,19 +8,18 @@ use crate::infrastructure::browser::print_page;
 /// Public CV and technical portfolio page.
 #[component]
 pub fn CvPage() -> impl IntoView {
-    let profile = profile();
-    let competencies = competencies();
-    let skills = skill_categories();
-    let experiences = experiences();
-    let highlights = highlights();
-    let education = education();
+    let i18n = use_i18n();
+    let profile_data = Memo::new(move |_| profile(i18n.get_locale()));
+    let competencies_data = Memo::new(move |_| competencies(i18n.get_locale()));
+    let skills_data = Memo::new(move |_| skill_categories(i18n.get_locale()));
+    let experiences_data = Memo::new(move |_| experiences(i18n.get_locale()));
+    let highlights_data = Memo::new(move |_| highlights(i18n.get_locale()));
+    let education_data = Memo::new(move |_| education(i18n.get_locale()));
     let show_phone = RwSignal::new(false);
     let show_email = RwSignal::new(false);
     let show_cover_letter = RwSignal::new(false);
     let cover_letter_copied = RwSignal::new(false);
     let cover_letter_copy_error = RwSignal::new(false);
-    let i18n = use_i18n();
-
     let copy_cover_letter = move |_| {
         let content = t_string!(i18n, cv_cover_letter_body).to_string();
         cover_letter_copied.set(false);
@@ -46,13 +45,13 @@ pub fn CvPage() -> impl IntoView {
                 <header class="cv-hero rounded-2xl border border-[var(--border-color)] bg-[var(--surface)] p-6 shadow-sm sm:p-8 lg:p-10">
                     <div class="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
                         <div>
-                            <p class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">"Public Technical Portfolio"</p>
-                            <h1 class="text-4xl font-bold tracking-tight text-[var(--text-primary)] sm:text-5xl">{profile.name}</h1>
-                            <p class="mt-3 text-xl font-semibold text-[var(--accent)] sm:text-2xl">{profile.title}</p>
-                            <p class="mt-5 max-w-3xl text-base leading-7 text-[var(--text-secondary)]">{profile.summary}</p>
+                            <p class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">{move || t_string!(i18n, cv_portfolio_label)}</p>
+                            <h1 class="text-4xl font-bold tracking-tight text-[var(--text-primary)] sm:text-5xl">{move || profile_data.get().name}</h1>
+                            <p class="mt-3 text-xl font-semibold text-[var(--accent)] sm:text-2xl">{move || profile_data.get().title}</p>
+                            <p class="mt-5 max-w-3xl text-base leading-7 text-[var(--text-secondary)]">{move || profile_data.get().summary}</p>
                         </div>
                         <div class="flex flex-col gap-3 text-sm text-[var(--text-secondary)] lg:min-w-52 lg:text-right">
-                            <span>{profile.location}</span>
+                            <span>{move || profile_data.get().location}</span>
 
                             <div class="flex items-center justify-start gap-2 lg:justify-end">
                                 <Show
@@ -61,18 +60,18 @@ pub fn CvPage() -> impl IntoView {
                                         <button
                                             type="button"
                                             class="rounded-md px-2 py-1 text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                                            aria-label="Show phone number"
+                                            aria-label=move || t_string!(i18n, cv_show_phone)
                                             on:click=move |_| show_phone.set(true)
                                         >
-                                            {move || if i18n.get_locale() == Locale::vi { "Hiện số điện thoại" } else { "Show phone" }}
+                                            {move || t_string!(i18n, cv_show_phone)}
                                         </button>
                                     }
                                 >
                                     <a
                                         class="break-all text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                                        href=format!("tel:{}", profile.phone)
+                                        href=format!("tel:{}", profile_data.get().phone)
                                     >
-                                        {profile.phone}
+                                        {move || profile_data.get().phone}
                                     </a>
                                 </Show>
                             </div>
@@ -108,9 +107,9 @@ pub fn CvPage() -> impl IntoView {
                                 >
                                     <a
                                         class="break-all text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                                        href=format!("mailto:{}", profile.email)
+                                        href=format!("mailto:{}", profile_data.get().email)
                                     >
-                                        {profile.email}
+                                        {move || profile_data.get().email}
                                     </a>
                                 </Show>
                             </div>
@@ -118,12 +117,12 @@ pub fn CvPage() -> impl IntoView {
                     </div>
 
                     <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border-color)] pt-4">
-                        <nav aria-label="CV sections">
+                        <nav aria-label=move || t_string!(i18n, cv_sections_label)>
                             <ul class="flex flex-wrap gap-2 text-sm">
-                                <li><a class="cv-nav-link" href="#cv-about">{move || if i18n.get_locale() == Locale::vi { "Giới thiệu" } else { "About" }}</a></li>
-                                <li><a class="cv-nav-link" href="#cv-skills">{move || if i18n.get_locale() == Locale::vi { "Kỹ năng" } else { "Skills" }}</a></li>
-                                <li><a class="cv-nav-link" href="#cv-experience">{move || if i18n.get_locale() == Locale::vi { "Kinh nghiệm" } else { "Experience" }}</a></li>
-                                <li><a class="cv-nav-link" href="#cv-highlights">{move || if i18n.get_locale() == Locale::vi { "Điểm nổi bật" } else { "Highlights" }}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-about">{move || t_string!(i18n, cv_about)}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-skills">{move || t_string!(i18n, cv_skills_nav)}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-experience">{move || t_string!(i18n, cv_experience_nav)}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-highlights">{move || t_string!(i18n, cv_highlights_nav)}</a></li>
                                 <li><a class="cv-nav-link" href="#cv-education">{move || t!(i18n, cv_education)}</a></li>
                             </ul>
                         </nav>
@@ -131,12 +130,12 @@ pub fn CvPage() -> impl IntoView {
                         <button
                             type="button"
                             class="cv-print-button inline-flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] shadow-sm transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
-                            title="Open print dialog to save this CV as PDF"
-                            aria-label="Download CV as PDF"
+                            title=move || t_string!(i18n, cv_download_title)
+                            aria-label=move || t_string!(i18n, cv_download_title)
                             on:click=move |_| print_page()
                         >
                             <span aria-hidden="true">"↓"</span>
-                            {move || if i18n.get_locale() == Locale::vi { "Tải PDF" } else { "Download PDF" }}
+                            {move || t_string!(i18n, cv_download_pdf)}
                         </button>
                     </div>
                 </header>
@@ -144,7 +143,7 @@ pub fn CvPage() -> impl IntoView {
                 <div class="mt-12 space-y-12 sm:mt-16 sm:space-y-16">
                     <CvSection id="cv-about" title_key="competencies" eyebrow_key="what_i_do">
                         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            {competencies.into_iter().map(|item| view! {
+                            {competencies_data.get().into_iter().map(|item| view! {
                                 <div class="flex gap-3 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-4 py-3">
                                     <span class="mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]" aria-hidden="true"></span>
                                     <span class="text-sm leading-6 text-[var(--text-secondary)]">{item.name}</span>
@@ -155,7 +154,7 @@ pub fn CvPage() -> impl IntoView {
 
                     <CvSection id="cv-skills" title_key="skills" eyebrow_key="technology">
                         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {skills.into_iter().map(|category| view! {
+                            {skills_data.get().into_iter().map(|category| view! {
                                 <SkillGroup category=category />
                             }).collect_view()}
                         </div>
@@ -163,7 +162,7 @@ pub fn CvPage() -> impl IntoView {
 
                     <CvSection id="cv-experience" title_key="experience" eyebrow_key="career">
                         <div class="space-y-6">
-                            {experiences.into_iter().map(|experience| view! {
+                            {experiences_data.get().into_iter().map(|experience| view! {
                                 <ExperienceCard experience=experience />
                             }).collect_view()}
                         </div>
@@ -172,7 +171,7 @@ pub fn CvPage() -> impl IntoView {
                     <CvSection id="cv-highlights" title_key="highlights" eyebrow_key="engineering_focus">
                         <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-6">
                             <ul class="grid gap-3 sm:grid-cols-2">
-                                {highlights.into_iter().map(|highlight| view! {
+                                {highlights_data.get().into_iter().map(|highlight| view! {
                                     <li class="flex gap-3 text-sm leading-7 text-[var(--text-secondary)]">
                                         <span class="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" aria-hidden="true"></span>
                                         <span>{highlight}</span>
@@ -184,7 +183,7 @@ pub fn CvPage() -> impl IntoView {
 
                     <CvSection id="cv-education" title_key="education" eyebrow_key="academic_background">
                         <div class="space-y-4">
-                            {education.into_iter().map(|value| view! {
+                            {education_data.get().into_iter()}.map(|value| view! {
                                 <EducationCard value=value />
                             }).collect_view()}
                         </div>
