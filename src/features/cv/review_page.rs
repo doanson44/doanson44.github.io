@@ -29,7 +29,7 @@ pub fn CvReviewPage() -> impl IntoView {
             })
     });
 
-    let flip = move |_| flipped.update(|value| *value = !*value);
+    let flip = move || flipped.update(|value| *value = !*value);
 
     let previous = move |_| {
         let total = cards.get().len();
@@ -111,11 +111,11 @@ pub fn CvReviewPage() -> impl IntoView {
                         role="button"
                         tabindex="0"
                         aria-live="polite"
-                        on:click=flip
+                        on:click=move |_| flip()
                         on:keydown=move |event: web_sys::KeyboardEvent| {
                             if event.key() == "Enter" || event.key() == " " {
                                 event.prevent_default();
-                                flip(());
+                                flip();
                             }
                         }
                     >
@@ -172,7 +172,7 @@ pub fn CvReviewPage() -> impl IntoView {
                         <button
                             type="button"
                             class="min-h-11 rounded-lg border border-[var(--accent)] px-5 py-2 text-sm font-semibold text-[var(--accent)] transition hover:bg-[var(--accent)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                            on:click=flip
+                            on:click=move |_| flip()
                         >
                             {move || if flipped.get() {
                                 t_string!(i18n, cv_review_question)
