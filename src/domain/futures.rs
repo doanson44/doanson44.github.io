@@ -23,10 +23,10 @@ pub struct FuturesTickerUpdate {
     pub updated_at_ms: Option<u64>,
 }
 
-const RANKING_WINDOW_MS: u64 = 5 * 1_000;
-const SHORT_WINDOW_MS: u64 = 1_000;
-const MEDIUM_WINDOW_MS: u64 = 3 * 1_000;
-const PREVIOUS_WINDOW_MS: u64 = 2 * 1_000;
+const FAST_WINDOW_MS: u64 = 15 * 1_000;
+const MEDIUM_WINDOW_MS: u64 = 60 * 1_000;
+const RANKING_WINDOW_MS: u64 = 5 * 60 * 1_000;
+const DIRECTION_THRESHOLD: f64 = 0.15;
 
 /// A price observation used by the short-term market ranking engine.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -35,10 +35,10 @@ struct PriceSample {
     price: f64,
 }
 
-/// Short-term ranking metrics for a Futures ticker.
+/// Multi-horizon momentum metrics for a Futures ticker.
 ///
-/// The score favors fast, directional moves that are sustained over several
-/// seconds instead of counting individual socket ticks.
+/// The score blends fast, medium, and slow returns, normalizes them by realized
+/// volatility, and discounts signals that do not yet have enough history.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FuturesTickerRanking {
     #[serde(default)]
@@ -105,82 +105,162 @@ impl FuturesTickerRanking {
         }
     }
 
-    /// Returns the composite 0..=100 short-term ranking score.
+    /// Returns the composite 0..=100 momentum strength score.
     pub fn ranking_score(&self) -> u8 {
-        let Some(current) = self.samples.back() else {
+        let Some(signal) = self.momentum_signal() else {
             return 0;
         };
 
-        let Some(return_1s) = self.return_over(SHORT_WINDOW_MS) else {
-            return 0;
-        };
-        let Some(return_3s) = self.return_over(MEDIUM_WINDOW_MS) else {
-            return 0;
-        };
-
-        let return_5s = self.return_over(RANKING_WINDOW_MS).unwrap_or(return_3s);
-        let previous_1s = self
-            .return_between(
-                current.timestamp_ms.saturating_sub(PREVIOUS_WINDOW_MS),
-                current.timestamp_ms.saturating_sub(SHORT_WINDOW_MS),
-            )
-            .unwrap_or(0.0);
-        let acceleration = return_1s - previous_1s;
-        let efficiency = self.trend_efficiency(MEDIUM_WINDOW_MS).unwrap_or(0.0);
-
-        let same_direction = if return_1s.signum() == return_3s.signum()
-            && return_3s.signum() == return_5s.signum()
-            && return_1s != 0.0
-        {
-            1.0
-        } else if return_1s.signum() == return_3s.signum() && return_1s != 0.0 {
-            0.65
-        } else {
-            0.0
-        };
-
-        let speed_score = (return_1s.abs() / 0.005 * 40.0).min(40.0);
-        let medium_score = (return_3s.abs() / 0.012 * 20.0).min(20.0);
-        let acceleration_score = (acceleration.abs() / 0.003 * 15.0).min(15.0);
-        let efficiency_score = efficiency * 15.0;
-        let consistency_score = same_direction * 10.0;
-
-        (speed_score + medium_score + acceleration_score + efficiency_score + consistency_score)
-            .round()
-            .clamp(0.0, 100.0) as u8
+        (signal.abs() * 100.0).round().clamp(0.0, 100.0) as u8
     }
 
-    /// Returns the direction of the current short-term move.
+    /// Returns the current momentum direction.
     pub fn ranking_direction(&self) -> i8 {
-        if self.samples.len() < 2 {
+        let Some(signal) = self.momentum_signal() else {
             return 0;
+        };
+        if signal >= DIRECTION_THRESHOLD {
+            1
+        } else if signal <= -DIRECTION_THRESHOLD {
+            -1
+        } else {
+            0
         }
-        self.return_over(SHORT_WINDOW_MS).unwrap_or(0.0).signum() as i8
     }
 
-    /// Returns the two-second price return.
-    pub fn return_1s(&self) -> Option<f64> {
-        self.return_over(SHORT_WINDOW_MS)
+    /// Returns the fifteen-second price return.
+    pub fn return_15s(&self) -> Option<f64> {
+        self.return_over(FAST_WINDOW_MS)
     }
 
-    /// Returns the six-second price return.
-    pub fn return_3s(&self) -> Option<f64> {
+    /// Returns the one-minute price return.
+    pub fn return_1m(&self) -> Option<f64> {
         self.return_over(MEDIUM_WINDOW_MS)
     }
 
-    /// Returns the ten-second price return.
-    pub fn return_5s(&self) -> Option<f64> {
+    /// Returns the five-minute price return.
+    pub fn return_5m(&self) -> Option<f64> {
         self.return_over(RANKING_WINDOW_MS)
     }
 
-    /// Returns trend efficiency over the requested window.
-    pub fn trend_efficiency_3s(&self) -> Option<f64> {
+    /// Returns trend efficiency over the one-minute window.
+    pub fn trend_efficiency_1m(&self) -> Option<f64> {
         self.trend_efficiency(MEDIUM_WINDOW_MS)
     }
 
     /// Returns the number of observations retained for the ranking window.
     pub fn observation_count(&self) -> usize {
         self.samples.len()
+    }
+
+    fn momentum_signal(&self) -> Option<f64> {
+        let mut weighted_sum = 0.0;
+        let mut weight_sum = 0.0;
+        let horizons = [
+            (self.return_over(FAST_WINDOW_MS), FAST_WINDOW_MS, 0.25),
+            (self.return_over(MEDIUM_WINDOW_MS), MEDIUM_WINDOW_MS, 0.40),
+            (self.return_over(RANKING_WINDOW_MS), RANKING_WINDOW_MS, 0.35),
+        ];
+
+        for (price_return, window_ms, weight) in horizons {
+            if let Some(price_return) = price_return {
+                let volatility = self.realized_volatility(window_ms).unwrap_or(0.0);
+                let normalized = if volatility > f64::EPSILON {
+                    let observations = (window_ms as f64 / 1_000.0).sqrt();
+                    (price_return / (volatility * observations)).clamp(-3.0, 3.0) / 3.0
+                } else {
+                    price_return.signum().clamp(-1.0, 1.0)
+                };
+                weighted_sum += normalized * weight;
+                weight_sum += weight;
+            }
+        }
+
+        if weight_sum <= f64::EPSILON {
+            return None;
+        }
+
+        let available_horizons = horizons
+            .iter()
+            .filter(|(price_return, _, _)| price_return.is_some())
+            .count();
+        let history_factor = match available_horizons {
+            1 => 0.40,
+            2 => 0.70,
+            _ => 1.0,
+        };
+
+        let efficiency = self.trend_efficiency(MEDIUM_WINDOW_MS).unwrap_or(0.0);
+        let consistency = self.direction_consistency(MEDIUM_WINDOW_MS).unwrap_or(0.0);
+        let quality = (0.5 + efficiency * 0.25 + consistency * 0.25).clamp(0.5, 1.0);
+
+        Some((weighted_sum / weight_sum) * history_factor * quality)
+    }
+
+    fn realized_volatility(&self, window_ms: u64) -> Option<f64> {
+        let current = self.samples.back()?;
+        let cutoff = current.timestamp_ms.saturating_sub(window_ms);
+        let samples = self
+            .samples
+            .iter()
+            .filter(|sample| sample.timestamp_ms >= cutoff)
+            .copied()
+            .collect::<Vec<_>>();
+        if samples.len() < 3 {
+            return None;
+        }
+
+        let returns = samples
+            .windows(2)
+            .filter_map(|pair| {
+                if pair[0].price <= 0.0 {
+                    None
+                } else {
+                    Some(pair[1].price / pair[0].price - 1.0)
+                }
+            })
+            .collect::<Vec<_>>();
+        if returns.len() < 2 {
+            return None;
+        }
+
+        let mean = returns.iter().sum::<f64>() / returns.len() as f64;
+        let variance = returns
+            .iter()
+            .map(|value| {
+                let delta = *value - mean;
+                delta * delta
+            })
+            .sum::<f64>()
+            / (returns.len() - 1) as f64;
+
+        Some(variance.sqrt())
+    }
+
+    fn direction_consistency(&self, window_ms: u64) -> Option<f64> {
+        let current = self.samples.back()?;
+        let cutoff = current.timestamp_ms.saturating_sub(window_ms);
+        let samples = self
+            .samples
+            .iter()
+            .filter(|sample| sample.timestamp_ms >= cutoff)
+            .copied()
+            .collect::<Vec<_>>();
+        if samples.len() < 3 {
+            return None;
+        }
+
+        let net_direction = (samples.last()?.price - samples.first()?.price).signum();
+        if net_direction == 0.0 {
+            return Some(0.0);
+        }
+
+        let directional_moves = samples
+            .windows(2)
+            .filter(|pair| (pair[1].price - pair[0].price).signum() == net_direction)
+            .count();
+
+        Some(directional_moves as f64 / (samples.len() - 1) as f64)
     }
 
     fn return_over(&self, window_ms: u64) -> Option<f64> {
@@ -198,22 +278,6 @@ impl FuturesTickerRanking {
             return None;
         }
         Some(current.price / base.price - 1.0)
-    }
-
-    fn return_between(&self, start_ms: u64, end_ms: u64) -> Option<f64> {
-        let start = self
-            .samples
-            .iter()
-            .find(|sample| sample.timestamp_ms >= start_ms)?;
-        let end = self
-            .samples
-            .iter()
-            .rev()
-            .find(|sample| sample.timestamp_ms <= end_ms)?;
-        if start.price <= 0.0 {
-            return None;
-        }
-        Some(end.price / start.price - 1.0)
     }
 
     fn trend_efficiency(&self, window_ms: u64) -> Option<f64> {
@@ -393,13 +457,13 @@ mod tests {
     }
 
     #[test]
-    fn ranking_requires_one_and_three_second_history() {
+    fn ranking_warms_up_across_horizons() {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
-        ranking.observe_at(Some(100.5), Some(1_000));
-        assert_eq!(ranking.ranking_score(), 0);
+        ranking.observe_at(Some(100.5), Some(15_000));
+        assert!(ranking.ranking_score() > 0);
 
-        ranking.observe_at(Some(101.0), Some(3_000));
+        ranking.observe_at(Some(101.0), Some(60_000));
         assert!(ranking.ranking_score() > 0);
         assert_eq!(ranking.ranking_direction(), 1);
     }
@@ -409,20 +473,20 @@ mod tests {
         let mut ranking = FuturesTickerRanking::default();
         for (timestamp, price) in [
             (0, 100.0),
-            (1_000, 100.8),
-            (2_000, 101.7),
-            (3_000, 102.8),
-            (4_000, 104.0),
-            (5_000, 105.5),
+            (15_000, 100.8),
+            (30_000, 101.7),
+            (45_000, 102.8),
+            (60_000, 104.0),
+            (300_000, 105.5),
         ] {
             ranking.observe_at(Some(price), Some(timestamp));
         }
 
         assert!(ranking.ranking_score() >= 70);
         assert_eq!(ranking.ranking_direction(), 1);
-        assert!(ranking.return_1s().unwrap() > 0.0);
-        assert!(ranking.return_3s().unwrap() > 0.0);
-        assert!(ranking.trend_efficiency_3s().unwrap() > 0.9);
+        assert!(ranking.return_15s().unwrap() > 0.0);
+        assert!(ranking.return_1m().unwrap() > 0.0);
+        assert!(ranking.trend_efficiency_1m().unwrap() > 0.9);
     }
 
     #[test]
@@ -464,20 +528,20 @@ mod tests {
         ranking.observe_at(Some(102.0), Some(8_000));
 
         assert_eq!(ranking.observation_count(), 3);
-        assert!(ranking.return_1s().is_some());
-        assert!(ranking.return_3s().is_some());
+        assert!(ranking.return_15s().is_some());
+        assert!(ranking.return_1m().is_some());
         assert!(ranking.ranking_score() > 0);
     }
 
     #[test]
-    fn observations_are_bounded_to_five_seconds() {
+    fn observations_are_bounded_to_five_minutes() {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
-        ranking.observe_at(Some(101.0), Some(1_000));
-        ranking.observe_at(Some(102.0), Some(6_000));
+        ranking.observe_at(Some(101.0), Some(60_000));
+        ranking.observe_at(Some(102.0), Some(300_000));
 
         assert_eq!(ranking.observation_count(), 3);
-        assert!((ranking.return_5s().unwrap() - (102.0 / 101.0 - 1.0)).abs() < 1e-9);
+        assert!((ranking.return_5m().unwrap() - (102.0 / 100.0 - 1.0)).abs() < 1e-9);
     }
 
     #[test]
