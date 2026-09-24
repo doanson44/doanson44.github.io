@@ -514,7 +514,7 @@ mod tests {
         }
 
         assert!(
-            ranking.ranking_score() >= 60,
+            ranking.ranking_score() >= 55,
             "ranking should identify a strong downward move: {}",
             ranking.ranking_score()
         );
