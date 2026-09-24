@@ -446,7 +446,7 @@ mod tests {
     fn reset_keeps_only_the_current_baseline() {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
-        ranking.observe_at(Some(101.0), Some(60_000));
+        ranking.observe_at(Some(101.0), Some(1_000));
         ranking.observe_at(Some(102.0), Some(120_000));
 
         ranking.reset_metrics();
@@ -471,13 +471,13 @@ mod tests {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
         ranking.observe_at(Some(101.0), Some(60_000));
-        ranking.observe_at(Some(99.0), Some(30_000));
+        ranking.observe_at(Some(99.0), Some(500));
 
         assert_eq!(ranking.observation_count(), 2);
-        let return_1m = ranking
-            .return_1m()
+        let return_1s = ranking
+            .return_1s()
             .expect("one-second history should exist");
-        assert!((return_1m - 0.01).abs() < 1e-12);
+        assert!((return_1s - 0.01).abs() < 1e-12);
     }
 
     #[test]
