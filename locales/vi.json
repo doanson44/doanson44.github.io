@@ -168,8 +168,7 @@
   "tools_desc_html_entity": "Mã hóa hoặc giải mã các HTML entity phổ biến.",
   "tools_desc_unicode_escape": "Escape hoặc unescape các code point Unicode.",
   "tools_proxy_desc": "Gọi API JSON thông qua proxy và thu gọn response để hiển thị ngắn gọn.",
-  "tools_calculator_suffix": "Máy tính"
-,
+  "tools_calculator_suffix": "Máy tính",
   "market_refresh": "Làm mới",
   "market_search": "Tìm kiếm thị trường",
   "market_search_placeholder": "Tìm theo mã hoặc tên công ty...",
@@ -252,13 +251,18 @@
   "cv_review": "Ôn tập",
   "cv_review_label": "Interview Review",
   "cv_review_title": "Ôn tập kiến thức phỏng vấn",
-  "cv_review_description": "Ôn tập theo tài liệu ENGLISH.md / TIENG-VIET.md. Mỗi thẻ tương ứng với một chủ đề trong tài liệu; hãy tự trả lời trước khi lật thẻ.",
+  "cv_review_description": "Ôn tập theo bộ flashcard phỏng vấn. Chọn một thẻ để đọc câu hỏi và lời giải, rồi đánh dấu khi bạn đã hiểu.",
   "cv_review_back": "Quay lại CV",
   "cv_review_question": "Câu hỏi",
   "cv_review_answer": "Đáp án",
   "cv_review_reveal": "Hiện đáp án",
   "cv_review_previous": "Trước",
   "cv_review_next": "Tiếp",
-  "cv_review_empty": "Không có thẻ ôn tập."
-
+  "cv_review_empty": "Không có thẻ ôn tập.",
+  "cv_review_clear": "Xóa tiến độ",
+  "cv_review_understood": "Đã hiểu",
+  "cv_review_not_understood": "Chưa hiểu",
+  "cv_review_mark_understood": "Đánh dấu đã hiểu",
+  "cv_review_mark_not_understood": "Bỏ đánh dấu",
+  "cv_review_back_to_list": "Quay lại danh sách"
 }
