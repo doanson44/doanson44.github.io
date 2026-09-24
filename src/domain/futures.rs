@@ -23,225 +23,245 @@ pub struct FuturesTickerUpdate {
     pub updated_at_ms: Option<u64>,
 }
 
-const MOMENTUM_WINDOW: usize = 100;
-const BURST_WINDOW: usize = 6;
-const BURST_MIN_RETURN: f64 = 0.0005;
-const BURST_MIN_STREAK: usize = 2;
-const BURST_DECAY_HALF_LIFE_MS: f64 = 8_000.0;
+const RANKING_WINDOW_MS: u64 = 5 * 60 * 1_000;
+const SHORT_WINDOW_MS: u64 = 60 * 1_000;
+const MEDIUM_WINDOW_MS: u64 = 3 * 60 * 1_000;
+const PREVIOUS_WINDOW_MS: u64 = 2 * 60 * 1_000;
 
-/// Tracks directional price changes over a bounded rolling tick window.
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+/// A price observation used by the short-term market ranking engine.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+struct PriceSample {
+    timestamp_ms: u64,
+    price: f64,
+}
+
+/// Short-term ranking metrics for a Futures ticker.
+///
+/// The score favors fast, directional moves that are sustained over several
+/// minutes instead of counting individual socket ticks.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FuturesTickerMomentum {
-    pub previous_price: Option<f64>,
-    pub up_ticks: u64,
-    pub down_ticks: u64,
-    directions: VecDeque<i8>,
     #[serde(default)]
-    recent_returns: VecDeque<f64>,
-    #[serde(default)]
-    previous_timestamp_ms: Option<u64>,
-    #[serde(default)]
-    burst_score: u8,
-    #[serde(default)]
-    burst_score_updated_at_ms: Option<u64>,
+    samples: VecDeque<PriceSample>,
+}
+
+impl Default for FuturesTickerMomentum {
+    fn default() -> Self {
+        Self {
+            samples: VecDeque::new(),
+        }
+    }
 }
 
 impl FuturesTickerMomentum {
-    /// Creates a baseline without counting the first observed price as a tick.
-    pub fn baseline(price: Option<f64>) -> Self {
-        Self {
-            previous_price: price,
-            ..Self::default()
-        }
+    /// Creates an empty ranking history.
+    pub fn baseline(_price: Option<f64>) -> Self {
+        Self::default()
     }
 
-    /// Restores directional counters without restoring a previous market price.
-    pub fn from_cached_counts(up_ticks: u64, down_ticks: u64) -> Self {
-        let up_ticks = up_ticks.min(MOMENTUM_WINDOW as u64);
-        let down_ticks = down_ticks.min(MOMENTUM_WINDOW as u64 - up_ticks);
-        let mut directions = VecDeque::with_capacity((up_ticks + down_ticks) as usize);
-        directions.extend((0..up_ticks).map(|_| 1));
-        directions.extend((0..down_ticks).map(|_| -1));
-
-        Self {
-            previous_price: None,
-            up_ticks,
-            down_ticks,
-            directions,
-            recent_returns: VecDeque::new(),
-            previous_timestamp_ms: None,
-            burst_score: 0,
-            burst_score_updated_at_ms: None,
-        }
+    /// Restores no historical ranking state.
+    ///
+    /// Kept as a compatibility boundary for callers that previously restored
+    /// tick counters. Historical tick counts are intentionally not reused.
+    pub fn from_cached_counts(_up_ticks: u64, _down_ticks: u64) -> Self {
+        Self::default()
     }
 
-    /// Applies a price observation and keeps only the latest directional window.
+    /// Applies a price observation using a synthetic monotonic sequence when
+    /// no exchange timestamp is available.
     pub fn observe(&mut self, price: Option<f64>) {
-        self.observe_at(price, None);
+        let timestamp_ms = self
+            .samples
+            .back()
+            .map(|sample| sample.timestamp_ms.saturating_add(1))
+            .unwrap_or(0);
+        self.observe_at(price, Some(timestamp_ms));
     }
 
-    /// Applies a price observation with an optional observation timestamp.
+    /// Applies a timestamped price observation and retains the latest five minutes.
     pub fn observe_at(&mut self, price: Option<f64>, timestamp_ms: Option<u64>) {
-        let Some(new_price) = price else {
+        let (Some(price), Some(timestamp_ms)) = (price, timestamp_ms) else {
             return;
         };
-        let Some(previous_price) = self.previous_price else {
-            self.previous_price = Some(new_price);
-            self.previous_timestamp_ms = timestamp_ms;
+        if !price.is_finite() || price <= 0.0 {
             return;
-        };
+        }
 
-        let direction = if new_price > previous_price {
-            1
-        } else if new_price < previous_price {
-            -1
-        } else {
-            0
-        };
-
-        if direction != 0 {
-            self.directions.push_back(direction);
-            if direction > 0 {
-                self.up_ticks += 1;
-            } else {
-                self.down_ticks += 1;
+        if let Some(last) = self.samples.back_mut() {
+            if timestamp_ms < last.timestamp_ms {
+                return;
             }
-            if self.directions.len() > MOMENTUM_WINDOW {
-                if let Some(oldest) = self.directions.pop_front() {
-                    if oldest > 0 {
-                        self.up_ticks = self.up_ticks.saturating_sub(1);
-                    } else {
-                        self.down_ticks = self.down_ticks.saturating_sub(1);
-                    }
-                }
+            if timestamp_ms == last.timestamp_ms {
+                last.price = price;
+                return;
             }
         }
 
-        if let (Some(previous_timestamp_ms), Some(timestamp_ms)) =
-            (self.previous_timestamp_ms, timestamp_ms)
+        self.samples.push_back(PriceSample {
+            timestamp_ms,
+            price,
+        });
+        let cutoff = timestamp_ms.saturating_sub(RANKING_WINDOW_MS);
+        while self
+            .samples
+            .front()
+            .is_some_and(|sample| sample.timestamp_ms < cutoff)
         {
-            if timestamp_ms > previous_timestamp_ms && previous_price > 0.0 && new_price > 0.0 {
-                let return_rate = new_price / previous_price - 1.0;
-                self.recent_returns.push_back(return_rate);
-                if self.recent_returns.len() > BURST_WINDOW {
-                    self.recent_returns.pop_front();
-                }
-                let current_score = self.calculate_burst_score();
-                self.burst_score = self.decayed_burst_score(timestamp_ms);
-                self.burst_score = self.burst_score.max(current_score);
-                self.burst_score_updated_at_ms = Some(timestamp_ms);
-            }
-        }
-
-        self.previous_price = Some(new_price);
-        if timestamp_ms.is_some() {
-            self.previous_timestamp_ms = timestamp_ms;
+            self.samples.pop_front();
         }
     }
 
-    fn decayed_burst_score(&self, timestamp_ms: u64) -> u8 {
-        let Some(previous_timestamp_ms) = self.burst_score_updated_at_ms else {
-            return self.burst_score;
-        };
-
-        let elapsed_ms = timestamp_ms.saturating_sub(previous_timestamp_ms) as f64;
-        if elapsed_ms <= 0.0 || self.burst_score == 0 {
-            return self.burst_score;
+    /// Resets ranking history while preserving the current price as a baseline.
+    pub fn reset_metrics(&mut self) {
+        let current = self.samples.back().copied();
+        self.samples.clear();
+        if let Some(sample) = current {
+            self.samples.push_back(sample);
         }
-
-        let decay = 0.5_f64.powf(elapsed_ms / BURST_DECAY_HALF_LIFE_MS);
-        (self.burst_score as f64 * decay).round().min(100.0) as u8
     }
 
-    fn calculate_burst_score(&self) -> u8 {
-        let Some(&current) = self.recent_returns.back() else {
+    /// Returns the composite 0..=100 short-term ranking score.
+    pub fn ranking_score(&self) -> u8 {
+        let Some(current) = self.samples.back() else {
             return 0;
         };
-        if current.abs() < BURST_MIN_RETURN || self.recent_returns.len() < 2 {
-            return 0;
-        }
 
-        let previous = self
-            .recent_returns
-            .iter()
-            .rev()
-            .skip(1)
-            .take(BURST_WINDOW - 1)
-            .copied()
-            .collect::<Vec<_>>();
-        let baseline =
-            previous.iter().map(|value| value.abs()).sum::<f64>() / previous.len() as f64;
-        let ratio = if baseline > f64::EPSILON {
-            current.abs() / baseline
+        let Some(return_1m) = self.return_over(SHORT_WINDOW_MS) else {
+            return 0;
+        };
+        let Some(return_3m) = self.return_over(MEDIUM_WINDOW_MS) else {
+            return 0;
+        };
+
+        let return_5m = self.return_over(RANKING_WINDOW_MS).unwrap_or(return_3m);
+        let previous_1m = self
+            .return_between(
+                current.timestamp_ms.saturating_sub(PREVIOUS_WINDOW_MS),
+                current.timestamp_ms.saturating_sub(SHORT_WINDOW_MS),
+            )
+            .unwrap_or(0.0);
+        let acceleration = return_1m - previous_1m;
+        let efficiency = self.trend_efficiency(MEDIUM_WINDOW_MS).unwrap_or(0.0);
+
+        let same_direction = if return_1m.signum() == return_3m.signum()
+            && return_3m.signum() == return_5m.signum()
+            && return_1m != 0.0
+        {
+            1.0
+        } else if return_1m.signum() == return_3m.signum() && return_1m != 0.0 {
+            0.65
         } else {
             0.0
         };
 
-        let mut streak = 1;
-        for value in self.recent_returns.iter().rev().skip(1) {
-            if value.signum() == current.signum() {
-                streak += 1;
-            } else {
-                break;
-            }
-        }
+        let speed_score = (return_1m.abs() / 0.005 * 40.0).min(40.0);
+        let medium_score = (return_3m.abs() / 0.012 * 20.0).min(20.0);
+        let acceleration_score = (acceleration.abs() / 0.003 * 15.0).min(15.0);
+        let efficiency_score = efficiency * 15.0;
+        let consistency_score = same_direction * 10.0;
 
-        if ratio < 2.0 || streak < BURST_MIN_STREAK {
-            return 0;
-        }
-
-        let magnitude_score = (current.abs() / BURST_MIN_RETURN * 30.0).min(30.0);
-        let ratio_score = ((ratio - 1.0) * 13.333_333).min(40.0);
-        let streak_score = ((streak.saturating_sub(1)) as f64 * 15.0).min(30.0);
-
-        (magnitude_score + ratio_score + streak_score)
+        (speed_score + medium_score + acceleration_score + efficiency_score + consistency_score)
             .round()
-            .min(100.0) as u8
+            .clamp(0.0, 100.0) as u8
     }
 
-    /// Returns the current burst score, where 70+ indicates a sudden move.
-    pub fn burst_score(&self) -> u8 {
-        self.burst_score
+    /// Returns the direction of the current short-term move.
+    pub fn ranking_direction(&self) -> i8 {
+        self.return_over(SHORT_WINDOW_MS)
+            .unwrap_or(0.0)
+            .signum() as i8
     }
 
-    /// Returns the number of consecutive socket update ticks in the current burst.
-    pub fn burst_ticks(&self) -> usize {
-        if !self.is_burst() {
-            return 0;
+    /// Returns the one-minute price return.
+    pub fn return_1m(&self) -> Option<f64> {
+        self.return_over(SHORT_WINDOW_MS)
+    }
+
+    /// Returns the three-minute price return.
+    pub fn return_3m(&self) -> Option<f64> {
+        self.return_over(MEDIUM_WINDOW_MS)
+    }
+
+    /// Returns the five-minute price return.
+    pub fn return_5m(&self) -> Option<f64> {
+        self.return_over(RANKING_WINDOW_MS)
+    }
+
+    /// Returns trend efficiency over the requested window.
+    pub fn trend_efficiency_3m(&self) -> Option<f64> {
+        self.trend_efficiency(MEDIUM_WINDOW_MS)
+    }
+
+    /// Returns the number of observations retained for the ranking window.
+    pub fn observation_count(&self) -> usize {
+        self.samples.len()
+    }
+
+    fn return_over(&self, window_ms: u64) -> Option<f64> {
+        let current = self.samples.back()?;
+        let cutoff = current.timestamp_ms.saturating_sub(window_ms);
+        let base = self.samples.iter().find(|sample| sample.timestamp_ms >= cutoff)?;
+        if base.price <= 0.0 {
+            return None;
         }
+        Some(current.price / base.price - 1.0)
+    }
 
-        let Some(&current) = self.recent_returns.back() else {
-            return 0;
-        };
-
-        self.recent_returns
+    fn return_between(&self, start_ms: u64, end_ms: u64) -> Option<f64> {
+        let start = self
+            .samples
+            .iter()
+            .find(|sample| sample.timestamp_ms >= start_ms)?;
+        let end = self
+            .samples
             .iter()
             .rev()
-            .take_while(|value| value.signum() == current.signum())
-            .count()
+            .find(|sample| sample.timestamp_ms <= end_ms)?;
+        if start.price <= 0.0 {
+            return None;
+        }
+        Some(end.price / start.price - 1.0)
     }
 
-    /// Resets directional and burst metrics while preserving the current price baseline.
-    pub fn reset_metrics(&mut self) {
-        let previous_price = self.previous_price;
-        *self = Self::baseline(previous_price);
+    fn trend_efficiency(&self, window_ms: u64) -> Option<f64> {
+        let current = self.samples.back()?;
+        let cutoff = current.timestamp_ms.saturating_sub(window_ms);
+        let samples = self
+            .samples
+            .iter()
+            .filter(|sample| sample.timestamp_ms >= cutoff)
+            .copied()
+            .collect::<Vec<_>>();
+        if samples.len() < 2 {
+            return None;
+        }
+
+        let net = (samples.last()?.price - samples.first()?.price).abs();
+        let path = samples
+            .windows(2)
+            .map(|pair| (pair[1].price - pair[0].price).abs())
+            .sum::<f64>();
+
+        if path <= f64::EPSILON {
+            return Some(0.0);
+        }
+
+        Some((net / path).clamp(0.0, 1.0))
     }
 
-    /// Returns whether the ticker is currently experiencing a burst.
-    pub fn is_burst(&self) -> bool {
-        self.burst_score >= 70
+    /// Legacy directional tick count. Ranking no longer uses tick counts.
+    pub fn up_ticks(&self) -> u64 {
+        0
     }
 
-    /// Returns the net directional ticks in the current rolling window.
-    pub fn net_ticks(&self) -> i64 {
-        self.up_ticks as i64 - self.down_ticks as i64
+    /// Legacy directional tick count. Ranking no longer uses tick counts.
+    pub fn down_ticks(&self) -> u64 {
+        0
     }
 
-    /// Returns momentum as a bounded 0..=100 score.
+    /// Legacy compatibility metric. The ranking score replaces momentum.
     pub fn progress(&self) -> u8 {
-        self.up_ticks
-            .saturating_sub(self.down_ticks)
-            .min(MOMENTUM_WINDOW as u64) as u8
+        self.ranking_score()
     }
 }
 
