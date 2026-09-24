@@ -13,7 +13,7 @@ pub mod trading;
 use std::collections::HashMap;
 
 use crate::domain::futures::{
-    FuturesTickerMomentum, FuturesTickerRegistry, FuturesTickerUpdate, TrackedFuturesTicker,
+    FuturesTickerRanking, FuturesTickerRegistry, FuturesTickerUpdate, TrackedFuturesTicker,
 };
 use crate::domain::markdown::{render_markdown, RenderedMarkdown};
 
@@ -21,7 +21,7 @@ use crate::domain::markdown::{render_markdown, RenderedMarkdown};
 #[derive(Debug, Default)]
 pub struct FuturesMarketService {
     registry: FuturesTickerRegistry,
-    momentum: HashMap<String, FuturesTickerMomentum>,
+    ranking: HashMap<String, FuturesTickerRanking>,
 }
 
 impl FuturesMarketService {
@@ -34,11 +34,11 @@ impl FuturesMarketService {
     pub fn apply_batch(&mut self, updates: impl IntoIterator<Item = FuturesTickerUpdate>) {
         let updates = updates.into_iter().collect::<Vec<_>>();
         for update in &updates {
-            let momentum = self
-                .momentum
+            let ranking = self
+                .ranking
                 .entry(update.symbol.clone())
-                .or_insert_with(|| FuturesTickerMomentum::baseline(None));
-            momentum.observe_at(update.last_price, update.updated_at_ms);
+                .or_insert_with(|| FuturesTickerRanking::baseline(None));
+            ranking.observe_at(update.last_price, update.updated_at_ms);
         }
         self.registry.apply_batch(updates);
     }
@@ -48,11 +48,11 @@ impl FuturesMarketService {
         self.registry
             .snapshot()
             .map(|(symbol, ticker)| {
-                let momentum = self
-                    .momentum
+                let ranking = self
+                    .ranking
                     .get(symbol)
                     .cloned()
-                    .unwrap_or_else(|| FuturesTickerMomentum::baseline(ticker.last_price));
+                    .unwrap_or_else(|| FuturesTickerRanking::baseline(ticker.last_price));
                 (
                     symbol.clone(),
                     TrackedFuturesTicker {
@@ -75,18 +75,18 @@ impl FuturesMarketService {
             .map(|(symbol, ticker)| (symbol.clone(), ticker.last_price))
             .collect::<Vec<_>>();
 
-        self.momentum.clear();
+        self.ranking.clear();
         for (symbol, price) in baselines {
-            self.momentum
-                .insert(symbol, FuturesTickerMomentum::baseline(price));
+            self.ranking
+                .insert(symbol, FuturesTickerRanking::baseline(price));
         }
     }
 
     /// Re-baselines known tickers after reconnect without creating synthetic ticks.
     pub fn rebaseline(&mut self) {
         for (symbol, ticker) in self.registry.snapshot() {
-            if let Some(momentum) = self.momentum.get_mut(symbol) {
-                *momentum = FuturesTickerMomentum::baseline(ticker.last_price);
+            if let Some(momentum) = self.ranking.get_mut(symbol) {
+                *momentum = FuturesTickerRanking::baseline(ticker.last_price);
             }
         }
     }
