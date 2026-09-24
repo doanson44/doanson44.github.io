@@ -11,7 +11,7 @@ use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::features::socket::portfolio::PortfolioPanel;
 use crate::features::socket::state::{
-    SocketSortDirection, SocketSortMode, SocketState, SocketViewMode,
+    SocketDirectionFilter, SocketSortDirection, SocketSortMode, SocketState, SocketViewMode,
 };
 
 /// Realtime Futures market ticker monitor page.
@@ -25,6 +25,7 @@ pub fn SocketPage(
     let visible = Memo::new({
         let tickers = state.tickers;
         let view_mode = state.view_mode;
+        let direction_filter = state.direction_filter;
         let sort_mode = state.sort_mode;
         let sort_direction = state.sort_direction;
         let search_query = state.search_query;
@@ -34,6 +35,7 @@ pub fn SocketPage(
             build_visible(
                 tickers.get(),
                 view_mode.get(),
+                direction_filter.get(),
                 sort_mode.get(),
                 sort_direction.get(),
                 pinned_symbols.get(),
@@ -136,6 +138,11 @@ pub fn SocketPage(
                     <div class="flex" role="group" aria-label=move || t_string!(i18n, socket_view)>
                         <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::All) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::All).to_string() on:click=move |_| state.view_mode.set(SocketViewMode::All)>{move || t_string!(i18n, socket_all)}</button>
                         <button class=move || view_button_class(state.view_mode.get() == SocketViewMode::PinnedOnly) type="button" aria-pressed=move || (state.view_mode.get() == SocketViewMode::PinnedOnly).to_string() on:click=move |_| state.view_mode.set(SocketViewMode::PinnedOnly)>{move || t_string!(i18n, socket_pinned)}</button>
+                    </div>
+                    <div class="flex" role="group" aria-label=move || t_string!(i18n, socket_direction_filter)>
+                        <button class=move || view_button_class(state.direction_filter.get() == SocketDirectionFilter::All) type="button" aria-pressed=move || (state.direction_filter.get() == SocketDirectionFilter::All).to_string() on:click=move |_| state.set_direction_filter(SocketDirectionFilter::All)>{move || t_string!(i18n, socket_all)}</button>
+                        <button class=move || view_button_class(state.direction_filter.get() == SocketDirectionFilter::Long) type="button" aria-pressed=move || (state.direction_filter.get() == SocketDirectionFilter::Long).to_string() on:click=move |_| state.set_direction_filter(SocketDirectionFilter::Long)>{move || t_string!(i18n, socket_long)}</button>
+                        <button class="rounded-r-md border-y border-r border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" class=move || if state.direction_filter.get() == SocketDirectionFilter::Short { "rounded-r-md border border-[var(--accent)] bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" } else { "rounded-r-md border-y border-r border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" } type="button" aria-pressed=move || (state.direction_filter.get() == SocketDirectionFilter::Short).to_string() on:click=move |_| state.set_direction_filter(SocketDirectionFilter::Short)>{move || t_string!(i18n, socket_short)}</button>
                     </div>
                 </div>
 
@@ -604,7 +611,7 @@ fn socket_analysis_term(i18n: leptos_i18n::I18nContext<Locale>, value: &str) -> 
 fn build_visible(
     all: MarketSnapshot,
     mode: SocketViewMode,
-
+    direction_filter: SocketDirectionFilter,
     sort: SocketSortMode,
     direction: SocketSortDirection,
     pinned_symbols: Vec<String>,
@@ -687,11 +694,17 @@ fn build_visible(
     let pinned_set = pinned_symbols
         .iter()
         .collect::<std::collections::HashSet<_>>();
+    let direction_matches = |item: &TrackedFuturesTicker| match direction_filter {
+        SocketDirectionFilter::All => true,
+        SocketDirectionFilter::Long => item.ranking.ranking_direction() == 1,
+        SocketDirectionFilter::Short => item.ranking.ranking_direction() == -1,
+    };
 
     if mode == SocketViewMode::PinnedOnly {
         let mut pinned = all
             .values()
             .filter(|item| item.ticker.symbol.contains(&query))
+            .filter(|item| direction_matches(item))
             .filter(|item| pinned_set.contains(&item.ticker.symbol))
             .cloned()
             .collect::<Vec<_>>();
@@ -704,6 +717,7 @@ fn build_visible(
         .values()
         .filter(|item| pinned_set.contains(&item.ticker.symbol))
         .filter(|item| item.ticker.symbol.contains(&query))
+        .filter(|item| direction_matches(item))
         .cloned()
         .collect::<Vec<_>>();
     pinned.sort_unstable_by(sort_fn);
@@ -712,6 +726,7 @@ fn build_visible(
         .values()
         .filter(|item| !pinned_set.contains(&item.ticker.symbol))
         .filter(|item| item.ticker.symbol.contains(&query))
+        .filter(|item| direction_matches(item))
         .cloned()
         .collect::<Vec<_>>();
     dynamic.sort_unstable_by(sort_fn);
