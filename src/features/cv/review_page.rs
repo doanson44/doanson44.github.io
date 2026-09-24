@@ -28,8 +28,9 @@ pub fn CvReviewPage(card_id: Option<String>) -> impl IntoView {
         understood.set(empty);
     };
 
+    let selected_card_id = card_id.clone();
     let selected_card = Memo::new(move |_| {
-        let id = card_id.as_deref()?;
+        let id = selected_card_id.as_deref()?;
         cards.get().iter().find(|card| card.id == id).copied()
     });
 
