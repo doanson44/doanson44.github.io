@@ -308,11 +308,24 @@ impl SocketState {
         }
     }
 
-    /// Toggles a ticker pin and executes the corresponding paper trade.
-    ///
-    /// Pinning buys the ticker using all available paper-trading capital as margin.
-    /// Unpinning sells the complete leveraged position.
+    /// Toggles a ticker pin without affecting its paper-trading position.
     pub fn toggle_pin(&self, symbol: &str) {
+        let mut symbols = self.pinned_symbols.get_untracked();
+        if let Some(index) = symbols.iter().position(|item| item == symbol) {
+            symbols.remove(index);
+            self.trading_notice.set(Some(format!("Unpinned {symbol}.")));
+        } else {
+            symbols.push(symbol.to_owned());
+            self.trading_notice.set(Some(format!("Pinned {symbol}.")));
+        }
+
+        self.trading_error.set(None);
+        self.pinned_symbols.set(symbols);
+        save_pinned_symbols(&self.pinned_symbols.get_untracked());
+    }
+
+    /// Opens or closes the paper position using the configured long or short side.
+    pub fn trade(&self, symbol: &str) {
         let Some(price) = self
             .tickers
             .get_untracked()
@@ -330,16 +343,16 @@ impl SocketState {
 
         let snapshot = self.trading_snapshot.get_untracked();
         let timestamp_ms = js_sys::Date::now() as i64;
-        let is_pinned = self
-            .pinned_symbols
-            .get_untracked()
+        let is_held = snapshot
+            .portfolio
+            .positions
             .iter()
-            .any(|item| item == symbol);
+            .any(|position| position.symbol == symbol);
 
-        let next_snapshot = if is_pinned {
-            TradingService::sell(&snapshot, symbol, price, timestamp_ms)
+        let next_snapshot = if is_held {
+            TradingService::close(&snapshot, symbol, price, timestamp_ms)
         } else {
-            TradingService::buy(&snapshot, symbol, price, timestamp_ms)
+            TradingService::open(&snapshot, symbol, price, timestamp_ms)
         };
 
         let Ok(next_snapshot) = next_snapshot else {
@@ -356,18 +369,26 @@ impl SocketState {
             return;
         }
 
-        let mut symbols = self.pinned_symbols.get_untracked();
-        if is_pinned {
-            symbols.retain(|item| item != symbol);
-            self.trading_notice
-                .set(Some(format!("Sold {symbol} at market price.")));
+        let action = if is_held {
+            match snapshot
+                .portfolio
+                .positions
+                .iter()
+                .find(|position| position.symbol == symbol)
+                .map(|position| position.side)
+            {
+                Some(crate::domain::trading::PositionSide::Short) => "Bought",
+                _ => "Sold",
+            }
         } else {
-            symbols.push(symbol.to_owned());
-            self.trading_notice
-                .set(Some(format!("Bought {symbol} at market price.")));
-        }
+            match snapshot.settings.position_side {
+                crate::domain::trading::PositionSide::Short => "Sold",
+                _ => "Bought",
+            }
+        };
 
-        self.pinned_symbols.set(symbols);
+        self.trading_notice
+            .set(Some(format!("{action} {symbol} at market price.")));
         self.trading_snapshot.set(next_snapshot);
     }
 
