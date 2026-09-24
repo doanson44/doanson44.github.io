@@ -62,7 +62,7 @@ impl FuturesTickerRanking {
         self.observe_at(price, Some(timestamp_ms));
     }
 
-    /// Applies a timestamped price observation and retains the latest ten seconds.
+    /// Applies a timestamped price observation and retains the latest five minutes.
     pub fn observe_at(&mut self, price: Option<f64>, timestamp_ms: Option<u64>) {
         let (Some(price), Some(timestamp_ms)) = (price, timestamp_ms) else {
             return;
