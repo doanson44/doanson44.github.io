@@ -45,7 +45,6 @@ pub struct FuturesTickerRanking {
     samples: VecDeque<PriceSample>,
 }
 
-
 impl FuturesTickerRanking {
     /// Creates an empty ranking history.
     pub fn baseline(_price: Option<f64>) -> Self {
