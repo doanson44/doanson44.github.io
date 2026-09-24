@@ -41,8 +41,8 @@ pub enum SocketViewMode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SocketSortMode {
     Symbol,
+    Ranking,
     Price,
-    TotalTicks,
     Funding,
     Change24h,
     Volume24h,
