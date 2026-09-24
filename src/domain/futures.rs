@@ -408,9 +408,9 @@ mod tests {
         let mut ranking = FuturesTickerRanking::default();
         for (timestamp, price) in [
             (0, 100.0),
-            (60_000, 100.8),
+            (1_000, 100.8),
             (2_000, 101.7),
-            (180_000, 102.8),
+            (3_000, 102.8),
             (4_000, 104.0),
             (5_000, 105.5),
         ] {
@@ -429,11 +429,11 @@ mod tests {
         let mut ranking = FuturesTickerRanking::default();
         for (timestamp, price) in [
             (0, 100.0),
-            (60_000, 99.2),
-            (120_000, 98.4),
-            (180_000, 97.5),
-            (240_000, 96.4),
-            (300_000, 95.2),
+            (1_000, 99.2),
+            (2_000, 98.4),
+            (3_000, 97.5),
+            (4_000, 96.4),
+            (5_000, 95.2),
         ] {
             ranking.observe_at(Some(price), Some(timestamp));
         }
@@ -447,7 +447,7 @@ mod tests {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
         ranking.observe_at(Some(101.0), Some(1_000));
-        ranking.observe_at(Some(102.0), Some(120_000));
+        ranking.observe_at(Some(102.0), Some(2_000));
 
         ranking.reset_metrics();
 
@@ -459,7 +459,7 @@ mod tests {
     fn observations_are_bounded_to_five_minutes() {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
-        ranking.observe_at(Some(101.0), Some(300_000));
+        ranking.observe_at(Some(101.0), Some(3_000));
         ranking.observe_at(Some(102.0), Some(6_000));
 
         assert_eq!(ranking.observation_count(), 2);
@@ -470,7 +470,7 @@ mod tests {
     fn out_of_order_observations_are_ignored() {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
-        ranking.observe_at(Some(101.0), Some(60_000));
+        ranking.observe_at(Some(101.0), Some(1_000));
         ranking.observe_at(Some(99.0), Some(500));
 
         assert_eq!(ranking.observation_count(), 2);
