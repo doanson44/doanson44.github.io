@@ -433,8 +433,8 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
             <td class="px-3 py-2 text-right font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</td>
-            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_1s())}</td>
-            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_3s())}</td>
+            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_15s())}</td>
+            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_1m())}</td>
             <td class="px-3 py-2">{socket_analysis_actions(symbol.clone(), state)}</td>
         </tr>
     }
@@ -504,8 +504,8 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
                 <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_ranking)}</span><span class="font-mono text-[var(--accent)]">{ticker.ranking.ranking_score()}</span></div>
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_direction)}</span><span class="font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</span></div>
-                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change2s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_1s())}</span></div>
-                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change6s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_3s())}</span></div>
+                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change2s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_15s())}</span></div>
+                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change6s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_1m())}</span></div>
             </div>
         </article>
     }
@@ -634,16 +634,16 @@ fn build_visible(
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
             SocketSortMode::Change2s => left
                 .ranking
-                .return_1s()
+                .return_15s()
                 .unwrap_or(0.0)
-                .partial_cmp(&right.ranking.return_1s().unwrap_or(0.0))
+                .partial_cmp(&right.ranking.return_15s().unwrap_or(0.0))
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
             SocketSortMode::Change6s => left
                 .ranking
-                .return_3s()
+                .return_1m()
                 .unwrap_or(0.0)
-                .partial_cmp(&right.ranking.return_3s().unwrap_or(0.0))
+                .partial_cmp(&right.ranking.return_1m().unwrap_or(0.0))
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
             SocketSortMode::Price => {
