@@ -153,7 +153,7 @@ pub fn SocketPage(
                                             <SortHeader state=state mode=SocketSortMode::Symbol align="left">"Symbol" </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Burst align="right">"Burst" </SortHeader>
+                                            <SortHeader state=state mode=SocketSortMode::Ranking align="right">{move || t_string!(i18n, socket_ranking)} </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Price align="right">"Price" </SortHeader>
@@ -165,7 +165,7 @@ pub fn SocketPage(
                                             <SortHeader state=state mode=SocketSortMode::Funding align="right">{move || t_string!(i18n, socket_funding)} </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Momentum align="right">{move || t_string!(i18n, socket_momentum)} </SortHeader>
+                                            <SortHeader state=state mode=SocketSortMode::Ranking align="right">{move || t_string!(i18n, socket_ranking)} </SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::TotalTicks align="right">{move || t_string!(i18n, socket_activity)} </SortHeader>
@@ -185,8 +185,8 @@ pub fn SocketPage(
                                 <span class="shrink-0 text-xs font-medium text-[var(--text-secondary)]">{move || t_string!(i18n, socket_sort)}</span>
                                 <div class="flex flex-wrap justify-end gap-1">
                                     {socket_mobile_sort_button("symbol", SocketSortMode::Symbol, state, i18n)}
-                                    {socket_mobile_sort_button("burst", SocketSortMode::Burst, state, i18n)}
-                                    {socket_mobile_sort_button("momentum", SocketSortMode::Momentum, state, i18n)}
+                                    {socket_mobile_sort_button("ranking", SocketSortMode::Ranking, state, i18n)}
+                                    {}
                                     {socket_mobile_sort_button("price", SocketSortMode::Price, state, i18n)}
                                     {socket_mobile_sort_button("change24h", SocketSortMode::Change24h, state, i18n)}
                                     {socket_mobile_sort_button("funding", SocketSortMode::Funding, state, i18n)}
@@ -342,8 +342,7 @@ fn socket_mobile_sort_button(
 fn socket_sort_label(i18n: leptos_i18n::I18nContext<Locale>, key: &'static str) -> String {
     match key {
         "symbol" => "Symbol".to_string(),
-        "burst" => t_string!(i18n, socket_burst).to_string(),
-        "momentum" => t_string!(i18n, socket_momentum).to_string(),
+        "ranking" => t_string!(i18n, socket_ranking).to_string(),
         "price" => t_string!(i18n, socket_price).to_string(),
         "change24h" => t_string!(i18n, socket_change24h).to_string(),
         "funding" => t_string!(i18n, socket_funding).to_string(),
@@ -412,21 +411,15 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                 <span class="font-mono">{symbol.clone()}</span>
             </th>
             <td class="px-3 py-2 text-left">
-                {if ticker.momentum.burst_ticks() > 0 {
-                    view! {
-                        <span class="font-mono text-[var(--warning)]">
-                            {ticker.momentum.burst_ticks()}
-                        </span>
-                    }.into_any()
-                } else {
-                    view! { <span class="text-[var(--text-secondary)]">"—"</span> }.into_any()
-                }}
+                <span class="font-mono font-semibold text-[var(--accent)]">
+                    {ticker.momentum.ranking_score()}
+                </span>
             </td>
             <td class="px-3 py-2 text-right font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</td>
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
-            <td class="px-3 py-2 text-right"><div class="flex min-w-32 items-center justify-end gap-2"><progress class="socket-ticker-progress w-24" max="100" value=ticker.momentum.progress().to_string() aria-label="Momentum"></progress><span class="font-mono text-xs text-[var(--text-secondary)]">{format!("{}%",ticker.momentum.progress())}</span></div></td>
-            <td class="px-3 py-2 text-right font-mono text-xs"><span class="text-[var(--success)]">{format!("↑ {}",ticker.momentum.up_ticks)}</span><span class="ml-2 text-[var(--danger)]">{format!("↓ {}",ticker.momentum.down_ticks)}</span></td>
+            <td class="px-3 py-2 text-right"><div class="flex min-w-32 items-center justify-end gap-2"><progress class="socket-ticker-progress w-24" max="100" value=ticker.momentum.ranking_score().to_string() aria-label="Momentum"></progress><span class="font-mono text-xs text-[var(--text-secondary)]">{format!("{}%",ticker.momentum.progress())}</span></div></td>
+            <td class="px-3 py-2 text-right font-mono text-xs"><span>{format!("{} obs", ticker.momentum.observation_count())}</span></td>
             <td class="px-3 py-2">{socket_analysis_actions(symbol.clone(), state)}</td>
         </tr>
     }
@@ -613,12 +606,12 @@ fn build_visible(
     let sort_fn = |left: &TrackedFuturesTicker, right: &TrackedFuturesTicker| {
         let cmp = match sort {
             SocketSortMode::Symbol => left.ticker.symbol.cmp(&right.ticker.symbol),
-            SocketSortMode::Burst => left
+            SocketSortMode::Ranking => right
                 .momentum
-                .burst_ticks()
-                .cmp(&right.momentum.burst_ticks())
+                .ranking_score()
+                .cmp(&left.momentum.ranking_score())
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
-            SocketSortMode::Momentum => right
+            SocketSortMode::Ranking => right
                 .momentum
                 .progress()
                 .cmp(&left.momentum.progress())
