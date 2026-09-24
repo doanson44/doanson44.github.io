@@ -3,7 +3,7 @@ use leptos::prelude::*;
 use super::components::{CvSection, EducationCard, ExperienceCard, SkillGroup};
 use super::data::{competencies, education, experiences, highlights, profile, skill_categories};
 use crate::i18n::*;
-use crate::infrastructure::browser::print_page;
+use crate::infrastructure::browser::{print_page, scroll_to_element};
 
 /// Public CV and technical portfolio page.
 #[component]
@@ -119,10 +119,10 @@ pub fn CvPage() -> impl IntoView {
                     <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border-color)] pt-4">
                         <nav aria-label=move || t_string!(i18n, cv_sections_label)>
                             <ul class="flex flex-wrap gap-2 text-sm">
-                                <li><a class="cv-nav-link" href="#cv-about">{move || t_string!(i18n, cv_about)}</a></li>
-                                <li><a class="cv-nav-link" href="#cv-skills">{move || t_string!(i18n, cv_skills_nav)}</a></li>
-                                <li><a class="cv-nav-link" href="#cv-experience">{move || t_string!(i18n, cv_experience_nav)}</a></li>
-                                <li><a class="cv-nav-link" href="#cv-highlights">{move || t_string!(i18n, cv_highlights_nav)}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-about" on:click=move |event| { event.prevent_default(); scroll_to_element("cv-about"); }>{move || t_string!(i18n, cv_about)}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-skills" on:click=move |event| { event.prevent_default(); scroll_to_element("cv-skills"); }>{move || t_string!(i18n, cv_skills_nav)}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-experience" on:click=move |event| { event.prevent_default(); scroll_to_element("cv-experience"); }>{move || t_string!(i18n, cv_experience_nav)}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-highlights" on:click=move |event| { event.prevent_default(); scroll_to_element("cv-highlights"); }>{move || t_string!(i18n, cv_highlights_nav)}</a></li>
                                 <li><a class="cv-nav-link" href="#cv-education">{move || t!(i18n, cv_education)}</a></li>
                             </ul>
                         </nav>
