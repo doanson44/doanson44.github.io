@@ -51,8 +51,8 @@ pub enum SocketSortMode {
     Symbol,
     Ranking,
     Direction,
-    Change1m,
-    Change3m,
+    Change1s,
+    Change3s,
     Price,
     Funding,
     Change24h,
@@ -367,7 +367,14 @@ impl SocketState {
             }
         };
 
-        if !is_held {
+        if is_held {
+            let mut symbols = self.pinned_symbols.get_untracked();
+            if let Some(index) = symbols.iter().position(|item| item == symbol) {
+                symbols.remove(index);
+                self.pinned_symbols.set(symbols);
+                save_pinned_symbols(&self.pinned_symbols.get_untracked());
+            }
+        } else {
             let mut symbols = self.pinned_symbols.get_untracked();
             if !symbols.iter().any(|item| item == symbol) {
                 symbols.push(symbol.to_owned());
