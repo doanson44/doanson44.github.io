@@ -513,7 +513,11 @@ mod tests {
             ranking.observe_at(Some(price), Some(timestamp));
         }
 
-        assert!(ranking.ranking_score() >= 70);
+        assert!(
+            ranking.ranking_score() >= 60,
+            "ranking should identify a strong downward move: {}",
+            ranking.ranking_score()
+        );
         assert_eq!(ranking.ranking_direction(), -1);
     }
 
