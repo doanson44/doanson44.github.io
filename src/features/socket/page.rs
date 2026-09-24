@@ -361,6 +361,7 @@ fn socket_sort_label(i18n: leptos_i18n::I18nContext<Locale>, key: &'static str) 
         "direction" => t_string!(i18n, socket_direction).to_string(),
         "change15s" => t_string!(i18n, socket_change15s).to_string(),
         "change1m" => t_string!(i18n, socket_change1m).to_string(),
+        "change5m" => t_string!(i18n, socket_change5m).to_string(),
         "price" => t_string!(i18n, socket_price).to_string(),
         "change24h" => t_string!(i18n, socket_change24h).to_string(),
         "funding" => t_string!(i18n, socket_funding).to_string(),
@@ -439,6 +440,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             <td class="px-3 py-2 text-right font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</td>
             <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_15s())}</td>
             <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_1m())}</td>
+            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_5m())}</td>
             <td class="px-3 py-2">{socket_analysis_actions(symbol.clone(), state)}</td>
         </tr>
     }
@@ -510,6 +512,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_direction)}</span><span class="font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</span></div>
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change15s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_15s())}</span></div>
                 <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change1m)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_1m())}</span></div>
+                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change5m)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_5m())}</span></div>
             </div>
         </article>
     }
