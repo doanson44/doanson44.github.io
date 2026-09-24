@@ -93,7 +93,7 @@ pub fn SocketPage(
                 <header class="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="mb-1 text-xl font-semibold">{move || if i18n.get_locale() == Locale::vi { "Thị trường Futures" } else { "Futures Market" }}</h2>
-                        <div class="text-sm text-[var(--text-secondary)]">{move || if i18n.get_locale() == Locale::vi { "Theo dõi momentum realtime kể từ khi mở trang" } else { "Realtime market momentum from the moment this page opens" }}</div>
+                        <div class="text-sm text-[var(--text-secondary)]">{move || if i18n.get_locale() == Locale::vi { "Xếp hạng chuyển động giá realtime kể từ khi mở trang" } else { "Realtime price-move ranking from the moment this page opens" }}</div>
                     </div>
                     <div class="flex items-center gap-2 text-sm">
                         {move || status_badge(state.connection_status.get())}
@@ -405,15 +405,15 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             </th>
             <td class="px-3 py-2 text-right">
                 <div class="flex min-w-28 items-center justify-end gap-2">
-                    <progress class="socket-ticker-progress w-20" max="100" value=ticker.momentum.ranking_score().to_string() aria-label="Ranking"></progress>
-                    <span class="font-mono font-semibold text-[var(--accent)]">{ticker.momentum.ranking_score()}</span>
+                    <progress class="socket-ticker-progress w-20" max="100" value=ticker.ranking.ranking_score().to_string() aria-label="Ranking"></progress>
+                    <span class="font-mono font-semibold text-[var(--accent)]">{ticker.ranking.ranking_score()}</span>
                 </div>
             </td>
             <td class="px-3 py-2 text-right font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</td>
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
-            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.momentum.return_1m())}</td>
-            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.momentum.return_3m())}</td>
+            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_1m())}</td>
+            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_3m())}</td>
             <td class="px-3 py-2">{socket_analysis_actions(symbol.clone(), state)}</td>
         </tr>
     }
@@ -481,9 +481,9 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
             </div>
             <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
-                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_ranking)}</span><span class="font-mono text-[var(--accent)]">{ticker.momentum.ranking_score()}</span></div>
-                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change1m)}</span><span class="font-mono">{format_short_percent(ticker.momentum.return_1m())}</span></div>
-                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change3m)}</span><span class="font-mono">{format_short_percent(ticker.momentum.return_3m())}</span></div>
+                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_ranking)}</span><span class="font-mono text-[var(--accent)]">{ticker.ranking.ranking_score()}</span></div>
+                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change1m)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_1m())}</span></div>
+                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change3m)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_3m())}</span></div>
             </div>
         </article>
     }
