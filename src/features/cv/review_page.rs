@@ -182,7 +182,7 @@ fn detail_view(
     };
 
     let id = card.id.to_string();
-    let is_understood = understood.contains(id);
+    let is_understood = understood.contains(&id);
 
     view! {
         <div>
