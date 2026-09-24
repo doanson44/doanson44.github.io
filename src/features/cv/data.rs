@@ -58,10 +58,10 @@ pub fn profile(locale: Locale) -> Profile {
         phone: "0814466008",
         email: "doanson44@gmail.com",
         summary: if locale == Locale::vi {
-                "Senior Backend Developer với khoảng 11 năm kinh nghiệm phát triển phần mềm chuyên nghiệp trong các lĩnh vực Tài chính, Bán lẻ, FMCG, Quản lý nhân sự, Quản lý dự án, Nền tảng khuyến mãi, Thương mại ảo và Phần mềm nhúng. Chuyên về thiết kế và phát triển các ứng dụng backend có khả năng mở rộng với C#, ASP.NET Core, .NET Core, Entity Framework Core, SQL Server, PostgreSQL, Azure và RESTful API. Có nền tảng vững về hiện đại hóa ứng dụng doanh nghiệp, tích hợp hệ thống, tối ưu cơ sở dữ liệu, kiến trúc phần mềm và hỗ trợ production."
-            } else {
-                "Senior Backend Developer with professional experience delivering enterprise software across Finance, Retail, FMCG, Employee Management, Project Management, Promotion Platforms, Virtual Commerce, and Embedded Software domains. Specialized in designing and developing scalable backend applications using C#, ASP.NET Core, .NET Core, Entity Framework Core, SQL Server, PostgreSQL, Azure, and RESTful APIs. Strong background in enterprise application modernization, system integration, database optimization, software architecture, and production support."
-            },
+            "Senior Backend Developer với khoảng 11 năm kinh nghiệm phát triển phần mềm chuyên nghiệp trong các lĩnh vực Tài chính, Bán lẻ, FMCG, Quản lý nhân sự, Quản lý dự án, Nền tảng khuyến mãi, Thương mại ảo và Phần mềm nhúng. Chuyên về thiết kế và phát triển các ứng dụng backend có khả năng mở rộng với C#, ASP.NET Core, .NET Core, Entity Framework Core, SQL Server, PostgreSQL, Azure và RESTful API. Có nền tảng vững về hiện đại hóa ứng dụng doanh nghiệp, tích hợp hệ thống, tối ưu cơ sở dữ liệu, kiến trúc phần mềm và hỗ trợ production."
+        } else {
+            "Senior Backend Developer with professional experience delivering enterprise software across Finance, Retail, FMCG, Employee Management, Project Management, Promotion Platforms, Virtual Commerce, and Embedded Software domains. Specialized in designing and developing scalable backend applications using C#, ASP.NET Core, .NET Core, Entity Framework Core, SQL Server, PostgreSQL, Azure, and RESTful APIs. Strong background in enterprise application modernization, system integration, database optimization, software architecture, and production support."
+        },
     }
 }
 
@@ -285,28 +285,42 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             } else {
                 "Developed enterprise financial software and third-party integrations."
             },
-            projects: vec![if locale == Locale::vi { "Tích hợp QuickBooks" } else { "QuickBooks Integration" }, if locale == Locale::vi { "Thông báo" } else { "Notification" }, "Carry Forward", "Activation", "CU Indicator"],
+            projects: vec![
+                if locale == Locale::vi {
+                    "Tích hợp QuickBooks"
+                } else {
+                    "QuickBooks Integration"
+                },
+                if locale == Locale::vi {
+                    "Thông báo"
+                } else {
+                    "Notification"
+                },
+                "Carry Forward",
+                "Activation",
+                "CU Indicator",
+            ],
             contributions: vec![
                 if locale == Locale::vi {
-                   "Xây dựng backend services và các tính năng tự động hóa."
-               } else {
-                   "Built backend services and automation features."
-               },
+                "Xây dựng backend services và các tính năng tự động hóa."
+                } else {
+                "Built backend services and automation features."
+                },
                 if locale == Locale::vi {
-                   "Tích hợp hệ thống doanh nghiệp với các dịch vụ bên ngoài."
-               } else {
-                   "Integrated enterprise systems with external services."
-               },
+                "Tích hợp hệ thống doanh nghiệp với các dịch vụ bên ngoài."
+                } else {
+                "Integrated enterprise systems with external services."
+                },
                 if locale == Locale::vi {
-                   "Tối ưu truy vấn SQL Server và xử lý dữ liệu."
-               } else {
-                   "Optimized SQL Server queries and data processing."
-               },
+                "Tối ưu truy vấn SQL Server và xử lý dữ liệu."
+                } else {
+                "Optimized SQL Server queries and data processing."
+                },
                 if locale == Locale::vi {
-                   "Bảo trì hệ thống production và xử lý các sự cố phức tạp."
-               } else {
-                   "Maintained production systems and resolved complex issues."
-               },
+                "Bảo trì hệ thống production và xử lý các sự cố phức tạp."
+                } else {
+                "Maintained production systems and resolved complex issues."
+                },
             ],
             technologies: vec![".NET Core", "SQL Server"],
         },
@@ -322,15 +336,15 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             projects: Vec::new(),
             contributions: vec![
                 if locale == Locale::vi {
-                   "Phát triển các tính năng backend cho nền tảng Domestic Tour."
-               } else {
-                   "Developed backend features for Domestic Tour platform."
-               },
+                "Phát triển các tính năng backend cho nền tảng Domestic Tour."
+                } else {
+                "Developed backend features for Domestic Tour platform."
+                },
                 if locale == Locale::vi {
-                   "Triển khai các cải tiến và sửa lỗi production."
-               } else {
-                   "Implemented enhancements and production bug fixes."
-               },
+                "Triển khai các cải tiến và sửa lỗi production."
+                } else {
+                "Implemented enhancements and production bug fixes."
+                },
             ],
             technologies: Vec::new(),
         },
@@ -346,25 +360,25 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             projects: vec!["Device Management Tool", "Seasar Migration", "Music in the Ship", "Renovation 2"],
             contributions: vec![
                 if locale == Locale::vi {
-                   "Migration các ứng dụng legacy sang .NET Core."
-               } else {
-                   "Migrated legacy applications to .NET Core."
-               },
+                "Migration các ứng dụng legacy sang .NET Core."
+                } else {
+                "Migrated legacy applications to .NET Core."
+                },
                 if locale == Locale::vi {
-                   "Phát triển các hệ thống quản lý doanh nghiệp."
-               } else {
-                   "Developed enterprise management systems."
-               },
+                "Phát triển các hệ thống quản lý doanh nghiệp."
+                } else {
+                "Developed enterprise management systems."
+                },
                 if locale == Locale::vi {
-                   "Tham gia làm rõ yêu cầu và nâng cấp hệ thống."
-               } else {
-                   "Participated in requirement clarification and system enhancement."
-               },
+                "Tham gia làm rõ yêu cầu và nâng cấp hệ thống."
+                } else {
+                "Participated in requirement clarification and system enhancement."
+                },
                 if locale == Locale::vi {
-                   "Làm việc với Angular, Vue.js và Entity Framework Core."
-               } else {
-                   "Worked with Angular, Vue.js, and Entity Framework Core."
-               },
+                "Làm việc với Angular, Vue.js và Entity Framework Core."
+                } else {
+                "Worked with Angular, Vue.js, and Entity Framework Core."
+                },
             ],
             technologies: vec![".NET Core", "Entity Framework Core", "Angular", "Vue.js"],
         },
@@ -380,20 +394,20 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             projects: vec!["MISRA-C Checker", "Smart Manual", "Current Consumption"],
             contributions: vec![
                 if locale == Locale::vi {
-                   "Thiết kế và phát triển các ứng dụng desktop phục vụ kỹ thuật."
-               } else {
-                   "Designed and developed engineering desktop applications."
-               },
+                "Thiết kế và phát triển các ứng dụng desktop phục vụ kỹ thuật."
+                } else {
+                "Designed and developed engineering desktop applications."
+                },
                 if locale == Locale::vi {
-                   "Phân tích yêu cầu khách hàng."
-               } else {
-                   "Analyzed customer requirements."
-               },
+                "Phân tích yêu cầu khách hàng."
+                } else {
+                "Analyzed customer requirements."
+                },
                 if locale == Locale::vi {
-                   "Thực hiện bảo trì, debug và phát triển tính năng."
-               } else {
-                   "Delivered maintenance, debugging, and feature implementation."
-               },
+                "Thực hiện bảo trì, debug và phát triển tính năng."
+                } else {
+                "Delivered maintenance, debugging, and feature implementation."
+                },
             ],
             technologies: Vec::new(),
         },
@@ -404,35 +418,35 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
 pub fn highlights(locale: Locale) -> Vec<&'static str> {
     vec![
         if locale == Locale::vi {
-           "Có nhiều kinh nghiệm phát triển phần mềm doanh nghiệp."
-       } else {
-           "Extensive enterprise software development experience."
-       },
+            "Có nhiều kinh nghiệm phát triển phần mềm doanh nghiệp."
+        } else {
+            "Extensive enterprise software development experience."
+        },
         if locale == Locale::vi {
-           "Có nhiều kinh nghiệm backend với C# và các công nghệ .NET."
-       } else {
-           "Extensive experience with backend development using C# and .NET technologies."
-       },
+            "Có nhiều kinh nghiệm backend với C# và các công nghệ .NET."
+        } else {
+            "Extensive experience with backend development using C# and .NET technologies."
+        },
         if locale == Locale::vi {
-           "Nắm vững cơ sở dữ liệu quan hệ và tối ưu SQL."
-       } else {
-           "Strong knowledge of relational databases and SQL optimization."
-       },
+            "Nắm vững cơ sở dữ liệu quan hệ và tối ưu SQL."
+        } else {
+            "Strong knowledge of relational databases and SQL optimization."
+        },
         if locale == Locale::vi {
-           "Có kinh nghiệm tích hợp hệ thống doanh nghiệp và các giải pháp cloud."
-       } else {
-           "Experienced in enterprise system integration and cloud-based solutions."
-       },
+            "Có kinh nghiệm tích hợp hệ thống doanh nghiệp và các giải pháp cloud."
+        } else {
+            "Experienced in enterprise system integration and cloud-based solutions."
+        },
         if locale == Locale::vi {
-           "Thành thạo debug, hỗ trợ production và hiện đại hóa hệ thống legacy."
-       } else {
-           "Proficient in debugging, production support, and legacy modernization."
-       },
+            "Thành thạo debug, hỗ trợ production và hiện đại hóa hệ thống legacy."
+        } else {
+            "Proficient in debugging, production support, and legacy modernization."
+        },
         if locale == Locale::vi {
-           "Có kinh nghiệm với thiết kế ứng dụng có khả năng mở rộng và các thực hành kỹ thuật phần mềm."
-       } else {
-           "Familiar with scalable application design and software engineering best practices."
-       },
+            "Có kinh nghiệm với thiết kế ứng dụng có khả năng mở rộng và các thực hành kỹ thuật phần mềm."
+        } else {
+            "Familiar with scalable application design and software engineering best practices."
+        },
     ]
 }
 
@@ -450,11 +464,7 @@ pub fn education(locale: Locale) -> Vec<Education> {
         } else {
             "Information Technology"
         },
-        classification: if locale == Locale::vi {
-            "Khá"
-        } else {
-            "Good"
-        },
+        classification: if locale == Locale::vi { "Khá" } else { "Good" },
     }]
 }
 
