@@ -175,10 +175,10 @@ pub fn SocketPage(
                                             <SortHeader state=state mode=SocketSortMode::Direction align="right">{move || t_string!(i18n, socket_direction)}</SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Change1m align="right">{move || t_string!(i18n, socket_change1m)}</SortHeader>
+                                            <SortHeader state=state mode=SocketSortMode::Change1s align="right">{move || t_string!(i18n, socket_change1s)}</SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Change3m align="right">{move || t_string!(i18n, socket_change3m)}</SortHeader>
+                                            <SortHeader state=state mode=SocketSortMode::Change3s align="right">{move || t_string!(i18n, socket_change3s)}</SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_analysis)}</th>
                                     </tr>
@@ -197,8 +197,8 @@ pub fn SocketPage(
                                     {socket_mobile_sort_button("symbol", SocketSortMode::Symbol, state, i18n)}
                                     {socket_mobile_sort_button("ranking", SocketSortMode::Ranking, state, i18n)}
                                     {socket_mobile_sort_button("direction", SocketSortMode::Direction, state, i18n)}
-                                    {socket_mobile_sort_button("change1m", SocketSortMode::Change1m, state, i18n)}
-                                    {socket_mobile_sort_button("change3m", SocketSortMode::Change3m, state, i18n)}
+                                    {socket_mobile_sort_button("change1s", SocketSortMode::Change1m, state, i18n)}
+                                    {socket_mobile_sort_button("change3s", SocketSortMode::Change3m, state, i18n)}
                                     {socket_mobile_sort_button("price", SocketSortMode::Price, state, i18n)}
                                     {socket_mobile_sort_button("change24h", SocketSortMode::Change24h, state, i18n)}
                                     {socket_mobile_sort_button("funding", SocketSortMode::Funding, state, i18n)}
@@ -433,8 +433,8 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
             <td class="px-3 py-2 text-right font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</td>
-            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_1m())}</td>
-            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_3m())}</td>
+            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_1s())}</td>
+            <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_3s())}</td>
             <td class="px-3 py-2">{socket_analysis_actions(symbol.clone(), state)}</td>
         </tr>
     }
