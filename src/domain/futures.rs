@@ -472,7 +472,7 @@ mod tests {
     fn ranking_detects_a_fast_directional_move() {
         let mut ranking = FuturesTickerRanking::default();
         for (timestamp, price) in [
-(0, 100.0),
+            (0, 100.0),
             (15_000, 100.8),
             (30_000, 101.7),
             (45_000, 102.8),
@@ -482,7 +482,7 @@ mod tests {
             (120_000, 108.0),
             (180_000, 110.0),
             (240_000, 112.0),
-            (300_000, 114.0)
+            (300_000, 114.0),
         ] {
             ranking.observe_at(Some(price), Some(timestamp));
         }
