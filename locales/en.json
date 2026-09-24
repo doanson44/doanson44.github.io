@@ -272,5 +272,8 @@
   "socket_ranking": "Ranking",
   "socket_change1m": "1m",
   "socket_change3m": "3m",
-  "socket_direction": "Direction"
+  "socket_direction": "Direction",
+  "socket_direction_filter": "Direction filter",
+  "socket_long": "Long",
+  "socket_short": "Short"
 }
