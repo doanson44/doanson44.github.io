@@ -378,7 +378,6 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
     let trade_label_title = symbol.clone();
     let trade_label_aria = symbol.clone();
     let trade_click_symbol = symbol.clone();
-    let trade_view_symbol = symbol.clone();
     let is_held = Memo::new({
         let trading_snapshot = state.trading_snapshot;
         let symbol = symbol.clone();
@@ -458,7 +457,6 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
     let trade_label_title = symbol.clone();
     let trade_label_aria = symbol.clone();
     let trade_click_symbol = symbol.clone();
-    let trade_view_symbol = symbol.clone();
     let is_held = Memo::new({
         let trading_snapshot = state.trading_snapshot;
         let symbol = symbol.clone();
