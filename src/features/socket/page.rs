@@ -164,6 +164,7 @@ pub fn SocketPage(
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Ranking align="right">{move || t_string!(i18n, socket_ranking)} </SortHeader>
                                         </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_direction)}</th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_change1m)}</th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_change3m)}</th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_analysis)}</th>
@@ -412,6 +413,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             <td class="px-3 py-2 text-right font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</td>
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
+            <td class="px-3 py-2 text-right font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</td>
             <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_1m())}</td>
             <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_3m())}</td>
             <td class="px-3 py-2">{socket_analysis_actions(symbol.clone(), state)}</td>
@@ -482,6 +484,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
             <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
                 <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_ranking)}</span><span class="font-mono text-[var(--accent)]">{ticker.ranking.ranking_score()}</span></div>
+                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_direction)}</span><span class="font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</span></div>
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change1m)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_1m())}</span></div>
                 <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change3m)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_3m())}</span></div>
             </div>
@@ -754,6 +757,14 @@ fn format_percent(value: Option<f64>) -> String {
     value
         .map(|number| format!("{number:+.2}%", number = number * 100.0))
         .unwrap_or_else(|| "—".into())
+}
+
+fn ranking_direction_label(direction: i8) -> &'static str {
+    match direction {
+        1 => "LONG ↑",
+        -1 => "SHORT ↓",
+        _ => "—",
+    }
 }
 
 fn format_short_percent(value: Option<f64>) -> String {
