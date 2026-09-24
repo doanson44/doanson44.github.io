@@ -390,7 +390,7 @@ mod tests {
     #[test]
     fn first_price_is_a_baseline() {
         let mut ranking = FuturesTickerRanking::baseline(None);
-        ranking.observe_at(Some(100.0), Some(60_000));
+        ranking.observe(Some(100.0));
 
         assert_eq!(ranking.ranking_score(), 0);
         assert_eq!(ranking.ranking_direction(), 0);
