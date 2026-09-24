@@ -97,8 +97,8 @@ impl Portfolio {
         }
     }
 
-    /// Buys a position using the default allocation of available cash.
-    pub fn buy(
+    /// Opens a position using the configured side and allocation.
+    pub fn open(
         &mut self,
         settings: &TradingSettings,
         symbol: &str,
@@ -128,6 +128,7 @@ impl Portfolio {
         }
 
         let quantity = notional / price;
+        let side = settings.position_side;
         self.cash -= total_cost;
         self.positions.push(Position {
             symbol: symbol.to_string(),
@@ -137,11 +138,14 @@ impl Portfolio {
             entry_fee: fee,
             margin,
             leverage,
-            side: settings.position_side,
+            side,
         });
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
-            side: TradeSide::Buy,
+            side: match side {
+                PositionSide::Long => TradeSide::Buy,
+                PositionSide::Short => TradeSide::Sell,
+            },
             price,
             quantity,
             value: notional,
@@ -153,8 +157,19 @@ impl Portfolio {
         Ok(())
     }
 
-    /// Sells the complete open position for a symbol at the supplied market price.
-    pub fn sell(
+    /// Opens a long position using the configured allocation.
+    pub fn buy(
+        &mut self,
+        settings: &TradingSettings,
+        symbol: &str,
+        price: f64,
+        timestamp_ms: i64,
+    ) -> Result<(), String> {
+        self.open(settings, symbol, price, timestamp_ms)
+    }
+
+    /// Closes the complete open position for a symbol at the supplied market price.
+    pub fn close(
         &mut self,
         settings: &TradingSettings,
         symbol: &str,
@@ -184,7 +199,10 @@ impl Portfolio {
         self.realized_pnl += realized_pnl;
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
-            side: TradeSide::Sell,
+            side: match position.side {
+                PositionSide::Long => TradeSide::Sell,
+                PositionSide::Short => TradeSide::Buy,
+            },
             price,
             quantity: position.quantity,
             value,
@@ -195,7 +213,19 @@ impl Portfolio {
 
         Ok(())
     }
+
+    /// Closes the complete open position for a symbol.
+    pub fn sell(
+        &mut self,
+        settings: &TradingSettings,
+        symbol: &str,
+        price: f64,
+        timestamp_ms: i64,
+    ) -> Result<(), String> {
+        self.close(settings, symbol, price, timestamp_ms)
+    }
 }
+
 
 /// A holding enriched with the latest market valuation.
 #[derive(Debug, Clone, PartialEq)]
