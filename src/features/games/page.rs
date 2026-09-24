@@ -338,11 +338,7 @@ fn hangman_game_view(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView 
     .into_any()
 }
 
-fn standard_game_view(
-    game: GameKind,
-    score: RwSignal<u32>,
-    status: RwSignal<String>,
-) -> AnyView {
+fn standard_game_view(game: GameKind, score: RwSignal<u32>, status: RwSignal<String>) -> AnyView
     view! {
         <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6">
             <div class="mb-5 flex flex-wrap items-center gap-3">
