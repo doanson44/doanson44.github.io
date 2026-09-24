@@ -1,7 +1,5 @@
 use crate::i18n::Locale;
 
-use crate::i18n::Locale;
-
 /// Static profile data displayed by the public CV page.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Profile {
