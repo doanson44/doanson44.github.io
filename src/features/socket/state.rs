@@ -53,6 +53,7 @@ pub enum SocketSortMode {
     Direction,
     Change15s,
     Change1m,
+    Change5m,
     Price,
     Funding,
     Change24h,
