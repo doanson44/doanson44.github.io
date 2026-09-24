@@ -159,9 +159,7 @@ impl FuturesTickerRanking {
 
     /// Returns the direction of the current short-term move.
     pub fn ranking_direction(&self) -> i8 {
-        self.return_over(SHORT_WINDOW_MS)
-            .unwrap_or(0.0)
-            .signum() as i8
+        self.return_over(SHORT_WINDOW_MS).unwrap_or(0.0).signum() as i8
     }
 
     /// Returns the one-minute price return.
@@ -192,7 +190,10 @@ impl FuturesTickerRanking {
     fn return_over(&self, window_ms: u64) -> Option<f64> {
         let current = self.samples.back()?;
         let cutoff = current.timestamp_ms.saturating_sub(window_ms);
-        let base = self.samples.iter().find(|sample| sample.timestamp_ms >= cutoff)?;
+        let base = self
+            .samples
+            .iter()
+            .find(|sample| sample.timestamp_ms >= cutoff)?;
         if base.price <= 0.0 {
             return None;
         }
@@ -240,7 +241,6 @@ impl FuturesTickerRanking {
 
         Some((net / path).clamp(0.0, 1.0))
     }
-
 }
 
 /// A Futures ticker together with its session-local short-term ranking.
@@ -484,5 +484,4 @@ mod tests {
         ranking.observe_at(None, Some(1_000));
         assert_eq!(ranking.observation_count(), 0);
     }
-
 }
