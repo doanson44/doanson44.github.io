@@ -391,7 +391,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                 {if ticker.momentum.burst_ticks() > 0 {
                     view! {
                         <span class="font-mono text-[var(--warning)]">
-                            {format!("{} tick{}", ticker.momentum.burst_ticks(), if ticker.momentum.burst_ticks() == 1 { "" } else { "s" })}
+                            {ticker.momentum.burst_ticks()}
                         </span>
                     }.into_any()
                 } else {
