@@ -58,7 +58,6 @@
   "socket_copy_1d": "Sao chép 1D",
   "socket_view": "Chế độ ticker",
   "socket_all": "Tất cả",
-  "socket_burst": "Burst",
   "socket_pinned": "Đã ghim",
   "socket_sort": "Sắp xếp theo",
   "socket_show": "Hiển thị",
@@ -269,5 +268,8 @@
   "cv_review_explanation": "Hiểu bản chất",
   "cv_review_example": "Ví dụ",
   "cv_review_interview_tip": "Mẹo phỏng vấn",
-  "cv_review_back_to_list": "Quay lại danh sách"
+  "cv_review_back_to_list": "Quay lại danh sách",
+  "socket_ranking": "Xếp hạng",
+  "socket_change1m": "1m",
+  "socket_change3m": "3m"
 }
