@@ -1842,7 +1842,7 @@ pub const ENGLISH_CARDS: &[ReviewCard] = &[
         simple_explanation: "In simple words: Short: App Service until we have many services, sidecars, and a platform team. AKS is a product you now operate.",
     },
     ReviewCard {
-        id: "cv-65-{",
+        id: "cv-65-aa",
         section: "4 — Interview",
         title: "Round D — TA panel — Part 27",
         question: "App Service: TLS, scale-out, slots, enough for one API + worker. AKS: node pools, ingress, mesh, upgrades, on-call for the cluster. Container Apps as a middle. I choose the least platform that meets the SLO.\n\nHow would you load-test check-in?",
@@ -1853,7 +1853,7 @@ pub const ENGLISH_CARDS: &[ReviewCard] = &[
         simple_explanation: "In simple words: Deep: App Service: TLS, scale-out, slots, enough for one API + worker. AKS: node pools, ingress, mesh, upgrades, on-call for the cluster. Container Apps as a middle. I choose the least platform that meets the SLO.",
     },
     ReviewCard {
-        id: "cv-65-|",
+        id: "cv-65-ab",
         section: "4 — Interview",
         title: "Round D — TA panel — Part 28",
         question: "Script the golden journey, ramp to 2× expected peak, assert p95 and error ratio against the SLO, soak for an hour?",
@@ -1864,7 +1864,7 @@ pub const ENGLISH_CARDS: &[ReviewCard] = &[
         simple_explanation: "In simple words: Short: Script the golden journey, ramp to 2× expected peak, assert p95 and error ratio against the SLO, soak for an hour.",
     },
     ReviewCard {
-        id: "cv-65-}",
+        id: "cv-65-ac",
         section: "4 — Interview",
         title: "Round D — TA panel — Part 29",
         question: "Production-like data volume (not 10 rows). Idempotency keys so retries do not double-insert. Watch SQL DTU, lock waits, Redis CPU, thread pool. Stop if we burn the staging error budget. Never “see what happens” on prod Friday.\n\nOWASP API — top risks you actually design for?",
@@ -1875,7 +1875,7 @@ pub const ENGLISH_CARDS: &[ReviewCard] = &[
         simple_explanation: "In simple words: Deep: Production-like data volume (not 10 rows). Idempotency keys so retries do not double-insert. Watch SQL DTU, lock waits, Redis CPU, thread pool. Stop if we burn the staging error budget. Never “see what happens” on prod Friday.",
     },
     ReviewCard {
-        id: "cv-65-~",
+        id: "cv-65-ad",
         section: "4 — Interview",
         title: "Round D — TA panel — Part 30",
         question: "IDOR (BOLA), broken auth, unconstrained payload, injection, security misconfig (public blob, open Hangfire)?",
@@ -1886,7 +1886,7 @@ pub const ENGLISH_CARDS: &[ReviewCard] = &[
         simple_explanation: "In simple words: Short: IDOR (BOLA), broken auth, unconstrained payload, injection, security misconfig (public blob, open Hangfire).",
     },
     ReviewCard {
-        id: "cv-65-",
+        id: "cv-65-ae",
         section: "4 — Interview",
         title: "Round D — TA panel — Part 31",
         question: "Every GET /{id} is an authorization test, not only authentication. BFF so tokens are not in JS. Max body size, virus scan async on photos. Parameterised SQL / EF. Hangfire and Swagger locked down in production. Rate limit login. No stack traces.\n\nSoft delete vs hard delete?",
@@ -1897,7 +1897,7 @@ pub const ENGLISH_CARDS: &[ReviewCard] = &[
         simple_explanation: "In simple words: Deep: Every GET /{id} is an authorization test, not only authentication. BFF so tokens are not in JS. Max body size, virus scan async on photos. Parameterised SQL / EF. Hangfire and Swagger locked down in production. Rate limit login. No stack traces.",
     },
     ReviewCard {
-        id: "cv-65-",
+        id: "cv-65-af",
         section: "4 — Interview",
         title: "Round D — TA panel — Part 32",
         question: "Soft delete for undo and audit, filtered index, global EF filter. Hard delete PII on a retention job when required?",
@@ -1908,7 +1908,7 @@ pub const ENGLISH_CARDS: &[ReviewCard] = &[
         simple_explanation: "In simple words: Short: Soft delete for undo and audit, filtered index, global EF filter. Hard delete PII on a retention job when required.",
     },
     ReviewCard {
-        id: "cv-65-",
+        id: "cv-65-ag",
         section: "4 — Interview",
         title: "Round D — TA panel — Part 33",
         question: "Soft delete that every query forgets is worse than hard delete. Unique email + soft delete needs a filtered unique index. “Delete account” is a process: anonymise, revoke tokens, tombstone, legal hold exceptions.\n\nWhere does UTC live?",
@@ -1919,7 +1919,7 @@ pub const ENGLISH_CARDS: &[ReviewCard] = &[
         simple_explanation: "In simple words: Deep: Soft delete that every query forgets is worse than hard delete. Unique email + soft delete needs a filtered unique index. “Delete account” is a process: anonymise, revoke tokens, tombstone, legal hold exceptions.",
     },
     ReviewCard {
-        id: "cv-65-",
+        id: "cv-65-ah",
         section: "4 — Interview",
         title: "Round D — TA panel — Part 34",
         question: "DateTime.Now in a handler is a bug in APAC. TimeProvider injected. Overnight jobs use a named time zone per market. datetimeoffset or UTC datetime2 plus zone in the user profile — pick one and ADR it?",
@@ -3704,7 +3704,7 @@ pub const VIETNAMESE_CARDS: &[ReviewCard] = &[
         simple_explanation: "Nói đơn giản: Sâu: App Service: TLS, scale-out, slot, đủ một API + worker. AKS: node pool, ingress, mesh, upgrade, on-call cluster. Container Apps ở giữa. Chọn ít platform nhất vẫn đạt SLO.",
     },
     ReviewCard {
-        id: "cv-65-{",
+        id: "cv-65-aa",
         section: "4 — Phỏng vấn",
         title: "Vòng D — panel TA — Phần 27",
         question: "Script golden journey, tăng tới 2× peak kỳ vọng, assert p95 và tỉ lệ lỗi theo SLO, soak một giờ?",
@@ -3715,7 +3715,7 @@ pub const VIETNAMESE_CARDS: &[ReviewCard] = &[
         simple_explanation: "Nói đơn giản: Ngắn: Script golden journey, tăng tới 2× peak kỳ vọng, assert p95 và tỉ lệ lỗi theo SLO, soak một giờ.",
     },
     ReviewCard {
-        id: "cv-65-|",
+        id: "cv-65-ab",
         section: "4 — Phỏng vấn",
         title: "Vòng D — panel TA — Phần 28",
         question: "Volume data giống production (không 10 dòng). Idempotency key để retry không insert đôi. Nhìn DTU SQL, lock wait, CPU Redis, thread pool. Dừng nếu cháy error budget staging. Không “xem sao” trên prod thứ Sáu.\n\nOWASP API — rủi ro thật sự thiết kế?",
@@ -3726,7 +3726,7 @@ pub const VIETNAMESE_CARDS: &[ReviewCard] = &[
         simple_explanation: "Nói đơn giản: Sâu: Volume data giống production (không 10 dòng). Idempotency key để retry không insert đôi. Nhìn DTU SQL, lock wait, CPU Redis, thread pool. Dừng nếu cháy error budget staging. Không “xem sao” trên prod thứ Sáu.",
     },
     ReviewCard {
-        id: "cv-65-}",
+        id: "cv-65-ac",
         section: "4 — Phỏng vấn",
         title: "Vòng D — panel TA — Phần 29",
         question: "IDOR (BOLA), auth gãy, payload không trần, injection, misconfig (blob public, Hangfire mở)?",
@@ -3737,7 +3737,7 @@ pub const VIETNAMESE_CARDS: &[ReviewCard] = &[
         simple_explanation: "Nói đơn giản: Ngắn: IDOR (BOLA), auth gãy, payload không trần, injection, misconfig (blob public, Hangfire mở).",
     },
     ReviewCard {
-        id: "cv-65-~",
+        id: "cv-65-ad",
         section: "4 — Phỏng vấn",
         title: "Vòng D — panel TA — Phần 30",
         question: "Mọi GET /{id} là test authorization, không chỉ authentication. BFF để token không trong JS. Max body, virus scan async ảnh. SQL parameterized / EF. Hangfire và Swagger khóa production. Rate limit login. Không stack.\n\nSoft delete vs hard delete?",
@@ -3748,7 +3748,7 @@ pub const VIETNAMESE_CARDS: &[ReviewCard] = &[
         simple_explanation: "Nói đơn giản: Sâu: Mọi GET /{id} là test authorization, không chỉ authentication. BFF để token không trong JS. Max body, virus scan async ảnh. SQL parameterized / EF. Hangfire và Swagger khóa production. Rate limit login. Không stack.",
     },
     ReviewCard {
-        id: "cv-65-",
+        id: "cv-65-ae",
         section: "4 — Phỏng vấn",
         title: "Vòng D — panel TA — Phần 31",
         question: "Soft delete cho undo và audit, filtered index, global filter EF. Hard delete PII trên job retention khi bắt buộc?",
@@ -3759,7 +3759,7 @@ pub const VIETNAMESE_CARDS: &[ReviewCard] = &[
         simple_explanation: "Nói đơn giản: Ngắn: Soft delete cho undo và audit, filtered index, global filter EF. Hard delete PII trên job retention khi bắt buộc.",
     },
     ReviewCard {
-        id: "cv-65-",
+        id: "cv-65-af",
         section: "4 — Phỏng vấn",
         title: "Vòng D — panel TA — Phần 32",
         question: "Soft delete mà mọi query quên thì tệ hơn hard delete. Email unique + soft delete cần unique index filtered. “Xóa tài khoản” là quy trình: ẩn danh, thu hồi token, tombstone, ngoại lệ legal hold.\n\nUTC nằm đâu?",
@@ -3770,7 +3770,7 @@ pub const VIETNAMESE_CARDS: &[ReviewCard] = &[
         simple_explanation: "Nói đơn giản: Sâu: Soft delete mà mọi query quên thì tệ hơn hard delete. Email unique + soft delete cần unique index filtered. “Xóa tài khoản” là quy trình: ẩn danh, thu hồi token, tombstone, ngoại lệ legal hold.",
     },
     ReviewCard {
-        id: "cv-65-",
+        id: "cv-65-ag",
         section: "4 — Phỏng vấn",
         title: "Vòng D — panel TA — Phần 33",
         question: "DateTime.Now trong handler là bug APAC. Inject TimeProvider. Job đêm dùng time zone đặt tên theo thị trường. datetimeoffset hoặc UTC datetime2 + zone trên profile — chọn một và ADR?",
@@ -3822,7 +3822,7 @@ mod tests {
         assert!(cards.len() > 67);
         assert_eq!(cards[0].id, "cv-1");
         assert!(!cards[0].simple_explanation.is_empty());
-        assert!(cards.iter().any(|card| card.id.ends_with("-a")));
+        assert!(cards.iter().all(|card| card.id.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '-')));
     }
 
     #[test]
@@ -3831,6 +3831,6 @@ mod tests {
         assert!(cards.len() > 67);
         assert_eq!(cards[0].id, "cv-1");
         assert!(!cards[0].simple_explanation.is_empty());
-        assert!(cards.iter().any(|card| card.id.ends_with("-a")));
+        assert!(cards.iter().all(|card| card.id.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '-')));
     }
 }
