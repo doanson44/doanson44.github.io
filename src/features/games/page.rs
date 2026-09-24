@@ -29,7 +29,7 @@ fn toggle_browser_fullscreen() {
     };
 
     if document.fullscreen_element().is_some() {
-        let _ = document.exit_fullscreen();
+        document.exit_fullscreen();
         return;
     }
 
