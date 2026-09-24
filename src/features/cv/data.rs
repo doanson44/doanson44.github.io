@@ -302,24 +302,24 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             ],
             contributions: vec![
                 if locale == Locale::vi {
-                "Xây dựng backend services và các tính năng tự động hóa."
+                    "Xây dựng backend services và các tính năng tự động hóa."
                 } else {
-                "Built backend services and automation features."
+                    "Built backend services and automation features."
                 },
                 if locale == Locale::vi {
-                "Tích hợp hệ thống doanh nghiệp với các dịch vụ bên ngoài."
+                    "Tích hợp hệ thống doanh nghiệp với các dịch vụ bên ngoài."
                 } else {
-                "Integrated enterprise systems with external services."
+                    "Integrated enterprise systems with external services."
                 },
                 if locale == Locale::vi {
-                "Tối ưu truy vấn SQL Server và xử lý dữ liệu."
+                    "Tối ưu truy vấn SQL Server và xử lý dữ liệu."
                 } else {
-                "Optimized SQL Server queries and data processing."
+                    "Optimized SQL Server queries and data processing."
                 },
                 if locale == Locale::vi {
-                "Bảo trì hệ thống production và xử lý các sự cố phức tạp."
+                    "Bảo trì hệ thống production và xử lý các sự cố phức tạp."
                 } else {
-                "Maintained production systems and resolved complex issues."
+                    "Maintained production systems and resolved complex issues."
                 },
             ],
             technologies: vec![".NET Core", "SQL Server"],
@@ -336,14 +336,14 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             projects: Vec::new(),
             contributions: vec![
                 if locale == Locale::vi {
-                "Phát triển các tính năng backend cho nền tảng Domestic Tour."
+                    "Phát triển các tính năng backend cho nền tảng Domestic Tour."
                 } else {
-                "Developed backend features for Domestic Tour platform."
+                    "Developed backend features for Domestic Tour platform."
                 },
                 if locale == Locale::vi {
-                "Triển khai các cải tiến và sửa lỗi production."
+                    "Triển khai các cải tiến và sửa lỗi production."
                 } else {
-                "Implemented enhancements and production bug fixes."
+                    "Implemented enhancements and production bug fixes."
                 },
             ],
             technologies: Vec::new(),
@@ -357,27 +357,32 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             } else {
                 "Developed and modernized enterprise applications and management systems."
             },
-            projects: vec!["Device Management Tool", "Seasar Migration", "Music in the Ship", "Renovation 2"],
+            projects: vec![
+                "Device Management Tool",
+                "Seasar Migration",
+                "Music in the Ship",
+                "Renovation 2",
+            ],
             contributions: vec![
                 if locale == Locale::vi {
-                "Migration các ứng dụng legacy sang .NET Core."
+                    "Migration các ứng dụng legacy sang .NET Core."
                 } else {
-                "Migrated legacy applications to .NET Core."
+                    "Migrated legacy applications to .NET Core."
                 },
                 if locale == Locale::vi {
-                "Phát triển các hệ thống quản lý doanh nghiệp."
+                    "Phát triển các hệ thống quản lý doanh nghiệp."
                 } else {
-                "Developed enterprise management systems."
+                    "Developed enterprise management systems."
                 },
                 if locale == Locale::vi {
-                "Tham gia làm rõ yêu cầu và nâng cấp hệ thống."
+                    "Tham gia làm rõ yêu cầu và nâng cấp hệ thống."
                 } else {
-                "Participated in requirement clarification and system enhancement."
+                    "Participated in requirement clarification and system enhancement."
                 },
                 if locale == Locale::vi {
-                "Làm việc với Angular, Vue.js và Entity Framework Core."
+                    "Làm việc với Angular, Vue.js và Entity Framework Core."
                 } else {
-                "Worked with Angular, Vue.js, and Entity Framework Core."
+                    "Worked with Angular, Vue.js, and Entity Framework Core."
                 },
             ],
             technologies: vec![".NET Core", "Entity Framework Core", "Angular", "Vue.js"],
@@ -394,19 +399,19 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             projects: vec!["MISRA-C Checker", "Smart Manual", "Current Consumption"],
             contributions: vec![
                 if locale == Locale::vi {
-                "Thiết kế và phát triển các ứng dụng desktop phục vụ kỹ thuật."
+                    "Thiết kế và phát triển các ứng dụng desktop phục vụ kỹ thuật."
                 } else {
-                "Designed and developed engineering desktop applications."
+                    "Designed and developed engineering desktop applications."
                 },
                 if locale == Locale::vi {
-                "Phân tích yêu cầu khách hàng."
+                    "Phân tích yêu cầu khách hàng."
                 } else {
-                "Analyzed customer requirements."
+                    "Analyzed customer requirements."
                 },
                 if locale == Locale::vi {
-                "Thực hiện bảo trì, debug và phát triển tính năng."
+                    "Thực hiện bảo trì, debug và phát triển tính năng."
                 } else {
-                "Delivered maintenance, debugging, and feature implementation."
+                    "Delivered maintenance, debugging, and feature implementation."
                 },
             ],
             technologies: Vec::new(),
