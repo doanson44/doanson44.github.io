@@ -42,6 +42,9 @@ pub enum SocketViewMode {
 pub enum SocketSortMode {
     Symbol,
     Ranking,
+    Direction,
+    Change1m,
+    Change3m,
     Price,
     Funding,
     Change24h,
