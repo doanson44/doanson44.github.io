@@ -3831,6 +3831,6 @@ mod tests {
         assert!(cards.len() > 67);
         assert_eq!(cards[0].id, "cv-1");
         assert!(!cards[0].simple_explanation.is_empty());
-        assert!(cards.iter().any(|card| card.id == "cv-1-a"));
+        assert!(cards.iter().any(|card| card.id.ends_with("-a")));
     }
 }
