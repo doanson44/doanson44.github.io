@@ -34,7 +34,7 @@ pub fn App() -> impl IntoView {
         <div class="app-container flex min-h-screen flex-col" id="app">
             {move || {
                 if is_hangman_route(&current_hash.get()) {
-                    view! { <></> }.into_any()
+                    ().into_any()
                 } else {
                     view! { <Navbar /> }.into_any()
                 }
