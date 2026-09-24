@@ -32,11 +32,19 @@ pub fn App() -> impl IntoView {
     view! {
         <I18nContextProvider>
         <div class="app-container flex min-h-screen flex-col" id="app">
-            <Navbar />
+            {move || {
+                if is_hangman_route(&current_hash.get()) {
+                    view! { <></> }.into_any()
+                } else {
+                    view! { <Navbar /> }.into_any()
+                }
+            }}
             <main
                 class=move || {
                     let route = current_hash.get();
-                    if is_workspace_route(&route) {
+                    if is_hangman_route(&route) {
+                        "app-main app-main--hangman flex min-h-[100dvh] flex-1 flex-col overflow-hidden"
+                    } else if is_workspace_route(&route) {
                         "app-main app-main--workspace flex min-h-0 flex-1 flex-col overflow-hidden"
                     } else if route == "/socket" {
                         "app-main app-main--socket flex min-h-0 flex-1 flex-col overflow-hidden"
@@ -47,7 +55,13 @@ pub fn App() -> impl IntoView {
             >
                 {move || render_page(current_hash.get())}
             </main>
-            <Footer />
+            {move || {
+                if is_hangman_route(&current_hash.get()) {
+                    view! { <></> }.into_any()
+                } else {
+                    view! { <Footer /> }.into_any()
+                }
+            }}
         </div>
         </I18nContextProvider>
     }
@@ -79,6 +93,10 @@ fn create_hash_signal() -> RwSignal<String> {
     }
     closure.forget();
     hash
+}
+
+fn is_hangman_route(route: &str) -> bool {
+    route == "/games/hangman"
 }
 
 fn is_workspace_route(route: &str) -> bool {

@@ -20,6 +20,24 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 use crate::i18n::*;
 
+fn toggle_browser_fullscreen() {
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let Some(document) = window.document() else {
+        return;
+    };
+
+    if document.fullscreen_element().is_some() {
+        let _ = document.exit_fullscreen();
+        return;
+    }
+
+    if let Some(root) = document.document_element() {
+        let _ = root.request_fullscreen();
+    }
+}
+
 fn bind_keys(handler: impl Fn(web_sys::KeyboardEvent) + 'static) {
     let handle = window_event_listener(ev::keydown, handler);
     on_cleanup(move || handle.remove());
@@ -277,9 +295,23 @@ fn GameGrid() -> impl IntoView {
 fn GameView(game: GameKind) -> impl IntoView {
     let score = RwSignal::new(0u32);
     let status = RwSignal::new(String::from("Ready"));
+    let is_hangman = game == GameKind::Hangman;
+
     view! {
-        <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6">
-            <div class="mb-5 flex flex-wrap items-center gap-3">
+        <section class=move || {
+            if is_hangman {
+                "flex min-h-[100dvh] flex-col bg-[var(--surface)] px-4 py-4 sm:px-6 sm:py-6"
+            } else {
+                "rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6"
+            }
+        }>
+            <div class=move || {
+                if is_hangman {
+                    "mx-auto flex w-full max-w-3xl flex-wrap items-center gap-3"
+                } else {
+                    "mb-5 flex flex-wrap items-center gap-3"
+                }
+            }>
                 <a
                     href="#/games"
                     class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
@@ -293,8 +325,33 @@ fn GameView(game: GameKind) -> impl IntoView {
                 <span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">
                     {move || status.get()}
                 </span>
+                {move || {
+                    if is_hangman {
+                        view! {
+                            <button
+                                type="button"
+                                class="min-h-11 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                                title="Enter browser fullscreen"
+                                aria-label="Enter browser fullscreen"
+                                on:click=move |_| toggle_browser_fullscreen()
+                            >
+                                "Fullscreen"
+                            </button>
+                        }
+                        .into_any()
+                    } else {
+                        view! { <span></span> }.into_any()
+                    }
+                }}
             </div>
-            {match game {
+            <div class=move || {
+                if is_hangman {
+                    "flex min-h-0 flex-1 items-center justify-center py-4 sm:py-6"
+                } else {
+                    ""
+                }
+            }>
+                {match game {
                 GameKind::TwentyFortyEight => board_2048(score, status),
                 GameKind::TicTacToe => board_ttt(score, status),
                 GameKind::Minesweeper => board_mines(score, status),
@@ -1210,34 +1267,66 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     };
 
     view! {
-        <div class="mx-auto max-w-sm space-y-4">
-            <div class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] p-4 text-center font-mono text-sm whitespace-pre">{move || hangman_art()}</div>
-            <div class="flex justify-center gap-2 text-2xl font-bold tracking-[0.3em] text-[var(--text-primary)]">
-                {move || word.chars().map(|c| {
-                    let shown = guessed.get().contains(&c) || is_lost();
-                    if shown { c.to_string() } else { "_".to_string() }
-                }).collect::<Vec<_>>().join(" ")}
+        <div class="flex w-full max-w-3xl flex-col gap-5">
+            <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:items-center">
+                <div
+                    class="flex min-h-32 items-center justify-center rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-4 text-center font-mono text-sm whitespace-pre"
+                    aria-label="Hangman drawing"
+                >
+                    {move || hangman_art()}
+                </div>
+                <div class="space-y-4">
+                    <div class="flex min-h-20 items-center justify-center rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] px-4 py-5">
+                        <p class="text-center text-3xl font-bold tracking-[0.25em] text-[var(--text-primary)] sm:text-4xl">
+                            {move || word.chars().map(|c| {
+                                let shown = guessed.get().contains(&c) || is_lost();
+                                if shown { c.to_string() } else { "_".to_string() }
+                            }).collect::<Vec<_>>().join(" ")}
+                        </p>
+                    </div>
+                    <p class="text-center text-sm text-[var(--text-secondary)]">
+                        "Choose a letter to guess the word."
+                    </p>
+                </div>
             </div>
-            <div class="grid grid-cols-7 gap-1">
+
+            <div class="grid grid-cols-7 gap-2 sm:grid-cols-9" aria-label="Letter keyboard">
                 {('a'..='z').map(|c| view! {
-                    <button type="button"
+                    <button
+                        type="button"
                         class=move || {
                             let g = guessed.get();
                             let used = g.contains(&c);
                             let correct = word.contains(c);
-                            if !used { String::from("rounded border border-[var(--border-color)] py-1 text-xs hover:bg-[var(--surface-hover)]") }
-                            else if correct { String::from("rounded border border-green-500 bg-green-100 dark:bg-green-900/30 py-1 text-xs text-green-700 dark:text-green-300") }
-                            else { String::from("rounded border border-red-400 bg-red-100 dark:bg-red-900/30 py-1 text-xs text-red-600 line-through opacity-50") }
+                            if !used {
+                                String::from("min-h-11 rounded-lg border border-[var(--border-color)] px-2 py-2 text-sm font-semibold uppercase text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] active:scale-95")
+                            } else if correct {
+                                String::from("min-h-11 rounded-lg border border-green-500 bg-green-100 py-2 text-sm font-semibold uppercase text-green-700 dark:bg-green-900/30 dark:text-green-300")
+                            } else {
+                                String::from("min-h-11 rounded-lg border border-red-400 bg-red-100 py-2 text-sm font-semibold uppercase text-red-600 line-through opacity-60 dark:bg-red-900/30 dark:text-red-300")
+                            }
                         }
-                        on:click=move |_| guess(c)>
+                        on:click=move |_| guess(c)
+                        disabled=move || guessed.get().contains(&c) || is_won() || is_lost()
+                        aria-label=format!("Guess letter {}", c.to_ascii_uppercase())
+                    >
                         {c.to_string()}
                     </button>
                 }).collect_view()}
             </div>
-            <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|{
-                guessed.set(vec![]);
-                status.set("Guess a letter".into());
-            }>"New Game"</button>
+
+            <div class="flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    class="min-h-11 flex-1 rounded-md border border-[var(--border-color)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                    on:click=move |_| {
+                        guessed.set(vec![]);
+                        status.set("Guess a letter".into());
+                    }
+                >
+                    "New Game"
+                </button>
+            </div>
         </div>
     }.into_any()
 }
