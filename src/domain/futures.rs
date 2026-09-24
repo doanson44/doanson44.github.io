@@ -62,7 +62,7 @@ impl FuturesTickerRanking {
         self.observe_at(price, Some(timestamp_ms));
     }
 
-    /// Applies a timestamped price observation and retains the latest five seconds.
+    /// Applies a timestamped price observation and retains the latest ten seconds.
     pub fn observe_at(&mut self, price: Option<f64>, timestamp_ms: Option<u64>) {
         let (Some(price), Some(timestamp_ms)) = (price, timestamp_ms) else {
             return;
@@ -158,17 +158,17 @@ impl FuturesTickerRanking {
         self.return_over(SHORT_WINDOW_MS).unwrap_or(0.0).signum() as i8
     }
 
-    /// Returns the one-second price return.
+    /// Returns the two-second price return.
     pub fn return_1s(&self) -> Option<f64> {
         self.return_over(SHORT_WINDOW_MS)
     }
 
-    /// Returns the three-second price return.
+    /// Returns the six-second price return.
     pub fn return_3s(&self) -> Option<f64> {
         self.return_over(MEDIUM_WINDOW_MS)
     }
 
-    /// Returns the five-second price return.
+    /// Returns the ten-second price return.
     pub fn return_5s(&self) -> Option<f64> {
         self.return_over(RANKING_WINDOW_MS)
     }
