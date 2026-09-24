@@ -38,7 +38,7 @@ struct PriceSample {
 /// Short-term ranking metrics for a Futures ticker.
 ///
 /// The score favors fast, directional moves that are sustained over several
-/// minutes instead of counting individual socket ticks.
+/// seconds instead of counting individual socket ticks.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FuturesTickerRanking {
     #[serde(default)]
@@ -110,36 +110,36 @@ impl FuturesTickerRanking {
             return 0;
         };
 
-        let Some(return_1m) = self.return_over(SHORT_WINDOW_MS) else {
+        let Some(return_1s) = self.return_over(SHORT_WINDOW_MS) else {
             return 0;
         };
-        let Some(return_3m) = self.return_over(MEDIUM_WINDOW_MS) else {
+        let Some(return_3s) = self.return_over(MEDIUM_WINDOW_MS) else {
             return 0;
         };
 
-        let return_5m = self.return_over(RANKING_WINDOW_MS).unwrap_or(return_3m);
-        let previous_1m = self
+        let return_5s = self.return_over(RANKING_WINDOW_MS).unwrap_or(return_3s);
+        let previous_1s = self
             .return_between(
                 current.timestamp_ms.saturating_sub(PREVIOUS_WINDOW_MS),
                 current.timestamp_ms.saturating_sub(SHORT_WINDOW_MS),
             )
             .unwrap_or(0.0);
-        let acceleration = return_1m - previous_1m;
+        let acceleration = return_1s - previous_1s;
         let efficiency = self.trend_efficiency(MEDIUM_WINDOW_MS).unwrap_or(0.0);
 
-        let same_direction = if return_1m.signum() == return_3m.signum()
-            && return_3m.signum() == return_5m.signum()
-            && return_1m != 0.0
+        let same_direction = if return_1s.signum() == return_3s.signum()
+            && return_3s.signum() == return_5s.signum()
+            && return_1s != 0.0
         {
             1.0
-        } else if return_1m.signum() == return_3m.signum() && return_1m != 0.0 {
+        } else if return_1s.signum() == return_3s.signum() && return_1s != 0.0 {
             0.65
         } else {
             0.0
         };
 
-        let speed_score = (return_1m.abs() / 0.005 * 40.0).min(40.0);
-        let medium_score = (return_3m.abs() / 0.012 * 20.0).min(20.0);
+        let speed_score = (return_1s.abs() / 0.005 * 40.0).min(40.0);
+        let medium_score = (return_3s.abs() / 0.012 * 20.0).min(20.0);
         let acceleration_score = (acceleration.abs() / 0.003 * 15.0).min(15.0);
         let efficiency_score = efficiency * 15.0;
         let consistency_score = same_direction * 10.0;
@@ -173,7 +173,7 @@ impl FuturesTickerRanking {
     }
 
     /// Returns trend efficiency over the requested window.
-    pub fn trend_efficiency_3m(&self) -> Option<f64> {
+    pub fn trend_efficiency_3s(&self) -> Option<f64> {
         self.trend_efficiency(MEDIUM_WINDOW_MS)
     }
 
@@ -392,7 +392,7 @@ mod tests {
     }
 
     #[test]
-    fn ranking_requires_one_and_three_minute_history() {
+    fn ranking_requires_one_and_three_second_history() {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
         ranking.observe_at(Some(100.5), Some(1_000));
@@ -421,7 +421,7 @@ mod tests {
         assert_eq!(ranking.ranking_direction(), 1);
         assert!(ranking.return_1s().unwrap() > 0.0);
         assert!(ranking.return_3s().unwrap() > 0.0);
-        assert!(ranking.trend_efficiency_3m().unwrap() > 0.9);
+        assert!(ranking.trend_efficiency_3s().unwrap() > 0.9);
     }
 
     #[test]
