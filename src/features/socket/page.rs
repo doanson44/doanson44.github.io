@@ -374,15 +374,35 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
     let symbol_title = symbol.clone();
     let symbol_aria = symbol.clone();
     let symbol_click = symbol.clone();
+    let trade_symbol = symbol.clone();
+    let trade_label = symbol.clone();
+    let is_held = Memo::new({
+        let trading_snapshot = state.trading_snapshot;
+        let symbol = symbol.clone();
+        move |_| trading_snapshot.get().portfolio.positions.iter().any(|position| position.symbol == symbol)
+    });
     view! {
         <tr class=move || if is_pinned.get() { "border-b border-[var(--accent)]/50 bg-[var(--accent)]/5 last:border-b-0 hover:bg-[var(--surface-hover)]" } else { "border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]" }>
             <td class="px-3 py-2 text-center">
-                <button type="button" class="min-h-11 min-w-11 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                    title=move || if is_pinned.get() { format!("Sell + Unpin {}", symbol_title) } else { format!("Buy + Pin {}", symbol_title) }
-                    aria-label=move || if is_pinned.get() { format!("Sell + Unpin {}", symbol_aria) } else { format!("Buy + Pin {}", symbol_aria) }
-                    on:click=move |_| state.toggle_pin(&symbol_click)>
-                    {move || if is_pinned.get() { "★" } else { "☆" }}
-                </button>
+                <div class="flex items-center justify-center gap-1">
+                    <button type="button" class="min-h-11 min-w-11 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                        title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_aria) }
+                        aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria) } else { format!("Pin {}", symbol_aria) }
+                        on:click=move |_| state.toggle_pin(&symbol_click)>
+                        {move || if is_pinned.get() { "★" } else { "☆" }}
+                    </button>
+                    <button type="button" class="min-h-9 rounded-md border border-[var(--success)]/60 px-2 text-xs font-bold text-[var(--success)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--success)]/40"
+                        title=move || format!("Trade {}", trade_label)
+                        aria-label=move || format!("Trade {}", trade_label)
+                        on:click=move |_| state.trade(&trade_symbol)>
+                        {move || {
+                            let snapshot = state.trading_snapshot.get();
+                            if is_held.get() {
+                                if snapshot.portfolio.positions.iter().find(|position| position.symbol == trade_symbol).map(|position| position.side) == Some(crate::domain::trading::PositionSide::Short) { "BUY" } else { "SELL" }
+                            } else if snapshot.settings.position_side == crate::domain::trading::PositionSide::Short { "SELL" } else { "BUY" }
+                        }}
+                    </button>
+                </div>
             </td>
             <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">
                 <span class="font-mono">{symbol.clone()}</span>
