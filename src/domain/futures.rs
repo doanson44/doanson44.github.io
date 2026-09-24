@@ -243,7 +243,7 @@ impl FuturesTickerRanking {
 
 }
 
-/// A Futures ticker together with session-local directional momentum.
+/// A Futures ticker together with its session-local short-term ranking.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrackedFuturesTicker {
     pub ticker: FuturesTicker,
@@ -464,7 +464,7 @@ mod tests {
         ranking.observe_at(Some(102.0), Some(600_000));
 
         assert_eq!(ranking.observation_count(), 2);
-        assert_eq!(ranking.return_5m(), Some(0.0));
+        assert!((ranking.return_5m().unwrap() - (102.0 / 101.0 - 1.0)).abs() < 1e-9);
     }
 
     #[test]
