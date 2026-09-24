@@ -513,7 +513,7 @@ fn SocketAnalysisModal(
                         <section class="rounded-md border border-[var(--border-color)] p-3">
                             <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_summary)}</h3>
                             <p class="m-0">{format!("{} · {}", socket_analysis_term(i18n, &result.trend.state), socket_analysis_term(i18n, &result.trend.strength))}</p>
-                            <p class="m-0 mt-1 text-sm text-[var(--text-secondary)]">{format!("Close: {:.4} · RSI: {}", result.snapshot.close, result.momentum.rsi.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()))}</p>
+                            <p class="m-0 mt-1 text-sm text-[var(--text-secondary)]">{format!("Close: {:.4} · RSI: {}", result.snapshot.close, result.ranking.rsi.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()))}</p>
                         </section>
                         <section class="rounded-md border border-[var(--border-color)] p-3">
                             <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_signals)}</h3>
@@ -525,7 +525,7 @@ fn SocketAnalysisModal(
                         </section>
                         <section class="rounded-md border border-[var(--border-color)] p-3">
                             <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_momentum_section)}</h3>
-                            <p class="m-0">{format!("RSI {} · MACD {} / {} / {}", result.momentum.rsi.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.momentum.macd.macd.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()), result.momentum.macd.signal.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()), result.momentum.macd.histogram.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()))}</p>
+                            <p class="m-0">{format!("RSI {} · MACD {} / {} / {}", result.ranking.rsi.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.ranking.macd.macd.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()), result.ranking.macd.signal.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()), result.ranking.macd.histogram.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()))}</p>
                         </section>
                         <section class="rounded-md border border-[var(--border-color)] p-3">
                             <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_structure_section)}</h3>
@@ -604,14 +604,9 @@ fn build_visible(
         let cmp = match sort {
             SocketSortMode::Symbol => left.ticker.symbol.cmp(&right.ticker.symbol),
             SocketSortMode::Ranking => right
-                .momentum
+                .ranking
                 .ranking_score()
-                .cmp(&left.momentum.ranking_score())
-                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
-            SocketSortMode::Ranking => right
-                .momentum
-                .progress()
-                .cmp(&left.momentum.progress())
+                .cmp(&left.ranking.ranking_score())
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
             SocketSortMode::Price => {
                 let left_price = left.ticker.last_price.unwrap_or(0.0);
