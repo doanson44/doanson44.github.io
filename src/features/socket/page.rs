@@ -164,9 +164,15 @@ pub fn SocketPage(
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Funding align="right">{move || t_string!(i18n, socket_funding)} </SortHeader>
                                         </th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_direction)}</th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_change1m)}</th>
-                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_change3m)}</th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Direction align="right">{move || t_string!(i18n, socket_direction)}</SortHeader>
+                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Change1m align="right">{move || t_string!(i18n, socket_change1m)}</SortHeader>
+                                        </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Change3m align="right">{move || t_string!(i18n, socket_change3m)}</SortHeader>
+                                        </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_analysis)}</th>
                                     </tr>
                                 </thead>
@@ -183,6 +189,9 @@ pub fn SocketPage(
                                 <div class="flex flex-wrap justify-end gap-1">
                                     {socket_mobile_sort_button("symbol", SocketSortMode::Symbol, state, i18n)}
                                     {socket_mobile_sort_button("ranking", SocketSortMode::Ranking, state, i18n)}
+                                    {socket_mobile_sort_button("direction", SocketSortMode::Direction, state, i18n)}
+                                    {socket_mobile_sort_button("change1m", SocketSortMode::Change1m, state, i18n)}
+                                    {socket_mobile_sort_button("change3m", SocketSortMode::Change3m, state, i18n)}
                                     {socket_mobile_sort_button("price", SocketSortMode::Price, state, i18n)}
                                     {socket_mobile_sort_button("change24h", SocketSortMode::Change24h, state, i18n)}
                                     {socket_mobile_sort_button("funding", SocketSortMode::Funding, state, i18n)}
@@ -338,6 +347,9 @@ fn socket_sort_label(i18n: leptos_i18n::I18nContext<Locale>, key: &'static str) 
     match key {
         "symbol" => "Symbol".to_string(),
         "ranking" => t_string!(i18n, socket_ranking).to_string(),
+        "direction" => t_string!(i18n, socket_direction).to_string(),
+        "change1m" => t_string!(i18n, socket_change1m).to_string(),
+        "change3m" => t_string!(i18n, socket_change3m).to_string(),
         "price" => t_string!(i18n, socket_price).to_string(),
         "change24h" => t_string!(i18n, socket_change24h).to_string(),
         "funding" => t_string!(i18n, socket_funding).to_string(),
