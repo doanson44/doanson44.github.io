@@ -3822,9 +3822,10 @@ mod tests {
         assert!(cards.len() > 67);
         assert_eq!(cards[0].id, "cv-1");
         assert!(!cards[0].simple_explanation.is_empty());
-        assert!(cards
-            .iter()
-            .all(|card| card.id.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '-')));
+        assert!(cards.iter().all(|card| card
+            .id
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '-')));
     }
 
     #[test]
@@ -3833,8 +3834,9 @@ mod tests {
         assert!(cards.len() > 67);
         assert_eq!(cards[0].id, "cv-1");
         assert!(!cards[0].simple_explanation.is_empty());
-        assert!(cards
-            .iter()
-            .all(|card| card.id.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '-')));
+        assert!(cards.iter().all(|card| card
+            .id
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '-')));
     }
 }
