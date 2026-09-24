@@ -320,10 +320,13 @@ fn GameView(game: GameKind) -> impl IntoView {
     let score = RwSignal::new(0u32);
     let status = RwSignal::new(String::from("Ready"));
     let is_hangman = game == GameKind::Hangman;
+    let container_class = game_container_class(is_hangman);
+    let header_class = game_header_class(is_hangman);
+    let content_class = game_content_class(is_hangman);
 
     view! {
-        <section class=move || game_container_class(is_hangman)>
-            <div class=move || game_header_class(is_hangman)>
+        <section class=container_class>
+            <div class=header_class>
                 <a
                     href="#/games"
                     class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
@@ -356,7 +359,7 @@ fn GameView(game: GameKind) -> impl IntoView {
                     }
                 }}
             </div>
-            <div class=move || game_content_class(is_hangman)>
+            <div class=content_class>
                 {match game {
                 GameKind::TwentyFortyEight => board_2048(score, status),
                 GameKind::TicTacToe => board_ttt(score, status),
