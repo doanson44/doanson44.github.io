@@ -316,17 +316,60 @@ fn GameGrid() -> impl IntoView {
 }
 
 #[component]
-fn GameView(game: GameKind) -> impl IntoView {
+fn GameView(game: GameKind) -> AnyView {
     let score = RwSignal::new(0u32);
     let status = RwSignal::new(String::from("Ready"));
-    let is_hangman = game == GameKind::Hangman;
-    let container_class = game_container_class(is_hangman);
-    let header_class = game_header_class(is_hangman);
-    let content_class = game_content_class(is_hangman);
 
+    if game == GameKind::Hangman {
+        hangman_game_view(score, status)
+    } else {
+        standard_game_view(game, score, status)
+    }
+}
+
+fn hangman_game_view(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     view! {
-        <section class={container_class}>
-            <div class={header_class}>
+        <section class="flex min-h-[100dvh] flex-col bg-[var(--surface)] px-4 py-4 sm:px-6 sm:py-6">
+            <div class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-3">
+                <a
+                    href="#/games"
+                    class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                >
+                    "← All games"
+                </a>
+                <div class="min-w-0 flex-1">
+                    <h2 class="text-xl font-bold text-[var(--text-primary)]">"Hangman"</h2>
+                    <p class="text-sm text-[var(--text-secondary)]">"Guess the word before the figure is complete."</p>
+                </div>
+                <span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">
+                    {move || status.get()}
+                </span>
+                <button
+                    type="button"
+                    class="min-h-11 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                    title="Enter browser fullscreen"
+                    aria-label="Enter browser fullscreen"
+                    on:click=move |_| toggle_browser_fullscreen()
+                >
+                    "Fullscreen"
+                </button>
+            </div>
+            <div class="flex min-h-0 flex-1 items-center justify-center py-4 sm:py-6">
+                {board_hangman(score, status)}
+            </div>
+        </section>
+    }
+    .into_any()
+}
+
+fn standard_game_view(
+    game: GameKind,
+    score: RwSignal<u32>,
+    status: RwSignal<String>,
+) -> AnyView {
+    view! {
+        <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6">
+            <div class="mb-5 flex flex-wrap items-center gap-3">
                 <a
                     href="#/games"
                     class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
@@ -340,27 +383,8 @@ fn GameView(game: GameKind) -> impl IntoView {
                 <span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">
                     {move || status.get()}
                 </span>
-                {move || {
-                    if is_hangman {
-                        view! {
-                            <button
-                                type="button"
-                                class="min-h-11 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                                title="Enter browser fullscreen"
-                                aria-label="Enter browser fullscreen"
-                                on:click=move |_| toggle_browser_fullscreen()
-                            >
-                                "Fullscreen"
-                            </button>
-                        }
-                        .into_any()
-                    } else {
-                        view! { <span></span> }.into_any()
-                    }
-                }}
             </div>
-            <div class={content_class}>
-                {match game {
+            {match game {
                 GameKind::TwentyFortyEight => board_2048(score, status),
                 GameKind::TicTacToe => board_ttt(score, status),
                 GameKind::Minesweeper => board_mines(score, status),
@@ -370,7 +394,6 @@ fn GameView(game: GameKind) -> impl IntoView {
                 GameKind::Memory => board_memory(score, status),
                 GameKind::Typing => board_typing(score, status),
                 GameKind::Wordle => board_wordle(score, status),
-                GameKind::Hangman => board_hangman(score, status),
                 GameKind::FifteenPuzzle => board_puzzle(score, status),
                 GameKind::LightsOut => board_lights(score, status),
                 GameKind::TowerDefense => board_tower(score, status),
@@ -381,9 +404,11 @@ fn GameView(game: GameKind) -> impl IntoView {
                 GameKind::Chess => board_chess(score, status),
                 GameKind::Checkers => board_checkers(score, status),
                 GameKind::Blackjack => board_blackjack(score, status),
+                GameKind::Hangman => unreachable!("Hangman is rendered by hangman_game_view"),
             }}
         </section>
     }
+    .into_any()
 }
 
 // ── 2048 ──────────────────────────────────────────────────────────────────────
