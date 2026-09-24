@@ -479,7 +479,9 @@ mod tests {
         ranking.observe_at(Some(99.0), Some(30_000));
 
         assert_eq!(ranking.observation_count(), 2);
-        let return_1m = ranking.return_1m().expect("one-minute history should exist");
+        let return_1m = ranking
+            .return_1m()
+            .expect("one-minute history should exist");
         assert!((return_1m - 0.01).abs() < 1e-12);
     }
 
