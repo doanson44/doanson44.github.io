@@ -127,16 +127,25 @@ pub fn CvPage() -> impl IntoView {
                             </ul>
                         </nav>
 
-                        <button
-                            type="button"
-                            class="cv-print-button inline-flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] shadow-sm transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
-                            title=move || t_string!(i18n, cv_download_title)
-                            aria-label=move || t_string!(i18n, cv_download_title)
-                            on:click=move |_| print_page()
-                        >
-                            <span aria-hidden="true">"↓"</span>
-                            {move || t_string!(i18n, cv_download_pdf)}
-                        </button>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <a
+                                href="#/cv/review"
+                                class="inline-flex items-center gap-2 rounded-lg border border-[var(--accent)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--accent)] transition hover:bg-[var(--accent)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                            >
+                                {move || t_string!(i18n, cv_review)}
+                            </a>
+
+                            <button
+                                type="button"
+                                class="cv-print-button inline-flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] shadow-sm transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--surface)]"
+                                title=move || t_string!(i18n, cv_download_title)
+                                aria-label=move || t_string!(i18n, cv_download_title)
+                                on:click=move |_| print_page()
+                            >
+                                <span aria-hidden="true">"↓"</span>
+                                {move || t_string!(i18n, cv_download_pdf)}
+                            </button>
+                        </div>
                     </div>
                 </header>
 
