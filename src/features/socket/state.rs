@@ -197,13 +197,9 @@ impl SocketState {
             flush_for_stream();
         });
 
-        let service_for_status = service.clone();
         let flush_for_status = schedule_flush.clone();
         let status_signal = connection_status;
         let on_status = Rc::new(move |status: FuturesConnectionStatus| {
-            if status == FuturesConnectionStatus::Reconnecting {
-                service_for_status.borrow_mut().rebaseline();
-            }
             status_signal.set(status);
             flush_for_status();
         });
