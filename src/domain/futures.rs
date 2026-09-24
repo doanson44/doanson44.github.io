@@ -159,6 +159,9 @@ impl FuturesTickerRanking {
 
     /// Returns the direction of the current short-term move.
     pub fn ranking_direction(&self) -> i8 {
+        if self.samples.len() < 2 {
+            return 0;
+        }
         self.return_over(SHORT_WINDOW_MS).unwrap_or(0.0).signum() as i8
     }
 
