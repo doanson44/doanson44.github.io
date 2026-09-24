@@ -379,7 +379,14 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
     let is_held = Memo::new({
         let trading_snapshot = state.trading_snapshot;
         let symbol = symbol.clone();
-        move |_| trading_snapshot.get().portfolio.positions.iter().any(|position| position.symbol == symbol)
+        move |_| {
+            trading_snapshot
+                .get()
+                .portfolio
+                .positions
+                .iter()
+                .any(|position| position.symbol == symbol)
+        }
     });
     view! {
         <tr class=move || if is_pinned.get() { "border-b border-[var(--accent)]/50 bg-[var(--accent)]/5 last:border-b-0 hover:bg-[var(--surface-hover)]" } else { "border-b border-[var(--border-color)] last:border-b-0 hover:bg-[var(--surface-hover)]" }>
