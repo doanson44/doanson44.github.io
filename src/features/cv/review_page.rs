@@ -150,8 +150,11 @@ fn list_view(
                             <h2 class="mt-2 text-lg font-semibold leading-7 text-[var(--text-primary)] group-hover:text-[var(--accent)]">
                                 {card.title}
                             </h2>
-                            <p class="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+                            <p class="mt-3 text-sm font-medium leading-6 text-[var(--text-primary)]">
                                 {card.question}
+                            </p>
+                            <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                                {card.quick_answer}
                             </p>
                         </a>
                     }
@@ -203,23 +206,55 @@ fn detail_view(
                     </h1>
                 </div>
 
-                <div class="grid gap-0 lg:grid-cols-2">
-                    <section class="border-b border-[var(--border-color)] p-5 sm:p-8 lg:border-b-0 lg:border-r">
-                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                <div class="space-y-6 p-5 sm:p-8">
+                    <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
                             {t_string!(i18n, cv_review_question)}
                         </p>
-                        <h2 class="mt-4 text-xl font-semibold leading-8 text-[var(--text-primary)]">
+                        <h2 class="mt-3 text-lg font-semibold leading-8 text-[var(--text-primary)]">
                             {card.question}
                         </h2>
                     </section>
 
-                    <section class="p-5 sm:p-8">
-                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
-                            {t_string!(i18n, cv_review_answer)}
+                    <section>
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
+                            {t_string!(i18n, cv_review_quick_answer)}
                         </p>
-                        <div class="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
-                            {card.answer}
-                        </div>
+                        <p class="mt-3 whitespace-pre-line text-base font-medium leading-7 text-[var(--text-primary)]">
+                            {card.quick_answer}
+                        </p>
+                    </section>
+
+                    <section>
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                            {t_string!(i18n, cv_review_explanation)}
+                        </p>
+                        <p class="mt-3 whitespace-pre-line text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
+                            {card.explanation}
+                        </p>
+                    </section>
+
+                    {if card.example.is_empty() {
+                        ().into_any()
+                    } else {
+                        view! {
+                            <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-5">
+                                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                                    {t_string!(i18n, cv_review_example)}
+                                </p>
+                                <pre class="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-[var(--text-secondary)]"><code>{card.example}</code></pre>
+                            </section>
+                        }
+                        .into_any()
+                    }}
+
+                    <section class="rounded-xl border border-[var(--border-color)] p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">
+                            {t_string!(i18n, cv_review_interview_tip)}
+                        </p>
+                        <p class="mt-3 whitespace-pre-line text-sm leading-6 text-[var(--text-secondary)]">
+                            {card.interview_tip}
+                        </p>
                     </section>
                 </div>
             </article>
