@@ -16,7 +16,29 @@ pub fn CvPage() -> impl IntoView {
     let education = education();
     let show_phone = RwSignal::new(false);
     let show_email = RwSignal::new(false);
+    let show_cover_letter = RwSignal::new(false);
+    let cover_letter_copied = RwSignal::new(false);
+    let cover_letter_copy_error = RwSignal::new(false);
     let i18n = use_i18n();
+
+    let copy_cover_letter = move |_| {
+        let content = t_string!(i18n, cv_cover_letter_body).to_string();
+        cover_letter_copied.set(false);
+        cover_letter_copy_error.set(false);
+
+        leptos::task::spawn_local(async move {
+            if crate::infrastructure::browser::copy_to_clipboard(&content)
+                .await
+                .is_ok()
+            {
+                cover_letter_copied.set(true);
+                gloo_timers::future::TimeoutFuture::new(1800).await;
+                cover_letter_copied.set(false);
+            } else {
+                cover_letter_copy_error.set(true);
+            }
+        });
+    };
 
     view! {
         <main class="flex flex-1 flex-col">
@@ -56,16 +78,31 @@ pub fn CvPage() -> impl IntoView {
                             </div>
 
                             <div class="flex items-center justify-start gap-2 lg:justify-end">
+                                <button
+                                    type="button"
+                                    class="rounded-md px-2 py-1 text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                                    aria-label=move || t_string!(i18n, cv_show_cover_letter)
+                                    on:click=move |_| {
+                                        cover_letter_copied.set(false);
+                                        cover_letter_copy_error.set(false);
+                                        show_cover_letter.set(true);
+                                    }
+                                >
+                                    {move || t_string!(i18n, cv_show_cover_letter)}
+                                </button>
+                            </div>
+
+                            <div class="flex items-center justify-start gap-2 lg:justify-end">
                                 <Show
                                     when=move || show_email.get()
                                     fallback=move || view! {
                                         <button
                                             type="button"
                                             class="rounded-md px-2 py-1 text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                                            aria-label="Show email address"
+                                            aria-label=move || t_string!(i18n, cv_show_email)
                                             on:click=move |_| show_email.set(true)
                                         >
-                                            {move || if i18n.get_locale() == Locale::vi { "Hiện email" } else { "Show email" }}
+                                            {move || t_string!(i18n, cv_show_email)}
                                         </button>
                                     }
                                 >
@@ -155,5 +192,82 @@ pub fn CvPage() -> impl IntoView {
                 </div>
             </div>
         </main>
+
+        {move || if show_cover_letter.get() {
+            view! {
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] p-3" role="presentation">
+                    <div
+                        class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--surface)] shadow-xl"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="cv-cover-letter-title"
+                    >
+                        <header class="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border-color)] px-4 py-3 sm:px-5">
+                            <div>
+                                <h2 id="cv-cover-letter-title" class="text-lg font-semibold text-[var(--text-primary)]">
+                                    {move || t_string!(i18n, cv_cover_letter_title)}
+                                </h2>
+                                <p class="mt-1 text-xs text-[var(--text-secondary)]">
+                                    {move || t_string!(i18n, cv_cover_letter_hint)}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                class="min-h-10 min-w-10 rounded-md border border-[var(--border-color)] px-2 text-sm text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                                aria-label=move || t_string!(i18n, common_close)
+                                title=move || t_string!(i18n, common_close)
+                                on:click=move |_| {
+                                    show_cover_letter.set(false);
+                                    cover_letter_copied.set(false);
+                                    cover_letter_copy_error.set(false);
+                                }
+                            >
+                                "×"
+                            </button>
+                        </header>
+
+                        <div class="min-h-0 overflow-y-auto px-4 py-5 sm:px-6">
+                            <div class="whitespace-pre-line text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
+                                {move || t_string!(i18n, cv_cover_letter_body)}
+                            </div>
+                        </div>
+
+                        <footer class="flex shrink-0 flex-col gap-2 border-t border-[var(--border-color)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                            <div class="min-h-5 text-xs" aria-live="polite">
+                                <Show when=move || cover_letter_copy_error.get()>
+                                    <span class="text-[var(--danger)]">{move || t_string!(i18n, cv_cover_letter_copy_error)}</span>
+                                </Show>
+                            </div>
+                            <div class="flex flex-wrap justify-end gap-2">
+                                <button
+                                    type="button"
+                                    class="min-h-10 rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                                    on:click=move |_| {
+                                        show_cover_letter.set(false);
+                                        cover_letter_copied.set(false);
+                                        cover_letter_copy_error.set(false);
+                                    }
+                                >
+                                    {move || t_string!(i18n, common_close)}
+                                </button>
+                                <button
+                                    type="button"
+                                    class="min-h-10 rounded-md border border-[var(--accent)] px-3 py-2 text-sm font-semibold text-[var(--accent)] transition hover:bg-[var(--accent)]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                                    on:click=copy_cover_letter
+                                >
+                                    {move || if cover_letter_copied.get() {
+                                        t_string!(i18n, common_copied)
+                                    } else {
+                                        t_string!(i18n, common_copy)
+                                    }}
+                                </button>
+                            </div>
+                        </footer>
+                    </div>
+                </div>
+            }.into_any()
+        } else {
+            ().into_any()
+        }}
     }
 }
