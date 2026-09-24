@@ -4,8 +4,8 @@ use leptos::prelude::*;
 
 use super::review::{review_cards, ReviewCard};
 use crate::i18n::*;
-use leptos_i18n::I18nContext;
 use crate::infrastructure::browser::{scroll_to_top, storage_get, storage_set};
+use leptos_i18n::I18nContext;
 
 const PROGRESS_STORAGE_KEY: &str = "cv.review.understood.v1";
 
