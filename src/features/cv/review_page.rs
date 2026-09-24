@@ -4,6 +4,7 @@ use leptos::prelude::*;
 
 use super::review::{review_cards, ReviewCard};
 use crate::i18n::*;
+use leptos_i18n::I18nContext;
 use crate::infrastructure::browser::{scroll_to_top, storage_get, storage_set};
 
 const PROGRESS_STORAGE_KEY: &str = "cv.review.understood.v1";
@@ -29,7 +30,7 @@ pub fn CvReviewPage(card_id: Option<String>) -> impl IntoView {
 
     let selected_card = Memo::new(move |_| {
         let id = card_id.as_deref()?;
-        cards.get().into_iter().find(|card| card.id == id)
+        cards.get().iter().find(|card| card.id == id).copied()
     });
 
     let toggle_understood = move |id: String| {
@@ -70,10 +71,10 @@ pub fn CvReviewPage(card_id: Option<String>) -> impl IntoView {
 }
 
 fn list_view(
-    i18n: I18nContext,
-    cards: Vec<ReviewCard>,
+    i18n: I18nContext<crate::i18n::Locale>,
+    cards: &'static [ReviewCard],
     understood: HashSet<String>,
-    clear_progress: impl FnMut(ev::MouseEvent) + Copy + 'static,
+    clear_progress: impl FnMut(leptos::ev::MouseEvent) + Copy + 'static,
 ) -> impl IntoView {
     let total = cards.len();
     let completed = cards
@@ -122,7 +123,7 @@ fn list_view(
                 .enumerate()
                 .map(|(index, card)| {
                     let id = card.id.clone();
-                    let is_understood = understood.contains(&id);
+                    let is_understood = understood.contains(id.as_str());
                     view! {
                         <a
                             href=format!("#/cv/review/{id}")
@@ -239,7 +240,7 @@ fn detail_view(
                         "min-h-11 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                     }
                     on:click=move |_| {
-                        toggle_understood(id.clone());
+                        toggle_understood(id.to_string());
                         scroll_to_top();
                     }
                 >
