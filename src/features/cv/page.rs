@@ -123,7 +123,7 @@ pub fn CvPage() -> impl IntoView {
                                 <li><a class="cv-nav-link" href="#cv-skills" on:click=move |event| { event.prevent_default(); scroll_to_element("cv-skills"); }>{move || t_string!(i18n, cv_skills_nav)}</a></li>
                                 <li><a class="cv-nav-link" href="#cv-experience" on:click=move |event| { event.prevent_default(); scroll_to_element("cv-experience"); }>{move || t_string!(i18n, cv_experience_nav)}</a></li>
                                 <li><a class="cv-nav-link" href="#cv-highlights" on:click=move |event| { event.prevent_default(); scroll_to_element("cv-highlights"); }>{move || t_string!(i18n, cv_highlights_nav)}</a></li>
-                                <li><a class="cv-nav-link" href="#cv-education">{move || t!(i18n, cv_education)}</a></li>
+                                <li><a class="cv-nav-link" href="#cv-education" on:click=move |event| { event.prevent_default(); scroll_to_element("cv-education"); }>{move || t!(i18n, cv_education)}</a></li>
                             </ul>
                         </nav>
 
