@@ -181,8 +181,8 @@ fn detail_view(
         }.into_any();
     };
 
-    let id = card.id.clone();
-    let is_understood = understood.contains(id.as_str());
+    let id = card.id.to_string();
+    let is_understood = understood.contains(id);
 
     view! {
         <div>
@@ -254,6 +254,7 @@ fn detail_view(
             </div>
         </div>
     }
+    .into_any()
 }
 
 fn load_understood() -> HashSet<String> {
