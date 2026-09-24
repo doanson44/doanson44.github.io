@@ -32,22 +32,6 @@
     font-display: swap;
 }
 
-@font-face {
-    font-family: 'JetBrains Mono';
-    src: url('../vendor/fonts/jetbrains-mono/JetBrainsMono-Regular.woff2') format('woff2');
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'JetBrains Mono';
-    src: url('../vendor/fonts/jetbrains-mono/JetBrainsMono-Medium.woff2') format('woff2');
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-}
-
 * {
     box-sizing: border-box;
 }
