@@ -175,10 +175,10 @@ pub fn SocketPage(
                                             <SortHeader state=state mode=SocketSortMode::Direction align="right">{move || t_string!(i18n, socket_direction)}</SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Change2s align="right">{move || t_string!(i18n, socket_change2s)}</SortHeader>
+                                            <SortHeader state=state mode=SocketSortMode::Change15s align="right">{move || t_string!(i18n, socket_change15s)}</SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
-                                            <SortHeader state=state mode=SocketSortMode::Change6s align="right">{move || t_string!(i18n, socket_change6s)}</SortHeader>
+                                            <SortHeader state=state mode=SocketSortMode::Change1m align="right">{move || t_string!(i18n, socket_change1m)}</SortHeader>
                                         </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_analysis)}</th>
                                     </tr>
@@ -197,8 +197,8 @@ pub fn SocketPage(
                                     {socket_mobile_sort_button("symbol", SocketSortMode::Symbol, state, i18n)}
                                     {socket_mobile_sort_button("ranking", SocketSortMode::Ranking, state, i18n)}
                                     {socket_mobile_sort_button("direction", SocketSortMode::Direction, state, i18n)}
-                                    {socket_mobile_sort_button("change2s", SocketSortMode::Change2s, state, i18n)}
-                                    {socket_mobile_sort_button("change6s", SocketSortMode::Change6s, state, i18n)}
+                                    {socket_mobile_sort_button("change15s", SocketSortMode::Change15s, state, i18n)}
+                                    {socket_mobile_sort_button("change1m", SocketSortMode::Change1m, state, i18n)}
                                     {socket_mobile_sort_button("price", SocketSortMode::Price, state, i18n)}
                                     {socket_mobile_sort_button("change24h", SocketSortMode::Change24h, state, i18n)}
                                     {socket_mobile_sort_button("funding", SocketSortMode::Funding, state, i18n)}
@@ -355,8 +355,8 @@ fn socket_sort_label(i18n: leptos_i18n::I18nContext<Locale>, key: &'static str) 
         "symbol" => "Symbol".to_string(),
         "ranking" => t_string!(i18n, socket_ranking).to_string(),
         "direction" => t_string!(i18n, socket_direction).to_string(),
-        "change2s" => t_string!(i18n, socket_change2s).to_string(),
-        "change6s" => t_string!(i18n, socket_change6s).to_string(),
+        "change15s" => t_string!(i18n, socket_change15s).to_string(),
+        "change1m" => t_string!(i18n, socket_change1m).to_string(),
         "price" => t_string!(i18n, socket_price).to_string(),
         "change24h" => t_string!(i18n, socket_change24h).to_string(),
         "funding" => t_string!(i18n, socket_funding).to_string(),
@@ -504,8 +504,8 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
                 <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_ranking)}</span><span class="font-mono text-[var(--accent)]">{ticker.ranking.ranking_score()}</span></div>
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_direction)}</span><span class="font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</span></div>
-                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change2s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_15s())}</span></div>
-                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change6s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_1m())}</span></div>
+                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change15s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_15s())}</span></div>
+                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change1m)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_1m())}</span></div>
             </div>
         </article>
     }
@@ -632,14 +632,14 @@ fn build_visible(
                 .ranking_direction()
                 .cmp(&right.ranking.ranking_direction())
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
-            SocketSortMode::Change2s => left
+            SocketSortMode::Change15s => left
                 .ranking
                 .return_15s()
                 .unwrap_or(0.0)
                 .partial_cmp(&right.ranking.return_15s().unwrap_or(0.0))
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
-            SocketSortMode::Change6s => left
+            SocketSortMode::Change1m => left
                 .ranking
                 .return_1m()
                 .unwrap_or(0.0)
