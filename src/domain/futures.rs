@@ -40,12 +40,12 @@ struct PriceSample {
 /// The score favors fast, directional moves that are sustained over several
 /// minutes instead of counting individual socket ticks.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct FuturesTickerMomentum {
+pub struct FuturesTickerRanking {
     #[serde(default)]
     samples: VecDeque<PriceSample>,
 }
 
-impl Default for FuturesTickerMomentum {
+impl Default for FuturesTickerRanking {
     fn default() -> Self {
         Self {
             samples: VecDeque::new(),
@@ -53,7 +53,7 @@ impl Default for FuturesTickerMomentum {
     }
 }
 
-impl FuturesTickerMomentum {
+impl FuturesTickerRanking {
     /// Creates an empty ranking history.
     pub fn baseline(_price: Option<f64>) -> Self {
         Self::default()
@@ -247,7 +247,7 @@ impl FuturesTickerMomentum {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrackedFuturesTicker {
     pub ticker: FuturesTicker,
-    pub momentum: FuturesTickerMomentum,
+    pub ranking: FuturesTickerRanking,
 }
 
 impl FuturesTicker {
@@ -385,7 +385,7 @@ mod tests {
 
     #[test]
     fn first_price_is_a_baseline() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
         momentum.observe(Some(100.0));
 
         assert_eq!(momentum.up_ticks, 0);
@@ -395,7 +395,7 @@ mod tests {
 
     #[test]
     fn cached_counts_restore_without_a_previous_price() {
-        let mut momentum = FuturesTickerMomentum::from_cached_counts(4, 2);
+        let mut momentum = FuturesTickerRanking::from_cached_counts(4, 2);
         momentum.observe(Some(100.0));
 
         assert_eq!(momentum.up_ticks, 4);
@@ -405,7 +405,7 @@ mod tests {
 
     #[test]
     fn price_changes_update_directional_ticks() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
         momentum.observe(Some(101.0));
         momentum.observe(Some(102.0));
         momentum.observe(Some(101.0));
@@ -419,7 +419,7 @@ mod tests {
 
     #[test]
     fn momentum_is_capped_at_100_and_drops_when_direction_reverses() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(0.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(0.0));
         for price in 1..=101 {
             momentum.observe(Some(price as f64));
         }
@@ -435,7 +435,7 @@ mod tests {
 
     #[test]
     fn momentum_uses_a_rolling_window() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(0.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(0.0));
         for price in 1..=101 {
             momentum.observe(Some(price as f64));
         }
@@ -452,7 +452,7 @@ mod tests {
 
     #[test]
     fn reset_metrics_clears_momentum_and_burst_history() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
         momentum.observe_at(Some(100.02), Some(1_000));
         momentum.observe_at(Some(100.04), Some(2_000));
         momentum.observe_at(Some(100.08), Some(3_000));
@@ -469,7 +469,7 @@ mod tests {
 
     #[test]
     fn burst_detects_a_sudden_acceleration() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
         momentum.observe_at(Some(100.02), Some(1_000));
         momentum.observe_at(Some(100.04), Some(2_000));
         momentum.observe_at(Some(100.08), Some(3_000));
@@ -481,7 +481,7 @@ mod tests {
 
     #[test]
     fn burst_score_decays_instead_of_resetting() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
         momentum.observe_at(Some(100.02), Some(1_000));
         momentum.observe_at(Some(100.04), Some(2_000));
         momentum.observe_at(Some(100.08), Some(3_000));
@@ -496,7 +496,7 @@ mod tests {
 
     #[test]
     fn burst_does_not_trigger_on_steady_moves() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
         momentum.observe_at(Some(100.02), Some(1_000));
         momentum.observe_at(Some(100.04), Some(2_000));
         momentum.observe_at(Some(100.06), Some(3_000));
@@ -507,7 +507,7 @@ mod tests {
 
     #[test]
     fn burst_requires_timestamped_observations() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
         momentum.observe(Some(100.02));
         momentum.observe(Some(100.20));
 
@@ -517,7 +517,7 @@ mod tests {
 
     #[test]
     fn missing_price_does_not_create_a_tick() {
-        let mut momentum = FuturesTickerMomentum::baseline(Some(100.0));
+        let mut momentum = FuturesTickerRanking::baseline(Some(100.0));
         momentum.observe(None);
         assert_eq!(momentum.up_ticks, 0);
         assert_eq!(momentum.down_ticks, 0);
