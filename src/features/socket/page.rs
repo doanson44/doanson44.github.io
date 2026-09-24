@@ -372,10 +372,13 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
     });
     let change_class = change_class(ticker.ticker.change_24h);
     let symbol_title = symbol.clone();
-    let symbol_aria = symbol.clone();
+    let symbol_aria_title = symbol.clone();
+    let symbol_aria_label = symbol.clone();
     let symbol_click = symbol.clone();
-    let trade_symbol = symbol.clone();
-    let trade_label = symbol.clone();
+    let trade_label_title = symbol.clone();
+    let trade_label_aria = symbol.clone();
+    let trade_click_symbol = symbol.clone();
+    let trade_view_symbol = symbol.clone();
     let is_held = Memo::new({
         let trading_snapshot = state.trading_snapshot;
         let symbol = symbol.clone();
@@ -393,19 +396,19 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             <td class="px-3 py-2 text-center">
                 <div class="flex items-center justify-center gap-1">
                     <button type="button" class="min-h-11 min-w-11 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
-                        title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_aria) }
-                        aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria) } else { format!("Pin {}", symbol_aria) }
+                        title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_aria_title) }
+                        aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria_label) } else { format!("Pin {}", symbol_aria_label) }
                         on:click=move |_| state.toggle_pin(&symbol_click)>
                         {move || if is_pinned.get() { "★" } else { "☆" }}
                     </button>
                     <button type="button" class="min-h-9 rounded-md border border-[var(--success)]/60 px-2 text-xs font-bold text-[var(--success)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--success)]/40"
-                        title=move || format!("Trade {}", trade_label)
-                        aria-label=move || format!("Trade {}", trade_label)
-                        on:click=move |_| state.trade(&trade_symbol)>
+                        title=move || format!("Trade {}", trade_label_title)
+                        aria-label=move || format!("Trade {}", trade_label_aria)
+                        on:click=move |_| state.trade(&trade_click_symbol)>
                         {move || {
                             let snapshot = state.trading_snapshot.get();
                             if is_held.get() {
-                                if snapshot.portfolio.positions.iter().find(|position| position.symbol == trade_symbol).map(|position| position.side) == Some(crate::domain::trading::PositionSide::Short) { "BUY" } else { "SELL" }
+                                if snapshot.portfolio.positions.iter().find(|position| position.symbol == trade_view_symbol).map(|position| position.side) == Some(crate::domain::trading::PositionSide::Short) { "BUY" } else { "SELL" }
                             } else if snapshot.settings.position_side == crate::domain::trading::PositionSide::Short { "SELL" } else { "BUY" }
                         }}
                     </button>
