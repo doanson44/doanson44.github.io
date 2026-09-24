@@ -168,8 +168,7 @@
   "tools_desc_html_entity": "Encode or decode common HTML entities.",
   "tools_desc_unicode_escape": "Escape or unescape Unicode code points.",
   "tools_proxy_desc": "Call JSON APIs through the proxy and minimize responses for compact output.",
-  "tools_calculator_suffix": "calculator."
-,
+  "tools_calculator_suffix": "calculator.",
   "market_refresh": "Refresh",
   "market_search": "Search market",
   "market_search_placeholder": "Search symbol or company name...",
@@ -252,13 +251,18 @@
   "cv_review": "Review",
   "cv_review_label": "Interview Review",
   "cv_review_title": "Interview Knowledge Review",
-  "cv_review_description": "Review the ENGLISH.md / TIENG-VIET.md study resources. Each card represents one topic from the source; recall the answer before revealing the card.",
+  "cv_review_description": "Review the interview flashcard deck. Open a card to read the question and explanation, then mark it when you understand it.",
   "cv_review_back": "Back to CV",
   "cv_review_question": "Question",
   "cv_review_answer": "Answer",
   "cv_review_reveal": "Reveal answer",
   "cv_review_previous": "Previous",
   "cv_review_next": "Next",
-  "cv_review_empty": "No review cards available."
-
+  "cv_review_empty": "No review cards available.",
+  "cv_review_clear": "Clear progress",
+  "cv_review_understood": "Understood",
+  "cv_review_not_understood": "Not understood",
+  "cv_review_mark_understood": "Mark as understood",
+  "cv_review_mark_not_understood": "Mark as not understood",
+  "cv_review_back_to_list": "Back to list"
 }
