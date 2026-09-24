@@ -44,7 +44,7 @@ pub fn ExperienceCard(experience: Experience) -> impl IntoView {
                         <div class="flex flex-wrap items-center gap-2">
                             <h3 class="text-lg font-semibold text-[var(--text-primary)]">{experience.company}</h3>
                             {is_current.then(|| view! {
-                                <span class="rounded-full border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-2 py-0.5 text-xs font-semibold text-[var(--accent)]">"Current"</span>
+                                <span class="rounded-full border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-2 py-0.5 text-xs font-semibold text-[var(--accent)]">{move || localized_cv_text("current")}</span>
                             })}
                         </div>
                         <p class="mt-1 font-medium text-[var(--accent)]">{experience.role}</p>
@@ -56,7 +56,7 @@ pub fn ExperienceCard(experience: Experience) -> impl IntoView {
 
                 {(!experience.projects.is_empty()).then(|| view! {
                     <div class="mt-5">
-                        <h4 class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">"Representative Projects"</h4>
+                        <h4 class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">{move || localized_cv_text("representative_projects")}</h4>
                         <ul class="mt-2 grid gap-1 text-sm text-[var(--text-secondary)] sm:grid-cols-2">
                             {experience.projects.into_iter().map(|project| view! {
                                 <li class="flex gap-2">
@@ -69,7 +69,7 @@ pub fn ExperienceCard(experience: Experience) -> impl IntoView {
                 })}
 
                 <div class="mt-5">
-                    <h4 class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">"Key Contributions"</h4>
+                    <h4 class="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-tertiary)]">{move || localized_cv_text("key_contributions")}</h4>
                     <ul class="mt-2 space-y-2 text-sm leading-6 text-[var(--text-secondary)]">
                         {experience.contributions.into_iter().map(|contribution| view! {
                             <li class="flex gap-2">
@@ -81,7 +81,7 @@ pub fn ExperienceCard(experience: Experience) -> impl IntoView {
                 </div>
 
                 {(!experience.technologies.is_empty()).then(|| view! {
-                    <div class="mt-5 flex flex-wrap gap-2" aria-label="Technologies">
+                    <div class="mt-5 flex flex-wrap gap-2" aria-label=move || localized_cv_text("technologies")>
                         {experience.technologies.into_iter().map(|technology| view! {
                             <span class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">{technology}</span>
                         }).collect_view()}
@@ -119,7 +119,7 @@ pub fn EducationCard(value: Education) -> impl IntoView {
                 </div>
                 <span class="w-fit rounded-md border border-[var(--border-color)] px-2.5 py-1 text-xs text-[var(--text-secondary)]">{value.classification}</span>
             </div>
-            <p class="mt-3 text-sm text-[var(--text-secondary)]">"Major: "{value.major}</p>
+            <p class="mt-3 text-sm text-[var(--text-secondary)]">{move || format_major_label(value.major)}</p>
         </article>
     }
 }
@@ -160,6 +160,18 @@ fn localized_cv_text(key: &str) -> String {
                 "Engineering focus".into()
             }
         }
+        "current" => {
+            if i18n.get_locale() == Locale::vi { "Hiện tại".into() } else { "Current".into() }
+        }
+        "representative_projects" => {
+            if i18n.get_locale() == Locale::vi { "Dự án tiêu biểu".into() } else { "Representative Projects".into() }
+        }
+        "key_contributions" => {
+            if i18n.get_locale() == Locale::vi { "Đóng góp chính".into() } else { "Key Contributions".into() }
+        }
+        "technologies" => {
+            if i18n.get_locale() == Locale::vi { "Công nghệ".into() } else { "Technologies".into() }
+        }
         "academic_background" => {
             if i18n.get_locale() == Locale::vi {
                 "Học vấn".into()
@@ -168,5 +180,15 @@ fn localized_cv_text(key: &str) -> String {
             }
         }
         _ => String::new(),
+    }
+}
+
+
+fn format_major_label(major: &str) -> String {
+    let i18n = use_i18n();
+    if i18n.get_locale() == Locale::vi {
+        format!("Chuyên ngành: {major}")
+    } else {
+        format!("Major: {major}")
     }
 }
