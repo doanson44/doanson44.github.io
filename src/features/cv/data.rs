@@ -50,7 +50,11 @@ pub fn profile(locale: Locale) -> Profile {
     Profile {
         name: "Thai Doan Son",
         title: "Senior Backend Developer",
-        location: if locale == Locale::vi { "Việt Nam" } else { "Vietnam" },
+        location: if locale == Locale::vi {
+            "Việt Nam"
+        } else {
+            "Vietnam"
+        },
         phone: "0814466008",
         email: "doanson44@gmail.com",
         summary: if locale == Locale::vi {
@@ -65,40 +69,88 @@ pub fn profile(locale: Locale) -> Profile {
 pub fn competencies(locale: Locale) -> Vec<Competency> {
     vec![
         Competency {
-            name: if locale == Locale::vi { "Backend Engineering" } else { "Backend Engineering" },
+            name: if locale == Locale::vi {
+                "Backend Engineering"
+            } else {
+                "Backend Engineering"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Phát triển ứng dụng doanh nghiệp" } else { "Enterprise Application Development" },
+            name: if locale == Locale::vi {
+                "Phát triển ứng dụng doanh nghiệp"
+            } else {
+                "Enterprise Application Development"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Thiết kế RESTful API" } else { "RESTful API Design" },
+            name: if locale == Locale::vi {
+                "Thiết kế RESTful API"
+            } else {
+                "RESTful API Design"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Thiết kế & tối ưu cơ sở dữ liệu" } else { "Database Design & Optimization" },
+            name: if locale == Locale::vi {
+                "Thiết kế & tối ưu cơ sở dữ liệu"
+            } else {
+                "Database Design & Optimization"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Tích hợp hệ thống" } else { "System Integration" },
+            name: if locale == Locale::vi {
+                "Tích hợp hệ thống"
+            } else {
+                "System Integration"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Tối ưu hiệu năng" } else { "Performance Optimization" },
+            name: if locale == Locale::vi {
+                "Tối ưu hiệu năng"
+            } else {
+                "Performance Optimization"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Giải pháp nền tảng đám mây" } else { "Cloud-based Solutions" },
+            name: if locale == Locale::vi {
+                "Giải pháp nền tảng đám mây"
+            } else {
+                "Cloud-based Solutions"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Kiến trúc phần mềm" } else { "Software Architecture" },
+            name: if locale == Locale::vi {
+                "Kiến trúc phần mềm"
+            } else {
+                "Software Architecture"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Clean Code & khả năng bảo trì" } else { "Clean Code & Maintainability" },
+            name: if locale == Locale::vi {
+                "Clean Code & khả năng bảo trì"
+            } else {
+                "Clean Code & Maintainability"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Hiện đại hóa hệ thống legacy" } else { "Legacy System Modernization" },
+            name: if locale == Locale::vi {
+                "Hiện đại hóa hệ thống legacy"
+            } else {
+                "Legacy System Modernization"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Phối hợp liên phòng ban" } else { "Cross-functional Collaboration" },
+            name: if locale == Locale::vi {
+                "Phối hợp liên phòng ban"
+            } else {
+                "Cross-functional Collaboration"
+            },
         },
         Competency {
-            name: if locale == Locale::vi { "Hỗ trợ production & debug" } else { "Production Support & Debugging" },
+            name: if locale == Locale::vi {
+                "Hỗ trợ production & debug"
+            } else {
+                "Production Support & Debugging"
+            },
         },
     ]
 }
@@ -107,7 +159,11 @@ pub fn competencies(locale: Locale) -> Vec<Competency> {
 pub fn skill_categories(locale: Locale) -> Vec<SkillCategory> {
     vec![
         SkillCategory {
-            name: if locale == Locale::vi { "Ngôn ngữ" } else { "Languages" },
+            name: if locale == Locale::vi {
+                "Ngôn ngữ"
+            } else {
+                "Languages"
+            },
             skills: vec!["C#", "SQL", "Java", "JavaScript"],
         },
         SkillCategory {
@@ -125,7 +181,11 @@ pub fn skill_categories(locale: Locale) -> Vec<SkillCategory> {
             ],
         },
         SkillCategory {
-            name: if locale == Locale::vi { "Kiến trúc" } else { "Architecture" },
+            name: if locale == Locale::vi {
+                "Kiến trúc"
+            } else {
+                "Architecture"
+            },
             skills: vec![
                 "Clean Architecture",
                 "SOLID",
@@ -138,7 +198,11 @@ pub fn skill_categories(locale: Locale) -> Vec<SkillCategory> {
             ],
         },
         SkillCategory {
-            name: if locale == Locale::vi { "Cơ sở dữ liệu" } else { "Database" },
+            name: if locale == Locale::vi {
+                "Cơ sở dữ liệu"
+            } else {
+                "Database"
+            },
             skills: vec![
                 "SQL Server",
                 "PostgreSQL",
@@ -169,7 +233,11 @@ pub fn skill_categories(locale: Locale) -> Vec<SkillCategory> {
             skills: vec!["Angular", "HTML", "CSS", "JavaScript"],
         },
         SkillCategory {
-            name: if locale == Locale::vi { "Công cụ" } else { "Tools" },
+            name: if locale == Locale::vi {
+                "Công cụ"
+            } else {
+                "Tools"
+            },
             skills: vec![
                 "Visual Studio",
                 "VS Code",
@@ -179,11 +247,19 @@ pub fn skill_categories(locale: Locale) -> Vec<SkillCategory> {
             ],
         },
         SkillCategory {
-            name: if locale == Locale::vi { "Nền tảng" } else { "Platforms" },
+            name: if locale == Locale::vi {
+                "Nền tảng"
+            } else {
+                "Platforms"
+            },
             skills: vec!["Windows", "Linux (Ubuntu, Debian)"],
         },
         SkillCategory {
-            name: if locale == Locale::vi { "Phương pháp" } else { "Practices" },
+            name: if locale == Locale::vi {
+                "Phương pháp"
+            } else {
+                "Practices"
+            },
             skills: vec![
                 "Agile",
                 "Scrum",
@@ -204,13 +280,33 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             company: "Titan Technology",
             role: "Senior Software Developer",
             period: "Jun 2020 — Mar 2022",
-            description: if locale == Locale::vi { "Phát triển phần mềm tài chính doanh nghiệp và các tích hợp với hệ thống bên thứ ba." } else { "Developed enterprise financial software and third-party integrations." },
+            description: if locale == Locale::vi {
+                "Phát triển phần mềm tài chính doanh nghiệp và các tích hợp với hệ thống bên thứ ba."
+            } else {
+                "Developed enterprise financial software and third-party integrations."
+            },
             projects: vec![if locale == Locale::vi { "Tích hợp QuickBooks" } else { "QuickBooks Integration" }, if locale == Locale::vi { "Thông báo" } else { "Notification" }, "Carry Forward", "Activation", "CU Indicator"],
             contributions: vec![
-                if locale == Locale::vi { "Xây dựng backend services và các tính năng tự động hóa." } else { "Built backend services and automation features." },
-                if locale == Locale::vi { "Tích hợp hệ thống doanh nghiệp với các dịch vụ bên ngoài." } else { "Integrated enterprise systems with external services." },
-                if locale == Locale::vi { "Tối ưu truy vấn SQL Server và xử lý dữ liệu." } else { "Optimized SQL Server queries and data processing." },
-                if locale == Locale::vi { "Bảo trì hệ thống production và xử lý các sự cố phức tạp." } else { "Maintained production systems and resolved complex issues." },
+                if locale == Locale::vi {
+                   "Xây dựng backend services và các tính năng tự động hóa."
+               } else {
+                   "Built backend services and automation features."
+               },
+                if locale == Locale::vi {
+                   "Tích hợp hệ thống doanh nghiệp với các dịch vụ bên ngoài."
+               } else {
+                   "Integrated enterprise systems with external services."
+               },
+                if locale == Locale::vi {
+                   "Tối ưu truy vấn SQL Server và xử lý dữ liệu."
+               } else {
+                   "Optimized SQL Server queries and data processing."
+               },
+                if locale == Locale::vi {
+                   "Bảo trì hệ thống production và xử lý các sự cố phức tạp."
+               } else {
+                   "Maintained production systems and resolved complex issues."
+               },
             ],
             technologies: vec![".NET Core", "SQL Server"],
         },
@@ -218,11 +314,23 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             company: "Hybrid Technologies",
             role: "Software Developer",
             period: "Dec 2019 — Jun 2020",
-            description: if locale == Locale::vi { "Phát triển các tính năng backend cho nền tảng Domestic Tour và triển khai các cải tiến, sửa lỗi production." } else { "Developed backend features for a Domestic Tour platform and delivered enhancements and production bug fixes." },
+            description: if locale == Locale::vi {
+                "Phát triển các tính năng backend cho nền tảng Domestic Tour và triển khai các cải tiến, sửa lỗi production."
+            } else {
+                "Developed backend features for a Domestic Tour platform and delivered enhancements and production bug fixes."
+            },
             projects: Vec::new(),
             contributions: vec![
-                if locale == Locale::vi { "Phát triển các tính năng backend cho nền tảng Domestic Tour." } else { "Developed backend features for Domestic Tour platform." },
-                if locale == Locale::vi { "Triển khai các cải tiến và sửa lỗi production." } else { "Implemented enhancements and production bug fixes." },
+                if locale == Locale::vi {
+                   "Phát triển các tính năng backend cho nền tảng Domestic Tour."
+               } else {
+                   "Developed backend features for Domestic Tour platform."
+               },
+                if locale == Locale::vi {
+                   "Triển khai các cải tiến và sửa lỗi production."
+               } else {
+                   "Implemented enhancements and production bug fixes."
+               },
             ],
             technologies: Vec::new(),
         },
@@ -230,13 +338,33 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             company: "MTI Technology",
             role: "Software Developer",
             period: "Jul 2017 — Dec 2019",
-            description: if locale == Locale::vi { "Phát triển và hiện đại hóa các ứng dụng doanh nghiệp và hệ thống quản lý." } else { "Developed and modernized enterprise applications and management systems." },
+            description: if locale == Locale::vi {
+                "Phát triển và hiện đại hóa các ứng dụng doanh nghiệp và hệ thống quản lý."
+            } else {
+                "Developed and modernized enterprise applications and management systems."
+            },
             projects: vec!["Device Management Tool", "Seasar Migration", "Music in the Ship", "Renovation 2"],
             contributions: vec![
-                if locale == Locale::vi { "Migration các ứng dụng legacy sang .NET Core." } else { "Migrated legacy applications to .NET Core." },
-                if locale == Locale::vi { "Phát triển các hệ thống quản lý doanh nghiệp." } else { "Developed enterprise management systems." },
-                if locale == Locale::vi { "Tham gia làm rõ yêu cầu và nâng cấp hệ thống." } else { "Participated in requirement clarification and system enhancement." },
-                if locale == Locale::vi { "Làm việc với Angular, Vue.js và Entity Framework Core." } else { "Worked with Angular, Vue.js, and Entity Framework Core." },
+                if locale == Locale::vi {
+                   "Migration các ứng dụng legacy sang .NET Core."
+               } else {
+                   "Migrated legacy applications to .NET Core."
+               },
+                if locale == Locale::vi {
+                   "Phát triển các hệ thống quản lý doanh nghiệp."
+               } else {
+                   "Developed enterprise management systems."
+               },
+                if locale == Locale::vi {
+                   "Tham gia làm rõ yêu cầu và nâng cấp hệ thống."
+               } else {
+                   "Participated in requirement clarification and system enhancement."
+               },
+                if locale == Locale::vi {
+                   "Làm việc với Angular, Vue.js và Entity Framework Core."
+               } else {
+                   "Worked with Angular, Vue.js, and Entity Framework Core."
+               },
             ],
             technologies: vec![".NET Core", "Entity Framework Core", "Angular", "Vue.js"],
         },
@@ -244,12 +372,28 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
             company: "Renesas Design Vietnam",
             role: "Software Engineer",
             period: "Mar 2015 — Jul 2017",
-            description: if locale == Locale::vi { "Thiết kế và phát triển các ứng dụng desktop phục vụ kỹ thuật, đồng thời hỗ trợ yêu cầu khách hàng và công việc bảo trì." } else { "Designed and developed engineering desktop applications and supported customer requirements and maintenance work." },
+            description: if locale == Locale::vi {
+                "Thiết kế và phát triển các ứng dụng desktop phục vụ kỹ thuật, đồng thời hỗ trợ yêu cầu khách hàng và công việc bảo trì."
+            } else {
+                "Designed and developed engineering desktop applications and supported customer requirements and maintenance work."
+            },
             projects: vec!["MISRA-C Checker", "Smart Manual", "Current Consumption"],
             contributions: vec![
-                if locale == Locale::vi { "Thiết kế và phát triển các ứng dụng desktop phục vụ kỹ thuật." } else { "Designed and developed engineering desktop applications." },
-                if locale == Locale::vi { "Phân tích yêu cầu khách hàng." } else { "Analyzed customer requirements." },
-                if locale == Locale::vi { "Thực hiện bảo trì, debug và phát triển tính năng." } else { "Delivered maintenance, debugging, and feature implementation." },
+                if locale == Locale::vi {
+                   "Thiết kế và phát triển các ứng dụng desktop phục vụ kỹ thuật."
+               } else {
+                   "Designed and developed engineering desktop applications."
+               },
+                if locale == Locale::vi {
+                   "Phân tích yêu cầu khách hàng."
+               } else {
+                   "Analyzed customer requirements."
+               },
+                if locale == Locale::vi {
+                   "Thực hiện bảo trì, debug và phát triển tính năng."
+               } else {
+                   "Delivered maintenance, debugging, and feature implementation."
+               },
             ],
             technologies: Vec::new(),
         },
@@ -259,12 +403,36 @@ pub fn experiences(locale: Locale) -> Vec<Experience> {
 /// Returns selected technical highlights from the CV.
 pub fn highlights(locale: Locale) -> Vec<&'static str> {
     vec![
-        if locale == Locale::vi { "Có nhiều kinh nghiệm phát triển phần mềm doanh nghiệp." } else { "Extensive enterprise software development experience." },
-        if locale == Locale::vi { "Có nhiều kinh nghiệm backend với C# và các công nghệ .NET." } else { "Extensive experience with backend development using C# and .NET technologies." },
-        if locale == Locale::vi { "Nắm vững cơ sở dữ liệu quan hệ và tối ưu SQL." } else { "Strong knowledge of relational databases and SQL optimization." },
-        if locale == Locale::vi { "Có kinh nghiệm tích hợp hệ thống doanh nghiệp và các giải pháp cloud." } else { "Experienced in enterprise system integration and cloud-based solutions." },
-        if locale == Locale::vi { "Thành thạo debug, hỗ trợ production và hiện đại hóa hệ thống legacy." } else { "Proficient in debugging, production support, and legacy modernization." },
-        if locale == Locale::vi { "Có kinh nghiệm với thiết kế ứng dụng có khả năng mở rộng và các thực hành kỹ thuật phần mềm." } else { "Familiar with scalable application design and software engineering best practices." },
+        if locale == Locale::vi {
+           "Có nhiều kinh nghiệm phát triển phần mềm doanh nghiệp."
+       } else {
+           "Extensive enterprise software development experience."
+       },
+        if locale == Locale::vi {
+           "Có nhiều kinh nghiệm backend với C# và các công nghệ .NET."
+       } else {
+           "Extensive experience with backend development using C# and .NET technologies."
+       },
+        if locale == Locale::vi {
+           "Nắm vững cơ sở dữ liệu quan hệ và tối ưu SQL."
+       } else {
+           "Strong knowledge of relational databases and SQL optimization."
+       },
+        if locale == Locale::vi {
+           "Có kinh nghiệm tích hợp hệ thống doanh nghiệp và các giải pháp cloud."
+       } else {
+           "Experienced in enterprise system integration and cloud-based solutions."
+       },
+        if locale == Locale::vi {
+           "Thành thạo debug, hỗ trợ production và hiện đại hóa hệ thống legacy."
+       } else {
+           "Proficient in debugging, production support, and legacy modernization."
+       },
+        if locale == Locale::vi {
+           "Có kinh nghiệm với thiết kế ứng dụng có khả năng mở rộng và các thực hành kỹ thuật phần mềm."
+       } else {
+           "Familiar with scalable application design and software engineering best practices."
+       },
     ]
 }
 
@@ -272,9 +440,21 @@ pub fn highlights(locale: Locale) -> Vec<&'static str> {
 pub fn education(locale: Locale) -> Vec<Education> {
     vec![Education {
         institution: "University of Science — Vietnam National University Ho Chi Minh City",
-        degree: if locale == Locale::vi { "Kỹ sư" } else { "Bachelor of Engineering" },
-        major: if locale == Locale::vi { "Công nghệ thông tin" } else { "Information Technology" },
-        classification: if locale == Locale::vi { "Khá" } else { "Good" },
+        degree: if locale == Locale::vi {
+            "Kỹ sư"
+        } else {
+            "Bachelor of Engineering"
+        },
+        major: if locale == Locale::vi {
+            "Công nghệ thông tin"
+        } else {
+            "Information Technology"
+        },
+        classification: if locale == Locale::vi {
+            "Khá"
+        } else {
+            "Good"
+        },
     }]
 }
 
