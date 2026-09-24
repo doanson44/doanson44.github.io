@@ -20,30 +20,6 @@ use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
 use crate::i18n::*;
 
-fn game_container_class(is_hangman: bool) -> &'static str {
-    if is_hangman {
-        "flex min-h-[100dvh] flex-col bg-[var(--surface)] px-4 py-4 sm:px-6 sm:py-6"
-    } else {
-        "rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6"
-    }
-}
-
-fn game_header_class(is_hangman: bool) -> &'static str {
-    if is_hangman {
-        "mx-auto flex w-full max-w-3xl flex-wrap items-center gap-3"
-    } else {
-        "mb-5 flex flex-wrap items-center gap-3"
-    }
-}
-
-fn game_content_class(is_hangman: bool) -> &'static str {
-    if is_hangman {
-        "flex min-h-0 flex-1 items-center justify-center py-4 sm:py-6"
-    } else {
-        ""
-    }
-}
-
 fn toggle_browser_fullscreen() {
     let Some(window) = web_sys::window() else {
         return;
