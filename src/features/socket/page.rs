@@ -620,6 +620,25 @@ fn build_visible(
                 .ranking_score()
                 .cmp(&left.ranking.ranking_score())
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+            SocketSortMode::Direction => left
+                .ranking
+                .ranking_direction()
+                .cmp(&right.ranking.ranking_direction())
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+            SocketSortMode::Change1m => left
+                .ranking
+                .return_1m()
+                .unwrap_or(0.0)
+                .partial_cmp(&right.ranking.return_1m().unwrap_or(0.0))
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+            SocketSortMode::Change3m => left
+                .ranking
+                .return_3m()
+                .unwrap_or(0.0)
+                .partial_cmp(&right.ranking.return_3m().unwrap_or(0.0))
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
             SocketSortMode::Price => {
                 let left_price = left.ticker.last_price.unwrap_or(0.0);
                 let right_price = right.ticker.last_price.unwrap_or(0.0);
