@@ -128,7 +128,6 @@ impl SocketState {
         let reset_metrics_request = RwSignal::new(0u64);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
-
         let reset_request = reset_metrics_request;
         let reset_service = service.clone();
         let reset_tickers = tickers;
@@ -141,7 +140,6 @@ impl SocketState {
 
             reset_service.borrow_mut().reset_metrics();
             reset_tickers.set(Rc::new(reset_service.borrow().snapshot()));
-
         });
 
         let flush_pending = Rc::new(Cell::new(false));
