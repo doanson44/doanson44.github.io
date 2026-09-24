@@ -57,7 +57,7 @@ pub fn App() -> impl IntoView {
             </main>
             {move || {
                 if is_hangman_route(&current_hash.get()) {
-                    view! { <></> }.into_any()
+                    ().into_any()
                 } else {
                     view! { <Footer /> }.into_any()
                 }
