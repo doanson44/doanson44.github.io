@@ -183,7 +183,7 @@ pub fn CvPage() -> impl IntoView {
 
                     <CvSection id="cv-education" title_key="education" eyebrow_key="academic_background">
                         <div class="space-y-4">
-                            {education_data.get().into_iter()}.map(|value| view! {
+                            {education_data.get().into_iter().map(|value| view! {
                                 <EducationCard value=value />
                             }).collect_view()}
                         </div>
