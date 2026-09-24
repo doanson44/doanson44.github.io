@@ -79,7 +79,7 @@ fn list_view(
     let total = cards.len();
     let completed = cards
         .iter()
-        .filter(|card| understood.contains(&card.id))
+        .filter(|card| understood.contains(card.id))
         .count();
 
     view! {
@@ -123,7 +123,7 @@ fn list_view(
                 .enumerate()
                 .map(|(index, card)| {
                     let id = card.id.clone();
-                    let is_understood = understood.contains(id.as_str());
+                    let is_understood = understood.contains(id);
                     view! {
                         <a
                             href=format!("#/cv/review/{id}")
@@ -161,7 +161,7 @@ fn list_view(
 }
 
 fn detail_view(
-    i18n: I18nContext,
+    i18n: I18nContext<crate::i18n::Locale>,
     card: Option<ReviewCard>,
     understood: HashSet<String>,
     toggle_understood: impl Fn(String) + Copy + 'static,
@@ -181,7 +181,7 @@ fn detail_view(
     };
 
     let id = card.id.clone();
-    let is_understood = understood.contains(&id);
+    let is_understood = understood.contains(id.as_str());
 
     view! {
         <div>
