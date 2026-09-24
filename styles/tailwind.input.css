@@ -2,7 +2,7 @@
 
 @theme {
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
     --color-app: var(--ms-bg-primary);
     --color-surface: var(--ms-bg-surface);
     --color-surface-hover: var(--ms-bg-elevated);
