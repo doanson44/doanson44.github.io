@@ -154,6 +154,7 @@ fn open_connection(
 
         match serde_json::from_value::<Vec<TickerPayload>>(envelope.data) {
             Ok(tickers) => {
+                let received_at_ms = js_sys::Date::now().max(0.0) as u64;
                 let updates = tickers
                     .into_iter()
                     .filter(|ticker| ticker.symbol.ends_with("_USDT"))
@@ -164,7 +165,7 @@ fn open_connection(
                         volume_24h: ticker.volume_24h,
                         change_24h: ticker.change_24h,
                         fair_price: ticker.fair_price,
-                        updated_at_ms: Some(js_sys::Date::now().max(0.0) as u64),
+                        updated_at_ms: Some(received_at_ms),
                     })
                     .collect();
                 batch_callback(updates);
