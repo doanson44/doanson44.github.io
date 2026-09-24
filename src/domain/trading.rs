@@ -226,7 +226,6 @@ impl Portfolio {
     }
 }
 
-
 /// A holding enriched with the latest market valuation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct HoldingSummary {
