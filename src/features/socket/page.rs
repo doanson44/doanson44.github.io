@@ -180,6 +180,9 @@ pub fn SocketPage(
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Change1m align="right">{move || t_string!(i18n, socket_change1m)}</SortHeader>
                                         </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">
+                                            <SortHeader state=state mode=SocketSortMode::Change5m align="right">{move || t_string!(i18n, socket_change5m)}</SortHeader>
+                                        </th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_analysis)}</th>
                                     </tr>
                                 </thead>
@@ -199,6 +202,7 @@ pub fn SocketPage(
                                     {socket_mobile_sort_button("direction", SocketSortMode::Direction, state, i18n)}
                                     {socket_mobile_sort_button("change15s", SocketSortMode::Change15s, state, i18n)}
                                     {socket_mobile_sort_button("change1m", SocketSortMode::Change1m, state, i18n)}
+                                    {socket_mobile_sort_button("change5m", SocketSortMode::Change5m, state, i18n)}
                                     {socket_mobile_sort_button("price", SocketSortMode::Price, state, i18n)}
                                     {socket_mobile_sort_button("change24h", SocketSortMode::Change24h, state, i18n)}
                                     {socket_mobile_sort_button("funding", SocketSortMode::Funding, state, i18n)}
@@ -644,6 +648,13 @@ fn build_visible(
                 .return_1m()
                 .unwrap_or(0.0)
                 .partial_cmp(&right.ranking.return_1m().unwrap_or(0.0))
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
+            SocketSortMode::Change5m => left
+                .ranking
+                .return_5m()
+                .unwrap_or(0.0)
+                .partial_cmp(&right.ranking.return_5m().unwrap_or(0.0))
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| left.ticker.symbol.cmp(&right.ticker.symbol)),
             SocketSortMode::Price => {
