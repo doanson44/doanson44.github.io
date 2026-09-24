@@ -456,10 +456,10 @@ mod tests {
     }
 
     #[test]
-    fn observations_are_bounded_to_five_minutes() {
+    fn observations_are_bounded_to_five_seconds() {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
-        ranking.observe_at(Some(101.0), Some(3_000));
+        ranking.observe_at(Some(101.0), Some(1_000));
         ranking.observe_at(Some(102.0), Some(6_000));
 
         assert_eq!(ranking.observation_count(), 2);
