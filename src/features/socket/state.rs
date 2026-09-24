@@ -6,7 +6,6 @@ use std::{
 
 use leptos::prelude::*;
 use send_wrapper::SendWrapper;
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast};
 
 use crate::application::{
@@ -42,8 +41,6 @@ pub enum SocketViewMode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SocketSortMode {
     Symbol,
-    Burst,
-    Momentum,
     Price,
     TotalTicks,
     Funding,
