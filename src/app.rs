@@ -9,6 +9,7 @@ use crate::components::navbar::Navbar;
 use crate::domain::developer::ToolId;
 use crate::domain::finance::FinanceTool;
 use crate::features::cv::page::CvPage;
+use crate::features::cv::review_page::CvReviewPage;
 use crate::features::games::page::GamesPage;
 use crate::features::home::page::HomePage;
 use crate::features::socket::page::SocketPage;
@@ -131,6 +132,7 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools/proxy" => view! { <ProxyPage /> }.into_any(),
         "/games" => view! { <GamesPage game=None /> }.into_any(),
         "/cv" => view! { <CvPage /> }.into_any(),
+        "/cv/review" => view! { <CvReviewPage /> }.into_any(),
         "/socket" => view! {
             <SocketPage
                 stream=Rc::new(MexcFuturesStream)
