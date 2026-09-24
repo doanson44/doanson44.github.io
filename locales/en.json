@@ -248,5 +248,17 @@
   "market_analysis_yes": "Yes",
   "market_analysis_no": "No",
   "market_analysis_na": "N/A",
-  "market_analysis_range": "Range"
+  "market_analysis_range": "Range",
+  "cv_review": "Review",
+  "cv_review_label": "Interview Review",
+  "cv_review_title": "Interview Knowledge Review",
+  "cv_review_description": "Review the ENGLISH.md / TIENG-VIET.md study resources. Each card represents one topic from the source; recall the answer before revealing the card.",
+  "cv_review_back": "Back to CV",
+  "cv_review_question": "Question",
+  "cv_review_answer": "Answer",
+  "cv_review_reveal": "Reveal answer",
+  "cv_review_previous": "Previous",
+  "cv_review_next": "Next",
+  "cv_review_empty": "No review cards available."
+
 }
