@@ -59,14 +59,6 @@ impl FuturesTickerMomentum {
         Self::default()
     }
 
-    /// Restores no historical ranking state.
-    ///
-    /// Kept as a compatibility boundary for callers that previously restored
-    /// tick counters. Historical tick counts are intentionally not reused.
-    pub fn from_cached_counts(_up_ticks: u64, _down_ticks: u64) -> Self {
-        Self::default()
-    }
-
     /// Applies a price observation using a synthetic monotonic sequence when
     /// no exchange timestamp is available.
     pub fn observe(&mut self, price: Option<f64>) {
@@ -249,20 +241,6 @@ impl FuturesTickerMomentum {
         Some((net / path).clamp(0.0, 1.0))
     }
 
-    /// Legacy directional tick count. Ranking no longer uses tick counts.
-    pub fn up_ticks(&self) -> u64 {
-        0
-    }
-
-    /// Legacy directional tick count. Ranking no longer uses tick counts.
-    pub fn down_ticks(&self) -> u64 {
-        0
-    }
-
-    /// Legacy compatibility metric. The ranking score replaces momentum.
-    pub fn progress(&self) -> u8 {
-        self.ranking_score()
-    }
 }
 
 /// A Futures ticker together with session-local directional momentum.
