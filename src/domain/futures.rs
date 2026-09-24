@@ -472,12 +472,17 @@ mod tests {
     fn ranking_detects_a_fast_directional_move() {
         let mut ranking = FuturesTickerRanking::default();
         for (timestamp, price) in [
-            (0, 100.0),
+(0, 100.0),
             (15_000, 100.8),
             (30_000, 101.7),
             (45_000, 102.8),
             (60_000, 104.0),
-            (300_000, 105.5),
+            (75_000, 105.0),
+            (90_000, 106.0),
+            (120_000, 108.0),
+            (180_000, 110.0),
+            (240_000, 112.0),
+            (300_000, 114.0)
         ] {
             ranking.observe_at(Some(price), Some(timestamp));
         }
@@ -498,7 +503,12 @@ mod tests {
             (30_000, 98.4),
             (45_000, 97.5),
             (60_000, 96.4),
-            (300_000, 95.2),
+            (75_000, 95.5),
+            (90_000, 94.5),
+            (120_000, 92.5),
+            (180_000, 90.5),
+            (240_000, 88.5),
+            (300_000, 86.5),
         ] {
             ranking.observe_at(Some(price), Some(timestamp));
         }
@@ -525,7 +535,7 @@ mod tests {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
         ranking.observe_at(Some(101.0), Some(4_000));
-        ranking.observe_at(Some(102.0), Some(8_000));
+        ranking.observe_at(Some(102.0), Some(20_000));
 
         assert_eq!(ranking.observation_count(), 3);
         assert!(ranking.return_15s().is_some());
