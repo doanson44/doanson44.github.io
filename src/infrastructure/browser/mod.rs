@@ -85,6 +85,13 @@ pub fn print_page() {
     get_window().print().ok();
 }
 
+/// Scroll the document to an element without changing the application hash route.
+pub fn scroll_to_element(id: &str) {
+    if let Some(element) = get_document().get_element_by_id(id) {
+        element.scroll_into_view();
+    }
+}
+
 /// Copy the rendered preview as rich HTML with a plain-text fallback.
 pub async fn copy_preview_as_html(element_id: &str) -> Result<(), String> {
     match copy_preview_as_html_js(element_id).await {
