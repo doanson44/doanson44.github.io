@@ -64,22 +64,7 @@ impl FuturesMarketService {
             .collect()
     }
 
-    /// Exports all session-local momentum data, including items not actively in the registry.
-    pub fn export_momentum(&self) -> impl Iterator<Item = (&String, &FuturesTickerMomentum)> {
-        self.momentum.iter()
-    }
-
-    /// Restores only cached directional counters; live ticker data is not restored.
-    pub fn restore_momentum(&mut self, cached: impl IntoIterator<Item = (String, u64, u64)>) {
-        for (symbol, up_ticks, down_ticks) in cached {
-            self.momentum.insert(
-                symbol,
-                FuturesTickerMomentum::from_cached_counts(up_ticks, down_ticks),
-            );
-        }
-    }
-
-    /// Resets momentum, burst score, and tick history for all known tickers.
+    /// Resets short-term ranking history for all known tickers.
     ///
     /// Current market prices are preserved as baselines so the next live update
     /// starts a fresh measurement window without creating a synthetic tick.
@@ -149,75 +134,115 @@ mod tests {
         service.apply_batch(vec![update("BTC_USDT", 100.0)]);
         let snapshot = service.snapshot();
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 0);
-        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.ranking_score(), 0);
     }
 
     #[test]
-    fn subsequent_updates_count_directional_ticks() {
+    fn ranking_requires_enough_history() {
         let mut service = FuturesMarketService::new();
-        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
-        service.apply_batch(vec![update("BTC_USDT", 101.0)]);
-        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
+        service.apply_batch(vec![
+            update("BTC_USDT", 100.0),
+            update("BTC_USDT", 100.2),
+            update("BTC_USDT", 100.5),
+        ]);
         let snapshot = service.snapshot();
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 1);
-        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 1);
-        assert_eq!(snapshot["BTC_USDT"].momentum.progress(), 0);
+        assert_eq!(snapshot["BTC_USDT"].momentum.ranking_score(), 0);
     }
 
     #[test]
-    fn cached_momentum_is_applied_before_the_first_live_price() {
+    fn ranking_detects_a_fast_directional_move() {
         let mut service = FuturesMarketService::new();
-        service.restore_momentum(vec![("BTC_USDT".into(), 4, 2)]);
-        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
-        let snapshot = service.snapshot();
+        for (timestamp, price) in [
+            (0, 100.0),
+            (60_000, 100.8),
+            (120_000, 101.7),
+            (180_000, 102.8),
+            (240_000, 104.0),
+            (300_000, 105.5),
+        ] {
+            service.apply_batch(vec![FuturesTickerUpdate {
+                symbol: "BTC_USDT".into(),
+                last_price: Some(price),
+                volume_24h: None,
+                change_24h: None,
+                fair_price: None,
+                updated_at_ms: Some(timestamp),
+            }]);
+        }
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 4);
-        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 2);
-        assert_eq!(snapshot["BTC_USDT"].momentum.previous_price, Some(100.0));
+        let ranking = service.snapshot()["BTC_USDT"].momentum.ranking_score();
+        assert!(ranking >= 70, "ranking should identify a strong move: {ranking}");
+        assert_eq!(service.snapshot()["BTC_USDT"].momentum.ranking_direction(), 1);
     }
 
     #[test]
-    fn cached_momentum_continues_with_live_ticks() {
+    fn reset_preserves_price_baseline_but_clears_ranking_history() {
         let mut service = FuturesMarketService::new();
-        service.restore_momentum(vec![("BTC_USDT".into(), 4, 2)]);
-        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
-        service.apply_batch(vec![update("BTC_USDT", 101.0)]);
-        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
-        let snapshot = service.snapshot();
-
-        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 5);
-        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 3);
-    }
-
-    #[test]
-    fn reset_metrics_clears_all_counters_without_creating_a_tick() {
-        let mut service = FuturesMarketService::new();
-        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
-        service.apply_batch(vec![update("BTC_USDT", 101.0)]);
-        service.apply_batch(vec![update("BTC_USDT", 102.0)]);
+        service.apply_batch(vec![
+            FuturesTickerUpdate {
+                symbol: "BTC_USDT".into(),
+                last_price: Some(100.0),
+                volume_24h: None,
+                change_24h: None,
+                fair_price: None,
+                updated_at_ms: Some(0),
+            },
+            FuturesTickerUpdate {
+                symbol: "BTC_USDT".into(),
+                last_price: Some(101.0),
+                volume_24h: None,
+                change_24h: None,
+                fair_price: None,
+                updated_at_ms: Some(60_000),
+            },
+        ]);
 
         service.reset_metrics();
-        service.apply_batch(vec![update("BTC_USDT", 103.0)]);
-        let snapshot = service.snapshot();
+        service.apply_batch(vec![FuturesTickerUpdate {
+            symbol: "BTC_USDT".into(),
+            last_price: Some(102.0),
+            volume_24h: None,
+            change_24h: None,
+            fair_price: None,
+            updated_at_ms: Some(120_000),
+        }]);
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 1);
-        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 0);
-        assert_eq!(snapshot["BTC_USDT"].momentum.burst_score(), 0);
-        assert_eq!(snapshot["BTC_USDT"].momentum.burst_ticks(), 0);
+        assert_eq!(service.snapshot()["BTC_USDT"].momentum.ranking_score(), 0);
     }
 
     #[test]
-    fn reconnect_rebaseline_does_not_create_a_tick() {
+    fn reconnect_rebaseline_does_not_create_a_synthetic_move() {
         let mut service = FuturesMarketService::new();
-        service.apply_batch(vec![update("BTC_USDT", 100.0)]);
-        service.apply_batch(vec![update("BTC_USDT", 101.0)]);
+        service.apply_batch(vec![
+            FuturesTickerUpdate {
+                symbol: "BTC_USDT".into(),
+                last_price: Some(100.0),
+                volume_24h: None,
+                change_24h: None,
+                fair_price: None,
+                updated_at_ms: Some(0),
+            },
+            FuturesTickerUpdate {
+                symbol: "BTC_USDT".into(),
+                last_price: Some(101.0),
+                volume_24h: None,
+                change_24h: None,
+                fair_price: None,
+                updated_at_ms: Some(60_000),
+            },
+        ]);
         service.rebaseline();
-        service.apply_batch(vec![update("BTC_USDT", 102.0)]);
-        let snapshot = service.snapshot();
+        service.apply_batch(vec![FuturesTickerUpdate {
+            symbol: "BTC_USDT".into(),
+            last_price: Some(102.0),
+            volume_24h: None,
+            change_24h: None,
+            fair_price: None,
+            updated_at_ms: Some(120_000),
+        }]);
 
-        assert_eq!(snapshot["BTC_USDT"].momentum.up_ticks, 1);
-        assert_eq!(snapshot["BTC_USDT"].momentum.down_ticks, 0);
+        assert_eq!(service.snapshot()["BTC_USDT"].momentum.ranking_score(), 0);
     }
+
 }
