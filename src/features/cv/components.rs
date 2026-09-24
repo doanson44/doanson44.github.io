@@ -172,18 +172,6 @@ fn localized_cv_text(key: &str) -> String {
         "technologies" => {
             if i18n.get_locale() == Locale::vi { "Công nghệ".into() } else { "Technologies".into() }
         }
-        "current" => {
-            if i18n.get_locale() == Locale::vi { "Hiện tại".into() } else { "Current".into() }
-        }
-        "representative_projects" => {
-            if i18n.get_locale() == Locale::vi { "Dự án tiêu biểu".into() } else { "Representative Projects".into() }
-        }
-        "key_contributions" => {
-            if i18n.get_locale() == Locale::vi { "Đóng góp chính".into() } else { "Key Contributions".into() }
-        }
-        "technologies" => {
-            if i18n.get_locale() == Locale::vi { "Công nghệ".into() } else { "Technologies".into() }
-        }
         "academic_background" => {
             if i18n.get_locale() == Locale::vi {
                 "Học vấn".into()
