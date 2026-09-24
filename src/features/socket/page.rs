@@ -405,12 +405,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                         title=move || format!("Trade {}", trade_label_title)
                         aria-label=move || format!("Trade {}", trade_label_aria)
                         on:click=move |_| state.trade(&trade_click_symbol)>
-                        {move || {
-                            let snapshot = state.trading_snapshot.get();
-                            if is_held.get() {
-                                if snapshot.portfolio.positions.iter().find(|position| position.symbol == trade_view_symbol).map(|position| position.side) == Some(crate::domain::trading::PositionSide::Short) { "BUY" } else { "SELL" }
-                            } else if snapshot.settings.position_side == crate::domain::trading::PositionSide::Short { "SELL" } else { "BUY" }
-                        }}
+                        {move || if is_held.get() { "CLOSE" } else if state.trading_snapshot.get().settings.position_side == crate::domain::trading::PositionSide::Short { "SELL" } else { "BUY" }}
                     </button>
                 </div>
             </td>
@@ -492,12 +487,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                         title=move || format!("Trade {}", trade_label_title)
                         aria-label=move || format!("Trade {}", trade_label_aria)
                         on:click=move |_| state.trade(&trade_click_symbol)>
-                        {move || {
-                            let snapshot = state.trading_snapshot.get();
-                            if is_held.get() {
-                                if snapshot.portfolio.positions.iter().find(|position| position.symbol == trade_view_symbol).map(|position| position.side) == Some(crate::domain::trading::PositionSide::Short) { "BUY" } else { "SELL" }
-                            } else if snapshot.settings.position_side == crate::domain::trading::PositionSide::Short { "SELL" } else { "BUY" }
-                        }}
+                        {move || if is_held.get() { "CLOSE" } else if state.trading_snapshot.get().settings.position_side == crate::domain::trading::PositionSide::Short { "SELL" } else { "BUY" }}
                     </button>
                 </div>
             </div>
