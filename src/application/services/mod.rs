@@ -172,8 +172,14 @@ mod tests {
         }
 
         let ranking = service.snapshot()["BTC_USDT"].ranking.ranking_score();
-        assert!(ranking >= 70, "ranking should identify a strong move: {ranking}");
-        assert_eq!(service.snapshot()["BTC_USDT"].ranking.ranking_direction(), 1);
+        assert!(
+            ranking >= 70,
+            "ranking should identify a strong move: {ranking}"
+        );
+        assert_eq!(
+            service.snapshot()["BTC_USDT"].ranking.ranking_direction(),
+            1
+        );
     }
 
     #[test]
@@ -244,5 +250,4 @@ mod tests {
 
         assert_eq!(service.snapshot()["BTC_USDT"].ranking.ranking_score(), 0);
     }
-
 }
