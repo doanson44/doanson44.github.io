@@ -23,10 +23,10 @@ pub struct FuturesTickerUpdate {
     pub updated_at_ms: Option<u64>,
 }
 
-const RANKING_WINDOW_MS: u64 = 5 * 60 * 1_000;
-const SHORT_WINDOW_MS: u64 = 60 * 1_000;
-const MEDIUM_WINDOW_MS: u64 = 3 * 60 * 1_000;
-const PREVIOUS_WINDOW_MS: u64 = 2 * 60 * 1_000;
+const RANKING_WINDOW_MS: u64 = 5 * 1_000;
+const SHORT_WINDOW_MS: u64 = 1_000;
+const MEDIUM_WINDOW_MS: u64 = 3 * 1_000;
+const PREVIOUS_WINDOW_MS: u64 = 2 * 1_000;
 
 /// A price observation used by the short-term market ranking engine.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -62,7 +62,7 @@ impl FuturesTickerRanking {
         self.observe_at(price, Some(timestamp_ms));
     }
 
-    /// Applies a timestamped price observation and retains the latest five minutes.
+    /// Applies a timestamped price observation and retains the latest five seconds.
     pub fn observe_at(&mut self, price: Option<f64>, timestamp_ms: Option<u64>) {
         let (Some(price), Some(timestamp_ms)) = (price, timestamp_ms) else {
             return;
@@ -157,18 +157,18 @@ impl FuturesTickerRanking {
         self.return_over(SHORT_WINDOW_MS).unwrap_or(0.0).signum() as i8
     }
 
-    /// Returns the one-minute price return.
-    pub fn return_1m(&self) -> Option<f64> {
+    /// Returns the one-second price return.
+    pub fn return_1s(&self) -> Option<f64> {
         self.return_over(SHORT_WINDOW_MS)
     }
 
-    /// Returns the three-minute price return.
-    pub fn return_3m(&self) -> Option<f64> {
+    /// Returns the three-second price return.
+    pub fn return_3s(&self) -> Option<f64> {
         self.return_over(MEDIUM_WINDOW_MS)
     }
 
-    /// Returns the five-minute price return.
-    pub fn return_5m(&self) -> Option<f64> {
+    /// Returns the five-second price return.
+    pub fn return_5s(&self) -> Option<f64> {
         self.return_over(RANKING_WINDOW_MS)
     }
 
@@ -395,10 +395,10 @@ mod tests {
     fn ranking_requires_one_and_three_minute_history() {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
-        ranking.observe_at(Some(100.5), Some(60_000));
+        ranking.observe_at(Some(100.5), Some(1_000));
         assert_eq!(ranking.ranking_score(), 0);
 
-        ranking.observe_at(Some(101.0), Some(180_000));
+        ranking.observe_at(Some(101.0), Some(3_000));
         assert!(ranking.ranking_score() > 0);
         assert_eq!(ranking.ranking_direction(), 1);
     }
@@ -409,18 +409,18 @@ mod tests {
         for (timestamp, price) in [
             (0, 100.0),
             (60_000, 100.8),
-            (120_000, 101.7),
+            (2_000, 101.7),
             (180_000, 102.8),
-            (240_000, 104.0),
-            (300_000, 105.5),
+            (4_000, 104.0),
+            (5_000, 105.5),
         ] {
             ranking.observe_at(Some(price), Some(timestamp));
         }
 
         assert!(ranking.ranking_score() >= 70);
         assert_eq!(ranking.ranking_direction(), 1);
-        assert!(ranking.return_1m().unwrap() > 0.0);
-        assert!(ranking.return_3m().unwrap() > 0.0);
+        assert!(ranking.return_1s().unwrap() > 0.0);
+        assert!(ranking.return_3s().unwrap() > 0.0);
         assert!(ranking.trend_efficiency_3m().unwrap() > 0.9);
     }
 
@@ -460,10 +460,10 @@ mod tests {
         let mut ranking = FuturesTickerRanking::default();
         ranking.observe_at(Some(100.0), Some(0));
         ranking.observe_at(Some(101.0), Some(300_000));
-        ranking.observe_at(Some(102.0), Some(600_000));
+        ranking.observe_at(Some(102.0), Some(6_000));
 
         assert_eq!(ranking.observation_count(), 2);
-        assert!((ranking.return_5m().unwrap() - (102.0 / 101.0 - 1.0)).abs() < 1e-9);
+        assert!((ranking.return_5s().unwrap() - (102.0 / 101.0 - 1.0)).abs() < 1e-9);
     }
 
     #[test]
@@ -476,7 +476,7 @@ mod tests {
         assert_eq!(ranking.observation_count(), 2);
         let return_1m = ranking
             .return_1m()
-            .expect("one-minute history should exist");
+            .expect("one-second history should exist");
         assert!((return_1m - 0.01).abs() < 1e-12);
     }
 
