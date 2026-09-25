@@ -688,7 +688,7 @@ const BREAKOUT_BRICK_COUNT: usize = 24;
 /// Pure game state and rules for a single-player Breakout match.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BreakoutGame {
-    paddle_x: i32,
+    paddle_x: f64,
     ball_x: i32,
     ball_y: i32,
     ball_dx: i32,
@@ -721,7 +721,7 @@ impl BreakoutGame {
     /// Creates a new Breakout match.
     pub fn new() -> Self {
         Self {
-            paddle_x: (Self::WIDTH - Self::PADDLE_WIDTH) / 2,
+            paddle_x: (Self::WIDTH - Self::PADDLE_WIDTH) as f64 / 2.0,
             ball_x: Self::WIDTH / 2,
             ball_y: Self::HEIGHT - 4,
             ball_dx: 1,
@@ -735,6 +735,11 @@ impl BreakoutGame {
 
     /// Returns the paddle's leftmost cell.
     pub fn paddle_x(&self) -> i32 {
+        self.paddle_x.round() as i32
+    }
+
+    /// Returns the paddle's continuous horizontal position in logical cells.
+    pub fn paddle_position(&self) -> f64 {
         self.paddle_x
     }
 
@@ -767,7 +772,13 @@ impl BreakoutGame {
 
     /// Moves the player's paddle while keeping it inside the playfield.
     pub fn move_paddle(&mut self, delta: i32) {
-        self.paddle_x = (self.paddle_x + delta).clamp(0, Self::WIDTH - Self::PADDLE_WIDTH);
+        self.move_paddle_by(delta as f64);
+    }
+
+    /// Moves the paddle by a continuous amount in logical cells.
+    pub fn move_paddle_by(&mut self, delta: f64) {
+        self.paddle_x = (self.paddle_x + delta)
+            .clamp(0.0, (Self::WIDTH - Self::PADDLE_WIDTH) as f64);
     }
 
     /// Advances the game by one fixed simulation step.
@@ -794,8 +805,8 @@ impl BreakoutGame {
         if next_dy > 0
             && next_y >= Self::PADDLE_Y
             && self.ball_y < Self::PADDLE_Y
-            && next_x >= self.paddle_x
-            && next_x < self.paddle_x + Self::PADDLE_WIDTH
+            && next_x as f64 >= self.paddle_x
+            && next_x as f64 < self.paddle_x + Self::PADDLE_WIDTH as f64
         {
             next_dy = -1;
             next_y = Self::PADDLE_Y - 1;
@@ -827,7 +838,13 @@ impl BreakoutGame {
                 if self.bricks[index] {
                     self.bricks[index] = false;
                     self.score = self.score.saturating_add(10);
-                    next_dy = -next_dy;
+                    let hit_dy = next_dy;
+                    next_dy = -hit_dy;
+                    next_y = if hit_dy > 0 {
+                        row as i32 + 1
+                    } else {
+                        row as i32 - 1
+                    };
 
                     self.ball_x = next_x;
                     self.ball_y = next_y;
