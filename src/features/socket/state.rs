@@ -543,7 +543,12 @@ impl SocketState {
         ) {
             Ok(snapshot) => match TradingService::save(&LocalTradingStorage, &snapshot) {
                 Ok(()) => {
-                    let settings = ExecutionSettings::default();
+                    let mut settings = LocalExecutionStorage
+                        .load()
+                        .ok()
+                        .flatten()
+                        .unwrap_or_else(ExecutionSettings::default);
+                    settings.mode = ExecutionMode::Paper;
                     if let Err(message) = LocalExecutionStorage.save(&settings) {
                         self.trading_error.set(Some(message));
                         return;
@@ -551,7 +556,6 @@ impl SocketState {
 
                     self.trading_snapshot.set(snapshot);
                     self.execution_mode.set(ExecutionMode::Paper);
-                    self.real_account.set(None);
                     self.pinned_symbols.set(Vec::new());
                     save_pinned_symbols(&[]);
                     self.trading_error.set(None);
