@@ -640,38 +640,36 @@ impl SocketState {
             let service = service.clone();
             Rc::new(
                 move |contract: crate::application::services::mexc_trading::ContractDetail| {
-                    let (side, volume, position_id, reduce_only) =
-                        if let Some(position) = existing.as_ref() {
-                            (
-                                match position.side {
-                                    PositionSide::Long => 4,
-                                    PositionSide::Short => 2,
-                                },
-                                position.hold_volume,
-                                Some(position.position_id),
-                                Some(true),
-                            )
-                        } else {
-                            let allocation = settings.trade_allocation_percent / 100.0;
-                            let margin = account.available_balance * allocation;
-                            let notional = margin * settings.leverage;
-                            let raw_volume = notional / (price * contract.contract_size);
-                            let volume =
-                                (raw_volume / contract.vol_unit).floor() * contract.vol_unit;
-                            (
-                                match settings.position_side {
-                                    PositionSide::Long => 1,
-                                    PositionSide::Short => 3,
-                                },
-                                volume,
-                                None,
-                                None,
-                            )
-                        };
+                    let (side, volume, position_id, reduce_only) = if let Some(position) =
+                        existing.as_ref()
+                    {
+                        (
+                            match position.side {
+                                PositionSide::Long => 4,
+                                PositionSide::Short => 2,
+                            },
+                            position.hold_volume,
+                            Some(position.position_id),
+                            Some(true),
+                        )
+                    } else {
+                        let allocation = settings.trade_allocation_percent / 100.0;
+                        let margin = account.available_balance * allocation;
+                        let notional = margin * settings.leverage;
+                        let raw_volume = notional / (price * contract.contract_size);
+                        let volume = (raw_volume / contract.vol_unit).floor() * contract.vol_unit;
+                        (
+                            match settings.position_side {
+                                PositionSide::Long => 1,
+                                PositionSide::Short => 3,
+                            },
+                            volume,
+                            None,
+                            None,
+                        )
+                    };
 
-                    if !volume.is_finite()
-                        || volume < contract.min_vol
-                        || volume > contract.max_vol
+                    if !volume.is_finite() || volume < contract.min_vol || volume > contract.max_vol
                     {
                         error_signal.set(Some(
                             "Calculated order volume is outside the MEXC contract limits."
