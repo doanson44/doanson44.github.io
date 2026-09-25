@@ -2927,8 +2927,9 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 if running.get() {
                     let callback_ref = tick_frame_clone.borrow();
                     if let Some(callback) = callback_ref.as_ref() {
-                        if let Ok(id) = callback_window_clone
-                            .request_animation_frame(callback.as_ref().unchecked_ref())
+                        let callback_js: &wasm_bindgen::JsValue = callback.as_ref();
+                        if let Ok(id) =
+                            callback_window_clone.request_animation_frame(callback_js.unchecked_ref())
                         {
                             animation_id_clone.set(Some(id));
                         }
@@ -2940,9 +2941,9 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
             let callback_ref = tick_frame.borrow();
             if let Some(callback) = callback_ref.as_ref() {
-                if let Ok(id) =
-                    callback_window.request_animation_frame(callback.as_ref().unchecked_ref())
-                {
+                let callback_js: &wasm_bindgen::JsValue = callback.as_ref();
+                if let Ok(id) = callback_window.request_animation_frame(callback_js.unchecked_ref()) {
+
                     animation_id.set(Some(id));
                 }
             }
