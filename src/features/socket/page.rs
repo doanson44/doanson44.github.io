@@ -558,14 +558,23 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
     let trade_click_symbol = symbol.clone();
     let is_held = Memo::new({
         let trading_snapshot = state.trading_snapshot;
+        let execution_mode = state.execution_mode;
+        let real_positions = state.real_positions;
         let symbol = symbol.clone();
         move |_| {
-            trading_snapshot
-                .get()
-                .portfolio
-                .positions
-                .iter()
-                .any(|position| position.symbol == symbol)
+            if execution_mode.get() == crate::domain::trading::ExecutionMode::Real {
+                real_positions
+                    .get()
+                    .iter()
+                    .any(|position| position.symbol == symbol)
+            } else {
+                trading_snapshot
+                    .get()
+                    .portfolio
+                    .positions
+                    .iter()
+                    .any(|position| position.symbol == symbol)
+            }
         }
     });
     view! {
