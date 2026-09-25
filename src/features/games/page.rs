@@ -2863,31 +2863,13 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Pong ──────────────────────────────────────────────────────────────────────
 
 fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let width = PongGame::WIDTH as usize;
-    let height = PongGame::HEIGHT as usize;
-
     let game = RwSignal::new(PongService::new_game());
     let running = RwSignal::new(false);
+    let up_pressed = RwSignal::new(false);
+    let down_pressed = RwSignal::new(false);
+    let frame_window = web_sys::window().expect("window should exist");
 
-    let step = move || {
-        if !running.get() {
-            return;
-        }
-
-        match PongService::tick(&mut game.write()) {
-            crate::domain::games::PongTickResult::Rally => {}
-            crate::domain::games::PongTickResult::PlayerScored => {
-                score.set(game.get().score());
-                status.set(format!("You scored! {}", game.get().score()));
-            }
-            crate::domain::games::PongTickResult::ComputerScored => {
-                running.set(false);
-                status.set(format!("Computer wins — score {}", game.get().score()));
-            }
-        }
-    };
-
-    let start = move || {
+    let start_loop = move || {
         if running.get() {
             return;
         }
@@ -2900,39 +2882,77 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         running.set(true);
         status.set("Rally!".into());
 
-        leptos::task::spawn_local(async move {
-            loop {
-                gloo_timers::future::TimeoutFuture::new(80).await;
-                if !running.get() {
-                    break;
-                }
-                step();
+        let callback_window = frame_window.clone();
+        let last_time = std::rc::Rc::new(std::cell::Cell::new(None::<f64>));
+        let animation_id = std::rc::Rc::new(std::cell::Cell::new(None::<i32>));
+
+        let tick_frame: std::rc::Rc<std::cell::RefCell<Option<Box<dyn FnMut(f64)>>>> =
+            std::rc::Rc::new(std::cell::RefCell::new(None));
+        let tick_frame_clone = tick_frame.clone();
+        let last_time_clone = last_time.clone();
+        let animation_id_clone = animation_id.clone();
+
+        *tick_frame.borrow_mut() = Some(Box::new(move |timestamp| {
+            if !running.get() {
+                last_time_clone.set(None);
+                return;
             }
-        });
-    };
 
-    let pause = move || {
-        if running.get() && !game.get().is_game_over() {
-            running.set(false);
-            status.set("Paused — Space to resume".into());
+            let dt = last_time_clone
+                .get()
+                .map(|previous| (timestamp - previous) / 1000.0)
+                .unwrap_or(0.0);
+            last_time_clone.set(Some(timestamp));
+
+            match PongService::tick(
+                &mut game.write(),
+                dt,
+                up_pressed.get(),
+                down_pressed.get(),
+            ) {
+                crate::domain::games::PongTickResult::Rally => {}
+                crate::domain::games::PongTickResult::PlayerScored => {
+                    score.set(game.get().score());
+                    status.set(format!("You scored! {}", game.get().score()));
+                }
+                crate::domain::games::PongTickResult::ComputerScored => {
+                    running.set(false);
+                    status.set(format!("Computer wins — score {}", game.get().score()));
+                    return;
+                }
+            }
+
+            if running.get() {
+                if let Ok(id) = callback_window
+                    .request_animation_frame(tick_frame_clone.borrow().as_ref().unwrap().as_ref())
+                {
+                    animation_id_clone.set(Some(id));
+                }
+            }
+        }));
+
+        if let Ok(id) = callback_window
+            .request_animation_frame(tick_frame.borrow().as_ref().unwrap().as_ref())
+        {
+            animation_id.set(Some(id));
         }
     };
 
-    let toggle = move || {
-        if running.get() {
-            pause();
+    let stop = move || {
+        running.set(false);
+        up_pressed.set(false);
+        down_pressed.set(false);
+    };
+
+    let set_input = move |up: bool, pressed: bool| {
+        if up {
+            up_pressed.set(pressed);
         } else {
-            start();
+            down_pressed.set(pressed);
         }
     };
 
-    let move_player = move |delta: i32| {
-        if !game.get().is_game_over() {
-            PongService::move_player(&mut game.write(), delta);
-        }
-    };
-
-    bind_keys(move |e: web_sys::KeyboardEvent| {
+    let key_bindings = move |e: web_sys::KeyboardEvent| {
         if is_text_input(&e) {
             return;
         }
@@ -2941,28 +2961,51 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             " " => {
                 e.prevent_default();
                 if !e.repeat() {
-                    toggle();
+                    if running.get() {
+                        stop();
+                        status.set("Paused — Space to resume".into());
+                    } else {
+                        start_loop();
+                    }
                 }
             }
             "ArrowUp" | "w" | "W" => {
                 e.prevent_default();
-                move_player(-1);
+                set_input(true, true);
             }
             "ArrowDown" | "s" | "S" => {
                 e.prevent_default();
-                move_player(1);
+                set_input(false, true);
             }
             _ => {}
         }
-    });
+    };
+
+    bind_keys(key_bindings);
+
+    let release_keys = move |e: web_sys::KeyboardEvent| match e.key().as_str() {
+        "ArrowUp" | "w" | "W" => set_input(true, false),
+        "ArrowDown" | "s" | "S" => set_input(false, false),
+        _ => {}
+    };
+
+    let board_width = PongGame::WIDTH;
+    let board_height = PongGame::HEIGHT;
 
     view! {
-        <div class="pong-container mx-auto w-100">
-            <div class="d-flex gap-2 mb-2">
+        <div class="mx-auto w-full max-w-5xl space-y-3">
+            <div class="flex gap-2">
                 <button
                     type="button"
-                    class="btn btn-primary flex-grow-1"
-                    on:click=move |_| toggle()
+                    class="min-h-11 flex-1 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                    on:click=move |_| {
+                        if running.get() {
+                            stop();
+                            status.set("Paused — Space to resume".into());
+                        } else {
+                            start_loop();
+                        }
+                    }
                 >
                     {move || if game.get().is_game_over() {
                         "New Game (Space)"
@@ -2974,68 +3017,88 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 </button>
             </div>
 
-            <div class="d-flex justify-content-center gap-2 mb-3">
+            <p class="text-center text-xs text-[var(--text-tertiary)]">
+                "One player · Hold ↑ ↓ / W S · Space to start or pause"
+            </p>
+
+            <div
+                class="mx-auto w-full overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] shadow-lg"
+                role="img"
+                aria-label="Single-player Pong game board"
+            >
+                <svg
+                    viewBox="0 0 960 540"
+                    class="block aspect-video h-auto w-full select-none"
+                    aria-hidden="true"
+                >
+                    <rect
+                        x="0"
+                        y="0"
+                        width=board_width
+                        height=board_height
+                        fill="currentColor"
+                        opacity="0.03"
+                    />
+                    <line
+                        x1=move || board_width / 2.0
+                        y1="0"
+                        x2=move || board_width / 2.0
+                        y2=board_height
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-dasharray="12 12"
+                        opacity="0.22"
+                    />
+                    <rect
+                        x="16"
+                        y=move || game.get().player_y() - PongGame::PADDLE_HEIGHT / 2.0
+                        width=PongGame::PADDLE_WIDTH
+                        height=PongGame::PADDLE_HEIGHT
+                        rx="6"
+                        fill="var(--accent)"
+                    />
+                    <rect
+                        x=move || board_width - 16.0 - PongGame::PADDLE_WIDTH
+                        y=move || game.get().computer_y() - PongGame::PADDLE_HEIGHT / 2.0
+                        width=PongGame::PADDLE_WIDTH
+                        height=PongGame::PADDLE_HEIGHT
+                        rx="6"
+                        fill="var(--text-secondary)"
+                    />
+                    <circle
+                        cx=move || game.get().ball_position().0
+                        cy=move || game.get().ball_position().1
+                        r=PongGame::BALL_RADIUS
+                        fill="var(--text-primary)"
+                    />
+                </svg>
+            </div>
+
+            <div class="flex justify-center gap-2">
                 <button
                     type="button"
-                    class="btn btn-outline-secondary pong-control"
-                    title="Move paddle up"
+                    class="min-h-11 min-w-20 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] touch-none"
                     aria-label="Move paddle up"
-                    on:click=move |_| move_player(-1)
+                    on:mousedown=move |_| set_input(true, true)
+                    on:mouseup=move |_| set_input(true, false)
+                    on:mouseleave=move |_| set_input(true, false)
+                    on:touchstart=move |_| set_input(true, true)
+                    on:touchend=move |_| set_input(true, false)
                 >
                     "↑"
                 </button>
                 <button
                     type="button"
-                    class="btn btn-outline-secondary pong-control"
-                    title="Move paddle down"
+                    class="min-h-11 min-w-20 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] touch-none"
                     aria-label="Move paddle down"
-                    on:click=move |_| move_player(1)
+                    on:mousedown=move |_| set_input(false, true)
+                    on:mouseup=move |_| set_input(false, false)
+                    on:mouseleave=move |_| set_input(false, false)
+                    on:touchstart=move |_| set_input(false, true)
+                    on:touchend=move |_| set_input(false, false)
                 >
                     "↓"
                 </button>
-            </div>
-
-            <p class="text-center text-body-secondary small mb-2">
-                "One player · ↑ ↓ / W S · Space to start or pause"
-            </p>
-
-            <div
-                class="pong-board border border-secondary rounded overflow-hidden"
-                role="img"
-                aria-label="Single-player Pong game board"
-            >
-                {(0..height)
-                    .flat_map(|row| {
-                        (0..width).map(move |col| {
-                            view! {
-                                <div class=move || {
-                                    let current = game.get();
-                                    let (ball_x, ball_y) = current.ball_position();
-                                    let player = col == 0
-                                        && (row as i32 - current.player_y()).abs()
-                                            <= PongGame::PADDLE_SIZE / 2;
-                                    let computer = col == width - 1
-                                        && (row as i32 - current.computer_y()).abs()
-                                            <= PongGame::PADDLE_SIZE / 2;
-                                    let ball = col as i32 == ball_x && row as i32 == ball_y;
-
-                                    if ball {
-                                        "pong-cell pong-ball"
-                                    } else if player {
-                                        "pong-cell pong-paddle-player"
-                                    } else if computer {
-                                        "pong-cell pong-paddle-computer"
-                                    } else if col == width / 2 {
-                                        "pong-cell pong-center-line"
-                                    } else {
-                                        "pong-cell"
-                                    }
-                                }></div>
-                            }
-                        })
-                        .collect::<Vec<_>>()
-                    })
-                    .collect_view()}
             </div>
         </div>
     }
