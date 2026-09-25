@@ -731,3 +731,33 @@ body {
     --mines-revealed-border: #1f241f;
     --mines-mine: #b94a43;
 }
+
+
+/* Final mobile game constraints. */
+@media (max-width: 576px) {
+    .flappy-stage {
+        width: min(100%, calc(62dvh * 2 / 3), 400px);
+        aspect-ratio: 2 / 3;
+    }
+
+    .flappy-stage .flappy-canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .breakout-board {
+        width: min(100%, calc(62dvh * 3 / 4), 34rem);
+        margin-inline: auto;
+    }
+}
+
+@media (max-width: 375px) {
+    .flappy-stage {
+        width: min(100%, calc(58dvh * 2 / 3), 400px);
+    }
+
+    .breakout-board {
+        width: min(100%, calc(58dvh * 3 / 4), 34rem);
+    }
+}
