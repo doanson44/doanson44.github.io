@@ -48,9 +48,15 @@ pub fn SocketPage(
     let portfolio_summary = Memo::new({
         let tickers = state.tickers;
         let trading_snapshot = state.trading_snapshot;
+        let execution_mode = state.execution_mode;
+        let real_account = state.real_account;
+        let real_positions = state.real_positions;
         move |_| {
             tickers.get();
             trading_snapshot.get();
+            execution_mode.get();
+            real_account.get();
+            real_positions.get();
             state.portfolio_summary()
         }
     });
