@@ -31,6 +31,32 @@ pub struct RealAccountSnapshot {
     pub frozen_balance: f64,
 }
 
+/// A live Futures position returned by MEXC.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct RealPosition {
+    pub position_id: i64,
+    pub symbol: String,
+    pub side: PositionSide,
+    pub hold_volume: f64,
+    pub open_average_price: f64,
+    pub close_average_price: f64,
+    pub liquidation_price: f64,
+    pub initial_margin: f64,
+    pub realized_pnl: f64,
+    pub unrealized_pnl: f64,
+}
+
+/// Current Real Trading portfolio values derived from the MEXC account.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct RealPortfolioSummary {
+    pub cash: f64,
+    pub equity: f64,
+    pub total_pnl: f64,
+    pub realized_pnl: f64,
+    pub unrealized_pnl: f64,
+    pub holdings: Vec<HoldingSummary>
+}
+
 /// Client-only configuration for the real execution mode.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RealTradingSettings {
