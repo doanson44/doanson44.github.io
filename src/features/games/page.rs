@@ -7,7 +7,7 @@ use crate::domain::games::{
     lights_toggle, minesweeper_adjacent_mines_sized, minesweeper_flood_reveal_sized,
     puzzle_is_solved, puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given,
     sudoku_puzzle_with_seed, sudoku_valid, tetris_clear_filled, tetris_rotate_cw,
-    tower_wave_countdown, tower_wave_damage, ttt_best_move_sized, ttt_is_draw_sized,
+    ttt_best_move_sized, ttt_is_draw_sized,
     ttt_winner_sized, typing_reactor_tasks, wordle_check, wordle_word, BreakoutGame,
     BreakoutTickResult, FlappyGame, PongGame, TypingReactor,
 };
@@ -95,7 +95,6 @@ pub enum GameKind {
     Hangman,
     FifteenPuzzle,
     LightsOut,
-    TowerDefense,
     Breakout,
     Pong,
     Flappy,
@@ -119,7 +118,6 @@ impl GameKind {
             Self::Hangman,
             Self::FifteenPuzzle,
             Self::LightsOut,
-            Self::TowerDefense,
             Self::Breakout,
             Self::Pong,
             Self::Flappy,
@@ -143,7 +141,6 @@ impl GameKind {
             Self::Hangman => "hangman",
             Self::FifteenPuzzle => "15-puzzle",
             Self::LightsOut => "lights-out",
-            Self::TowerDefense => "tower-defense",
             Self::Breakout => "breakout",
             Self::Pong => "pong",
             Self::Flappy => "flappy",
@@ -172,7 +169,6 @@ impl GameKind {
             Self::Hangman => "Hangman",
             Self::FifteenPuzzle => "15 Puzzle",
             Self::LightsOut => "Lights Out",
-            Self::TowerDefense => "Mini Tower Defense",
             Self::Breakout => "Breakout",
             Self::Pong => "Pong",
             Self::Flappy => "Flappy",
@@ -196,7 +192,6 @@ impl GameKind {
             Self::Hangman => "Guess the word before the figure is complete.",
             Self::FifteenPuzzle => "Slide tiles into numerical order.",
             Self::LightsOut => "Toggle lights until all are off.",
-            Self::TowerDefense => "Survive waves with a tiny defense line.",
             Self::Breakout => "Break all blocks with the ball.",
             Self::Pong => "Keep the ball away from your side.",
             Self::Flappy => "Navigate gaps with timed jumps.",
@@ -220,7 +215,6 @@ impl GameKind {
             Self::Hangman => "H",
             Self::FifteenPuzzle => "15",
             Self::LightsOut => "💡",
-            Self::TowerDefense => "🏰",
             Self::Breakout => "🧱",
             Self::Pong => "🏓",
             Self::Flappy => "🐦",
@@ -245,11 +239,11 @@ pub(crate) fn GamesPage(game: Option<GameKind>) -> impl IntoView {
                             {move || t_string!(i18n, games_title)}
                         </h1>
                         <p class="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
-                            "Twenty compact browser games — all client-side Rust/WASM, no server needed."
+                            "Nineteen compact browser games — all client-side Rust/WASM, no server needed."
                         </p>
                     </div>
                     <span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">
-                        "20 games"
+                        "19 games"
                     </span>
                 </div>
                 {match game {
@@ -369,7 +363,6 @@ fn standard_game_view(game: GameKind, score: RwSignal<u32>, status: RwSignal<Str
                 GameKind::Wordle => board_wordle(score, status),
                 GameKind::FifteenPuzzle => board_puzzle(score, status),
                 GameKind::LightsOut => board_lights(score, status),
-                GameKind::TowerDefense => board_tower(score, status),
                 GameKind::Breakout => board_breakout(score, status),
                 GameKind::Pong => board_pong(score, status),
                 GameKind::Flappy => board_flappy(score, status),
@@ -2566,100 +2559,6 @@ fn board_blackjack(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     }.into_any()
 }
 
-// ── Tower Defense (simplified wave game) ─────────────────────────────────────
-
-fn board_tower(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let hp = RwSignal::new(20i32);
-    let wave = RwSignal::new(1u32);
-    let towers = RwSignal::new(3u32);
-    let countdown = RwSignal::new(tower_wave_countdown(1));
-    let running = RwSignal::new(false);
-    let game_over = RwSignal::new(false);
-
-    let resolve_wave = move || {
-        let t = towers.get();
-        let w = wave.get();
-        let damage = tower_wave_damage(w, t);
-        hp.update(|h| *h = (*h - damage).max(0));
-        score.update(|s| *s += t * 5);
-        if hp.get() <= 0 {
-            game_over.set(true);
-            running.set(false);
-            status.set(format!("💀 Base destroyed at wave {w}!"));
-        } else {
-            wave.set(w + 1);
-            countdown.set(tower_wave_countdown(w + 1));
-            status.set(format!(
-                "Wave {w} survived ({damage} dmg). Next in {}s",
-                countdown.get()
-            ));
-        }
-    };
-
-    let start = move || {
-        if running.get() {
-            return;
-        }
-        if game_over.get() {
-            hp.set(20);
-            wave.set(1);
-            towers.set(3);
-            countdown.set(tower_wave_countdown(1));
-            score.set(0);
-            game_over.set(false);
-        }
-        running.set(true);
-        status.set(format!(
-            "Wave {} incoming in {}s — build towers!",
-            wave.get(),
-            countdown.get()
-        ));
-        leptos::task::spawn_local(async move {
-            loop {
-                gloo_timers::future::TimeoutFuture::new(1000).await;
-                if !running.get() || game_over.get() {
-                    break;
-                }
-                let left = countdown.get().saturating_sub(1);
-                countdown.set(left);
-                if left == 0 {
-                    resolve_wave();
-                } else {
-                    status.set(format!("Wave {} in {}s", wave.get(), left));
-                }
-            }
-        });
-    };
-
-    let build = move || {
-        if game_over.get() {
-            return;
-        }
-        towers.update(|t| *t += 1);
-        status.set(format!("Tower built! ({} towers)", towers.get()));
-    };
-
-    view! {
-        <div class="mx-auto max-w-sm space-y-4">
-            <div class="grid grid-cols-4 gap-2 rounded-lg border border-[var(--border-color)] p-4 text-center">
-                <div><p class="text-xs text-[var(--text-secondary)]">"HP"</p><p class="text-2xl font-bold text-red-500">{move || hp.get()}</p></div>
-                <div><p class="text-xs text-[var(--text-secondary)]">"Wave"</p><p class="text-2xl font-bold text-[var(--accent)]">{move || wave.get()}</p></div>
-                <div><p class="text-xs text-[var(--text-secondary)]">"Towers"</p><p class="text-2xl font-bold text-green-500">{move || towers.get()}</p></div>
-                <div><p class="text-xs text-[var(--text-secondary)]">"ETA"</p><p class="text-2xl font-bold text-[var(--text-primary)]">{move || format!("{}s", countdown.get())}</p></div>
-            </div>
-            <div class="h-4 w-full overflow-hidden rounded-full border border-[var(--border-color)] bg-[var(--surface-hover)]">
-                <div class="h-full bg-red-500 transition-all" style=move || format!("width: {}%", (hp.get().max(0) as f32 / 20.0 * 100.0) as u32)></div>
-            </div>
-            <div class="flex gap-2">
-                <button type="button" class="flex-1 rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|start()>
-                    {move || if running.get() { "Waves incoming…" } else if game_over.get() { "New Game" } else { "▶ Start waves" }}
-                </button>
-                <button type="button" class="flex-1 rounded-md border border-green-500 bg-green-500/10 py-2 text-sm font-semibold text-green-600 hover:bg-green-500/20 disabled:opacity-40" disabled=move||game_over.get() on:click=move|_|build()>"🏗️ Build Tower"</button>
-            </div>
-        </div>
-    }.into_any()
-}
-
 // ── Breakout ──────────────────────────────────────────────────────────────────
 
 fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
@@ -3741,7 +3640,6 @@ fn localized_game_title(game: GameKind) -> String {
         GameKind::Hangman => "Đoán chữ".into(),
         GameKind::FifteenPuzzle => "Xếp hình 15".into(),
         GameKind::LightsOut => "Tắt đèn".into(),
-        GameKind::TowerDefense => "Phòng thủ tháp".into(),
         GameKind::Breakout => "Phá gạch".into(),
         GameKind::Pong => "Pong".into(),
         GameKind::Flappy => "Flappy".into(),
@@ -3770,7 +3668,6 @@ fn localized_game_description(game: GameKind) -> String {
         GameKind::Hangman => "Đoán từ trước khi hình người hoàn tất.".into(),
         GameKind::FifteenPuzzle => "Trượt các ô về đúng thứ tự số.".into(),
         GameKind::LightsOut => "Tắt tất cả các đèn.".into(),
-        GameKind::TowerDefense => "Sống sót qua các đợt tấn công.".into(),
         GameKind::Breakout => "Phá tất cả các khối bằng quả bóng.".into(),
         GameKind::Pong => "Giữ bóng không đi qua phía của bạn.".into(),
         GameKind::Flappy => "Đi qua các khoảng trống bằng những cú nhảy đúng lúc.".into(),
