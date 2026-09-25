@@ -6,8 +6,7 @@ use crate::domain::games::{
     connect_four_ai_column, connect_four_drop, connect_four_winner, hangman_word, has_move_2048,
     lights_toggle, minesweeper_adjacent_mines, minesweeper_flood_reveal, puzzle_is_solved,
     puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given, sudoku_puzzle, sudoku_valid,
-    tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage, ttt_best_move_sized,
-    ttt_is_draw_sized, ttt_winner_sized, typing_words, wordle_check, wordle_word, BreakoutGame,
+    tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage, ttt_best_move_sized, ttt_is_draw_sized, ttt_winner_sized, typing_words, wordle_check, wordle_word, BreakoutGame,
     BreakoutTickResult, FlappyGame, PongGame,
 };
 use leptos::ev;
@@ -532,7 +531,7 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         b[i] = 'X';
         board.set(b.clone());
 
-        if let Some(w) = crate::domain::games::ttt_winner_sized(&b, n, target) {
+        if let Some(w) = ttt_winner_sized(&b, n, target) {
             status.set(format!("{w} wins! 🎉"));
             game_over.set(true);
             if w == 'X' {
@@ -540,7 +539,7 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             }
             return;
         }
-        if crate::domain::games::ttt_is_draw_sized(&b, n, target) {
+        if ttt_is_draw_sized(&b, n, target) {
             status.set("Draw!".into());
             game_over.set(true);
             return;
@@ -551,7 +550,7 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         let b_copy = b;
         leptos::task::spawn_local(async move {
             gloo_timers::future::TimeoutFuture::new(300).await;
-            if let Some(ai_idx) = crate::domain::games::ttt_best_move_sized(&b_copy, n, target) {
+            if let Some(ai_idx) = ttt_best_move_sized(&b_copy, n, target) {
                 let mut b2 = b_copy;
                 b2[ai_idx] = 'O';
                 board.set(b2.clone());
@@ -2949,7 +2948,7 @@ fn localized_game_description(game: GameKind) -> String {
     }
     match game {
         GameKind::TwentyFortyEight => "Ghép các ô để đạt 2048.".into(),
-        GameKind::TicTacToe => "Đấu với AI trên bàn cờ 3×3.".into(),
+        GameKind::TicTacToe => "Đấu với AI với bàn cờ tùy chọn từ 3×3 đến 6×6.".into(),
         GameKind::Minesweeper => "Mở các ô an toàn và tránh mìn.".into(),
         GameKind::Snake => "Ăn mồi, lớn lên và tránh tường.".into(),
         GameKind::Sudoku => "Hoàn thành bảng logic mà không lặp số.".into(),
