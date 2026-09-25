@@ -806,7 +806,9 @@ pub fn sudoku_puzzle_with_seed(seed: u64) -> [u8; 81] {
         2, 8, 0, 0, 0, 0, 4, 1, 9, 0, 0, 5, 0, 0, 0, 0, 8, 0, 0, 7, 9,
     ];
 
-    let mut state = seed.wrapping_mul(0x9E3779B97F4A7C15).wrapping_add(0xBF58476D1CE4E5B9);
+    let mut state = seed
+        .wrapping_mul(0x9E3779B97F4A7C15)
+        .wrapping_add(0xBF58476D1CE4E5B9);
     let mut next = || {
         state ^= state >> 30;
         state = state.wrapping_mul(0xBF58476D1CE4E5B9);
@@ -872,7 +874,11 @@ pub fn sudoku_puzzle_with_seed(seed: u64) -> [u8; 81] {
     for row in 0..9 {
         for col in 0..9 {
             let value = base[reordered_rows[row] * 9 + reordered_cols[col]];
-            puzzle[row * 9 + col] = if value == 0 { 0 } else { digits[value as usize - 1] };
+            puzzle[row * 9 + col] = if value == 0 {
+                0
+            } else {
+                digits[value as usize - 1]
+            };
         }
     }
     puzzle
