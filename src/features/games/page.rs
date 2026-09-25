@@ -1276,16 +1276,8 @@ fn board_sudoku(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                             } else {
                                 "border-b border-b-[var(--border-color)]"
                             };
-                            let left = if col == 0 {
-                                "border-l border-l-[var(--border-color)]"
-                            } else {
-                                "border-l border-l-[var(--border-color)]"
-                            };
-                            let top = if row == 0 {
-                                "border-t border-t-[var(--border-color)]"
-                            } else {
-                                "border-t border-t-[var(--border-color)]"
-                            };
+                            let left = "border-l border-l-[var(--border-color)]";
+                            let top = "border-t border-t-[var(--border-color)]";
                             format!(
                                 "aspect-square text-xs font-bold {left} {right} {top} {bottom} {}",
                                 if conflict {
