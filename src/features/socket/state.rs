@@ -513,13 +513,12 @@ impl SocketState {
                         &api_key,
                         &api_secret,
                         js_sys::Date::now().max(0.0) as i64,
-                        Rc::new(move |positions_result| {
-                            if let Ok(positions) = positions_result {
+                        Rc::new(move |positions_result| match positions_result {
+                            Ok(positions) => {
                                 positions_signal.set(positions);
                                 error_signal.set(None);
-                            } else if let Err(message) = positions_result {
-                                error_signal.set(Some(message));
                             }
+                            Err(message) => error_signal.set(Some(message)),
                         }),
                     );
                 }
