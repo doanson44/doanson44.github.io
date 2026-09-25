@@ -316,7 +316,7 @@ fn hangman_game_view(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView 
 
 fn standard_game_view(game: GameKind, score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     view! {
-        <section class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-4 sm:p-6">
+        <section class="game-shell min-w-0 overflow-visible rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-3 sm:p-6">
             <div class="mb-5 flex flex-wrap items-center gap-3">
                 <a
                     href="#/games"
@@ -3394,7 +3394,7 @@ fn board_tetris(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     {move || if game_over.get() { "New Game (Space)" } else if running.get() { "⏸ Pause (Space)" } else { "▶ Start (Space)" }}
                 </button>
             </div>
-            <div class="grid gap-px rounded border border-[var(--border-color)] bg-[var(--border-color)] overflow-hidden" style="grid-template-columns: repeat(10, 1fr)">
+            <div class="tetris-board mx-auto grid gap-px overflow-hidden rounded border border-[var(--border-color)] bg-[var(--border-color)]">
                 {(0..rows).flat_map(|row| (0..cols).map(move |col| view! {
                     <div class=move || {
                         let b = board.get();
