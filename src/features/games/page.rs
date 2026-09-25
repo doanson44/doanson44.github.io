@@ -1267,12 +1267,12 @@ fn board_sudoku(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                             let col = i % 9;
                             let row = i / 9;
                             let right = if col == 2 || col == 5 || col == 8 {
-                                "border-r-4 border-r-[var(--text-primary)]"
+                                "border-r-2 border-r-[var(--border-color)]"
                             } else {
                                 "border-r border-r-[var(--border-color)]"
                             };
                             let bottom = if row == 2 || row == 5 || row == 8 {
-                                "border-b-4 border-b-[var(--text-primary)]"
+                                "border-b-2 border-b-[var(--border-color)]"
                             } else {
                                 "border-b border-b-[var(--border-color)]"
                             };
