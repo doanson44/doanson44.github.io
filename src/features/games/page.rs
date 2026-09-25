@@ -492,31 +492,47 @@ fn board_2048(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Tic-Tac-Toe ───────────────────────────────────────────────────────────────
 
 fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let board = RwSignal::new([' '; 9]);
+    let size = RwSignal::new(3usize);
+    let win_len = RwSignal::new(3usize);
+    let board = RwSignal::new(vec![' '; 9]);
     let player_turn = RwSignal::new(true);
     let game_over = RwSignal::new(false);
 
     let reset = move || {
-        board.set([' '; 9]);
+        let n = size.get();
+        board.set(vec![' '; n * n]);
         player_turn.set(true);
         game_over.set(false);
-        status.set("Your turn (X)".into());
+        status.set(format!("Your turn (X) — {n}×{n}, first to {n} in a row"));
     };
 
-    status.set("Your turn (X)".into());
+    let set_size = move |value: usize| {
+        let n = value.clamp(3, 6);
+        let target = n.min(5);
+        size.set(n);
+        win_len.set(target);
+        board.set(vec![' '; n * n]);
+        player_turn.set(true);
+        game_over.set(false);
+        status.set(format!("Your turn (X) — {n}×{n}, first to {target} in a row"));
+    };
+
+    status.set("Your turn (X) — 3×3, first to 3 in a row".into());
 
     let click = move |i: usize| {
         if game_over.get() || !player_turn.get() {
             return;
         }
+        let n = size.get();
+        let target = win_len.get();
         let mut b = board.get();
-        if b[i] != ' ' {
+        if i >= b.len() || b[i] != ' ' {
             return;
         }
         b[i] = 'X';
-        board.set(b);
+        board.set(b.clone());
 
-        if let Some(w) = ttt_winner(&b) {
+        if let Some(w) = crate::domain::games::ttt_winner_sized(&b, n, target) {
             status.set(format!("{w} wins! 🎉"));
             game_over.set(true);
             if w == 'X' {
@@ -524,44 +540,89 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             }
             return;
         }
-        if ttt_is_draw(&b) {
+        if crate::domain::games::ttt_is_draw_sized(&b, n, target) {
             status.set("Draw!".into());
             game_over.set(true);
             return;
         }
+
         player_turn.set(false);
         status.set("AI thinking…".into());
-
         let b_copy = b;
         leptos::task::spawn_local(async move {
             gloo_timers::future::TimeoutFuture::new(300).await;
-            if let Some(ai_idx) = ttt_best_move(&b_copy) {
+            if let Some(ai_idx) = crate::domain::games::ttt_best_move_sized(&b_copy, n, target) {
                 let mut b2 = b_copy;
                 b2[ai_idx] = 'O';
-                board.set(b2);
-                if let Some(w) = ttt_winner(&b2) {
+                board.set(b2.clone());
+                if let Some(w) = crate::domain::games::ttt_winner_sized(&b2, n, target) {
                     status.set(format!("{w} wins!"));
                     game_over.set(true);
-                } else if ttt_is_draw(&b2) {
+                } else if crate::domain::games::ttt_is_draw_sized(&b2, n, target) {
                     status.set("Draw!".into());
                     game_over.set(true);
                 } else {
                     status.set("Your turn (X)".into());
                     player_turn.set(true);
                 }
+            } else {
+                player_turn.set(true);
             }
         });
     };
 
     view! {
-        <div class="mx-auto w-full max-w-md space-y-4">
-            <div class="grid grid-cols-3 gap-3">
-                {(0..9).map(|i| view! {
-                    <button type="button"
-                        class=move || format!("aspect-square rounded-lg border border-[var(--border-color)] text-5xl font-bold hover:bg-[var(--surface-hover)] {}",
-                            match board.get()[i] { 'X' => "text-[var(--accent)]", 'O' => "text-red-500", _ => "text-[var(--text-primary)]" })
-                        on:click=move |_| click(i)>
-                        {move || board.get()[i].to_string()}
+        <div class="mx-auto w-full max-w-2xl space-y-4">
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <span class="text-sm font-medium text-[var(--text-secondary)]">"Board"</span>
+                {[3usize, 4, 5, 6].into_iter().map(|n| {
+                    view! {
+                        <button
+                            type="button"
+                            class=move || format!(
+                                "min-h-10 rounded-md border px-3 py-2 text-sm font-semibold {}",
+                                if size.get() == n {
+                                    "border-[var(--accent)] bg-[var(--surface-hover)] text-[var(--text-primary)]"
+                                } else {
+                                    "border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
+                                }
+                            )
+                            aria-pressed=move || size.get() == n
+                            on:click=move |_| set_size(n)
+                        >
+                            {format!("{n}×{n}")}
+                        </button>
+                    }
+                }).collect_view()}
+            </div>
+
+            <div
+                class=move || format!(
+                    "mx-auto grid w-full max-w-xl gap-1.5 sm:gap-2",
+                )
+                style=move || format!("grid-template-columns: repeat({}, minmax(0, 1fr))", size.get())
+            >
+                {(0..36).map(|i| view! {
+                    <button
+                        type="button"
+                        class=move || {
+                            let b = board.get();
+                            if i >= b.len() {
+                                "hidden".to_string()
+                            } else {
+                                format!(
+                                    "aspect-square rounded-lg border border-[var(--border-color)] text-3xl font-bold hover:bg-[var(--surface-hover)] sm:text-4xl {}",
+                                    match b[i] {
+                                        'X' => "text-[var(--accent)]",
+                                        'O' => "text-red-500",
+                                        _ => "text-[var(--text-primary)]",
+                                    }
+                                )
+                            }
+                        }
+                        on:click=move |_| click(i)
+                    >
+                        {move || board.get().get(i).copied().unwrap_or(' ').to_string()}
                     </button>
                 }).collect_view()}
             </div>
