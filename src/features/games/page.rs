@@ -1658,7 +1658,7 @@ fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         task_index.set(next);
 
         if correct {
-            if next_reactor.combo() > 0 && next_reactor.combo() % TypingReactor::CRITICAL_COMBO == 0
+            if next_reactor.combo().is_multiple_of(TypingReactor::CRITICAL_COMBO)
             {
                 status.set("CRITICAL HIT — reactor cooled".into());
             } else {
@@ -1672,12 +1672,6 @@ fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let accuracy = move || accuracy_percent(&reactor.get());
 
     {
-        let reactor = reactor;
-        let started_ms = started_ms;
-        let elapsed_ms = elapsed_ms;
-        let running = running;
-        let finished = finished;
-        let status = status;
         leptos::task::spawn_local(async move {
             loop {
                 gloo_timers::future::TimeoutFuture::new(250).await;
