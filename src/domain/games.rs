@@ -331,26 +331,44 @@ pub fn snake_step(
     }
 }
 
-pub fn minesweeper_adjacent_mines(mines: &[bool; 25], index: usize) -> u8 {
-    if index >= 25 {
+/// Counts mines in the eight neighbouring cells of a Minesweeper cell.
+pub fn minesweeper_adjacent_mines_sized(
+    mines: &[bool],
+    width: usize,
+    height: usize,
+    index: usize,
+) -> u8 {
+    if width == 0 || height == 0 || mines.len() != width * height || index >= mines.len() {
         return 0;
     }
-    let row = index / 5;
-    let col = index % 5;
-    let mut count = 0;
+
+    let row = index / width;
+    let col = index % width;
+    let mut count = 0u8;
+
     for dr in -1i32..=1 {
         for dc in -1i32..=1 {
             if dr == 0 && dc == 0 {
                 continue;
             }
+
             let r = row as i32 + dr;
             let c = col as i32 + dc;
-            if (0..5).contains(&r) && (0..5).contains(&c) && mines[r as usize * 5 + c as usize] {
-                count += 1;
+            if (0..height as i32).contains(&r)
+                && (0..width as i32).contains(&c)
+                && mines[r as usize * width + c as usize]
+            {
+                count = count.saturating_add(1);
             }
         }
     }
+
     count
+}
+
+/// Backward-compatible 5×5 Minesweeper neighbour counter.
+pub fn minesweeper_adjacent_mines(mines: &[bool; 25], index: usize) -> u8 {
+    minesweeper_adjacent_mines_sized(mines, 5, 5, index)
 }
 
 pub fn tetris_clear_lines(board: &mut Vec<bool>, width: usize) -> usize {
@@ -1219,46 +1237,70 @@ pub fn chess_ai_move(board: &[i8; 64]) -> Option<(usize, usize)> {
     capture.or(quiet)
 }
 
-/// Flood-fill reveal for Minesweeper: reveals all connected safe cells from `index`.
-/// Returns the list of newly revealed indices.
-pub fn minesweeper_flood_reveal(
-    mines: &[bool; 25],
-    revealed: &[bool; 25],
+/// Flood-fills all connected safe cells from a Minesweeper cell.
+pub fn minesweeper_flood_reveal_sized(
+    mines: &[bool],
+    revealed: &[bool],
+    width: usize,
+    height: usize,
     index: usize,
 ) -> Vec<usize> {
-    if index >= 25 || mines[index] {
+    if width == 0
+        || height == 0
+        || mines.len() != width * height
+        || revealed.len() != mines.len()
+        || index >= mines.len()
+        || mines[index]
+    {
         return vec![];
     }
-    let mut visited = *revealed;
+
+    let mut visited = revealed.to_vec();
     let mut queue = vec![index];
-    let mut result = vec![];
+    let mut result = Vec::new();
+
     while let Some(idx) = queue.pop() {
         if visited[idx] {
             continue;
         }
+
         visited[idx] = true;
         result.push(idx);
-        if minesweeper_adjacent_mines(mines, idx) == 0 {
-            let row = idx / 5;
-            let col = idx % 5;
-            for dr in -1i32..=1 {
-                for dc in -1i32..=1 {
-                    if dr == 0 && dc == 0 {
-                        continue;
-                    }
-                    let r = row as i32 + dr;
-                    let c = col as i32 + dc;
-                    if (0..5).contains(&r) && (0..5).contains(&c) {
-                        let ni = r as usize * 5 + c as usize;
-                        if !visited[ni] {
-                            queue.push(ni);
-                        }
+
+        if minesweeper_adjacent_mines_sized(mines, width, height, idx) != 0 {
+            continue;
+        }
+
+        let row = idx / width;
+        let col = idx % width;
+        for dr in -1i32..=1 {
+            for dc in -1i32..=1 {
+                if dr == 0 && dc == 0 {
+                    continue;
+                }
+
+                let r = row as i32 + dr;
+                let c = col as i32 + dc;
+                if (0..height as i32).contains(&r) && (0..width as i32).contains(&c) {
+                    let next = r as usize * width + c as usize;
+                    if !visited[next] {
+                        queue.push(next);
                     }
                 }
             }
         }
     }
+
     result
+}
+
+/// Backward-compatible 5×5 Minesweeper flood fill.
+pub fn minesweeper_flood_reveal(
+    mines: &[bool; 25],
+    revealed: &[bool; 25],
+    index: usize,
+) -> Vec<usize> {
+    minesweeper_flood_reveal_sized(mines, revealed, 5, 5, index)
 }
 
 /// Fixed-size simulation state for the Flappy game.
