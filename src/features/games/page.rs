@@ -841,7 +841,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             return;
         }
 
-        let (w, h, _) = size.get().dimensions();
+        let (w, h, mine_count) = size.get().dimensions();
         let m = mines.get();
         let r = revealed.get();
         let f = flagged.get();
@@ -874,11 +874,31 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             return;
         }
 
+        // Chord reveals only the eight directly adjacent cells.
+        let mut next_revealed = r;
+        let mut hit_mine = false;
+
         for ni in neighbours {
-            reveal(ni);
-            if game_over.get() {
-                break;
-            }
+            next_revealed[ni] = true;
+            hit_mine |= m[ni];
+        }
+
+        revealed.set(next_revealed.clone());
+
+        if hit_mine {
+            game_over.set(true);
+            status.set("💥 Mine! Game over.".into());
+            return;
+        }
+
+        let safe_count = next_revealed.iter().filter(|&&v| v).count();
+        score.set(safe_count as u32);
+
+        if safe_count + mine_count == w * h {
+            game_over.set(true);
+            status.set("🎉 You cleared the field!".into());
+        } else {
+            status.set(format!("{} safe cells revealed", safe_count));
         }
     };
 
