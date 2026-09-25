@@ -74,6 +74,81 @@ fn minimax_ttt(board: &mut [char; 9], computer: bool) -> i32 {
     v
 }
 
+
+pub fn ttt_winner_sized(board: &[char], size: usize, win_len: usize) -> Option<char> {
+    if size == 0 || win_len == 0 || win_len > size || board.len() != size * size {
+        return None;
+    }
+
+    for row in 0..size {
+        for col in 0..size {
+            let player = board[row * size + col];
+            if player == ' ' {
+                continue;
+            }
+
+            for (dr, dc) in [(1isize, 0isize), (0, 1), (1, 1), (1, -1)] {
+                let end_row = row as isize + dr * (win_len as isize - 1);
+                let end_col = col as isize + dc * (win_len as isize - 1);
+                if end_row < 0
+                    || end_row >= size as isize
+                    || end_col < 0
+                    || end_col >= size as isize
+                {
+                    continue;
+                }
+
+                if (1..win_len).all(|step| {
+                    let r = (row as isize + dr * step as isize) as usize;
+                    let c = (col as isize + dc * step as isize) as usize;
+                    board[r * size + c] == player
+                }) {
+                    return Some(player);
+                }
+            }
+        }
+    }
+    None
+}
+
+pub fn ttt_is_draw_sized(board: &[char], size: usize, win_len: usize) -> bool {
+    ttt_winner_sized(board, size, win_len).is_none() && board.iter().all(|c| *c != ' ')
+}
+
+pub fn ttt_best_move_sized(board: &[char], size: usize, win_len: usize) -> Option<usize> {
+    if ttt_winner_sized(board, size, win_len).is_some() || ttt_is_draw_sized(board, size, win_len) {
+        return None;
+    }
+
+    // Keep perfect minimax for classic 3x3; larger boards use a lightweight
+    // tactical AI to keep the browser game responsive.
+    if size == 3 && win_len == 3 && board.len() == 9 {
+        let fixed: [char; 9] = board.try_into().ok()?;
+        return ttt_best_move(&fixed);
+    }
+
+    for player in ['O', 'X'] {
+        for i in 0..board.len() {
+            if board[i] != ' ' {
+                continue;
+            }
+            let mut candidate = board.to_vec();
+            candidate[i] = player;
+            if ttt_winner_sized(&candidate, size, win_len) == Some(player) {
+                return Some(i);
+            }
+        }
+    }
+
+    let center = size / 2;
+    let center_index = center * size + center;
+    if board[center_index] == ' ' {
+        return Some(center_index);
+    }
+
+    (0..board.len()).find(|&i| board[i] == ' ')
+}
+
 pub fn connect_four_drop(board: &mut [u8; 42], column: usize, piece: u8) -> Option<usize> {
     if column >= 7 {
         return None;
