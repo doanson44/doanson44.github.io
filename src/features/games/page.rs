@@ -2890,13 +2890,13 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             status.set("Rally!".into());
             last_time.set(None);
 
-            let tick_frame: Rc<RefCell<Option<Box<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
+            let tick_frame: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
             let tick_frame_clone = tick_frame.clone();
             let last_time_clone = last_time.clone();
             let animation_id_clone = animation_id.clone();
             let callback_window_clone = callback_window.clone();
 
-            *tick_frame.borrow_mut() = Some(Box::new(move |timestamp| {
+            *tick_frame.borrow_mut() = Some(Closure::wrap(Box::new(move |timestamp| {
                 if !running.get() {
                     last_time_clone.set(None);
                     animation_id_clone.set(None);
@@ -2928,7 +2928,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     let callback_ref = tick_frame_clone.borrow();
                     if let Some(callback) = callback_ref.as_ref() {
                         if let Ok(id) = callback_window_clone
-                            .request_animation_frame(callback.as_ref() as &js_sys::Function)
+                            .request_animation_frame(callback.as_ref().unchecked_ref())
                         {
                             animation_id_clone.set(Some(id));
                         }
@@ -2936,7 +2936,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 } else {
                     animation_id_clone.set(None);
                 }
-            }));
+            }) as Box<dyn FnMut(f64)>));
 
             let callback_ref = tick_frame.borrow();
             if let Some(callback) = callback_ref.as_ref() {
