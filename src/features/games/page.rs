@@ -1198,7 +1198,7 @@ fn board_snake(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|toggle()>
                 {move || if game_over.get() { "New Game (Space)" } else if running.get() { "⏸ Pause (Space)" } else { "▶ Start (Space)" }}
             </button>
-            <div class="grid gap-0.5" style="grid-template-columns: repeat(10, 1fr)">
+            <div class="game-grid-10 grid gap-0.5">
                 {(0..rows).flat_map(|y| (0..cols).map(move |x| view! {
                     <div class=move || {
                         let b = body.get();
