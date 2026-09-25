@@ -730,8 +730,8 @@ impl SocketState {
                     }),
                 );
             }
+                }
             })
-        };
         let submit_for_callback = submit.clone();
         service.fetch_contract(
             &api_url,
