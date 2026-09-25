@@ -729,9 +729,8 @@ impl SocketState {
                         Err(message) => error_signal.set(Some(message)),
                     }),
                 );
-            }
-                }
             })
+        };
         let submit_for_callback = submit.clone();
         service.fetch_contract(
             &api_url,
