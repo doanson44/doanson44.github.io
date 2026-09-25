@@ -422,60 +422,6 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
                         }.into_any()
                     }}
 
-                    <label class="block text-sm">
-                        <span class="mb-1 block font-medium text-[var(--text-primary)]">
-                            {move || t_string!(i18n, socket_trade_allocation)}
-                        </span>
-                        <input
-                            type="number"
-                            min="0.1"
-                            max="100"
-                            step="0.1"
-                            class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
-                            prop:value=move || trade_allocation.get()
-                            on:input=move |ev| trade_allocation.set(event_target_value(&ev))
-                        />
-                        <span class="mt-1 block text-xs text-[var(--text-secondary)]">
-                            {move || t_string!(i18n, socket_trade_allocation_hint)}
-                        </span>
-                    </label>
-
-                    <label class="block text-sm">
-                        <span class="mb-1 block font-medium text-[var(--text-primary)]">
-                            {move || t_string!(i18n, socket_trading_fee)}
-                        </span>
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
-                            prop:value=move || fee_percent.get()
-                            on:input=move |ev| fee_percent.set(event_target_value(&ev))
-                        />
-                        <span class="mt-1 block text-xs text-[var(--text-secondary)]">
-                            {move || t_string!(i18n, socket_fee_hint)}
-                        </span>
-                    </label>
-
-                    <label class="block text-sm">
-                        <span class="mb-1 block font-medium text-[var(--text-primary)]">
-                            {move || t_string!(i18n, socket_leverage)}
-                        </span>
-                        <input
-                            type="number"
-                            min="1"
-                            max="125"
-                            step="0.1"
-                            class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
-                            prop:value=move || leverage.get()
-                            on:input=move |ev| leverage.set(event_target_value(&ev))
-                        />
-                        <span class="mt-1 block text-xs text-[var(--text-secondary)]">
-                            {move || t_string!(i18n, socket_leverage_hint)}
-                        </span>
-                    </label>
-
                     <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2 text-xs text-[var(--text-secondary)]">
                         {move || if mode.get() == crate::domain::trading::ExecutionMode::Real {
                             t_string!(i18n, socket_real_storage_hint)
