@@ -601,12 +601,32 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 {socket_analysis_actions(symbol.clone(), state)}
             </div>
             <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-                <div><span class="block whitespace-nowrap text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
-                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_ranking)}</span><span class="font-mono text-[var(--accent)]">{ticker.ranking.ranking_score()}</span></div>
-                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_direction)}</span><span class="font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</span></div>
-                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change15s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_15s())}</span></div>
-                <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change1m)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_1m())}</span></div>
-                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change5m)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_5m())}</span></div>
+                <div>
+                    <span class="block whitespace-nowrap text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span>
+                    <span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span>
+                </div>
+                <div class="text-right">
+                    <span class="block whitespace-nowrap text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_ranking)}</span>
+                    <span class="font-mono text-[var(--accent)]">{ticker.ranking.ranking_score()}</span>
+                </div>
+                <div>
+                    <span class="block whitespace-nowrap text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_direction)}</span>
+                    <span class="font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</span>
+                </div>
+                <div class="col-span-2 mt-1 grid grid-cols-3 gap-x-2 text-center">
+                    <div>
+                        <span class="block whitespace-nowrap text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change15s)}</span>
+                        <span class="font-mono">{format_short_percent(ticker.ranking.return_15s())}</span>
+                    </div>
+                    <div>
+                        <span class="block whitespace-nowrap text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change1m)}</span>
+                        <span class="font-mono">{format_short_percent(ticker.ranking.return_1m())}</span>
+                    </div>
+                    <div>
+                        <span class="block whitespace-nowrap text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change5m)}</span>
+                        <span class="font-mono">{format_short_percent(ticker.ranking.return_5m())}</span>
+                    </div>
+                </div>
             </div>
         </article>
     }
