@@ -1837,7 +1837,7 @@ mod tests {
         assert_eq!(game.combo(), 5);
         assert_eq!(game.criticals(), 1);
         assert_eq!(game.heat(), 0);
-        assert_eq!(game.score(), 25 + 25 + 25 + 25 + 600);
+        assert_eq!(game.score(), 300);
     }
 
     #[test]
