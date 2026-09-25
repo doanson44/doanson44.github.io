@@ -442,6 +442,72 @@ pub fn snake_step(
     }
 }
 
+/// Flood-fills all connected safe cells from a Minesweeper cell.
+pub fn minesweeper_flood_reveal_sized(
+    mines: &[bool],
+    revealed: &[bool],
+    width: usize,
+    height: usize,
+    index: usize,
+) -> Vec<usize> {
+    if width == 0
+        || height == 0
+        || mines.len() != width * height
+        || revealed.len() != mines.len()
+        || index >= mines.len()
+        || mines[index]
+    {
+        return vec![];
+    }
+
+    let mut visited = revealed.to_vec();
+    let mut queue = vec![index];
+    let mut result = Vec::new();
+
+    while let Some(idx) = queue.pop() {
+        if visited[idx] {
+            continue;
+        }
+
+        visited[idx] = true;
+        result.push(idx);
+
+        if minesweeper_adjacent_mines_sized(mines, width, height, idx) != 0 {
+            continue;
+        }
+
+        let row = idx / width;
+        let col = idx % width;
+        for dr in -1i32..=1 {
+            for dc in -1i32..=1 {
+                if dr == 0 && dc == 0 {
+                    continue;
+                }
+
+                let r = row as i32 + dr;
+                let c = col as i32 + dc;
+                if (0..height as i32).contains(&r) && (0..width as i32).contains(&c) {
+                    let next = r as usize * width + c as usize;
+                    if !visited[next] {
+                        queue.push(next);
+                    }
+                }
+            }
+        }
+    }
+
+    result
+}
+
+/// Backward-compatible 5×5 Minesweeper flood fill.
+pub fn minesweeper_flood_reveal(
+    mines: &[bool; 25],
+    revealed: &[bool; 25],
+    index: usize,
+) -> Vec<usize> {
+    minesweeper_flood_reveal_sized(mines, revealed, 5, 5, index)
+}
+
 /// Counts mines in the eight neighbouring cells of a Minesweeper cell.
 pub fn minesweeper_adjacent_mines_sized(
     mines: &[bool],
@@ -1193,6 +1259,169 @@ pub fn tetris_clear_filled(board: &mut Vec<u8>, width: usize) -> usize {
         }
     }
     cleared
+}
+
+/// Fixed-size simulation state for the Flappy game.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FlappyGame {
+    /// Bird vertical position in game pixels.
+    pub bird_y: f64,
+    /// Bird vertical velocity in game pixels per second.
+    pub bird_velocity: f64,
+    /// Pipe positions and vertical gap centres.
+    pub pipes: Vec<FlappyPipe>,
+    /// Number of pipes successfully passed.
+    pub score: u32,
+    /// Whether the simulation is currently running.
+    pub running: bool,
+    /// Whether the current run has ended.
+    pub game_over: bool,
+}
+
+/// A single Flappy pipe pair.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FlappyPipe {
+    /// Horizontal position of the pipe pair in game pixels.
+    pub x: f64,
+    /// Vertical centre of the gap in game pixels.
+    pub gap_y: f64,
+    /// Whether this pipe pair has already awarded a score.
+    pub scored: bool,
+}
+
+impl FlappyGame {
+    /// Logical game width in pixels.
+    pub const WIDTH: f64 = 400.0;
+    /// Logical game height in pixels.
+    pub const HEIGHT: f64 = 600.0;
+    /// Bird horizontal position in pixels.
+    pub const BIRD_X: f64 = 90.0;
+    /// Bird collision size in pixels.
+    pub const BIRD_SIZE: f64 = 28.0;
+    /// Ground height in pixels.
+    pub const GROUND_HEIGHT: f64 = 48.0;
+    /// Pipe width in pixels.
+    pub const PIPE_WIDTH: f64 = 58.0;
+    /// Vertical pipe gap in pixels.
+    pub const PIPE_GAP: f64 = 155.0;
+    /// Minimum pipe gap centre.
+    pub const GAP_MIN_Y: f64 = 145.0;
+    /// Maximum pipe gap centre.
+    pub const GAP_MAX_Y: f64 = 455.0;
+    /// Horizontal distance between pipe pairs.
+    pub const PIPE_SPACING: f64 = 230.0;
+    /// Horizontal pipe speed in pixels per second.
+    pub const PIPE_SPEED: f64 = 180.0;
+    /// Gravity in pixels per second squared.
+    pub const GRAVITY: f64 = 1_450.0;
+    /// Upward impulse in pixels per second.
+    pub const FLAP_VELOCITY: f64 = -440.0;
+    /// Maximum downward velocity in pixels per second.
+    pub const MAX_FALL_SPEED: f64 = 620.0;
+    /// Maximum simulation step used by the caller.
+    pub const MAX_DT: f64 = 0.05;
+
+    /// Creates a deterministic starting state.
+    pub fn new(gap_y: f64) -> Self {
+        let gap_y = gap_y.clamp(Self::GAP_MIN_Y, Self::GAP_MAX_Y);
+        Self {
+            bird_y: Self::HEIGHT * 0.45,
+            bird_velocity: 0.0,
+            pipes: vec![
+                FlappyPipe {
+                    x: Self::WIDTH + 80.0,
+                    gap_y,
+                    scored: false,
+                },
+                FlappyPipe {
+                    x: Self::WIDTH + 80.0 + Self::PIPE_SPACING,
+                    gap_y,
+                    scored: false,
+                },
+            ],
+            score: 0,
+            running: false,
+            game_over: false,
+        }
+    }
+
+    /// Applies an immediate flap impulse and starts a new run when needed.
+    pub fn flap(&mut self) {
+        if self.game_over {
+            *self = Self::new(Self::HEIGHT * 0.5);
+        }
+        self.running = true;
+        self.game_over = false;
+        self.bird_velocity = Self::FLAP_VELOCITY;
+    }
+
+    /// Advances the simulation by a bounded time step.
+    ///
+    /// next_gap_y is only consumed when a new pipe pair must be spawned.
+    /// Supplying randomness from the UI layer keeps this simulation deterministic
+    /// under tests.
+    pub fn update(&mut self, dt: f64, next_gap_y: f64) {
+        if !self.running || self.game_over {
+            return;
+        }
+
+        let dt = dt.clamp(0.0, Self::MAX_DT);
+        self.bird_velocity = (self.bird_velocity + Self::GRAVITY * dt).min(Self::MAX_FALL_SPEED);
+        self.bird_y += self.bird_velocity * dt;
+
+        for pipe in &mut self.pipes {
+            pipe.x -= Self::PIPE_SPEED * dt;
+            if !pipe.scored && pipe.x + Self::PIPE_WIDTH < Self::BIRD_X {
+                pipe.scored = true;
+                self.score = self.score.saturating_add(1);
+            }
+        }
+
+        self.pipes.retain(|pipe| pipe.x + Self::PIPE_WIDTH > -20.0);
+
+        if self
+            .pipes
+            .last()
+            .is_none_or(|pipe| pipe.x < Self::WIDTH - Self::PIPE_SPACING)
+        {
+            let x = self
+                .pipes
+                .last()
+                .map_or(Self::WIDTH + 40.0, |pipe| pipe.x + Self::PIPE_SPACING);
+            self.pipes.push(FlappyPipe {
+                x,
+                gap_y: next_gap_y.clamp(Self::GAP_MIN_Y, Self::GAP_MAX_Y),
+                scored: false,
+            });
+        }
+
+        if self.bird_y - Self::BIRD_SIZE * 0.5 <= 0.0
+            || self.bird_y + Self::BIRD_SIZE * 0.5 >= Self::HEIGHT - Self::GROUND_HEIGHT
+            || self.collides_with_pipe()
+        {
+            self.running = false;
+            self.game_over = true;
+        }
+    }
+
+    fn collides_with_pipe(&self) -> bool {
+        let bird_left = Self::BIRD_X - Self::BIRD_SIZE * 0.5;
+        let bird_right = Self::BIRD_X + Self::BIRD_SIZE * 0.5;
+        let bird_top = self.bird_y - Self::BIRD_SIZE * 0.5;
+        let bird_bottom = self.bird_y + Self::BIRD_SIZE * 0.5;
+
+        self.pipes.iter().any(|pipe| {
+            let pipe_left = pipe.x;
+            let pipe_right = pipe.x + Self::PIPE_WIDTH;
+            if bird_right <= pipe_left || bird_left >= pipe_right {
+                return false;
+            }
+
+            let gap_top = pipe.gap_y - Self::PIPE_GAP * 0.5;
+            let gap_bottom = pipe.gap_y + Self::PIPE_GAP * 0.5;
+            bird_top < gap_top || bird_bottom > gap_bottom
+        })
+    }
 }
 
 #[cfg(test)]
