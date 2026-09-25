@@ -2062,8 +2062,9 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                         >
                             <div class="absolute left-1/2 top-7 h-12 w-12 -translate-x-1/2 rounded-full border border-[var(--border-color)] bg-[var(--surface)]"></div>
                             <div class="absolute bottom-7 left-1/2 h-12 w-8 -translate-x-1/2 rounded-md border border-[var(--border-color)]"></div>
-                            <div class="absolute -bottom-2 left-1/2 h-8 w-10 -translate-x-1/2 rounded-b-full bg-[var(--accent)] transition-opacity duration-300"
-                                class=(("opacity-0", move || mission_stage() < 2))
+                            <div
+                                class="absolute -bottom-2 left-1/2 h-8 w-10 -translate-x-1/2 rounded-b-full bg-[var(--accent)] transition-opacity duration-300"
+                                class:opacity-0=move || mission_stage() < 2
                             ></div>
                             <div class="absolute -left-5 bottom-5 h-12 w-8 -skew-x-12 rounded-l-xl border border-[var(--border-color)] bg-[var(--surface)]"></div>
                             <div class="absolute -right-5 bottom-5 h-12 w-8 skew-x-12 rounded-r-xl border border-[var(--border-color)] bg-[var(--surface)]"></div>
