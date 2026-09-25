@@ -1420,10 +1420,38 @@ impl MemorySize {
 
 fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let emojis = [
-        "🍎", "🍊", "🍋", "🍇", "🍓", "🍒", "🍑", "🥝",
-        "🥑", "🍉", "🍌", "🍍", "🥭", "🍐", "🍑", "🥥",
-        "🥕", "🌽", "🍄", "🥨", "🍪", "🍩", "🍰", "🍫",
-        "⚽", "🏀", "🎸", "🎹", "🚗", "🚲", "🚀", "⭐",
+        "🍎",
+        "🍊",
+        "🍋",
+        "🍇",
+        "🍓",
+        "🍒",
+        "🍑",
+        "🥝",
+        "🥑",
+        "🍉",
+        "🍌",
+        "🍍",
+        "🥭",
+        "🍐",
+        "🍑",
+        "🥥",
+        "🥕",
+        "🌽",
+        "🍄",
+        "🥨",
+        "🍪",
+        "🍩",
+        "🍰",
+        "🍫",
+        "⚽",
+        "🏀",
+        "🎸",
+        "🎹",
+        "🚗",
+        "🚲",
+        "🚀",
+        "⭐",
     ];
 
     let size = RwSignal::new(MemorySize::Small);
@@ -1449,7 +1477,11 @@ fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         first.set(None);
         locked.set(false);
         score.set(0);
-        status.set(format!("{} × {} — find all pairs", new_size.dimensions(), new_size.dimensions()));
+        status.set(format!(
+            "{} × {} — find all pairs",
+            new_size.dimensions(),
+            new_size.dimensions()
+        ));
     };
 
     new_game(MemorySize::Small);
