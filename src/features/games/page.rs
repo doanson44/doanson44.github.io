@@ -2820,8 +2820,8 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     class="breakout-paddle"
                 />
                 <circle
-                    cx=move || (game.get().ball_position().0 as f64 + 0.5) * 40.0
-                    cy=move || (game.get().ball_position().1 as f64 + 0.5) * 40.0
+                    cx=move || (game.get().ball_position().0 + 0.5) * 40.0
+                    cy=move || (game.get().ball_position().1 + 0.5) * 40.0
                     r="13"
                     class="breakout-ball"
                 />
