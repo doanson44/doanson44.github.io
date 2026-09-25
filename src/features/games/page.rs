@@ -1987,14 +1987,17 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         let wrong = g.iter().filter(|&&ch| !guess_word.contains(ch)).count();
         if guess_word.chars().all(|ch| g.contains(&ch)) {
             score.update(|s| *s += 20);
-            status.set("You got it!".into());
+            status.set("Mission complete — launch successful!".into());
         } else if wrong >= max_wrong {
             status.set(format!(
-                "The word was {}",
+                "Launch aborted — the code was {}",
                 guess_word_reveal.to_ascii_uppercase()
             ));
         } else {
-            status.set(format!("{} guesses left", max_wrong - wrong));
+            status.set(format!(
+                "Wrong code fragment — {} attempts remaining",
+                max_wrong - wrong
+            ));
         }
     };
 
@@ -2016,57 +2019,102 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let reset = move || {
         guessed.set(vec![]);
         score.set(0);
-        status.set("Choose a letter".into());
+        status.set("Mission ready — enter the launch code".into());
     };
 
+    let mission_stage = move || wrong_count.get().min(max_wrong);
+
     view! {
-        <div class="mx-auto w-full max-w-4xl space-y-5">
-            <div class="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div class="mx-auto w-full max-w-5xl space-y-5">
+            <div class="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
                 <section class="relative overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-5 sm:p-6">
-                    <div class="mb-4 flex items-center justify-between">
+                    <div class="flex items-start justify-between gap-3">
                         <div>
-                            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-                                "Mistakes"
+                            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--accent)]">
+                                "Mission Control"
                             </p>
-                            <p class="mt-1 text-2xl font-black tabular-nums text-[var(--text-primary)]">
-                                {move || format!("{}/{}", wrong_count.get(), max_wrong)}
-                            </p>
+                            <h3 class="mt-1 text-xl font-bold text-[var(--text-primary)]">
+                                "Launch Code"
+                            </h3>
                         </div>
-                        <span class="rounded-full border border-[var(--border-color)] px-2.5 py-1 text-xs font-semibold text-[var(--text-secondary)]">
-                            {move || if is_won.get() { "Solved" } else if is_lost.get() { "Finished" } else { "Playing" }}
+                        <span class=move || {
+                            if is_won.get() {
+                                "rounded-full border border-emerald-500/50 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300"
+                            } else if is_lost.get() {
+                                "rounded-full border border-red-500/50 bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-700 dark:text-red-300"
+                            } else {
+                                "rounded-full border border-[var(--border-color)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]"
+                            }
+                        }>
+                            {move || if is_won.get() { "LAUNCHED" } else if is_lost.get() { "ABORTED" } else { "STANDBY" }}
                         </span>
                     </div>
 
-                    <div class="relative mx-auto h-56 w-52" aria-label="Hangman drawing" role="img">
-                        <div class="absolute bottom-2 left-4 h-1 w-44 rounded-full bg-[var(--text-tertiary)]"></div>
-                        <div class="absolute bottom-2 left-8 h-48 w-1 rounded-full bg-[var(--text-tertiary)]"></div>
-                        <div class="absolute left-8 top-4 h-1 w-28 rounded-full bg-[var(--text-tertiary)]"></div>
-                        <div class="absolute left-36 top-4 h-10 w-1 rounded-full bg-[var(--text-tertiary)]"></div>
+                    <div class="relative mx-auto mt-5 h-72 max-w-[260px] overflow-hidden rounded-xl border border-[var(--border-color)] bg-[var(--surface)]">
+                        <div class="absolute inset-x-0 bottom-0 h-16 border-t border-[var(--border-color)] bg-[var(--surface-hover)]"></div>
+                        <div class="absolute bottom-12 left-1/2 h-2 w-40 -translate-x-1/2 rounded-full bg-[var(--text-tertiary)]"></div>
 
-                        <div class=move || format!(
-                            "absolute left-[8.25rem] top-12 h-10 w-10 rounded-full border-4 border-[var(--text-primary)] {}",
-                            if wrong_count.get() >= 1 { "" } else { "invisible" }
-                        )></div>
-                        <div class=move || format!(
-                            "absolute left-[8.75rem] top-[5.5rem] h-16 w-1 rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count.get() >= 2 { "" } else { "invisible" }
-                        )></div>
-                        <div class=move || format!(
-                            "absolute left-[7.15rem] top-[6.25rem] h-1 w-8 origin-right rotate-[-25deg] rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count.get() >= 3 { "" } else { "invisible" }
-                        )></div>
-                        <div class=move || format!(
-                            "absolute left-[9.05rem] top-[6.25rem] h-1 w-8 origin-left rotate-[25deg] rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count.get() >= 4 { "" } else { "invisible" }
-                        )></div>
-                        <div class=move || format!(
-                            "absolute left-[8.05rem] top-[9.2rem] h-1 w-8 origin-right rotate-[-60deg] rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count.get() >= 5 { "" } else { "invisible" }
-                        )></div>
-                        <div class=move || format!(
-                            "absolute left-[9.05rem] top-[9.2rem] h-1 w-8 origin-left rotate-[60deg] rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count.get() >= 6 { "" } else { "invisible" }
-                        )></div>
+                        <div
+                            class=move || format!(
+                                "absolute bottom-16 left-1/2 h-40 w-24 -translate-x-1/2 rounded-t-[3rem] border-2 border-[var(--text-primary)] bg-[var(--surface-hover)] transition-transform duration-500 {}",
+                                if is_won.get() { "-translate-y-8" } else { "" }
+                            )
+                        >
+                            <div class="absolute left-1/2 top-7 h-12 w-12 -translate-x-1/2 rounded-full border border-[var(--border-color)] bg-[var(--surface)]"></div>
+                            <div class="absolute bottom-7 left-1/2 h-12 w-8 -translate-x-1/2 rounded-md border border-[var(--border-color)]"></div>
+                            <div class="absolute -bottom-2 left-1/2 h-8 w-10 -translate-x-1/2 rounded-b-full bg-[var(--accent)] transition-opacity duration-300"
+                                class=(("opacity-0", move || mission_stage() < 2))
+                            ></div>
+                            <div class="absolute -left-5 bottom-5 h-12 w-8 -skew-x-12 rounded-l-xl border border-[var(--border-color)] bg-[var(--surface)]"></div>
+                            <div class="absolute -right-5 bottom-5 h-12 w-8 skew-x-12 rounded-r-xl border border-[var(--border-color)] bg-[var(--surface)]"></div>
+                        </div>
+
+                        <div class="absolute left-3 top-3 rounded-md border border-[var(--border-color)] bg-[var(--surface)]/90 px-2 py-1 font-mono text-[10px] font-bold tracking-widest text-[var(--text-tertiary)]">
+                            "MISSION 01"
+                        </div>
+                        <div class="absolute right-3 top-3 text-right font-mono text-[10px] font-bold tracking-widest text-[var(--text-tertiary)]">
+                            <div>"STATUS"</div>
+                            <div class="mt-1 text-[var(--accent)]">
+                                {move || if is_won.get() { "GO" } else if is_lost.get() { "ABORT" } else { "ARMED" }}
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-2 left-3 right-3">
+                            <div class="flex items-center justify-between font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                                <span>"Mission progress"</span>
+                                <span>{move || format!("{}/6", mission_stage())}</span>
+                            </div>
+                            <div class="mt-1 grid grid-cols-6 gap-1">
+                                {(0..max_wrong).map(|i| view! {
+                                    <div class=move || {
+                                        if mission_stage() > i {
+                                            "h-1.5 rounded-full bg-[var(--accent)]"
+                                        } else {
+                                            "h-1.5 rounded-full bg-[var(--border-color)]"
+                                        }
+                                    }></div>
+                                }).collect_view()}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
+                        <div class="rounded-lg border border-[var(--border-color)] p-3">
+                            <p class="font-mono uppercase tracking-wider text-[var(--text-tertiary)]">"Engine"</p>
+                            <p class=move || {
+                                if mission_stage() >= 2 || is_won.get() { "mt-1 font-bold text-[var(--accent)]" } else { "mt-1 font-bold text-[var(--text-tertiary)]" }
+                            }>
+                                {move || if mission_stage() >= 2 || is_won.get() { "ONLINE" } else { "OFFLINE" }}
+                            </p>
+                        </div>
+                        <div class="rounded-lg border border-[var(--border-color)] p-3">
+                            <p class="font-mono uppercase tracking-wider text-[var(--text-tertiary)]">"Navigation"</p>
+                            <p class=move || {
+                                if mission_stage() >= 4 || is_won.get() { "mt-1 font-bold text-[var(--accent)]" } else { "mt-1 font-bold text-[var(--text-tertiary)]" }
+                            }>
+                                {move || if mission_stage() >= 4 || is_won.get() { "LOCKED" } else { "PENDING" }}
+                            </p>
+                        </div>
                     </div>
                 </section>
 
@@ -2074,11 +2122,14 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <p class="text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent)]">
-                                "Guess the word"
+                                "Mission Briefing"
                             </p>
                             <h3 class="mt-1 text-2xl font-bold text-[var(--text-primary)] sm:text-3xl">
-                                "Complete the puzzle"
+                                "Enter the launch code"
                             </h3>
+                            <p class="mt-2 max-w-xl text-sm text-[var(--text-secondary)]">
+                                "Decode the word before the launch sequence runs out."
+                            </p>
                         </div>
                         <div class="text-right">
                             <p class="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">"Score"</p>
@@ -2087,14 +2138,17 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     </div>
 
                     <div class="mt-8 flex min-h-24 flex-wrap items-end justify-center gap-x-2 gap-y-3">
-                        {word.chars().map(|c| view! {
-                            <span class="flex h-12 w-8 items-center justify-center border-b-2 border-[var(--text-primary)] text-2xl font-bold uppercase text-[var(--text-primary)] sm:w-10 sm:text-3xl">
-                                {move || if guessed.get().contains(&c) || is_lost.get() {
-                                    c.to_string()
-                                } else {
-                                    String::new()
-                                }}
-                            </span>
+                        {word.chars().map(|c| {
+                            let word_char = c;
+                            view! {
+                                <span class="flex h-12 w-8 items-center justify-center border-b-2 border-[var(--text-primary)] text-2xl font-bold uppercase text-[var(--text-primary)] sm:w-10 sm:text-3xl">
+                                    {move || if guessed.get().contains(&word_char) || is_lost.get() {
+                                        word_char.to_string()
+                                    } else {
+                                        String::new()
+                                    }}
+                                </span>
+                            }
                         }).collect_view()}
                     </div>
 
@@ -2103,34 +2157,35 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     </p>
 
                     <div class="mt-auto pt-7">
-                        <div class="grid grid-cols-7 gap-1.5 sm:grid-cols-9" aria-label="Letter keyboard">
+                        <div class="grid grid-cols-7 gap-1.5 sm:grid-cols-9" aria-label="Launch code keyboard">
                             {('a'..='z').map(|c| {
                                 let button_guess = guess.clone();
                                 let button_word = word.clone();
                                 view! {
-                                <button
-                                    type="button"
-                                    class=move || {
-                                        let used = guessed.get().contains(&c);
-                                        let correct = button_word.contains(c);
-                                        if used && correct {
-                                            "min-h-10 rounded-lg border border-emerald-500 bg-emerald-500/15 text-sm font-bold uppercase text-emerald-700 dark:text-emerald-300"
-                                        } else if used {
-                                            "min-h-10 rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] text-sm font-bold uppercase text-[var(--text-tertiary)] line-through"
-                                        } else {
-                                            "min-h-10 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] text-sm font-bold uppercase text-[var(--text-primary)] shadow-sm transition hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] active:scale-95"
+                                    <button
+                                        type="button"
+                                        class=move || {
+                                            let used = guessed.get().contains(&c);
+                                            let correct = button_word.contains(c);
+                                            if used && correct {
+                                                "min-h-10 rounded-lg border border-emerald-500 bg-emerald-500/15 text-sm font-bold uppercase text-emerald-700 dark:text-emerald-300"
+                                            } else if used {
+                                                "min-h-10 rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] text-sm font-bold uppercase text-[var(--text-tertiary)] line-through"
+                                            } else {
+                                                "min-h-10 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] text-sm font-bold uppercase text-[var(--text-primary)] shadow-sm transition hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] active:scale-95"
+                                            }
                                         }
-                                    }
-                                    on:click=move |_| button_guess(c)
-                                    disabled=move || guessed.get().contains(&c) || is_won.get() || is_lost.get()
-                                    aria-label=format!("Guess letter {}", c.to_ascii_uppercase())
-                                >
-                                    {c.to_ascii_uppercase().to_string()}
-                                </button>
-                            }}).collect_view()}
+                                        on:click=move |_| button_guess(c)
+                                        disabled=move || guessed.get().contains(&c) || is_won.get() || is_lost.get()
+                                        aria-label=format!("Enter launch code letter {}", c.to_ascii_uppercase())
+                                    >
+                                        {c.to_ascii_uppercase().to_string()}
+                                    </button>
+                                }
+                            }).collect_view()}
                         </div>
                         <p class="mt-3 text-center text-xs text-[var(--text-tertiary)]">
-                            "Type A–Z or use the on-screen keyboard."
+                            "Type A–Z or use the launch keyboard."
                         </p>
                     </div>
                 </section>
@@ -2142,20 +2197,21 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     class="min-h-11 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-5 py-2.5 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                     on:click=move |_| reset()
                 >
-                    "New Game"
+                    "New Mission"
                 </button>
                 <p class="text-xs text-[var(--text-tertiary)]">
-                    "Find the word before you make six mistakes."
+                    "Six failed inputs trigger launch abort."
                 </p>
             </div>
 
             <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[var(--text-tertiary)]">
-                <span>{move || format!("Wrong guesses: {}", wrong_count.get())}</span>
-                <span>{move || format!("Remaining: {}", max_wrong - wrong_count.get().min(max_wrong))}</span>
+                <span>{move || format!("Failed inputs: {}", wrong_count.get())}</span>
+                <span>{move || format!("Attempts remaining: {}", max_wrong - wrong_count.get().min(max_wrong))}</span>
             </div>
         </div>
     }.into_any()
 }
+
 // ── 15 Puzzle ─────────────────────────────────────────────────────────────────
 
 fn board_puzzle(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
