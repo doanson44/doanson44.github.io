@@ -54,7 +54,7 @@ pub struct RealPortfolioSummary {
     pub total_pnl: f64,
     pub realized_pnl: f64,
     pub unrealized_pnl: f64,
-    pub holdings: Vec<HoldingSummary>
+    pub holdings: Vec<HoldingSummary>,
 }
 
 /// Client-only configuration for the real execution mode.
