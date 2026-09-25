@@ -1158,16 +1158,6 @@ pub fn has_move_2048(board: &[u32; 16]) -> bool {
     false
 }
 
-/// Standard 52-card deck (ranks 1..=13 repeated 4 times), shuffled with `rand_index`.
-pub fn shuffle_deck(mut rand_index: impl FnMut(usize) -> usize) -> Vec<u8> {
-    let mut deck: Vec<u8> = (0..52).map(|i| (i % 13) as u8 + 1).collect();
-    for i in (1..deck.len()).rev() {
-        let j = rand_index(i + 1).min(i);
-        deck.swap(i, j);
-    }
-    deck
-}
-
 /// Rotate a tetromino 90° clockwise, keeping the bounding-box origin.
 pub fn tetris_rotate_cw(piece: &[(i32, i32)]) -> Vec<(i32, i32)> {
     if piece.is_empty() {
@@ -1392,15 +1382,6 @@ mod tests {
         assert_eq!(cells.len(), 25);
     }
 
-    #[test]
-    fn shuffle_deck_has_52_cards() {
-        let mut i = 0usize;
-        let d = shuffle_deck(|n| {
-            i = (i + 3) % n.max(1);
-            i
-        });
-        assert_eq!(d.len(), 52);
-        assert_eq!(d.iter().filter(|&&c| c == 1).count(), 4);
     }
 
     #[test]
