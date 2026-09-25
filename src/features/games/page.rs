@@ -6,8 +6,9 @@ use crate::domain::games::{
     connect_four_ai_column, connect_four_drop, connect_four_winner, hangman_word, has_move_2048,
     lights_toggle, minesweeper_adjacent_mines, minesweeper_flood_reveal, puzzle_is_solved,
     puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given, sudoku_puzzle, sudoku_valid,
-    tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage, ttt_best_move_sized, ttt_is_draw_sized, ttt_winner_sized, typing_words, wordle_check, wordle_word, BreakoutGame,
-    BreakoutTickResult, FlappyGame, PongGame,
+    tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage,
+    ttt_best_move_sized, ttt_is_draw_sized, ttt_winner_sized, typing_words, wordle_check,
+    wordle_word, BreakoutGame, BreakoutTickResult, FlappyGame, PongGame,
 };
 use leptos::ev;
 use leptos::prelude::*;
@@ -505,9 +506,13 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         player_turn.set(true);
         game_over.set(false);
         if i18n.get_locale() == Locale::en {
-            status.set(format!("Your turn (X) — {n}×{n}, first to {target} in a row"));
+            status.set(format!(
+                "Your turn (X) — {n}×{n}, first to {target} in a row"
+            ));
         } else {
-            status.set(format!("Lượt của bạn (X) — {n}×{n}, thắng khi có {target} quân liên tiếp"));
+            status.set(format!(
+                "Lượt của bạn (X) — {n}×{n}, thắng khi có {target} quân liên tiếp"
+            ));
         }
     };
 
@@ -520,9 +525,13 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         player_turn.set(true);
         game_over.set(false);
         if i18n.get_locale() == Locale::en {
-            status.set(format!("Your turn (X) — {n}×{n}, first to {target} in a row"));
+            status.set(format!(
+                "Your turn (X) — {n}×{n}, first to {target} in a row"
+            ));
         } else {
-            status.set(format!("Lượt của bạn (X) — {n}×{n}, thắng khi có {target} quân liên tiếp"));
+            status.set(format!(
+                "Lượt của bạn (X) — {n}×{n}, thắng khi có {target} quân liên tiếp"
+            ));
         }
     };
 
