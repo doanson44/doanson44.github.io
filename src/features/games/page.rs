@@ -2786,35 +2786,21 @@ fn board_chess(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     view! {
                         <button
                             type="button"
-                            class=move || {
-                                let sel = selected.get();
-                                let current_board = board.get();
-                                let legal = sel.is_some_and(|s| {
-                                    chess_legal_moves(&current_board, s).contains(&i)
-                                });
-                                let piece = current_board[i];
-                                let highlight = if sel == Some(i) {
-                                    " chess-square--selected"
-                                } else if legal {
-                                    " chess-square--legal"
-                                } else {
-                                    ""
-                                };
-                                let square = if is_light {
-                                    " chess-square chess-square--light"
-                                } else {
-                                    " chess-square chess-square--dark"
-                                };
-                                let piece_class = if piece > 0 {
-                                    " chess-piece chess-piece--light"
-                                } else if piece < 0 {
-                                    " chess-piece chess-piece--dark"
-                                } else {
-                                    ""
-                                };
-                                format!("{square}{highlight}{piece_class}")
+                            class=if is_light {
+                                "chess-square chess-square--light"
+                            } else {
+                                "chess-square chess-square--dark"
                             }
+                            class=("chess-square--selected", move || selected.get() == Some(i))
+                            class=("chess-square--legal", move || {
+                                selected.get().is_some_and(|from| {
+                                    chess_legal_moves(&board.get(), from).contains(&i)
+                                })
+                            })
+                            class=("chess-piece chess-piece--light", move || board.get()[i] > 0)
+                            class=("chess-piece chess-piece--dark", move || board.get()[i] < 0)
                             on:click=move |_| click(i)
+                            aria-pressed=move || selected.get() == Some(i)
                             aria-label=move || format!(
                                 "{} {}",
                                 square_name,
