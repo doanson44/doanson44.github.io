@@ -276,5 +276,17 @@
   "socket_direction": "Hướng",
   "socket_direction_filter": "Lọc hướng",
   "socket_long": "Long",
-  "socket_short": "Short"
+  "socket_short": "Short",
+  "socket_real_trading": "Giao dịch thật",
+  "socket_execution_mode": "Chế độ thực thi",
+  "socket_real_trading_hint": "Sử dụng tài khoản MEXC Futures thay cho portfolio paper cục bộ.",
+  "socket_paper_trading_hint": "Mô phỏng giao dịch trên trình duyệt mà không gửi lệnh.",
+  "socket_real_initial_capital_hint": "Được lấy từ equity USDT của tài khoản MEXC Futures sau khi lưu cài đặt.",
+  "socket_paper_initial_capital_hint": "Vốn ban đầu cho portfolio paper chạy trên trình duyệt.",
+  "socket_api_url": "API URL",
+  "socket_api_secret": "API secret",
+  "socket_real_trading_warning": "Credential chỉ được lưu trong trình duyệt này. Nên dùng API key không có quyền rút tiền.",
+  "socket_real_storage_hint": "Credential và snapshot tài khoản gần nhất chỉ được lưu trong localStorage của trình duyệt. Không có backend lưu chúng.",
+  "socket_loading_account": "Đang lấy tài khoản..."
+
 }
