@@ -580,7 +580,7 @@ impl PongGame {
     }
 
     /// Returns the ball position.
-    pub fn ball_position(&self) -> (f64, f64) {
+    pub fn ball_position(&self) -> (i32, i32) {
         (self.ball_x, self.ball_y)
     }
 
