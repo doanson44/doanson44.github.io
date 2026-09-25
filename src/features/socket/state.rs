@@ -630,9 +630,9 @@ impl SocketState {
         let api_secret_for_refresh = api_secret.clone();
 
         let submit = move |contract: crate::application::services::mexc_trading::ContractDetail| {
-            let (side, volume, position_id, reduce_only) =
-                if let Some(position) = existing.as_ref()
-                (
+            let (side, volume, position_id, reduce_only) = if let Some(position) =
+                existing.as_ref()
+            {
                     match position.side {
                         PositionSide::Long => 4,
                         PositionSide::Short => 2,
