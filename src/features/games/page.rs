@@ -2923,18 +2923,24 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             }
 
             if running.get() {
-                if let Ok(id) = callback_window
-                    .request_animation_frame(tick_frame_clone.borrow().as_ref().unwrap().as_ref())
-                {
-                    animation_id_clone.set(Some(id));
+                let callback_ref = tick_frame_clone.borrow();
+                if let Some(callback) = callback_ref.as_ref() {
+                    if let Ok(id) = callback_window
+                        .request_animation_frame(callback.as_ref().unchecked_ref())
+                    {
+                        animation_id_clone.set(Some(id));
+                    }
                 }
             }
         }));
 
-        if let Ok(id) = callback_window
-            .request_animation_frame(tick_frame.borrow().as_ref().unwrap().as_ref())
-        {
-            animation_id.set(Some(id));
+        let callback_ref = tick_frame.borrow();
+        if let Some(callback) = callback_ref.as_ref() {
+            if let Ok(id) = callback_window
+                .request_animation_frame(callback.as_ref().unchecked_ref())
+            {
+                animation_id.set(Some(id));
+            }
         }
     };
 
