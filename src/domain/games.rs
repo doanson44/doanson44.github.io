@@ -1240,8 +1240,6 @@ mod tests {
         assert_eq!(connect_four_drop(&mut b, 0, 1), Some(35));
     }
 
-    }
-
     #[test]
     fn sudoku_rejects_duplicate() {
         let mut b = [0u8; 81];
@@ -1294,8 +1292,6 @@ mod tests {
         let mut b = vec![true; 10];
         assert_eq!(tetris_clear_lines(&mut b, 10), 1);
         assert!(b.iter().all(|v| !*v));
-    }
-
     }
 
     #[test]
@@ -1382,8 +1378,6 @@ mod tests {
         assert_eq!(cells.len(), 25);
     }
 
-    }
-
     #[test]
     fn tetris_rotate_turns_i_piece() {
         let p = [(0, 0), (1, 0), (2, 0), (3, 0)];
@@ -1397,12 +1391,6 @@ mod tests {
         let mut b = vec![1u8; 10];
         assert_eq!(tetris_clear_filled(&mut b, 10), 1);
         assert!(b.iter().all(|&v| v == 0));
-    }
-
-    }
-
-    }
-
     }
 
     #[test]
