@@ -1974,6 +1974,7 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let is_lost = Memo::new(move |_| wrong_count.get() >= max_wrong);
 
     let guess_word = word.clone();
+    let guess_word_reveal = word.clone();
     let guess = move |c: char| {
         if is_won.get() || is_lost.get() || guessed.get().contains(&c) {
             return;
@@ -1988,12 +1989,13 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             score.update(|s| *s += 20);
             status.set("You got it!".into());
         } else if wrong >= max_wrong {
-            status.set(format!("The word was {}", word.to_ascii_uppercase()));
+            status.set(format!("The word was {}", guess_word_reveal.to_ascii_uppercase()));
         } else {
             status.set(format!("{} guesses left", max_wrong - wrong));
         }
     };
 
+    let keyboard_guess = guess.clone();
     bind_keys(move |e: web_sys::KeyboardEvent| {
         if is_text_input(&e) || e.ctrl_key() || e.alt_key() || e.meta_key() {
             return;
@@ -2003,7 +2005,7 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         if key.len() == 1 {
             if let Some(c) = key.chars().next().filter(|c| c.is_ascii_alphabetic()) {
                 e.prevent_default();
-                guess(c);
+                keyboard_guess(c);
             }
         }
     });
@@ -2099,12 +2101,15 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
                     <div class="mt-auto pt-7">
                         <div class="grid grid-cols-7 gap-1.5 sm:grid-cols-9" aria-label="Letter keyboard">
-                            {('a'..='z').map(|c| view! {
+                            {('a'..='z').map(|c| {
+                                let button_guess = guess.clone();
+                                let button_word = word.clone();
+                                view! {
                                 <button
                                     type="button"
                                     class=move || {
                                         let used = guessed.get().contains(&c);
-                                        let correct = word.contains(c);
+                                        let correct = button_word.contains(c);
                                         if used && correct {
                                             "min-h-10 rounded-lg border border-emerald-500 bg-emerald-500/15 text-sm font-bold uppercase text-emerald-700 dark:text-emerald-300"
                                         } else if used {
@@ -2113,13 +2118,13 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                             "min-h-10 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] text-sm font-bold uppercase text-[var(--text-primary)] shadow-sm transition hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] active:scale-95"
                                         }
                                     }
-                                    on:click=move |_| guess(c)
+                                    on:click=move |_| button_guess(c)
                                     disabled=move || guessed.get().contains(&c) || is_won.get() || is_lost.get()
                                     aria-label=format!("Guess letter {}", c.to_ascii_uppercase())
                                 >
                                     {c.to_ascii_uppercase().to_string()}
                                 </button>
-                            }).collect_view()}
+                            }}).collect_view()}
                         </div>
                         <p class="mt-3 text-center text-xs text-[var(--text-tertiary)]">
                             "Type A–Z or use the on-screen keyboard."
