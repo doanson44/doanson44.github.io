@@ -10,14 +10,19 @@ impl PongService {
         PongGame::new()
     }
 
-    /// Advances the game by one simulation tick.
-    pub fn tick(game: &mut PongGame) -> PongTickResult {
-        game.tick()
+    /// Advances the game using elapsed seconds and current input state.
+    pub fn tick(
+        game: &mut PongGame,
+        dt: f64,
+        up_pressed: bool,
+        down_pressed: bool,
+    ) -> PongTickResult {
+        game.tick(dt, up_pressed, down_pressed)
     }
 
-    /// Moves the player's paddle.
-    pub fn move_player(game: &mut PongGame, delta: i32) {
-        game.move_player(delta);
+    /// Moves the player's paddle by a continuous pixel amount.
+    pub fn move_player(game: &mut PongGame, delta: f64) {
+        game.move_player_by(delta);
     }
 
     /// Resets the game to its initial state.
