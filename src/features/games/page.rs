@@ -458,13 +458,6 @@ fn board_2048(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
     view! {
         <div class="mx-auto max-w-sm space-y-3">
-            {dpad(
-                move || slide(0),
-                move || slide(3),
-                move || slide(2),
-                move || slide(1),
-            )}
-            <p class="text-center text-xs text-[var(--text-tertiary)]">"Arrows / WASD to slide"</p>
             <div class="grid grid-cols-4 gap-2 rounded-lg border border-[var(--border-color)] p-2">
                 {(0..16).map(|i| view! {
                     <div class=move || {
@@ -485,6 +478,13 @@ fn board_2048(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     </div>
                 }).collect_view()}
             </div>
+            {dpad(
+                move || slide(0),
+                move || slide(3),
+                move || slide(2),
+                move || slide(1),
+            )}
+            <p class="text-center text-xs text-[var(--text-tertiary)]">"Arrows / WASD to slide"</p>
             <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|reset()>"New Game"</button>
         </div>
     }.into_any()
@@ -1186,13 +1186,6 @@ fn board_snake(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|toggle()>
                 {move || if game_over.get() { "New Game (Space)" } else if running.get() { "⏸ Pause (Space)" } else { "▶ Start (Space)" }}
             </button>
-            {dpad(
-                move || set_dir((0, -1)),
-                move || set_dir((-1, 0)),
-                move || set_dir((0, 1)),
-                move || set_dir((1, 0)),
-            )}
-            <p class="text-center text-xs text-[var(--text-tertiary)]">"Space start/pause · arrows / WASD move"</p>
             <div class="grid gap-0.5" style="grid-template-columns: repeat(10, 1fr)">
                 {(0..rows).flat_map(|y| (0..cols).map(move |x| view! {
                     <div class=move || {
@@ -1205,6 +1198,13 @@ fn board_snake(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     }></div>
                 })).collect_view()}
             </div>
+            {dpad(
+                move || set_dir((0, -1)),
+                move || set_dir((-1, 0)),
+                move || set_dir((0, 1)),
+                move || set_dir((1, 0)),
+            )}
+            <p class="text-center text-xs text-[var(--text-tertiary)]">"Space start/pause · arrows / WASD move"</p>
         </div>
     }.into_any()
 }
@@ -3360,13 +3360,6 @@ fn board_tetris(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     {move || if game_over.get() { "New Game (Space)" } else if running.get() { "⏸ Pause (Space)" } else { "▶ Start (Space)" }}
                 </button>
             </div>
-            {dpad(
-                rotate,
-                move || move_piece(-1, 0),
-                move || move_piece(0, 1),
-                move || move_piece(1, 0),
-            )}
-            <p class="text-center text-xs text-[var(--text-tertiary)]">"Space start/pause · ↑ rotate · arrows / WASD"</p>
             <div class="grid gap-px rounded border border-[var(--border-color)] bg-[var(--border-color)] overflow-hidden" style="grid-template-columns: repeat(10, 1fr)">
                 {(0..rows).flat_map(|row| (0..cols).map(move |col| view! {
                     <div class=move || {
@@ -3384,6 +3377,13 @@ fn board_tetris(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     }></div>
                 })).collect_view()}
             </div>
+            {dpad(
+                rotate,
+                move || move_piece(-1, 0),
+                move || move_piece(0, 1),
+                move || move_piece(1, 0),
+            )}
+            <p class="text-center text-xs text-[var(--text-tertiary)]">"Space start/pause · ↑ rotate · arrows / WASD"</p>
         </div>
     }.into_any()
 }
