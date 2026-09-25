@@ -678,67 +678,65 @@ impl SocketState {
                         return;
                     }
 
-                    service.submit_market_order(
-                        &order_api_url,
-                        &order_api_key,
-                        &order_api_secret,
-                        js_sys::Date::now().max(0.0) as i64,
-                        MarketOrderRequest {
-                            symbol: symbol_owned.clone(),
-                            price,
-                            vol: volume,
-                            leverage: settings.leverage.max(1.0) as u32,
-                            side,
-                            order_type: 5,
-                            open_type: 1,
-                            position_id,
-                            reduce_only,
-                        },
-                        {
-                            let refresh_api_url = api_url_for_refresh.clone();
-                            let refresh_api_key = api_key_for_refresh.clone();
-                            let refresh_api_secret = api_secret_for_refresh.clone();
-                            Rc::new(move |result| match result {
-                                Ok(order_id) => {
-                                    notice_signal
-                                        .set(Some(format!("MEXC order {order_id} submitted.")));
-                                    let positions_signal = positions_signal;
-                                    let account_signal = account_signal;
-                                    let api_url = refresh_api_url.clone();
-                                    let api_key = refresh_api_key.clone();
-                                    let api_secret = refresh_api_secret.clone();
-                                    let positions_api_url = api_url.clone();
-                                    let positions_api_key = api_key.clone();
-                                    let positions_api_secret = api_secret.clone();
-                                MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
-                                    &api_url,
-                                    &api_key,
-                                    &api_secret,
-                                    js_sys::Date::now().max(0.0) as i64,
-                                    Rc::new(move |account_result| {
-                                        if let Ok(account) = account_result {
-                                            account_signal.set(Some(account));
-                                        }
-                                        MexcFuturesTradingService::new(ProxyApi).fetch_positions(
-                                            &positions_api_url,
-                                            &positions_api_key,
-                                            &positions_api_secret,
-                                            js_sys::Date::now().max(0.0) as i64,
-                                            Rc::new(move |positions_result| {
-                                                if let Ok(positions) = positions_result {
-                                                    positions_signal.set(positions);
-                                                }
-                                            }),
-                                        );
-                                    }),
-                                );
-                            }
-                            Err(message) => error_signal.set(Some(message)),
-                            }),
+                    let refresh_api_url = api_url_for_refresh.clone();
+                let refresh_api_key = api_key_for_refresh.clone();
+                let refresh_api_secret = api_secret_for_refresh.clone();
+
+                service.submit_market_order(
+                    &order_api_url,
+                    &order_api_key,
+                    &order_api_secret,
+                    js_sys::Date::now().max(0.0) as i64,
+                    MarketOrderRequest {
+                        symbol: symbol_owned.clone(),
+                        price,
+                        vol: volume,
+                        leverage: settings.leverage.max(1.0) as u32,
+                        side,
+                        order_type: 5,
+                        open_type: 1,
+                        position_id,
+                        reduce_only,
+                    },
+                    Rc::new(move |result| match result {
+                        Ok(order_id) => {
+                            notice_signal
+                                .set(Some(format!("MEXC order {order_id} submitted.")));
+                            let positions_signal = positions_signal;
+                            let account_signal = account_signal;
+                            let api_url = refresh_api_url.clone();
+                            let api_key = refresh_api_key.clone();
+                            let api_secret = refresh_api_secret.clone();
+                            let positions_api_url = api_url.clone();
+                            let positions_api_key = api_key.clone();
+                            let positions_api_secret = api_secret.clone();
+                            MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
+                                &api_url,
+                                &api_key,
+                                &api_secret,
+                                js_sys::Date::now().max(0.0) as i64,
+                                Rc::new(move |account_result| {
+                                    if let Ok(account) = account_result {
+                                        account_signal.set(Some(account));
+                                    }
+                                    MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+                                        &positions_api_url,
+                                        &positions_api_key,
+                                        &positions_api_secret,
+                                        js_sys::Date::now().max(0.0) as i64,
+                                        Rc::new(move |positions_result| {
+                                            if let Ok(positions) = positions_result {
+                                                positions_signal.set(positions);
+                                            }
+                                        }),
+                                    );
+                                }),
+                            );
                         }
-                    );
-                },
-            )
+                        Err(message) => error_signal.set(Some(message)),
+                    }),
+                );
+
         };
         let submit_for_callback = submit.clone();
         service.fetch_contract(
