@@ -221,6 +221,76 @@ pub fn SocketPage(
                         </div>
                 </Show>
             </div>
+            {move || if state.real_trade_confirm_open.get() {
+                let symbol = state
+                    .real_trade_pending_symbol
+                    .get()
+                    .unwrap_or_else(|| "—".to_string());
+                let is_held = state
+                    .real_positions
+                    .get()
+                    .iter()
+                    .any(|position| position.symbol == symbol);
+                let action = if is_held {
+                    "CLOSE".to_string()
+                } else if state.trading_snapshot.get().settings.position_side
+                    == crate::domain::trading::PositionSide::Short
+                {
+                    "SELL".to_string()
+                } else {
+                    "BUY".to_string()
+                };
+                let settings = state.trading_snapshot.get().settings;
+                view! {
+                    <div
+                        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                        role="presentation"
+                        on:click=move |_| state.cancel_real_trade()
+                    >
+                        <div
+                            class="w-full max-w-md rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 shadow-2xl"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="real-trade-confirm-title"
+                            on:click=move |ev| ev.stop_propagation()
+                        >
+                            <h3 id="real-trade-confirm-title" class="text-base font-semibold text-[var(--text-primary)]">
+                                "Confirm Real Trading"
+                            </h3>
+                            <p class="mt-2 text-sm text-[var(--text-secondary)]">
+                                {format!(
+                                    "{} {} using {:.1}% allocation and {:.1}x leverage.",
+                                    action,
+                                    symbol,
+                                    settings.trade_allocation_percent,
+                                    settings.leverage
+                                )}
+                            </p>
+                            <p class="mt-2 text-xs text-[var(--warning)]">
+                                "This will send a live order to MEXC Futures."
+                            </p>
+                            <div class="mt-4 flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    class="min-h-10 rounded-md border border-[var(--border-color)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                                    on:click=move |_| state.cancel_real_trade()
+                                >
+                                    "Cancel"
+                                </button>
+                                <button
+                                    type="button"
+                                    class="min-h-10 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                                    on:click=move |_| state.confirm_real_trade()
+                                >
+                                    "Confirm Order"
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }.into_any()
+            } else {
+                view! { <span></span> }.into_any()
+            }}
             {move || if state.analysis_modal_open.get() {
                 if let Some(result) = state.analysis_result.get() {
                     view! { <SocketAnalysisModal state=state result=result i18n=i18n /> }.into_any()
