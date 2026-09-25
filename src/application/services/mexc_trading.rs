@@ -181,6 +181,7 @@ struct MexcPosition {
     #[serde(rename = "liquidatePrice")]
     liquidate_price: f64,
     im: f64,
+    leverage: f64,
     realised: f64,
     #[serde(default)]
     unrealized: f64,
@@ -222,6 +223,7 @@ fn parse_positions_response(raw: String) -> Result<Vec<RealPosition>, String> {
             close_average_price: position.close_avg_price,
             liquidation_price: position.liquidate_price,
             initial_margin: position.im,
+            leverage: position.leverage,
             realized_pnl: position.realised,
             unrealized_pnl: position.unrealized,
         })
