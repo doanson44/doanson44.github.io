@@ -276,5 +276,17 @@
   "socket_direction": "Direction",
   "socket_direction_filter": "Direction filter",
   "socket_long": "Long",
-  "socket_short": "Short"
+  "socket_short": "Short",
+  "socket_real_trading": "Real trading",
+  "socket_execution_mode": "Execution mode",
+  "socket_real_trading_hint": "Use the MEXC Futures account instead of the local paper portfolio.",
+  "socket_paper_trading_hint": "Simulate trades locally without sending orders.",
+  "socket_real_initial_capital_hint": "Loaded from MEXC Futures USDT equity after saving the real-trading settings.",
+  "socket_paper_initial_capital_hint": "Starting capital for the local paper portfolio.",
+  "socket_api_url": "API URL",
+  "socket_api_secret": "API secret",
+  "socket_real_trading_warning": "API credentials are stored only in this browser. Use an API key without withdrawal permission.",
+  "socket_real_storage_hint": "Real account credentials and the latest account snapshot are stored only in browser localStorage. No backend stores them.",
+  "socket_loading_account": "Loading account..."
+
 }
