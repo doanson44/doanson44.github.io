@@ -1496,6 +1496,4 @@ mod tests {
         );
         assert!(game.is_game_over());
     }
-
-    }
 }
