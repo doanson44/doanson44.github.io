@@ -13,8 +13,11 @@ use crate::application::{
         FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream, RealTradingStorage,
     },
     services::{
-        mexc_account::MexcFuturesAccountService, mexc_trading::{MarketOrderRequest, MexcFuturesTradingService}, proxy::ProxyService,
-        technical_analysis::TechnicalAnalysisService, trading::TradingService,
+        mexc_account::MexcFuturesAccountService,
+        mexc_trading::{MarketOrderRequest, MexcFuturesTradingService},
+        proxy::ProxyService,
+        technical_analysis::TechnicalAnalysisService,
+        trading::TradingService,
         FuturesMarketService,
     },
 };
@@ -22,8 +25,8 @@ use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::domain::technical_analysis::AnalysisResult;
 use crate::domain::trading::{
-    ExecutionMode, ExecutionSettings, HoldingSummary, PortfolioSummary, PositionSide, RealAccountSnapshot, RealPosition,
-    RealTradingSettings, TradingSnapshot,
+    ExecutionMode, ExecutionSettings, HoldingSummary, PortfolioSummary, PositionSide,
+    RealAccountSnapshot, RealPosition, RealTradingSettings, TradingSnapshot,
 };
 use crate::infrastructure::browser;
 use crate::infrastructure::execution::LocalExecutionStorage;
@@ -571,17 +574,22 @@ impl SocketState {
         };
 
         let positions = self.real_positions.get_untracked();
-        let existing = positions.iter().find(|position| position.symbol == symbol).cloned();
+        let existing = positions
+            .iter()
+            .find(|position| position.symbol == symbol)
+            .cloned();
         let action = existing
             .as_ref()
             .map(|position| match position.side {
                 PositionSide::Long => "close LONG",
                 PositionSide::Short => "close SHORT",
             })
-            .unwrap_or(match self.trading_snapshot.get_untracked().settings.position_side {
-                PositionSide::Long => "open LONG",
-                PositionSide::Short => "open SHORT",
-            });
+            .unwrap_or(
+                match self.trading_snapshot.get_untracked().settings.position_side {
+                    PositionSide::Long => "open LONG",
+                    PositionSide::Short => "open SHORT",
+                },
+            );
 
         let message = format!(
             "REAL TRADING: {action} {symbol} at market price around {:.6}. Continue?",
@@ -591,7 +599,8 @@ impl SocketState {
             .and_then(|window| window.confirm_with_message(&message).ok())
             .unwrap_or(false);
         if !confirmed {
-            self.trading_notice.set(Some("Real order cancelled.".to_string()));
+            self.trading_notice
+                .set(Some("Real order cancelled.".to_string()));
             return;
         }
 
@@ -602,7 +611,9 @@ impl SocketState {
         let account = self.real_account.get_untracked().unwrap_or_default();
 
         if api_key.trim().is_empty() || api_secret.trim().is_empty() {
-            self.trading_error.set(Some("Real trading API credentials are not configured.".to_string()));
+            self.trading_error.set(Some(
+                "Real trading API credentials are not configured.".to_string(),
+            ));
             return;
         }
 
@@ -619,7 +630,8 @@ impl SocketState {
         let api_secret_for_refresh = api_secret.clone();
 
         let submit = move |contract: crate::application::services::mexc_trading::ContractDetail| {
-            let (side, volume, position_id, reduce_only) = if let Some(position) = existing.as_ref() {
+            let (side, volume, position_id, reduce_only) =
+                if let Some(position) = existing.as_ref()
                 (
                     match position.side {
                         PositionSide::Long => 4,
@@ -647,7 +659,9 @@ impl SocketState {
             };
 
             if !volume.is_finite() || volume < contract.min_vol || volume > contract.max_vol {
-                error_signal.set(Some("Calculated order volume is outside the MEXC contract limits.".to_string()));
+                error_signal.set(Some(
+                    "Calculated order volume is outside the MEXC contract limits.".to_string(),
+                ));
                 return;
             }
 
