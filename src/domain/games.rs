@@ -812,10 +812,10 @@ impl BreakoutGame {
         {
             next_y = Self::PADDLE_Y as f64 - 1.0;
 
-            let hit_offset =
-                ((next_x - self.paddle_x) / Self::PADDLE_WIDTH as f64).clamp(0.0, 1.0);
+            let hit_offset = ((next_x - self.paddle_x) / Self::PADDLE_WIDTH as f64).clamp(0.0, 1.0);
             let angle = hit_offset * 2.0 - 1.0;
-            next_dx = (angle * Self::BALL_SPEED * 1.6).clamp(-Self::BALL_SPEED * 1.6, Self::BALL_SPEED * 1.6);
+            next_dx = (angle * Self::BALL_SPEED * 1.6)
+                .clamp(-Self::BALL_SPEED * 1.6, Self::BALL_SPEED * 1.6);
             if next_dx.abs() < Self::BALL_SPEED * 0.25 {
                 next_dx = Self::BALL_SPEED * 0.25;
             }
