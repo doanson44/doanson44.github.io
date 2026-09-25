@@ -2078,7 +2078,7 @@ mod tests {
         game.ball_dy = 0.0;
         game.computer_y = 0.0;
 
-        assert_eq!(game.tick(0.01, false, false), PongTickResult::PlayerScored);
+        assert_eq!(game.tick(0.05, false, false), PongTickResult::PlayerScored);
         assert_eq!(game.score(), 1);
     }
 
