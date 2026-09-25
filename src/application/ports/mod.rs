@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::domain::document::MarkdownDocument;
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::FuturesTickerUpdate;
-use crate::domain::trading::TradingSnapshot;
+use crate::domain::trading::{ExecutionSettings, TradingSnapshot};
 
 /// Port for document persistence.
 pub trait DocumentRepository {
@@ -64,6 +64,17 @@ pub trait FundingRateProvider {
 pub trait ProxyClient {
     /// Fetches a target URL through the configured proxy and returns the response text.
     fn fetch(&self, target_url: &str, on_result: Rc<dyn Fn(Result<String, String>)>);
+
+    /// Fetches a target URL through the configured proxy with forwarded request headers.
+    fn fetch_with_headers(
+        &self,
+        target_url: &str,
+        headers: Vec<(String, String)>,
+        on_result: Rc<dyn Fn(Result<String, String>)>,
+    ) {
+        let _ = headers;
+        self.fetch(target_url, on_result);
+    }
 }
 
 /// Application port for direct browser HTTP access to market data.
@@ -82,6 +93,15 @@ pub trait MarketPinStore {
 
     /// Persists the symbols currently pinned by the user.
     fn save(&self, symbols: &[String]) -> Result<(), String>;
+}
+
+/// Application port for persisting client-side execution settings.
+pub trait RealTradingStorage {
+    /// Loads the execution mode and real-trading settings.
+    fn load(&self) -> Result<Option<ExecutionSettings>, String>;
+
+    /// Persists the execution mode and real-trading settings.
+    fn save(&self, settings: &ExecutionSettings) -> Result<(), String>;
 }
 
 /// Application port for persisting the client-side paper-trading snapshot.
