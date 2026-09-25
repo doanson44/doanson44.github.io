@@ -491,6 +491,9 @@ impl SocketState {
             let secret_signal = self.api_secret;
             let account_signal = self.real_account;
             let settings_open = self.settings_open;
+            let saved_api_url = api_url.clone();
+            let saved_api_key = api_key.clone();
+            let saved_api_secret = api_secret.clone();
 
             MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
                 &api_url,
@@ -504,9 +507,9 @@ impl SocketState {
                             let settings = ExecutionSettings {
                                 mode: ExecutionMode::Real,
                                 real: RealTradingSettings {
-                                    api_url: api_url.clone(),
-                                    api_key: api_key.clone(),
-                                    api_secret: api_secret.clone(),
+                                    api_url: saved_api_url.clone(),
+                                    api_key: saved_api_key.clone(),
+                                    api_secret: saved_api_secret.clone(),
                                     account: Some(account.clone()),
                                 },
                             };
@@ -514,9 +517,9 @@ impl SocketState {
                             match LocalExecutionStorage.save(&settings) {
                                 Ok(()) => {
                                     mode.set(ExecutionMode::Real);
-                                    url_signal.set(api_url.clone());
-                                    key_signal.set(api_key.clone());
-                                    secret_signal.set(api_secret.clone());
+                                    url_signal.set(saved_api_url.clone());
+                                    key_signal.set(saved_api_key.clone());
+                                    secret_signal.set(saved_api_secret.clone());
                                     account_signal.set(Some(account.clone()));
                                     error.set(None);
                                     settings_open.set(false);
