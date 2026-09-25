@@ -19,8 +19,8 @@ echo.
 set "FAILED_LABEL="
 set "FAILED_CMD="
 
-echo [1/4] Checking formatting...
-set "FAILED_LABEL=[1/4] Checking formatting..."
+echo [1/5] Checking formatting...
+set "FAILED_LABEL=[1/5] Checking formatting..."
 set "FAILED_CMD=cargo fmt --check"
 if "!CLIP_MODE!"=="1" (
     cargo fmt --check > "!TEMP_LOG!" 2>&1
@@ -33,8 +33,8 @@ if "!CLIP_MODE!"=="1" (
 )
 
 echo.
-echo [2/4] Checking WASM compilation...
-set "FAILED_LABEL=[2/4] Checking WASM compilation..."
+echo [2/5] Checking WASM compilation...
+set "FAILED_LABEL=[2/5] Checking WASM compilation..."
 set "FAILED_CMD=cargo check --target wasm32-unknown-unknown"
 if "!CLIP_MODE!"=="1" (
     cargo check --target wasm32-unknown-unknown > "!TEMP_LOG!" 2>&1
@@ -47,8 +47,8 @@ if "!CLIP_MODE!"=="1" (
 )
 
 echo.
-echo [3/4] Running tests...
-set "FAILED_LABEL=[3/4] Running tests..."
+echo [3/5] Running tests...
+set "FAILED_LABEL=[3/5] Running tests..."
 set "FAILED_CMD=cargo test"
 if "!CLIP_MODE!"=="1" (
     cargo test > "!TEMP_LOG!" 2>&1
@@ -61,8 +61,8 @@ if "!CLIP_MODE!"=="1" (
 )
 
 echo.
-echo [4/4] Running Clippy...
-set "FAILED_LABEL=[4/4] Running Clippy..."
+echo [4/5] Running Clippy...
+set "FAILED_LABEL=[4/5] Running Clippy..."
 set "FAILED_CMD=cargo clippy --target wasm32-unknown-unknown -- -D warnings"
 if "!CLIP_MODE!"=="1" (
     cargo clippy --target wasm32-unknown-unknown -- -D warnings > "!TEMP_LOG!" 2>&1
@@ -72,6 +72,26 @@ if "!CLIP_MODE!"=="1" (
 ) else (
     cargo clippy --target wasm32-unknown-unknown -- -D warnings
     if errorlevel 1 goto :failed
+)
+
+echo.
+echo [5/5] Auditing Bootstrap removal...
+set "FAILED_LABEL=[5/5] Auditing Bootstrap removal..."
+set "FAILED_CMD=Bootstrap reference audit"
+if "!CLIP_MODE!"=="1" (
+    powershell -NoProfile -Command "$ErrorActionPreference='SilentlyContinue'; $files=@('src','styles','index.html','package.json','Trunk.toml','public') | Where-Object { Test-Path $_ } | ForEach-Object { if ((Get-Item $_).PSIsContainer) { Get-ChildItem $_ -Recurse -File } else { Get-Item $_ } } | Select-String -Pattern 'bootstrap|data-bs-|--bs-|bi-[a-z0-9-]+' -CaseSensitive:$false"
+    set "STEP_EXIT=!ERRORLEVEL!"
+) else (
+    powershell -NoProfile -Command "$ErrorActionPreference='SilentlyContinue'; $files=@('src','styles','index.html','package.json','Trunk.toml','public') | Where-Object { Test-Path $_ } | ForEach-Object { if ((Get-Item $_).PSIsContainer) { Get-ChildItem $_ -Recurse -File } else { Get-Item $_ } } | Select-String -Pattern 'bootstrap|data-bs-|--bs-|bi-[a-z0-9-]+' -CaseSensitive:$false"
+    set "STEP_EXIT=!ERRORLEVEL!"
+)
+if "!STEP_EXIT!"=="0" (
+    echo Bootstrap-era references remain in production files.
+    if "!CLIP_MODE!"=="1" (
+        powershell -NoProfile -Command "$files=@('src','styles','index.html','package.json','Trunk.toml','public') | Where-Object { Test-Path $_ } | ForEach-Object { if ((Get-Item $_).PSIsContainer) { Get-ChildItem $_ -Recurse -File } else { Get-Item $_ } } | Select-String -Pattern 'bootstrap|data-bs-|--bs-|bi-[a-z0-9-]+' -CaseSensitive:$false | Out-File -Encoding utf8 '%TEMP_LOG%'"
+        type "!TEMP_LOG!"
+    )
+    goto :failed
 )
 
 if exist "!TEMP_LOG!" del /f /q "!TEMP_LOG!" >nul 2>&1
