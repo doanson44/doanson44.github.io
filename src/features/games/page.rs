@@ -9,8 +9,7 @@ use crate::domain::games::{
     sudoku_puzzle_with_seed, sudoku_valid, tetris_clear_filled, tetris_rotate_cw,
     tower_wave_countdown, tower_wave_damage, ttt_best_move_sized, ttt_is_draw_sized,
     ttt_winner_sized, typing_reactor_tasks, typing_words, wordle_check, wordle_word, BreakoutGame,
-    BreakoutTickResult, TypingReactor,
-    FlappyGame, PongGame,
+    BreakoutTickResult, FlappyGame, PongGame, TypingReactor,
 };
 use leptos::ev;
 use leptos::prelude::*;
@@ -1659,7 +1658,8 @@ fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         task_index.set(next);
 
         if correct {
-            if next_reactor.combo() > 0 && next_reactor.combo() % TypingReactor::CRITICAL_COMBO == 0 {
+            if next_reactor.combo() > 0 && next_reactor.combo() % TypingReactor::CRITICAL_COMBO == 0
+            {
                 status.set("CRITICAL HIT — reactor cooled".into());
             } else {
                 status.set(format!("GOOD — combo x{}", next_reactor.combo()));
