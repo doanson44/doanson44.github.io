@@ -503,6 +503,9 @@ impl SocketState {
         let account_signal = self.real_account;
         let positions_signal = self.real_positions;
         let error_signal = self.trading_error;
+        let api_url_for_positions = api_url.clone();
+        let api_key_for_positions = api_key.clone();
+        let api_secret_for_positions = api_secret.clone();
         MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
             &api_url,
             &api_key,
@@ -512,9 +515,9 @@ impl SocketState {
                 Ok(account) => {
                     account_signal.set(Some(account));
                     MexcFuturesTradingService::new(ProxyApi).fetch_positions(
-                        &api_url,
-                        &api_key,
-                        &api_secret,
+                        &api_url_for_positions,
+                        &api_key_for_positions,
+                        &api_secret_for_positions,
                         js_sys::Date::now().max(0.0) as i64,
                         Rc::new(move |positions_result| match positions_result {
                             Ok(positions) => {
@@ -620,7 +623,7 @@ impl SocketState {
         self.trading_error.set(None);
         self.trading_notice.set(None);
 
-        let service = MexcFuturesTradingService::new(ProxyApi);
+        let service = Rc::new(MexcFuturesTradingService::new(ProxyApi));
         let error_signal = self.trading_error;
         let notice_signal = self.trading_notice;
         let positions_signal = self.real_positions;
@@ -628,8 +631,11 @@ impl SocketState {
         let api_url_for_refresh = api_url.clone();
         let api_key_for_refresh = api_key.clone();
         let api_secret_for_refresh = api_secret.clone();
+        let symbol_owned = symbol.to_string();
 
-        let submit = move |contract: crate::application::services::mexc_trading::ContractDetail| {
+        let submit = {
+            let service = service.clone();
+            move |contract: crate::application::services::mexc_trading::ContractDetail| {
             let (side, volume, position_id, reduce_only) = if let Some(position) = existing.as_ref()
             {
                 (
@@ -671,7 +677,7 @@ impl SocketState {
                 &api_secret,
                 js_sys::Date::now().max(0.0) as i64,
                 MarketOrderRequest {
-                    symbol: symbol.to_string(),
+                    symbol: symbol_owned.clone(),
                     price,
                     vol: volume,
                     leverage: settings.leverage.max(1.0) as u32,
