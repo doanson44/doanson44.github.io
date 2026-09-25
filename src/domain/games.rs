@@ -74,7 +74,6 @@ fn minimax_ttt(board: &mut [char; 9], computer: bool) -> i32 {
     v
 }
 
-
 pub fn ttt_winner_sized(board: &[char], size: usize, win_len: usize) -> Option<char> {
     if size == 0 || win_len == 0 || win_len > size || board.len() != size * size {
         return None;
