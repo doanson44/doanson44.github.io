@@ -724,6 +724,7 @@ impl SocketState {
                     Err(message) => error_signal.set(Some(message)),
                 }),
             );
+            }
         };
 
         service.fetch_contract(
