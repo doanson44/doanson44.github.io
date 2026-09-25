@@ -2946,7 +2946,6 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 if let Ok(id) =
                     callback_window.request_animation_frame(callback_js.unchecked_ref())
                 {
-
                     animation_id.set(Some(id));
                 }
             }
