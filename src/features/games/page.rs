@@ -2797,8 +2797,6 @@ fn board_chess(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                     chess_legal_moves(&board.get(), from).contains(&i)
                                 })
                             })
-                            class=("chess-piece chess-piece--light", move || board.get()[i] > 0)
-                            class=("chess-piece chess-piece--dark", move || board.get()[i] < 0)
                             on:click=move |_| click(i)
                             aria-pressed=move || selected.get() == Some(i)
                             aria-label=move || format!(
@@ -2811,7 +2809,13 @@ fn board_chess(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                 }
                             )
                         >
-                            {move || chess_glyph(board.get()[i])}
+                            <span
+                                class="chess-piece"
+                                class=("chess-piece--light", move || board.get()[i] > 0)
+                                class=("chess-piece--dark", move || board.get()[i] < 0)
+                            >
+                                {move || chess_glyph(board.get()[i])}
+                            </span>
                         </button>
                     }
                 }).collect_view()}
