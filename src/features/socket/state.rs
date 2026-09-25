@@ -253,7 +253,7 @@ impl SocketState {
             Err(error) => connection_status.set(FuturesConnectionStatus::Error(error)),
         }
 
-        Self {
+        let state = Self {
             tickers,
             funding_rates,
             view_mode,
@@ -285,7 +285,11 @@ impl SocketState {
             real_positions,
             real_account_loading,
             reset_metrics_request,
+        };
+        if execution_settings.mode == ExecutionMode::Real {
+            state.refresh_real_account();
         }
+        state
     }
 
     /// Resets the short-term ranking history for all known tickers.
@@ -479,6 +483,49 @@ impl SocketState {
             .collect::<HashMap<_, _>>();
 
         TradingService::summarize(&self.trading_snapshot.get_untracked(), &prices)
+    }
+
+    /// Refreshes the live MEXC account and positions for the current Real Trading credentials.
+    pub fn refresh_real_account(&self) {
+        if self.execution_mode.get_untracked() != ExecutionMode::Real {
+            return;
+        }
+        let api_url = self.api_url.get_untracked();
+        let api_key = self.api_key.get_untracked();
+        let api_secret = self.api_secret.get_untracked();
+        if api_url.trim().is_empty() || api_key.trim().is_empty() || api_secret.trim().is_empty() {
+            return;
+        }
+
+        let account_signal = self.real_account;
+        let positions_signal = self.real_positions;
+        let error_signal = self.trading_error;
+        MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
+            &api_url,
+            &api_key,
+            &api_secret,
+            js_sys::Date::now().max(0.0) as i64,
+            Rc::new(move |account_result| match account_result {
+                Ok(account) => {
+                    account_signal.set(Some(account));
+                    MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+                        &api_url,
+                        &api_key,
+                        &api_secret,
+                        js_sys::Date::now().max(0.0) as i64,
+                        Rc::new(move |positions_result| {
+                            if let Ok(positions) = positions_result {
+                                positions_signal.set(positions);
+                                error_signal.set(None);
+                            } else if let Err(message) = positions_result {
+                                error_signal.set(Some(message));
+                            }
+                        }),
+                    );
+                }
+                Err(message) => error_signal.set(Some(message)),
+            }),
+        );
     }
 
     /// Refreshes the live MEXC positions for the current Real Trading credentials.
