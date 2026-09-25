@@ -686,7 +686,7 @@ pub enum BreakoutTickResult {
 const BREAKOUT_BRICK_COUNT: usize = 24;
 
 /// Pure game state and rules for a single-player Breakout match.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BreakoutGame {
     paddle_x: f64,
     ball_x: i32,
@@ -811,11 +811,13 @@ impl BreakoutGame {
             next_dy = -1;
             next_y = Self::PADDLE_Y - 1;
 
-            let hit_offset = next_x - self.paddle_x;
-            next_dx = match hit_offset {
-                0 => -1,
-                1 => 0,
-                _ => 1,
+            let hit_offset = next_x as f64 - self.paddle_x;
+            next_dx = if hit_offset < 1.0 {
+                -1
+            } else if hit_offset >= 2.0 {
+                1
+            } else {
+                0
             };
         }
 
