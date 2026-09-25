@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use super::components::{CvSection, EducationCard, ExperienceCard, SkillGroup};
-use super::data::{competencies, education, experiences, highlights, profile, skill_categories};
+use super::data::{competencies, education, experiences, highlights, profile, reveal_email, reveal_phone, skill_categories};
 use crate::i18n::*;
 use crate::infrastructure::browser::{print_page, scroll_to_element};
 
@@ -15,8 +15,8 @@ pub fn CvPage() -> impl IntoView {
     let experiences_data = Memo::new(move |_| experiences(i18n.get_locale()));
     let highlights_data = Memo::new(move |_| highlights(i18n.get_locale()));
     let education_data = Memo::new(move |_| education(i18n.get_locale()));
-    let show_phone = RwSignal::new(false);
-    let show_email = RwSignal::new(false);
+    let phone_value = RwSignal::new(None::<String>);
+    let email_value = RwSignal::new(None::<String>);
     let show_cover_letter = RwSignal::new(false);
     let cover_letter_copied = RwSignal::new(false);
     let cover_letter_copy_error = RwSignal::new(false);
@@ -55,13 +55,13 @@ pub fn CvPage() -> impl IntoView {
 
                             <div class="flex items-center justify-start gap-2 lg:justify-end">
                                 <Show
-                                    when=move || show_phone.get()
+                                    when=move || phone_value.get().is_some()
                                     fallback=move || view! {
                                         <button
                                             type="button"
                                             class="rounded-md px-2 py-1 text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                                             aria-label=move || t_string!(i18n, cv_show_phone)
-                                            on:click=move |_| show_phone.set(true)
+                                            on:click=move |_| phone_value.set(Some(reveal_phone()))
                                         >
                                             {move || t_string!(i18n, cv_show_phone)}
                                         </button>
@@ -69,9 +69,9 @@ pub fn CvPage() -> impl IntoView {
                                 >
                                     <a
                                         class="break-all text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                                        href=format!("tel:{}", profile_data.get().phone)
+                                        href=move || format!("tel:{}", phone_value.get().unwrap_or_default())
                                     >
-                                        {move || profile_data.get().phone}
+                                        {move || phone_value.get().unwrap_or_default()}
                                     </a>
                                 </Show>
                             </div>
@@ -93,13 +93,13 @@ pub fn CvPage() -> impl IntoView {
 
                             <div class="flex items-center justify-start gap-2 lg:justify-end">
                                 <Show
-                                    when=move || show_email.get()
+                                    when=move || email_value.get().is_some()
                                     fallback=move || view! {
                                         <button
                                             type="button"
                                             class="rounded-md px-2 py-1 text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                                             aria-label=move || t_string!(i18n, cv_show_email)
-                                            on:click=move |_| show_email.set(true)
+                                            on:click=move |_| email_value.set(Some(reveal_email()))
                                         >
                                             {move || t_string!(i18n, cv_show_email)}
                                         </button>
@@ -107,9 +107,9 @@ pub fn CvPage() -> impl IntoView {
                                 >
                                     <a
                                         class="break-all text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                                        href=format!("mailto:{}", profile_data.get().email)
+                                        href=move || format!("mailto:{}", email_value.get().unwrap_or_default())
                                     >
-                                        {move || profile_data.get().email}
+                                        {move || email_value.get().unwrap_or_default()}
                                     </a>
                                 </Show>
                             </div>
