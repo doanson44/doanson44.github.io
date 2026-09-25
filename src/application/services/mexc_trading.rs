@@ -104,8 +104,7 @@ where
             Some(body) => format!("{api_key}{request_time}{body}"),
             None => format!("{api_key}{request_time}"),
         };
-        let signature =
-            hmac_sha256_hex(api_secret.trim().as_bytes(), signature_payload.as_bytes());
+        let signature = hmac_sha256_hex(api_secret.trim().as_bytes(), signature_payload.as_bytes());
         let headers = vec![
             ("ApiKey".to_string(), api_key),
             ("Request-Time".to_string(), request_time),
