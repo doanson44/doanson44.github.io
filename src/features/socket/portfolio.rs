@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use crate::domain::trading::{ExecutionMode, PortfolioSummary, PositionSide};
-use crate::features::socket::state::SocketState;
+use crate::features::socket::state::{SocketState, TradingSettingsInput};
 use crate::i18n::*;
 
 /// Portfolio summary and holdings for Socket paper trading.
