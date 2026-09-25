@@ -636,9 +636,11 @@ impl SocketState {
         let order_api_key = api_key.clone();
         let order_api_secret = api_secret.clone();
 
-        let submit = {
+        let submit: Rc<
+            dyn Fn(crate::application::services::mexc_trading::ContractDetail),
+        > = {
             let service = service.clone();
-            move |contract: crate::application::services::mexc_trading::ContractDetail| {
+            Rc::new(move |contract: crate::application::services::mexc_trading::ContractDetail| {
                 let (side, volume, position_id, reduce_only) =
                     if let Some(position) = existing.as_ref() {
                         (
@@ -698,6 +700,9 @@ impl SocketState {
                             let api_url = api_url_for_refresh.clone();
                             let api_key = api_key_for_refresh.clone();
                             let api_secret = api_secret_for_refresh.clone();
+                            let positions_api_url = api_url.clone();
+                            let positions_api_key = api_key.clone();
+                            let positions_api_secret = api_secret.clone();
                             MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
                                 &api_url,
                                 &api_key,
@@ -708,9 +713,9 @@ impl SocketState {
                                         account_signal.set(Some(account));
                                     }
                                     MexcFuturesTradingService::new(ProxyApi).fetch_positions(
-                                        &api_url,
-                                        &api_key,
-                                        &api_secret,
+                                        &positions_api_url,
+                                        &positions_api_key,
+                                        &positions_api_secret,
                                         js_sys::Date::now().max(0.0) as i64,
                                         Rc::new(move |positions_result| {
                                             if let Ok(positions) = positions_result {
@@ -725,12 +730,14 @@ impl SocketState {
                     }),
                 );
             }
+            })
         };
+        let submit_for_callback = submit.clone();
         service.fetch_contract(
             &api_url,
             symbol,
             Rc::new(move |result| match result {
-                Ok(contract) => submit(contract),
+                Ok(contract) => submit_for_callback(contract),
                 Err(message) => error_signal.set(Some(message)),
             }),
         );
