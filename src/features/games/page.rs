@@ -4,11 +4,11 @@ use crate::domain::games::{
     blackjack_score, blackjack_should_hit, checkers_moves, chess_ai_move, chess_apply_move,
     chess_glyph, chess_has_move, chess_is_check, chess_legal_moves, chess_start,
     connect_four_ai_column, connect_four_drop, connect_four_winner, hangman_word, has_move_2048,
-    lights_toggle, minesweeper_adjacent_mines_sized, minesweeper_flood_reveal_sized, puzzle_is_solved,
-    puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given, sudoku_puzzle, sudoku_valid,
-    tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage,
-    ttt_best_move_sized, ttt_is_draw_sized, ttt_winner_sized, typing_words, wordle_check,
-    wordle_word, BreakoutGame, BreakoutTickResult, FlappyGame, PongGame,
+    lights_toggle, minesweeper_adjacent_mines_sized, minesweeper_flood_reveal_sized,
+    puzzle_is_solved, puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given,
+    sudoku_puzzle, sudoku_valid, tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown,
+    tower_wave_damage, ttt_best_move_sized, ttt_is_draw_sized, ttt_winner_sized, typing_words,
+    wordle_check, wordle_word, BreakoutGame, BreakoutTickResult, FlappyGame, PongGame,
 };
 use leptos::ev;
 use leptos::prelude::*;
@@ -911,7 +911,12 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         if r[i] && m[i] {
             "aspect-square min-w-5 border border-[var(--mines-revealed-border)] bg-[var(--mines-mine)] text-white text-[clamp(0.55rem,1.4vw,0.85rem)] font-bold leading-none"
         } else if r[i] {
-            let number_color = match minesweeper_adjacent_mines_sized(&m, size.get().dimensions().0, size.get().dimensions().1, i) {
+            let number_color = match minesweeper_adjacent_mines_sized(
+                &m,
+                size.get().dimensions().0,
+                size.get().dimensions().1,
+                i,
+            ) {
                 1 => "text-blue-600 dark:text-blue-400",
                 2 => "text-green-700 dark:text-green-400",
                 3 => "text-red-600 dark:text-red-400",
