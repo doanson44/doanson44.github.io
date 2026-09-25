@@ -2800,7 +2800,7 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                     height="34"
                                     rx="5"
                                     class=move || {
-                                        if game.get()[index] {
+                                        if game.get().brick_active(row, col) {
                                             "breakout-brick"
                                         } else {
                                             "opacity-0"
@@ -2813,8 +2813,8 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     .collect_view()}
                 <rect
                     x=move || game.get().paddle_position() * 40.0
-                    y={(BreakoutGame::PADDLE_Y * 40)}
-                    width={(BreakoutGame::PADDLE_WIDTH * 40)}
+                    y=BreakoutGame::PADDLE_Y * 40
+                    width=BreakoutGame::PADDLE_WIDTH * 40
                     height="18"
                     rx="9"
                     class="breakout-paddle"
