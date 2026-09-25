@@ -13,7 +13,7 @@ use crate::application::{
         FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream, RealTradingStorage,
     },
     services::{
-        mexc_account::MexcFuturesAccountService, proxy::ProxyService,
+        mexc_account::MexcFuturesAccountService, mexc_trading::{MarketOrderRequest, MexcFuturesTradingService}, proxy::ProxyService,
         technical_analysis::TechnicalAnalysisService, trading::TradingService,
         FuturesMarketService,
     },
@@ -22,7 +22,7 @@ use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::domain::technical_analysis::AnalysisResult;
 use crate::domain::trading::{
-    ExecutionMode, ExecutionSettings, PortfolioSummary, PositionSide, RealAccountSnapshot,
+    ExecutionMode, ExecutionSettings, PortfolioSummary, PositionSide, RealAccountSnapshot, RealPosition,
     RealTradingSettings, TradingSnapshot,
 };
 use crate::infrastructure::browser;
@@ -118,6 +118,7 @@ pub struct SocketState {
     pub api_key: RwSignal<String>,
     pub api_secret: RwSignal<String>,
     pub real_account: RwSignal<Option<RealAccountSnapshot>>,
+    pub real_positions: RwSignal<Vec<RealPosition>>,
     pub real_account_loading: RwSignal<bool>,
     pub reset_metrics_request: RwSignal<u64>,
 }
@@ -173,6 +174,7 @@ impl SocketState {
         let api_key = RwSignal::new(execution_settings.real.api_key.clone());
         let api_secret = RwSignal::new(execution_settings.real.api_secret.clone());
         let real_account = RwSignal::new(execution_settings.real.account.clone());
+        let real_positions = RwSignal::new(Vec::new());
         let real_account_loading = RwSignal::new(false);
         let reset_metrics_request = RwSignal::new(0u64);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
@@ -280,6 +282,7 @@ impl SocketState {
             api_key,
             api_secret,
             real_account,
+            real_positions,
             real_account_loading,
             reset_metrics_request,
         }
@@ -345,10 +348,7 @@ impl SocketState {
     /// not wired here until the authenticated order executor is added.
     pub fn trade(&self, symbol: &str) {
         if self.execution_mode.get_untracked() == ExecutionMode::Real {
-            self.trading_error.set(None);
-            self.trading_notice.set(Some(
-                "Real trading execution is not enabled yet. No order was sent.".to_string(),
-            ));
+            self.trade_real(symbol);
             return;
         }
         let Some(price) = self
@@ -435,6 +435,36 @@ impl SocketState {
 
     /// Returns the current portfolio valuation using the latest socket prices.
     pub fn portfolio_summary(&self) -> PortfolioSummary {
+        if self.execution_mode.get_untracked() == ExecutionMode::Real {
+            let account = self.real_account.get_untracked().unwrap_or_default();
+            let holdings = self
+                .real_positions
+                .get_untracked()
+                .into_iter()
+                .map(|position| HoldingSummary {
+                    symbol: position.symbol,
+                    side: position.side,
+                    quantity: position.hold_volume,
+                    market_value: position.initial_margin,
+                    pnl: position.unrealized_pnl,
+                })
+                .collect::<Vec<_>>();
+            let realized_pnl = self
+                .real_positions
+                .get_untracked()
+                .iter()
+                .map(|position| position.realized_pnl)
+                .sum::<f64>();
+            return PortfolioSummary {
+                cash: account.available_balance,
+                equity: account.equity,
+                total_pnl: account.unrealized + realized_pnl,
+                realized_pnl,
+                unrealized_pnl: account.unrealized,
+                holdings,
+            };
+        }
+
         let prices = self
             .tickers
             .get_untracked()
@@ -449,6 +479,191 @@ impl SocketState {
             .collect::<HashMap<_, _>>();
 
         TradingService::summarize(&self.trading_snapshot.get_untracked(), &prices)
+    }
+
+    /// Refreshes the live MEXC positions for the current Real Trading credentials.
+    pub fn refresh_real_positions(&self) {
+        if self.execution_mode.get_untracked() != ExecutionMode::Real {
+            return;
+        }
+        let api_url = self.api_url.get_untracked();
+        let api_key = self.api_key.get_untracked();
+        let api_secret = self.api_secret.get_untracked();
+        if api_url.trim().is_empty() || api_key.trim().is_empty() || api_secret.trim().is_empty() {
+            return;
+        }
+
+        let positions_signal = self.real_positions;
+        let error_signal = self.trading_error;
+        MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+            &api_url,
+            &api_key,
+            &api_secret,
+            js_sys::Date::now().max(0.0) as i64,
+            Rc::new(move |result| match result {
+                Ok(positions) => {
+                    positions_signal.set(positions);
+                    error_signal.set(None);
+                }
+                Err(message) => error_signal.set(Some(message)),
+            }),
+        );
+    }
+
+    fn trade_real(&self, symbol: &str) {
+        let Some(price) = self
+            .tickers
+            .get_untracked()
+            .get(symbol)
+            .and_then(|ticker| ticker.ticker.last_price)
+            .filter(|price| price.is_finite() && *price > 0.0)
+        else {
+            self.trading_error.set(Some(
+                "A live market price is required to trade.".to_string(),
+            ));
+            return;
+        };
+
+        let positions = self.real_positions.get_untracked();
+        let existing = positions.iter().find(|position| position.symbol == symbol);
+        let action = existing
+            .map(|position| match position.side {
+                PositionSide::Long => "close LONG",
+                PositionSide::Short => "close SHORT",
+            })
+            .unwrap_or(match self.trading_snapshot.get_untracked().settings.position_side {
+                PositionSide::Long => "open LONG",
+                PositionSide::Short => "open SHORT",
+            });
+
+        let message = format!(
+            "REAL TRADING: {action} {symbol} at market price around {:.6}. Continue?",
+            price
+        );
+        let confirmed = web_sys::window()
+            .and_then(|window| window.confirm_with_message(&message).ok())
+            .unwrap_or(false);
+        if !confirmed {
+            self.trading_notice.set(Some("Real order cancelled.".to_string()));
+            return;
+        }
+
+        let api_url = self.api_url.get_untracked();
+        let api_key = self.api_key.get_untracked();
+        let api_secret = self.api_secret.get_untracked();
+        let settings = self.trading_snapshot.get_untracked().settings;
+        let account = self.real_account.get_untracked().unwrap_or_default();
+
+        if api_key.trim().is_empty() || api_secret.trim().is_empty() {
+            self.trading_error.set(Some("Real trading API credentials are not configured.".to_string()));
+            return;
+        }
+
+        self.trading_error.set(None);
+        self.trading_notice.set(None);
+
+        let service = MexcFuturesTradingService::new(ProxyApi);
+        let error_signal = self.trading_error;
+        let notice_signal = self.trading_notice;
+        let positions_signal = self.real_positions;
+        let account_signal = self.real_account;
+        let api_url_for_refresh = api_url.clone();
+        let api_key_for_refresh = api_key.clone();
+        let api_secret_for_refresh = api_secret.clone();
+
+        let submit = move |contract: crate::application::services::mexc_trading::ContractDetail| {
+            let (side, volume, position_id, reduce_only) = if let Some(position) = existing {
+                (
+                    match position.side {
+                        PositionSide::Long => 4,
+                        PositionSide::Short => 2,
+                    },
+                    position.hold_volume,
+                    Some(position.position_id),
+                    Some(true),
+                )
+            } else {
+                let allocation = settings.trade_allocation_percent / 100.0;
+                let margin = account.available_balance * allocation;
+                let notional = margin * settings.leverage;
+                let raw_volume = notional / (price * contract.contract_size);
+                let volume = (raw_volume / contract.vol_unit).floor() * contract.vol_unit;
+                (
+                    match settings.position_side {
+                        PositionSide::Long => 1,
+                        PositionSide::Short => 3,
+                    },
+                    volume,
+                    None,
+                    None,
+                )
+            };
+
+            if !volume.is_finite() || volume < contract.min_vol || volume > contract.max_vol {
+                error_signal.set(Some("Calculated order volume is outside the MEXC contract limits.".to_string()));
+                return;
+            }
+
+            service.submit_market_order(
+                &api_url,
+                &api_key,
+                &api_secret,
+                js_sys::Date::now().max(0.0) as i64,
+                MarketOrderRequest {
+                    symbol: symbol.to_string(),
+                    price,
+                    vol: volume,
+                    leverage: settings.leverage.max(1.0) as u32,
+                    side,
+                    order_type: 5,
+                    open_type: 1,
+                    position_id,
+                    reduce_only,
+                },
+                Rc::new(move |result| match result {
+                    Ok(order_id) => {
+                        notice_signal.set(Some(format!("MEXC order {order_id} submitted.")));
+                        let positions_signal = positions_signal;
+                        let account_signal = account_signal;
+                        let api_url = api_url_for_refresh.clone();
+                        let api_key = api_key_for_refresh.clone();
+                        let api_secret = api_secret_for_refresh.clone();
+                        MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
+                            &api_url,
+                            &api_key,
+                            &api_secret,
+                            js_sys::Date::now().max(0.0) as i64,
+                            Rc::new(move |account_result| {
+                                if let Ok(account) = account_result {
+                                    account_signal.set(Some(account));
+                                }
+                                MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+                                    &api_url,
+                                    &api_key,
+                                    &api_secret,
+                                    js_sys::Date::now().max(0.0) as i64,
+                                    Rc::new(move |positions_result| {
+                                        if let Ok(positions) = positions_result {
+                                            positions_signal.set(positions);
+                                        }
+                                    }),
+                                );
+                            }),
+                        );
+                    }
+                    Err(message) => error_signal.set(Some(message)),
+                }),
+            );
+        };
+
+        service.fetch_contract(
+            &api_url,
+            symbol,
+            Rc::new(move |result| match result {
+                Ok(contract) => submit(contract),
+                Err(message) => error_signal.set(Some(message)),
+            }),
+        );
     }
 
     /// Opens the paper-trading settings panel.
@@ -503,6 +718,7 @@ impl SocketState {
             let key_signal = self.api_key;
             let secret_signal = self.api_secret;
             let account_signal = self.real_account;
+            let real_positions_signal = self.real_positions;
             let settings_open = self.settings_open;
             let saved_api_url = api_url.clone();
             let saved_api_key = api_key.clone();
@@ -534,6 +750,7 @@ impl SocketState {
                                     key_signal.set(saved_api_key.clone());
                                     secret_signal.set(saved_api_secret.clone());
                                     account_signal.set(Some(account.clone()));
+                                    real_positions_signal.set(Vec::new());
                                     error.set(None);
                                     settings_open.set(false);
                                     notice.set(Some(format!(
