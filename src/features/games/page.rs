@@ -1658,7 +1658,10 @@ fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         task_index.set(next);
 
         if correct {
-            if next_reactor.combo().is_multiple_of(TypingReactor::CRITICAL_COMBO) {
+            if next_reactor
+                .combo()
+                .is_multiple_of(TypingReactor::CRITICAL_COMBO)
+            {
                 status.set("CRITICAL HIT — reactor cooled".into());
             } else {
                 status.set(format!("GOOD — combo x{}", next_reactor.combo()));
