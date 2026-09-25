@@ -2892,8 +2892,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             status.set("Rally!".into());
             last_time.set(None);
 
-            let tick_frame: PongAnimationFrame =
-                Rc::new(RefCell::new(None));
+            let tick_frame: PongAnimationFrame = Rc::new(RefCell::new(None));
             let tick_frame_clone = tick_frame.clone();
             let last_time_clone = last_time.clone();
             let animation_id_clone = animation_id.clone();
