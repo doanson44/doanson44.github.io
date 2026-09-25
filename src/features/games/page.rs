@@ -2868,137 +2868,166 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let up_pressed = RwSignal::new(false);
     let down_pressed = RwSignal::new(false);
     let frame_window = web_sys::window().expect("window should exist");
+    let animation_id = Rc::new(std::cell::Cell::new(None::<i32>));
+    let last_time = Rc::new(std::cell::Cell::new(None::<f64>));
 
-    let start_loop = move || {
-        if running.get() {
-            return;
-        }
-
-        if game.get().is_game_over() {
-            PongService::reset(&mut game.write());
-            score.set(0);
-        }
-
-        running.set(true);
-        status.set("Rally!".into());
-
+    let start_loop: Rc<dyn Fn()> = {
+        let animation_id = animation_id.clone();
+        let last_time = last_time.clone();
         let callback_window = frame_window.clone();
-        let last_time = std::rc::Rc::new(std::cell::Cell::new(None::<f64>));
-        let animation_id = std::rc::Rc::new(std::cell::Cell::new(None::<i32>));
 
-        let tick_frame: std::rc::Rc<std::cell::RefCell<Option<Box<dyn FnMut(f64)>>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(None));
-        let tick_frame_clone = tick_frame.clone();
-        let last_time_clone = last_time.clone();
-        let animation_id_clone = animation_id.clone();
-
-        *tick_frame.borrow_mut() = Some(Box::new(move |timestamp| {
-            if !running.get() {
-                last_time_clone.set(None);
-                animation_id_clone.set(None);
+        Rc::new(move || {
+            if running.get() {
                 return;
             }
 
-            let dt = last_time_clone
-                .get()
-                .map(|previous| (timestamp - previous) / 1000.0)
-                .unwrap_or(0.0);
-            last_time_clone.set(Some(timestamp));
+            if game.get().is_game_over() {
+                PongService::reset(&mut game.write());
+                score.set(0);
+            }
 
-            match PongService::tick(
-                &mut game.write(),
-                dt,
-                up_pressed.get(),
-                down_pressed.get(),
-            ) {
-                crate::domain::games::PongTickResult::Rally => {}
-                crate::domain::games::PongTickResult::PlayerScored => {
-                    score.set(game.get().score());
-                    status.set(format!("You scored! {}", game.get().score()));
-                }
-                crate::domain::games::PongTickResult::ComputerScored => {
-                    running.set(false);
-                    status.set(format!("Computer wins — score {}", game.get().score()));
+            running.set(true);
+            status.set("Rally!".into());
+            last_time.set(None);
+
+            let tick_frame: Rc<RefCell<Option<Box<dyn FnMut(f64)>>>> =
+                Rc::new(RefCell::new(None));
+            let tick_frame_clone = tick_frame.clone();
+            let last_time_clone = last_time.clone();
+            let animation_id_clone = animation_id.clone();
+            let callback_window_clone = callback_window.clone();
+
+            *tick_frame.borrow_mut() = Some(Box::new(move |timestamp| {
+                if !running.get() {
+                    last_time_clone.set(None);
+                    animation_id_clone.set(None);
                     return;
                 }
-            }
 
+                let dt = last_time_clone
+                    .get()
+                    .map(|previous| (timestamp - previous) / 1000.0)
+                    .unwrap_or(0.0);
+                last_time_clone.set(Some(timestamp));
+
+                match PongService::tick(
+                    &mut game.write(),
+                    dt,
+                    up_pressed.get(),
+                    down_pressed.get(),
+                ) {
+                    crate::domain::games::PongTickResult::Rally => {}
+                    crate::domain::games::PongTickResult::PlayerScored => {
+                        score.set(game.get().score());
+                        status.set(format!("You scored! {}", game.get().score()));
+                    }
+                    crate::domain::games::PongTickResult::ComputerScored => {
+                        running.set(false);
+                        status.set(format!("Computer wins — score {}", game.get().score()));
+                        animation_id_clone.set(None);
+                        return;
+                    }
+                }
+
+                if running.get() {
+                    let callback_ref = tick_frame_clone.borrow();
+                    if let Some(callback) = callback_ref.as_ref() {
+                        if let Ok(id) = callback_window_clone
+                            .request_animation_frame(callback.as_ref().unchecked_ref())
+                        {
+                            animation_id_clone.set(Some(id));
+                        }
+                    }
+                } else {
+                    animation_id_clone.set(None);
+                }
+            }));
+
+            let callback_ref = tick_frame.borrow();
+            if let Some(callback) = callback_ref.as_ref() {
+                if let Ok(id) = callback_window.request_animation_frame(callback.as_ref().unchecked_ref())
+                {
+                    animation_id.set(Some(id));
+                }
+            }
+        })
+    };
+
+    let stop_loop: Rc<dyn Fn()> = {
+        let animation_id = animation_id.clone();
+        let callback_window = frame_window.clone();
+
+        Rc::new(move || {
+            running.set(false);
+            up_pressed.set(false);
+            down_pressed.set(false);
+            last_time.set(None);
+
+            if let Some(id) = animation_id.get() {
+                let _ = callback_window.cancel_animation_frame(id);
+                animation_id.set(None);
+            }
+        })
+    };
+
+    let toggle_loop: Rc<dyn Fn()> = {
+        let start_loop = start_loop.clone();
+        let stop_loop = stop_loop.clone();
+
+        Rc::new(move || {
             if running.get() {
-                let callback_ref = tick_frame_clone.borrow();
-                if let Some(callback) = callback_ref.as_ref() {
-                    if let Ok(id) = callback_window
-                    .request_animation_frame(callback.as_ref().unchecked_ref())
-                    {
-                        animation_id_clone.set(Some(id));
+                stop_loop();
+                status.set("Paused — Space to resume".into());
+            } else {
+                start_loop();
+            }
+        })
+    };
+
+    bind_keys({
+        let toggle_loop = toggle_loop.clone();
+        move |e: web_sys::KeyboardEvent| {
+            if is_text_input(&e) {
+                return;
+            }
+
+            match e.key().as_str() {
+                " " => {
+                    e.prevent_default();
+                    if !e.repeat() {
+                        toggle_loop();
                     }
                 }
+                "ArrowUp" | "w" | "W" => {
+                    e.prevent_default();
+                    up_pressed.set(true);
+                }
+                "ArrowDown" | "s" | "S" => {
+                    e.prevent_default();
+                    down_pressed.set(true);
+                }
+                _ => {}
             }
-        }));
-
-        let callback_ref = tick_frame.borrow();
-        if let Some(callback) = callback_ref.as_ref() {
-            if let Ok(id) = callback_window
-                .request_animation_frame(callback.as_ref().unchecked_ref())
-            {
-                animation_id.set(Some(id));
-            }
         }
-    };
+    });
 
-    let stop = move || {
-        running.set(false);
-        up_pressed.set(false);
-        down_pressed.set(false);
-        if let Some(id) = animation_id.get() {
-            let _ = callback_window.cancel_animation_frame(id);
-            animation_id.set(None);
-        }
-    };
-
-    let set_input = move |up: bool, pressed: bool| {
-        if up {
-            up_pressed.set(pressed);
-        } else {
-            down_pressed.set(pressed);
-        }
-    };
-
-    let key_bindings = move |e: web_sys::KeyboardEvent| {
-        if is_text_input(&e) {
-            return;
-        }
-
+    let keyup_handle = window_event_listener(ev::keyup, move |e: web_sys::KeyboardEvent| {
         match e.key().as_str() {
-            " " => {
-                e.prevent_default();
-                if !e.repeat() {
-                    if running.get() {
-                        stop();
-                        status.set("Paused — Space to resume".into());
-                    } else {
-                        start_loop();
-                    }
-                }
-            }
-            "ArrowUp" | "w" | "W" => {
-                e.prevent_default();
-                set_input(true, true);
-            }
-            "ArrowDown" | "s" | "S" => {
-                e.prevent_default();
-                set_input(false, true);
-            }
+            "ArrowUp" | "w" | "W" => up_pressed.set(false),
+            "ArrowDown" | "s" | "S" => down_pressed.set(false),
             _ => {}
         }
-    };
-
-    bind_keys(key_bindings);
-
-    let release_keys = move |e: web_sys::KeyboardEvent| match e.key().as_str() {
-        "ArrowUp" | "w" | "W" => set_input(true, false),
-        "ArrowDown" | "s" | "S" => set_input(false, false),
-        _ => {}
-    };
+    });
+    on_cleanup({
+        let animation_id = animation_id.clone();
+        let callback_window = frame_window.clone();
+        move || {
+            if let Some(id) = animation_id.get() {
+                let _ = callback_window.cancel_animation_frame(id);
+            }
+            keyup_handle.remove();
+        }
+    });
 
     let board_width = PongGame::WIDTH;
     let board_height = PongGame::HEIGHT;
@@ -3009,13 +3038,9 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 <button
                     type="button"
                     class="min-h-11 flex-1 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                    on:click=move |_| {
-                        if running.get() {
-                            stop();
-                            status.set("Paused — Space to resume".into());
-                        } else {
-                            start_loop();
-                        }
+                    on:click={
+                        let toggle_loop = toggle_loop.clone();
+                        move |_| toggle_loop()
                     }
                 >
                     {move || if game.get().is_game_over() {
@@ -3090,11 +3115,11 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     type="button"
                     class="min-h-11 min-w-20 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] touch-none"
                     aria-label="Move paddle up"
-                    on:mousedown=move |_| set_input(true, true)
-                    on:mouseup=move |_| set_input(true, false)
-                    on:mouseleave=move |_| set_input(true, false)
-                    on:touchstart=move |_| set_input(true, true)
-                    on:touchend=move |_| set_input(true, false)
+                    on:mousedown=move |_| up_pressed.set(true)
+                    on:mouseup=move |_| up_pressed.set(false)
+                    on:mouseleave=move |_| up_pressed.set(false)
+                    on:touchstart=move |_| up_pressed.set(true)
+                    on:touchend=move |_| up_pressed.set(false)
                 >
                     "↑"
                 </button>
@@ -3102,11 +3127,11 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     type="button"
                     class="min-h-11 min-w-20 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] touch-none"
                     aria-label="Move paddle down"
-                    on:mousedown=move |_| set_input(false, true)
-                    on:mouseup=move |_| set_input(false, false)
-                    on:mouseleave=move |_| set_input(false, false)
-                    on:touchstart=move |_| set_input(false, true)
-                    on:touchend=move |_| set_input(false, false)
+                    on:mousedown=move |_| down_pressed.set(true)
+                    on:mouseup=move |_| down_pressed.set(false)
+                    on:mouseleave=move |_| down_pressed.set(false)
+                    on:touchstart=move |_| down_pressed.set(true)
+                    on:touchend=move |_| down_pressed.set(false)
                 >
                     "↓"
                 </button>
@@ -3115,6 +3140,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     }
     .into_any()
 }
+
 // ── Flappy ────────────────────────────────────────────────────────────────────
 
 fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
