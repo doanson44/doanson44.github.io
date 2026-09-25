@@ -523,7 +523,7 @@ pub fn tetris_clear_lines(board: &mut Vec<bool>, width: usize) -> usize {
     cleared
 }
 
-/// The result of advancing a Pong game by one simulation tick.
+/// The result of advancing a Pong game by one simulation step.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PongTickResult {
     /// The rally is still active.
@@ -535,52 +535,62 @@ pub enum PongTickResult {
 }
 
 /// Pure game state and rules for a single-player Pong match.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PongGame {
-    player_y: i32,
-    computer_y: i32,
-    ball_x: i32,
-    ball_y: i32,
-    ball_dx: i32,
-    ball_dy: i32,
+    player_y: f64,
+    computer_y: f64,
+    ball_x: f64,
+    ball_y: f64,
+    ball_dx: f64,
+    ball_dy: f64,
     score: u32,
     game_over: bool,
 }
 
 impl PongGame {
-    /// Width of the logical playfield in cells.
-    pub const WIDTH: i32 = 20;
-    /// Height of the logical playfield in cells.
-    pub const HEIGHT: i32 = 10;
-    /// Number of cells occupied by each paddle.
-    pub const PADDLE_SIZE: i32 = 3;
+    /// Logical playfield width in pixels.
+    pub const WIDTH: f64 = 960.0;
+    /// Logical playfield height in pixels.
+    pub const HEIGHT: f64 = 540.0;
+    /// Paddle height in pixels.
+    pub const PADDLE_HEIGHT: f64 = 96.0;
+    /// Paddle width in pixels.
+    pub const PADDLE_WIDTH: f64 = 16.0;
+    /// Ball radius in pixels.
+    pub const BALL_RADIUS: f64 = 9.0;
+    /// Player paddle movement speed in pixels per second.
+    pub const PLAYER_SPEED: f64 = 520.0;
+    /// Initial ball speed in pixels per second.
+    pub const BALL_SPEED: f64 = 430.0;
+    /// Maximum vertical component of the computer paddle speed.
+    pub const COMPUTER_SPEED: f64 = 380.0;
 
     /// Creates a new single-player Pong match.
     pub fn new() -> Self {
         Self {
-            player_y: 5,
-            computer_y: 5,
-            ball_x: 10,
-            ball_y: 5,
-            ball_dx: 1,
-            ball_dy: 1,
+            player_y: Self::HEIGHT / 2.0,
+            computer_y: Self::HEIGHT / 2.0,
+            ball_x: Self::WIDTH / 2.0,
+            ball_y: Self::HEIGHT / 2.0,
+            ball_dx: Self::BALL_SPEED * 0.866,
+            ball_dy: Self::BALL_SPEED * 0.5,
             score: 0,
             game_over: false,
         }
     }
 
     /// Returns the player's paddle center.
-    pub fn player_y(&self) -> i32 {
+    pub fn player_y(&self) -> f64 {
         self.player_y
     }
 
     /// Returns the computer's paddle center.
-    pub fn computer_y(&self) -> i32 {
+    pub fn computer_y(&self) -> f64 {
         self.computer_y
     }
 
     /// Returns the ball position.
-    pub fn ball_position(&self) -> (i32, i32) {
+    pub fn ball_position(&self) -> (f64, f64) {
         (self.ball_x, self.ball_y)
     }
 
@@ -594,46 +604,75 @@ impl PongGame {
         self.game_over
     }
 
-    /// Moves the player's paddle by the requested number of cells.
-    pub fn move_player(&mut self, delta: i32) {
-        self.player_y = (self.player_y + delta).clamp(1, Self::HEIGHT - 2);
+    /// Moves the player's paddle by a continuous amount in pixels.
+    pub fn move_player_by(&mut self, delta: f64) {
+        let half = Self::PADDLE_HEIGHT / 2.0;
+        self.player_y = (self.player_y + delta).clamp(half, Self::HEIGHT - half);
     }
 
-    /// Advances the simulation by one fixed time step.
-    pub fn tick(&mut self) -> PongTickResult {
+    /// Advances the simulation by elapsed seconds.
+    pub fn tick(&mut self, dt: f64, up_pressed: bool, down_pressed: bool) -> PongTickResult {
         if self.game_over {
             return PongTickResult::ComputerScored;
         }
 
-        let mut next_x = self.ball_x + self.ball_dx;
-        let mut next_y = self.ball_y + self.ball_dy;
-
-        if !(0..Self::HEIGHT).contains(&next_y) {
-            self.ball_dy = -self.ball_dy;
-            next_y = self.ball_y + self.ball_dy;
+        let dt = dt.clamp(0.0, 0.05);
+        if up_pressed {
+            self.move_player_by(-Self::PLAYER_SPEED * dt);
+        }
+        if down_pressed {
+            self.move_player_by(Self::PLAYER_SPEED * dt);
         }
 
-        self.computer_y = pong_ai_y(self.computer_y, next_y, Self::HEIGHT - 1);
+        let target_y = self.ball_y;
+        let computer_delta = (target_y - self.computer_y)
+            .clamp(-Self::COMPUTER_SPEED * dt, Self::COMPUTER_SPEED * dt);
+        self.computer_y = (self.computer_y + computer_delta)
+            .clamp(Self::PADDLE_HEIGHT / 2.0, Self::HEIGHT - Self::PADDLE_HEIGHT / 2.0);
 
-        if next_x <= 1 {
-            if Self::paddle_covers(self.player_y, next_y) {
-                next_x = 1;
-                self.ball_dx = self.ball_dx.abs();
-            } else {
-                self.game_over = true;
-                return PongTickResult::ComputerScored;
-            }
+        let mut next_x = self.ball_x + self.ball_dx * dt;
+        let mut next_y = self.ball_y + self.ball_dy * dt;
+
+        let min_y = Self::BALL_RADIUS;
+        let max_y = Self::HEIGHT - Self::BALL_RADIUS;
+        if next_y < min_y {
+            next_y = min_y + (min_y - next_y);
+            self.ball_dy = self.ball_dy.abs();
+        } else if next_y > max_y {
+            next_y = max_y - (next_y - max_y);
+            self.ball_dy = -self.ball_dy.abs();
         }
 
-        if next_x >= Self::WIDTH - 2 {
-            if Self::paddle_covers(self.computer_y, next_y) {
-                next_x = Self::WIDTH - 2;
-                self.ball_dx = -self.ball_dx.abs();
-            } else {
-                self.score = self.score.saturating_add(1);
-                self.reset_ball();
-                return PongTickResult::PlayerScored;
-            }
+        let player_x = Self::PADDLE_WIDTH + Self::BALL_RADIUS;
+        let computer_x = Self::WIDTH - Self::PADDLE_WIDTH - Self::BALL_RADIUS;
+
+        if self.ball_dx < 0.0
+            && next_x - Self::BALL_RADIUS <= player_x
+            && self.ball_x - Self::BALL_RADIUS > player_x
+            && Self::paddle_covers(self.player_y, next_y)
+        {
+            next_x = player_x + Self::BALL_RADIUS;
+            self.reflect_from_paddle(next_y, self.player_y, true);
+        }
+
+        if self.ball_dx > 0.0
+            && next_x + Self::BALL_RADIUS >= computer_x
+            && self.ball_x + Self::BALL_RADIUS < computer_x
+            && Self::paddle_covers(self.computer_y, next_y)
+        {
+            next_x = computer_x - Self::BALL_RADIUS;
+            self.reflect_from_paddle(next_y, self.computer_y, false);
+        }
+
+        if next_x + Self::BALL_RADIUS < 0.0 {
+            self.game_over = true;
+            return PongTickResult::ComputerScored;
+        }
+
+        if next_x - Self::BALL_RADIUS > Self::WIDTH {
+            self.score = self.score.saturating_add(1);
+            self.reset_ball();
+            return PongTickResult::PlayerScored;
         }
 
         self.ball_x = next_x;
@@ -646,15 +685,32 @@ impl PongGame {
         *self = Self::new();
     }
 
-    fn reset_ball(&mut self) {
-        self.ball_x = Self::WIDTH / 2;
-        self.ball_y = Self::HEIGHT / 2;
-        self.ball_dx = 1;
-        self.ball_dy = if self.ball_dy == 0 { 1 } else { self.ball_dy };
+    fn reflect_from_paddle(&mut self, ball_y: f64, paddle_y: f64, player: bool) {
+        let relative = ((ball_y - paddle_y) / (Self::PADDLE_HEIGHT / 2.0)).clamp(-1.0, 1.0);
+        let max_angle = std::f64::consts::FRAC_PI_3;
+        let angle = relative * max_angle;
+        let speed = (self.ball_dx * self.ball_dx + self.ball_dy * self.ball_dy)
+            .sqrt()
+            .max(Self::BALL_SPEED);
+        let horizontal = angle.cos() * speed;
+        let vertical = angle.sin() * speed;
+        self.ball_dx = if player { horizontal.abs() } else { -horizontal.abs() };
+        self.ball_dy = vertical;
     }
 
-    fn paddle_covers(center_y: i32, ball_y: i32) -> bool {
-        (ball_y - center_y).abs() <= Self::PADDLE_SIZE / 2
+    fn reset_ball(&mut self) {
+        self.ball_x = Self::WIDTH / 2.0;
+        self.ball_y = Self::HEIGHT / 2.0;
+        self.ball_dx = if self.ball_dx < 0.0 {
+            -Self::BALL_SPEED * 0.866
+        } else {
+            Self::BALL_SPEED * 0.866
+        };
+        self.ball_dy = Self::BALL_SPEED * 0.5;
+    }
+
+    fn paddle_covers(center_y: f64, ball_y: f64) -> bool {
+        (ball_y - center_y).abs() <= Self::PADDLE_HEIGHT / 2.0
     }
 }
 
@@ -663,11 +719,6 @@ impl Default for PongGame {
         Self::new()
     }
 }
-
-pub fn pong_ai_y(paddle_y: i32, ball_y: i32, max_y: i32) -> i32 {
-    (paddle_y + (ball_y - paddle_y) / 2).clamp(1, max_y)
-}
-
 /// The result of advancing a Breakout game by one simulation tick.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BreakoutTickResult {
