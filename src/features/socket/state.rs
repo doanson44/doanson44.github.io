@@ -669,9 +669,7 @@ impl SocketState {
                         )
                     };
 
-                    if !volume.is_finite()
-                        || volume < contract.min_vol
-                        || volume > contract.max_vol
+                    if !volume.is_finite() || volume < contract.min_vol || volume > contract.max_vol
                     {
                         error_signal.set(Some(
                             "Calculated order volume is outside the MEXC contract limits."
