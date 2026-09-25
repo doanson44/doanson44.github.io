@@ -6,8 +6,6 @@ pub struct Profile {
     pub name: &'static str,
     pub title: &'static str,
     pub location: &'static str,
-    pub phone: &'static str,
-    pub email: &'static str,
     pub summary: &'static str,
 }
 
@@ -55,14 +53,47 @@ pub fn profile(locale: Locale) -> Profile {
         } else {
             "Vietnam"
         },
-        phone: "0814466008",
-        email: "doanson44@gmail.com",
         summary: if locale == Locale::vi {
             "Senior Backend Developer với khoảng 11 năm kinh nghiệm phát triển phần mềm chuyên nghiệp trong các lĩnh vực Tài chính, Bán lẻ, FMCG, Quản lý nhân sự, Quản lý dự án, Nền tảng khuyến mãi, Thương mại ảo và Phần mềm nhúng. Chuyên về thiết kế và phát triển các ứng dụng backend có khả năng mở rộng với C#, ASP.NET Core, .NET Core, Entity Framework Core, SQL Server, PostgreSQL, Azure và RESTful API. Có nền tảng vững về hiện đại hóa ứng dụng doanh nghiệp, tích hợp hệ thống, tối ưu cơ sở dữ liệu, kiến trúc phần mềm và hỗ trợ production."
         } else {
             "Senior Backend Developer with professional experience delivering enterprise software across Finance, Retail, FMCG, Employee Management, Project Management, Promotion Platforms, Virtual Commerce, and Embedded Software domains. Specialized in designing and developing scalable backend applications using C#, ASP.NET Core, .NET Core, Entity Framework Core, SQL Server, PostgreSQL, Azure, and RESTful APIs. Strong background in enterprise application modernization, system integration, database optimization, software architecture, and production support."
         },
     }
+}
+
+/// Contact data is stored as encrypted bytes so the plaintext is not embedded in the WASM source.
+///
+/// This is client-side obfuscation rather than a security boundary: the decryption key must ship
+/// with the application because the browser needs it to reveal the contact data.
+const CONTACT_KEY: &[u8] = b"cv-contact-v1:doanson44:reveal";
+const ENCRYPTED_PHONE: &[u8] = &[67, 0, 238, 211, 124, 85, 14, 171, 18, 144];
+const ENCRYPTED_EMAIL: &[u8] = &[23, 87, 190, 137, 59, 12, 86, 175, 22, 232, 179, 163, 0, 145, 215, 158, 168, 73, 21];
+
+/// Decrypts a contact value only when the UI explicitly asks to reveal it.
+fn decrypt_contact(ciphertext: &[u8]) -> String {
+    let mut plaintext = Vec::with_capacity(ciphertext.len());
+
+    for (index, &byte) in ciphertext.iter().enumerate() {
+        let block_index = (index / 32) as u32;
+        let mut input = Vec::with_capacity(CONTACT_KEY.len() + 4);
+        input.extend_from_slice(CONTACT_KEY);
+        input.extend_from_slice(&block_index.to_be_bytes());
+
+        let digest = sha2::Sha256::digest(&input);
+        plaintext.push(byte ^ digest[index % 32]);
+    }
+
+    String::from_utf8(plaintext).expect("encrypted CV contact data must be valid UTF-8")
+}
+
+/// Reveals the candidate's phone number.
+pub fn reveal_phone() -> String {
+    decrypt_contact(ENCRYPTED_PHONE)
+}
+
+/// Reveals the candidate's email address.
+pub fn reveal_email() -> String {
+    decrypt_contact(ENCRYPTED_EMAIL)
 }
 
 /// Returns the candidate's core professional competencies.
@@ -478,8 +509,6 @@ mod tests {
         let value = profile(Locale::en);
         assert_eq!(value.name, "Thai Doan Son");
         assert_eq!(value.title, "Senior Backend Developer");
-        assert_eq!(value.phone, "0814466008");
-        assert_eq!(value.email, "doanson44@gmail.com");
     }
 
     #[test]
