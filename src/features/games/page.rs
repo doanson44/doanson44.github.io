@@ -2846,15 +2846,9 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
                 {dpad(
                     move || {},
-                    {
-                        let left_pressed = left_pressed;
-                        move || left_pressed.set(true)
-                    },
+                    move || left_pressed.set(true),
                     move || {},
-                    {
-                        let right_pressed = right_pressed;
-                        move || right_pressed.set(true)
-                    },
+                    move || right_pressed.set(true),
                 )}
 
                 <p class="text-center text-xs text-[var(--text-tertiary)]">
