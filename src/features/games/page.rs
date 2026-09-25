@@ -8,7 +8,8 @@ use crate::domain::games::{
     puzzle_is_solved, puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given,
     sudoku_puzzle_with_seed, sudoku_valid, tetris_clear_filled, tetris_rotate_cw,
     tower_wave_countdown, tower_wave_damage, ttt_best_move_sized, ttt_is_draw_sized,
-    ttt_winner_sized, typing_words, wordle_check, wordle_word, BreakoutGame, BreakoutTickResult,
+    ttt_winner_sized, typing_reactor_tasks, typing_words, wordle_check, wordle_word, BreakoutGame,
+    BreakoutTickResult, TypingReactor,
     FlappyGame, PongGame,
 };
 use leptos::ev;
@@ -1583,69 +1584,237 @@ fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Typing Speed ──────────────────────────────────────────────────────────────
 
 fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let words = typing_words();
-    let idx = RwSignal::new(0usize);
+    let tasks = typing_reactor_tasks();
+    let reactor = RwSignal::new(TypingReactor::new());
+    let task_index = RwSignal::new(0usize);
     let input = RwSignal::new(String::new());
-    let correct = RwSignal::new(0u32);
-    let wrong = RwSignal::new(0u32);
     let started_ms = RwSignal::new(None::<f64>);
-    let done = RwSignal::new(false);
+    let elapsed_ms = RwSignal::new(0.0f64);
+    let running = RwSignal::new(false);
+    let finished = RwSignal::new(false);
 
-    let submit = move || {
-        if done.get() {
-            return;
-        }
-        let typed = input.get().trim().to_lowercase();
-        let target = words[idx.get()];
-        if typed == target {
-            correct.update(|c| *c += 1);
-            score.update(|s| *s += 10);
-        } else {
-            wrong.update(|w| *w += 1);
-        }
-        let next = idx.get() + 1;
-        if next >= words.len() {
-            done.set(true);
-            let elapsed_min = started_ms
-                .get()
-                .map(|t| ((js_sys::Date::now() - t) / 60_000.0).max(0.001))
-                .unwrap_or(0.001);
-            let wpm = (correct.get() as f64 / elapsed_min).round() as u32;
-            status.set(format!(
-                "Done — {wpm} WPM ({} correct, {} wrong)",
-                correct.get(),
-                wrong.get()
-            ));
-        } else {
-            idx.set(next);
-            status.set(format!("{}/{}  ·  type + Enter", next + 1, words.len()));
-        }
+    let reset = move || {
+        reactor.set(TypingReactor::new());
+        task_index.set(0);
         input.set(String::new());
+        started_ms.set(None);
+        elapsed_ms.set(0.0);
+        running.set(false);
+        finished.set(false);
+        score.set(0);
+        status.set("Core stable — press Start".into());
     };
 
+    let start = move || {
+        if finished.get() {
+            reset();
+        }
+        if running.get() {
+            return;
+        }
+        running.set(true);
+        let now = js_sys::Date::now();
+        if started_ms.get().is_none() {
+            started_ms.set(Some(now));
+        }
+        status.set("Reactor online — type the command".into());
+    };
+
+    let submit = move || {
+        if !running.get() || finished.get() {
+            return;
+        }
+
+        let typed = input.get().trim().to_lowercase();
+        if typed.is_empty() {
+            return;
+        }
+
+        let target = tasks[task_index.get()];
+        let correct = typed == target;
+        let mut next_reactor = reactor.get();
+        next_reactor.submit(correct);
+        reactor.set(next_reactor);
+        score.set(next_reactor.score());
+        input.set(String::new());
+
+        if next_reactor.game_over() {
+            running.set(false);
+            finished.set(true);
+            let elapsed = started_ms
+                .get()
+                .map(|t| (js_sys::Date::now() - t).max(1.0))
+                .unwrap_or(1.0);
+            elapsed_ms.set(elapsed);
+            status.set(format!(
+                "CORE MELTDOWN — {} pts · {} tasks · {}% accuracy",
+                next_reactor.score(),
+                next_reactor.completed(),
+                accuracy_percent(&next_reactor)
+            ));
+            return;
+        }
+
+        let next = (task_index.get() + 1) % tasks.len();
+        task_index.set(next);
+
+        if correct {
+            if next_reactor.combo() > 0 && next_reactor.combo() % TypingReactor::CRITICAL_COMBO == 0 {
+                status.set("CRITICAL HIT — reactor cooled".into());
+            } else {
+                status.set(format!("GOOD — combo x{}", next_reactor.combo()));
+            }
+        } else {
+            status.set("ERROR — reactor heat spike".into());
+        }
+    };
+
+    let accuracy = move || accuracy_percent(&reactor.get());
+
+    {
+        let reactor = reactor;
+        let started_ms = started_ms;
+        let elapsed_ms = elapsed_ms;
+        let running = running;
+        let finished = finished;
+        let status = status;
+        leptos::task::spawn_local(async move {
+            loop {
+                gloo_timers::future::TimeoutFuture::new(250).await;
+                if finished.get() {
+                    break;
+                }
+                if running.get() {
+                    if let Some(started) = started_ms.get() {
+                        elapsed_ms.set((js_sys::Date::now() - started).max(0.0));
+                    }
+                    let mut state = reactor.get();
+                    state.tick_heat(1);
+                    reactor.set(state);
+                    if state.game_over() {
+                        running.set(false);
+                        finished.set(true);
+                        status.set(format!(
+                            "CORE MELTDOWN — {} pts · heat reached 100%",
+                            state.score()
+                        ));
+                    }
+                }
+            }
+        });
+    }
+
     view! {
-        <div class="mx-auto max-w-md space-y-4 text-center">
-            <p class="text-3xl font-bold tracking-widest text-[var(--accent)]">{move || words[idx.get()]}</p>
+        <div class="mx-auto w-full max-w-2xl space-y-4">
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] p-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">"Heat"</p>
+                    <p class="mt-1 text-xl font-bold text-[var(--text-primary)]">{move || format!("{}%", reactor.get().heat())}</p>
+                </div>
+                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] p-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">"Combo"</p>
+                    <p class="mt-1 text-xl font-bold text-[var(--text-primary)]">{move || format!("x{}", reactor.get().combo())}</p>
+                </div>
+                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] p-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">"Score"</p>
+                    <p class="mt-1 text-xl font-bold text-[var(--text-primary)]">{move || reactor.get().score()}</p>
+                </div>
+                <div class="rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] p-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">"Accuracy"</p>
+                    <p class="mt-1 text-xl font-bold text-[var(--text-primary)]">{move || format!("{}%", accuracy())}</p>
+                </div>
+            </div>
+
+            <div
+                class="h-3 overflow-hidden rounded-full border border-[var(--border-color)] bg-[var(--surface-hover)]"
+                role="progressbar"
+                aria-label="Reactor heat"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow=move || reactor.get().heat().to_string()
+            >
+                <div
+                    class="h-full rounded-full transition-all duration-200"
+                    class=("bg-[var(--accent)]", move || reactor.get().heat() < 70)
+                    class=("bg-amber-500", move || {
+                        let heat = reactor.get().heat();
+                        (70..90).contains(&heat)
+                    })
+                    class=("bg-red-500", move || reactor.get().heat() >= 90)
+                    style=move || format!("width: {}%", reactor.get().heat())
+                ></div>
+            </div>
+
+            <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-5 text-center sm:p-8">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--text-tertiary)]">
+                    {move || format!("TASK {}/{}", task_index.get() + 1, tasks.len())}
+                </p>
+                <p class="mt-3 text-2xl font-bold tracking-wide text-[var(--accent)] sm:text-3xl">
+                    {move || tasks[task_index.get()]}
+                </p>
+                <p class="mt-2 text-xs text-[var(--text-tertiary)]">
+                    "Keep the reactor below 100%. Every 5-hit combo triggers a critical cooldown."
+                </p>
+            </div>
+
             <input
                 type="text"
-                class="w-full rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-4 py-3 text-center text-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-                placeholder="Type the word and press Enter"
+                autocomplete="off"
+                spellcheck="false"
+                class="w-full rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-4 py-4 text-center font-mono text-base text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]"
+                placeholder="Type the command and press Enter"
                 prop:value=move || input.get()
+                disabled=move || finished.get()
                 on:input=move |e| {
                     if started_ms.get().is_none() {
                         started_ms.set(Some(js_sys::Date::now()));
-                        status.set("Timer started".into());
                     }
                     input.set(event_target_value(&e));
+                    if !running.get() {
+                        start();
+                    }
                 }
-                on:keydown=move |e| { if e.key() == "Enter" { submit(); } }
+                on:keydown=move |e| {
+                    if e.key() == "Enter" {
+                        e.prevent_default();
+                        submit();
+                    }
+                }
             />
-            <div class="flex justify-center gap-6 text-sm">
-                <span class="text-green-500">{move || format!("✅ {}", correct.get())}</span>
-                <span class="text-red-500">{move || format!("❌ {}", wrong.get())}</span>
+
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <button
+                    type="button"
+                    class="min-h-11 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                    on:click=move |_| start()
+                >
+                    {move || if finished.get() { "Restart Reactor" } else if running.get() { "Reactor Online" } else { "Start Reactor" }}
+                </button>
+                <button
+                    type="button"
+                    class="min-h-11 rounded-md border border-[var(--border-color)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                    on:click=move |_| reset()
+                >
+                    "Reset"
+                </button>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-[var(--text-tertiary)]" aria-live="polite">
+                <span>{move || format!("Correct {}", reactor.get().correct())}</span>
+                <span>{move || format!("Wrong {}", reactor.get().wrong())}</span>
+                <span>{move || format!("Critical {}", reactor.get().criticals())}</span>
+                <span>{move || format!("{:.1}s", elapsed_ms.get() / 1000.0)}</span>
             </div>
         </div>
     }.into_any()
+}
+
+fn accuracy_percent(game: &TypingReactor) -> u32 {
+    if game.completed() == 0 {
+        0
+    } else {
+        ((game.correct() * 100) / game.completed()).min(100)
+    }
 }
 
 // ── Wordle ────────────────────────────────────────────────────────────────────
