@@ -145,15 +145,7 @@ impl SocketState {
         let position_side = load_position_side().unwrap_or(loaded_snapshot.settings.position_side);
         save_position_side(position_side);
         loaded_snapshot.settings.position_side = position_side;
-        let pinned_symbols = RwSignal::new(
-            loaded_snapshot
-                .portfolio
-                .positions
-                .iter()
-                .map(|position| position.symbol.clone())
-                .collect::<Vec<_>>(),
-        );
-        save_pinned_symbols(&pinned_symbols.get_untracked());
+        let pinned_symbols = RwSignal::new(load_pinned_symbols());
         let page_size = RwSignal::new(DEFAULT_PAGE_SIZE);
         let current_page = RwSignal::new(1usize);
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
@@ -1075,6 +1067,23 @@ impl SocketState {
             }
         });
     }
+}
+
+fn load_pinned_symbols() -> Vec<String> {
+    let Some(storage) = web_sys::window().and_then(|window| window.local_storage().ok().flatten())
+    else {
+        return Vec::new();
+    };
+
+    storage
+        .get_item(PINNED_SYMBOLS_KEY)
+        .ok()
+        .flatten()
+        .and_then(|raw| serde_json::from_str::<Vec<String>>(&raw).ok())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|symbol| !symbol.trim().is_empty())
+        .collect()
 }
 
 fn save_pinned_symbols(symbols: &[String]) {
