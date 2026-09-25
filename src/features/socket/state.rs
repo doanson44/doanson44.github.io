@@ -632,6 +632,9 @@ impl SocketState {
         let api_key_for_refresh = api_key.clone();
         let api_secret_for_refresh = api_secret.clone();
         let symbol_owned = symbol.to_string();
+        let order_api_url = api_url.clone();
+        let order_api_key = api_key.clone();
+        let order_api_secret = api_secret.clone();
 
         let submit = {
             let service = service.clone();
@@ -672,9 +675,9 @@ impl SocketState {
             }
 
             service.submit_market_order(
-                &api_url,
-                &api_key,
-                &api_secret,
+                &order_api_url,
+                &order_api_key,
+                &order_api_secret,
                 js_sys::Date::now().max(0.0) as i64,
                 MarketOrderRequest {
                     symbol: symbol_owned.clone(),
