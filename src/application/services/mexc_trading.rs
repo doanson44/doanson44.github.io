@@ -146,7 +146,7 @@ pub struct ContractDetail {
     #[serde(rename = "maxVol")]
     pub max_vol: f64,
     pub state: i32,
-    #[serde(rename = "apiAllowed")]
+    #[serde(rename = "apiAllowed", default = "default_api_allowed")]
     pub api_allowed: bool,
 }
 
@@ -227,6 +227,10 @@ fn parse_positions_response(raw: String) -> Result<Vec<RealPosition>, String> {
             unrealized_pnl: position.unrealized,
         })
         .collect())
+}
+
+fn default_api_allowed() -> bool {
+    true
 }
 
 fn parse_contract_response(raw: String) -> Result<ContractDetail, String> {
