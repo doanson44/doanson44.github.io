@@ -2890,8 +2890,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             status.set("Rally!".into());
             last_time.set(None);
 
-            let tick_frame: Rc<RefCell<Option<Box<dyn FnMut(f64)>>>> =
-                Rc::new(RefCell::new(None));
+            let tick_frame: Rc<RefCell<Option<Box<dyn FnMut(f64)>>>> = Rc::new(RefCell::new(None));
             let tick_frame_clone = tick_frame.clone();
             let last_time_clone = last_time.clone();
             let animation_id_clone = animation_id.clone();
@@ -2910,12 +2909,8 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     .unwrap_or(0.0);
                 last_time_clone.set(Some(timestamp));
 
-                match PongService::tick(
-                    &mut game.write(),
-                    dt,
-                    up_pressed.get(),
-                    down_pressed.get(),
-                ) {
+                match PongService::tick(&mut game.write(), dt, up_pressed.get(), down_pressed.get())
+                {
                     crate::domain::games::PongTickResult::Rally => {}
                     crate::domain::games::PongTickResult::PlayerScored => {
                         score.set(game.get().score());
@@ -2945,7 +2940,8 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
             let callback_ref = tick_frame.borrow();
             if let Some(callback) = callback_ref.as_ref() {
-                if let Ok(id) = callback_window.request_animation_frame(callback.as_ref().unchecked_ref())
+                if let Ok(id) =
+                    callback_window.request_animation_frame(callback.as_ref().unchecked_ref())
                 {
                     animation_id.set(Some(id));
                 }
