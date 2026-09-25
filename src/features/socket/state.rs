@@ -609,19 +609,6 @@ impl SocketState {
             .iter()
             .find(|position| position.symbol == symbol)
             .cloned();
-        let action = existing
-            .as_ref()
-            .map(|position| match position.side {
-                PositionSide::Long => "close LONG",
-                PositionSide::Short => "close SHORT",
-            })
-            .unwrap_or(
-                match self.trading_snapshot.get_untracked().settings.position_side {
-                    PositionSide::Long => "open LONG",
-                    PositionSide::Short => "open SHORT",
-                },
-            );
-
         let api_url = self.api_url.get_untracked();
         let api_key = self.api_key.get_untracked();
         let api_secret = self.api_secret.get_untracked();
