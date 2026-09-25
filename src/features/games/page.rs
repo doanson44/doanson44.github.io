@@ -909,21 +909,28 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         let f = flagged.get();
 
         if r[i] && m[i] {
-            "mines-cell mines-cell--mine"
+            "aspect-square min-w-5 border border-[var(--mines-revealed-border)] bg-[var(--mines-mine)] text-white text-[clamp(0.55rem,1.4vw,0.85rem)] font-bold leading-none"
         } else if r[i] {
-            "mines-cell mines-cell--revealed"
+            let number_color = match minesweeper_adjacent_mines_sized(&m, size.get().dimensions().0, size.get().dimensions().1, i) {
+                1 => "text-blue-600 dark:text-blue-400",
+                2 => "text-green-700 dark:text-green-400",
+                3 => "text-red-600 dark:text-red-400",
+                4 => "text-purple-700 dark:text-purple-400",
+                _ => "text-[var(--text-primary)]",
+            };
+            format!("aspect-square min-w-5 border border-[var(--mines-revealed-border)] bg-[var(--mines-revealed)] {number_color} text-[clamp(0.55rem,1.4vw,0.85rem)] font-bold leading-none")
         } else if f[i] {
-            "mines-cell mines-cell--flagged"
+            "aspect-square min-w-5 border-2 border-[var(--mines-raised-border)] bg-[var(--mines-raised)] text-[clamp(0.55rem,1.4vw,0.85rem)] font-bold leading-none"
         } else {
-            "mines-cell"
+            "aspect-square min-w-5 border-2 border-[var(--mines-raised-border)] bg-[var(--mines-covered)] text-[clamp(0.55rem,1.4vw,0.85rem)] leading-none hover:bg-[var(--mines-covered-hover)]"
         }
     };
 
     let grid_class = move || {
         let (w, _, _) = size.get().dimensions();
         match w {
-            9 => "grid grid-cols-9",
-            16 => "grid grid-cols-16",
+            9 => "grid grid-cols-[repeat(9,minmax(0,1fr))]",
+            16 => "grid grid-cols-[repeat(16,minmax(0,1fr))]",
             _ => "grid grid-cols-[repeat(30,minmax(0,1fr))]",
         }
     };
@@ -961,7 +968,9 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
             <div class="overflow-x-auto rounded-lg border-4 border-[var(--border-color)] bg-[var(--surface-hover)] p-1 shadow-sm">
                 <div class=grid_class()>
-                    {(0..width * height).map(|i| view! {
+                    {move || {
+                        let (w, h, _) = size.get().dimensions();
+                        (0..w * h).map(|i| view! {
                         <button
                             type="button"
                             class=move || cell_class(i)
@@ -999,7 +1008,8 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                 }
                             }}
                         </button>
-                    }).collect_view()}
+                        }).collect_view()
+                    }}
                 </div>
             </div>
 
