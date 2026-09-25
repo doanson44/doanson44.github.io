@@ -8,7 +8,7 @@ use crate::domain::games::{
     puzzle_is_solved, puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given,
     sudoku_puzzle_with_seed, sudoku_valid, tetris_clear_filled, tetris_rotate_cw,
     tower_wave_countdown, tower_wave_damage, ttt_best_move_sized, ttt_is_draw_sized,
-    ttt_winner_sized, typing_reactor_tasks, typing_words, wordle_check, wordle_word, BreakoutGame,
+    ttt_winner_sized, typing_reactor_tasks, wordle_check, wordle_word, BreakoutGame,
     BreakoutTickResult, FlappyGame, PongGame, TypingReactor,
 };
 use leptos::ev;
@@ -1741,7 +1741,17 @@ fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                         (70..90).contains(&heat)
                     })
                     class=("bg-red-500", move || reactor.get().heat() >= 90)
-                    class=move || reactor_heat_width_class(reactor.get().heat())
+                    class=("w-0", move || reactor.get().heat() == 0)
+                    class=("w-1/12", move || (1..=10).contains(&reactor.get().heat()))
+                    class=("w-2/12", move || (11..=20).contains(&reactor.get().heat()))
+                    class=("w-3/12", move || (21..=30).contains(&reactor.get().heat()))
+                    class=("w-4/12", move || (31..=40).contains(&reactor.get().heat()))
+                    class=("w-5/12", move || (41..=50).contains(&reactor.get().heat()))
+                    class=("w-6/12", move || (51..=60).contains(&reactor.get().heat()))
+                    class=("w-7/12", move || (61..=70).contains(&reactor.get().heat()))
+                    class=("w-8/12", move || (71..=80).contains(&reactor.get().heat()))
+                    class=("w-10/12", move || (81..=90).contains(&reactor.get().heat()))
+                    class=("w-full", move || reactor.get().heat() >= 91)
                 ></div>
             </div>
 
@@ -1807,22 +1817,6 @@ fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             </div>
         </div>
     }.into_any()
-}
-
-fn reactor_heat_width_class(heat: u8) -> &'static str {
-    match heat {
-        0 => "w-0",
-        1..=10 => "w-1/12",
-        11..=20 => "w-2/12",
-        21..=30 => "w-3/12",
-        31..=40 => "w-4/12",
-        41..=50 => "w-5/12",
-        51..=60 => "w-6/12",
-        61..=70 => "w-7/12",
-        71..=80 => "w-8/12",
-        81..=90 => "w-10/12",
-        _ => "w-full",
-    }
 }
 
 fn accuracy_percent(game: &TypingReactor) -> u32 {
