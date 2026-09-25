@@ -894,12 +894,37 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         status.set("Ready — left click to reveal".into());
     };
 
+    let left_button_down = RwSignal::new(false);
+    let right_button_down = RwSignal::new(false);
+
     let handle_mouse_down = move |i: usize, e: web_sys::MouseEvent| {
         e.prevent_default();
-        match e.buttons() {
-            3 => chord(i),
-            2 => flag(i),
-            1 => reveal(i),
+
+        match e.button() {
+            0 => {
+                left_button_down.set(true);
+                if right_button_down.get() {
+                    chord(i);
+                } else {
+                    reveal(i);
+                }
+            }
+            2 => {
+                right_button_down.set(true);
+                if left_button_down.get() {
+                    chord(i);
+                } else {
+                    flag(i);
+                }
+            }
+            _ => {}
+        }
+    };
+
+    let handle_mouse_up = move |e: web_sys::MouseEvent| {
+        match e.button() {
+            0 => left_button_down.set(false),
+            2 => right_button_down.set(false),
             _ => {}
         }
     };
@@ -997,6 +1022,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                 }
                             }
                             on:mousedown=move |e| handle_mouse_down(i, e)
+                            on:mouseup=handle_mouse_up
                             on:contextmenu=move |e| e.prevent_default()
                         >
                             {move || {
