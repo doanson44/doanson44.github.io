@@ -630,18 +630,18 @@ impl SocketState {
         let api_secret_for_refresh = api_secret.clone();
 
         let submit = move |contract: crate::application::services::mexc_trading::ContractDetail| {
-            let (side, volume, position_id, reduce_only) = if let Some(position) =
-                existing.as_ref()
-            {
-                    match position.side {
-                        PositionSide::Long => 4,
-                        PositionSide::Short => 2,
-                    },
-                    position.hold_volume,
-                    Some(position.position_id),
-                    Some(true),
-                )
-            } else {
+            let (side, volume, position_id, reduce_only) =
+                if let Some(position) = existing.as_ref() {
+                    (
+                        match position.side {
+                            PositionSide::Long => 4,
+                            PositionSide::Short => 2,
+                        },
+                        position.hold_volume,
+                        Some(position.position_id),
+                        Some(true),
+                    )
+                } else {
                 let allocation = settings.trade_allocation_percent / 100.0;
                 let margin = account.available_balance * allocation;
                 let notional = margin * settings.leverage;
