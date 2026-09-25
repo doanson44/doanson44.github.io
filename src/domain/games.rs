@@ -1136,16 +1136,6 @@ pub fn shuffle_deck(mut rand_index: impl FnMut(usize) -> usize) -> Vec<u8> {
     deck
 }
 
-/// Damage dealt to the base after a tower-defense wave.
-pub fn tower_wave_damage(wave: u32, towers: u32) -> i32 {
-    (wave as i32 * 3).saturating_sub(towers as i32 * 2).max(0)
-}
-
-/// Seconds before the next wave, shrinking as waves increase (minimum 3).
-pub fn tower_wave_countdown(wave: u32) -> u32 {
-    (8u32.saturating_sub(wave.saturating_sub(1) / 2)).max(3)
-}
-
 /// Rotate a tetromino 90° clockwise, keeping the bounding-box origin.
 pub fn tetris_rotate_cw(piece: &[(i32, i32)]) -> Vec<(i32, i32)> {
     if piece.is_empty() {
@@ -1890,13 +1880,6 @@ mod tests {
         assert_eq!(d.iter().filter(|&&c| c == 1).count(), 4);
     }
 
-    #[test]
-    fn tower_damage_scales_with_wave() {
-        assert_eq!(tower_wave_damage(1, 3), 0);
-        assert!(tower_wave_damage(8, 3) > 0);
-        assert_eq!(tower_wave_countdown(1), 8);
-        assert_eq!(tower_wave_countdown(20), 3);
-    }
 
     #[test]
     fn tetris_rotate_turns_i_piece() {
