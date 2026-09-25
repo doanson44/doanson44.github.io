@@ -103,7 +103,7 @@ pub enum GameKind {
     Blackjack,
 }
 impl GameKind {
-    fn all() -> [Self; 20] {
+    fn all() -> [Self; 19] {
         [
             Self::TwentyFortyEight,
             Self::TicTacToe,
