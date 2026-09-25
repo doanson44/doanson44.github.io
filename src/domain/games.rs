@@ -806,7 +806,7 @@ impl BreakoutGame {
             && next_y >= Self::PADDLE_Y
             && self.ball_y < Self::PADDLE_Y
             && next_x as f64 >= self.paddle_x
-            && next_x as f64 < self.paddle_x + Self::PADDLE_WIDTH as f64
+            && (next_x as f64) < self.paddle_x + Self::PADDLE_WIDTH as f64
         {
             next_dy = -1;
             next_y = Self::PADDLE_Y - 1;
