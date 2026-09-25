@@ -539,10 +539,10 @@ pub enum PongTickResult {
 pub struct PongGame {
     player_y: i32,
     computer_y: i32,
-    ball_x: i32,
-    ball_y: i32,
-    ball_dx: i32,
-    ball_dy: i32,
+    ball_x: f64,
+    ball_y: f64,
+    ball_dx: f64,
+    ball_dy: f64,
     score: u32,
     game_over: bool,
 }
@@ -580,7 +580,7 @@ impl PongGame {
     }
 
     /// Returns the ball position.
-    pub fn ball_position(&self) -> (i32, i32) {
+    pub fn ball_position(&self) -> (f64, f64) {
         (self.ball_x, self.ball_y)
     }
 
@@ -714,6 +714,8 @@ impl BreakoutGame {
     pub const BRICK_COUNT: usize = BREAKOUT_BRICK_COUNT;
     /// Initial number of lives.
     pub const INITIAL_LIVES: u8 = 3;
+    /// Ball movement per fixed 60 Hz simulation step, in logical cells.
+    pub const BALL_SPEED: f64 = 0.10;
     /// Vertical position of the paddle in the playfield.
     pub const PADDLE_Y: i32 = Self::HEIGHT - 2;
     const BRICK_START_X: i32 = 3;
@@ -722,10 +724,10 @@ impl BreakoutGame {
     pub fn new() -> Self {
         Self {
             paddle_x: (Self::WIDTH - Self::PADDLE_WIDTH) as f64 / 2.0,
-            ball_x: Self::WIDTH / 2,
-            ball_y: Self::HEIGHT - 4,
-            ball_dx: 1,
-            ball_dy: -1,
+            ball_x: Self::WIDTH as f64 / 2.0,
+            ball_y: Self::HEIGHT as f64 - 4.0,
+            ball_dx: Self::BALL_SPEED,
+            ball_dy: -Self::BALL_SPEED,
             bricks: [true; Self::BRICK_COUNT],
             score: 0,
             lives: Self::INITIAL_LIVES,
@@ -792,36 +794,35 @@ impl BreakoutGame {
         let mut next_dx = self.ball_dx;
         let mut next_dy = self.ball_dy;
 
-        if !(0..Self::WIDTH).contains(&next_x) {
+        if next_x < 0.0 || next_x >= Self::WIDTH as f64 {
             next_dx = -next_dx;
-            next_x = self.ball_x + next_dx;
+            next_x = (self.ball_x + next_dx).clamp(0.0, Self::WIDTH as f64 - f64::EPSILON);
         }
 
-        if next_y < 0 {
-            next_dy = 1;
-            next_y = 0;
+        if next_y < 0.0 {
+            next_dy = next_dy.abs();
+            next_y = 0.0;
         }
 
-        if next_dy > 0
-            && next_y >= Self::PADDLE_Y
-            && self.ball_y < Self::PADDLE_Y
-            && next_x as f64 >= self.paddle_x
-            && (next_x as f64) < self.paddle_x + Self::PADDLE_WIDTH as f64
+        if next_dy > 0.0
+            && next_y >= Self::PADDLE_Y as f64
+            && self.ball_y < Self::PADDLE_Y as f64
+            && next_x >= self.paddle_x
+            && next_x < self.paddle_x + Self::PADDLE_WIDTH as f64
         {
-            next_dy = -1;
-            next_y = Self::PADDLE_Y - 1;
+            next_y = Self::PADDLE_Y as f64 - 1.0;
 
-            let hit_offset = next_x as f64 - self.paddle_x;
-            next_dx = if hit_offset < 1.0 {
-                -1
-            } else if hit_offset >= 2.0 {
-                1
-            } else {
-                0
-            };
+            let hit_offset =
+                ((next_x - self.paddle_x) / Self::PADDLE_WIDTH as f64).clamp(0.0, 1.0);
+            let angle = hit_offset * 2.0 - 1.0;
+            next_dx = (angle * Self::BALL_SPEED * 1.6).clamp(-Self::BALL_SPEED * 1.6, Self::BALL_SPEED * 1.6);
+            if next_dx.abs() < Self::BALL_SPEED * 0.25 {
+                next_dx = Self::BALL_SPEED * 0.25;
+            }
+            next_dy = -Self::BALL_SPEED;
         }
 
-        if next_y >= Self::HEIGHT {
+        if next_y >= Self::HEIGHT as f64 {
             self.lives = self.lives.saturating_sub(1);
             if self.lives == 0 {
                 self.finished = true;
@@ -832,9 +833,9 @@ impl BreakoutGame {
             return BreakoutTickResult::LifeLost;
         }
 
-        if next_y < Self::BRICK_ROWS as i32 {
-            let row = next_y as usize;
-            let brick_col = next_x - Self::BRICK_START_X;
+        if next_y >= 0.0 && next_y < Self::BRICK_ROWS as f64 {
+            let row = next_y.floor() as usize;
+            let brick_col = next_x.floor() as i32 - Self::BRICK_START_X;
             if (0..Self::BRICK_COLS as i32).contains(&brick_col) {
                 let index = row * Self::BRICK_COLS + brick_col as usize;
                 if self.bricks[index] {
@@ -842,10 +843,10 @@ impl BreakoutGame {
                     self.score = self.score.saturating_add(10);
                     let hit_dy = next_dy;
                     next_dy = -hit_dy;
-                    next_y = if hit_dy > 0 {
-                        row as i32 + 1
+                    next_y = if hit_dy > 0.0 {
+                        row as f64 + 1.0
                     } else {
-                        row as i32 - 1
+                        row as f64 - 0.01
                     };
 
                     self.ball_x = next_x;
@@ -876,10 +877,10 @@ impl BreakoutGame {
     }
 
     fn reset_ball(&mut self) {
-        self.ball_x = Self::WIDTH / 2;
-        self.ball_y = Self::HEIGHT - 4;
-        self.ball_dx = 1;
-        self.ball_dy = -1;
+        self.ball_x = Self::WIDTH as f64 / 2.0;
+        self.ball_y = Self::HEIGHT as f64 - 4.0;
+        self.ball_dx = Self::BALL_SPEED;
+        self.ball_dy = -Self::BALL_SPEED;
     }
 }
 
@@ -1952,10 +1953,10 @@ mod tests {
     #[test]
     fn breakout_brick_hit_increases_score() {
         let mut game = BreakoutGame::new();
-        game.ball_x = 3;
-        game.ball_y = 1;
-        game.ball_dx = 0;
-        game.ball_dy = -1;
+        game.ball_x = 3.0;
+        game.ball_y = 1.0;
+        game.ball_dx = 0.0;
+        game.ball_dy = -BreakoutGame::BALL_SPEED;
 
         game.tick();
 
@@ -1966,18 +1967,18 @@ mod tests {
     #[test]
     fn breakout_life_loss_resets_ball_until_final_life() {
         let mut game = BreakoutGame::new();
-        game.ball_x = 0;
-        game.ball_y = BreakoutGame::HEIGHT - 1;
-        game.ball_dx = 0;
-        game.ball_dy = 1;
+        game.ball_x = 0.0;
+        game.ball_y = BreakoutGame::HEIGHT as f64 - 1.0;
+        game.ball_dx = 0.0;
+        game.ball_dy = BreakoutGame::BALL_SPEED;
 
         assert_eq!(game.tick(), BreakoutTickResult::LifeLost);
         assert_eq!(game.lives(), 2);
         assert!(!game.is_finished());
 
         game.lives = 1;
-        game.ball_y = BreakoutGame::HEIGHT - 1;
-        game.ball_dy = 1;
+        game.ball_y = BreakoutGame::HEIGHT as f64 - 1.0;
+        game.ball_dy = BreakoutGame::BALL_SPEED;
         assert_eq!(game.tick(), BreakoutTickResult::GameOver);
         assert_eq!(game.lives(), 0);
         assert!(game.is_finished());
