@@ -2696,7 +2696,7 @@ fn board_tetris(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     }.into_any()
 }
 
-// ── Chess (basic board — select & move highlighted squares) ──────────────────
+// ── Chess ──────────────────────────────────────────────────────────────────────
 
 fn board_chess(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let board: RwSignal<[i8; 64]> = RwSignal::new(chess_start());
@@ -2771,37 +2771,88 @@ fn board_chess(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     };
 
     view! {
-        <div class="mx-auto max-w-md space-y-3">
-            <div class="grid grid-cols-8 gap-0 rounded-lg overflow-hidden border border-[var(--border-color)]">
+        <div class="mx-auto w-full max-w-2xl space-y-4">
+            <div class="chess-board mx-auto w-[min(92vw,42rem)] max-w-full overflow-hidden rounded-xl border-4 shadow-lg">
                 {(0..64).map(|i| {
                     let row = i / 8;
                     let col = i % 8;
                     let is_light = (row + col) % 2 == 0;
+                    let square_name = format!(
+                        "{}{}",
+                        (b'a' + col as u8) as char,
+                        8 - row
+                    );
+
                     view! {
-                        <button type="button"
+                        <button
+                            type="button"
                             class=move || {
                                 let sel = selected.get();
-                                let legal = sel.is_some_and(|s| chess_legal_moves(&board.get(), s).contains(&i));
-                                let highlight = if sel == Some(i) { " ring-2 ring-inset ring-yellow-400" }
-                                    else if legal { " ring-2 ring-inset ring-green-400" }
-                                    else { "" };
-                                let bg = if is_light { "bg-amber-100 dark:bg-amber-200" } else { "bg-amber-700 dark:bg-amber-800" };
-                                format!("aspect-square text-xl flex items-center justify-center {bg}{highlight} hover:opacity-90")
+                                let current_board = board.get();
+                                let legal = sel.is_some_and(|s| {
+                                    chess_legal_moves(&current_board, s).contains(&i)
+                                });
+                                let piece = current_board[i];
+                                let highlight = if sel == Some(i) {
+                                    " chess-square--selected"
+                                } else if legal {
+                                    " chess-square--legal"
+                                } else {
+                                    ""
+                                };
+                                let square = if is_light {
+                                    " chess-square chess-square--light"
+                                } else {
+                                    " chess-square chess-square--dark"
+                                };
+                                let piece_class = if piece > 0 {
+                                    " chess-piece chess-piece--light"
+                                } else if piece < 0 {
+                                    " chess-piece chess-piece--dark"
+                                } else {
+                                    ""
+                                };
+                                format!("{square}{highlight}{piece_class}")
                             }
-                            on:click=move |_| click(i)>
+                            on:click=move |_| click(i)
+                            aria-label=move || format!(
+                                "{} {}",
+                                square_name,
+                                match board.get()[i] {
+                                    0 => "empty square",
+                                    p if p > 0 => "white piece",
+                                    _ => "black piece",
+                                }
+                            )
+                        >
                             {move || chess_glyph(board.get()[i])}
                         </button>
                     }
                 }).collect_view()}
             </div>
-            <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|{
-                board.set(chess_start());
-                selected.set(None);
-                game_over.set(false);
-                busy.set(false);
-                score.set(0);
-                status.set("White to move".into());
-            }>"New Game"</button>
+
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <p
+                    class="text-center text-xs text-[var(--text-tertiary)]"
+                    aria-live="polite"
+                >
+                    "Select a white piece, then choose a highlighted square."
+                </p>
+                <button
+                    type="button"
+                    class="min-h-11 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                    on:click=move |_| {
+                        board.set(chess_start());
+                        selected.set(None);
+                        game_over.set(false);
+                        busy.set(false);
+                        score.set(0);
+                        status.set("White to move".into());
+                    }
+                >
+                    "New Game"
+                </button>
+            </div>
         </div>
     }.into_any()
 }
