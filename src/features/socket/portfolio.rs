@@ -226,18 +226,16 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
         let execution_mode = mode.get_untracked();
 
         match (initial, fee, leverage, trade_allocation) {
-            (Ok(initial), Ok(fee), Ok(leverage), Ok(trade_allocation)) => {
-                state.save_settings(
-                    initial,
-                    fee,
-                    leverage,
-                    trade_allocation,
-                    execution_mode,
-                    api_url.get_untracked(),
-                    api_key.get_untracked(),
-                    api_secret.get_untracked(),
-                )
-            }
+            (Ok(initial), Ok(fee), Ok(leverage), Ok(trade_allocation)) => state.save_settings(
+                initial,
+                fee,
+                leverage,
+                trade_allocation,
+                execution_mode,
+                api_url.get_untracked(),
+                api_key.get_untracked(),
+                api_secret.get_untracked(),
+            ),
             _ => state
                 .trading_error
                 .set(Some("Enter valid numeric settings.".to_string())),
