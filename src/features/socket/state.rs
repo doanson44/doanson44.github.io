@@ -622,19 +622,6 @@ impl SocketState {
                 },
             );
 
-        let message = format!(
-            "REAL TRADING: {action} {symbol} at market price around {:.6}. Continue?",
-            price
-        );
-        let confirmed = web_sys::window()
-            .and_then(|window| window.confirm_with_message(&message).ok())
-            .unwrap_or(false);
-        if !confirmed {
-            self.trading_notice
-                .set(Some("Real order cancelled.".to_string()));
-            return;
-        }
-
         let api_url = self.api_url.get_untracked();
         let api_key = self.api_key.get_untracked();
         let api_secret = self.api_secret.get_untracked();
