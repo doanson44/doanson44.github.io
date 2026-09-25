@@ -37,6 +37,19 @@ const DEFAULT_PAGE_SIZE: usize = 10;
 
 type MarketSnapshot = Rc<HashMap<String, TrackedFuturesTicker>>;
 
+/// Input values for saving socket trading settings.
+#[derive(Clone)]
+pub struct TradingSettingsInput {
+    pub initial_capital: f64,
+    pub fee_percent: f64,
+    pub leverage: f64,
+    pub trade_allocation_percent: f64,
+    pub execution_mode: ExecutionMode,
+    pub api_url: String,
+    pub api_key: String,
+    pub api_secret: String,
+}
+
 /// Socket ticker view mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SocketViewMode {
@@ -151,7 +164,7 @@ impl SocketState {
             .load()
             .ok()
             .flatten()
-            .unwrap_or_else(ExecutionSettings::default);
+            .unwrap_or_default();
         let settings_open = RwSignal::new(false);
         let trading_error = RwSignal::new(None);
         let trading_notice = RwSignal::new(None);
@@ -452,17 +465,17 @@ impl SocketState {
 
     /// Saves execution settings. Real mode validates the MEXC account first and
     /// only persists the settings after the account request succeeds.
-    pub fn save_settings(
-        &self,
-        initial_capital: f64,
-        fee_percent: f64,
-        leverage: f64,
-        trade_allocation_percent: f64,
-        execution_mode: ExecutionMode,
-        api_url: String,
-        api_key: String,
-        api_secret: String,
-    ) {
+    pub fn save_settings(&self, input: TradingSettingsInput) {
+        let TradingSettingsInput {
+            initial_capital,
+            fee_percent,
+            leverage,
+            trade_allocation_percent,
+            execution_mode,
+            api_url,
+            api_key,
+            api_secret,
+        } = input;
         let fee_rate = fee_percent / 100.0;
         let position_side = self.trading_snapshot.get_untracked().settings.position_side;
 
