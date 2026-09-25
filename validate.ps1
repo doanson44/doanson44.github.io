@@ -85,6 +85,42 @@ function Invoke-Check {
     Write-Host ''
 }
 
+function Invoke-BootstrapAudit {
+    param([bool]$Capture = $false)
+
+    $label = '[5/5] Auditing Bootstrap removal...'
+    Write-Host $label
+
+    $paths = @('src', 'styles', 'index.html', 'package.json', 'Trunk.toml', 'public')
+    $existingPaths = $paths | Where-Object { Test-Path $_ }
+    $pattern = 'bootstrap|data-bs-|--bs-|bi-[a-z0-9-]+'
+
+    $matches = @(
+        $existingPaths | ForEach-Object {
+            if ((Get-Item $_).PSIsContainer) {
+                Get-ChildItem $_ -Recurse -File
+            }
+            else {
+                Get-Item $_
+            }
+        } | Select-String -Pattern $pattern
+    )
+
+    if ($matches.Count -gt 0) {
+        $output = $matches | Out-String
+        $script:LastCheckFailure = [PSCustomObject]@{
+            Label     = $label
+            Command   = 'Bootstrap reference audit'
+            ExitCode  = 1
+            Output    = $output.TrimEnd()
+        }
+        $matches | ForEach-Object { Write-Host $_ }
+        throw 'Bootstrap-era references remain in production files.'
+    }
+
+    Write-Host ''
+}
+
 Write-Host '========================================'
 Write-Host 'doanson44.github.io - Validation'
 if ($shouldClip) {
@@ -94,10 +130,11 @@ Write-Host '========================================'
 Write-Host ''
 
 try {
-    Invoke-Check -Label '[1/4] Checking formatting...' -Command cargo -Arguments @('fmt', '--check') -Capture $shouldClip
-    Invoke-Check -Label '[2/4] Checking WASM compilation...' -Command cargo -Arguments @('check', '--target', 'wasm32-unknown-unknown') -Capture $shouldClip
-    Invoke-Check -Label '[3/4] Running tests...' -Command cargo -Arguments @('test') -Capture $shouldClip
-    Invoke-Check -Label '[4/4] Running Clippy...' -Command cargo -Arguments @('clippy', '--target', 'wasm32-unknown-unknown', '--', '-D', 'warnings') -Capture $shouldClip
+    Invoke-Check -Label '[1/5] Checking formatting...' -Command cargo -Arguments @('fmt', '--check') -Capture $shouldClip
+    Invoke-Check -Label '[2/5] Checking WASM compilation...' -Command cargo -Arguments @('check', '--target', 'wasm32-unknown-unknown') -Capture $shouldClip
+    Invoke-Check -Label '[3/5] Running tests...' -Command cargo -Arguments @('test') -Capture $shouldClip
+    Invoke-Check -Label '[4/5] Running Clippy...' -Command cargo -Arguments @('clippy', '--target', 'wasm32-unknown-unknown', '--', '-D', 'warnings') -Capture $shouldClip
+    Invoke-BootstrapAudit -Capture $shouldClip
 }
 catch {
     Write-Host ''
