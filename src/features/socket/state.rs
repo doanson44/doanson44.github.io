@@ -116,6 +116,8 @@ pub struct SocketState {
     pub settings_open: RwSignal<bool>,
     pub trading_error: RwSignal<Option<String>>,
     pub trading_notice: RwSignal<Option<String>>,
+    pub real_trade_confirm_open: RwSignal<bool>,
+    pub real_trade_pending_symbol: RwSignal<Option<String>>,
     pub execution_mode: RwSignal<ExecutionMode>,
     pub api_url: RwSignal<String>,
     pub api_key: RwSignal<String>,
@@ -172,6 +174,8 @@ impl SocketState {
         let settings_open = RwSignal::new(false);
         let trading_error = RwSignal::new(None);
         let trading_notice = RwSignal::new(None);
+        let real_trade_confirm_open = RwSignal::new(false);
+        let real_trade_pending_symbol = RwSignal::new(None);
         let execution_mode = RwSignal::new(execution_settings.mode);
         let api_url = RwSignal::new(execution_settings.real.api_url.clone());
         let api_key = RwSignal::new(execution_settings.real.api_key.clone());
@@ -280,6 +284,8 @@ impl SocketState {
             settings_open,
             trading_error,
             trading_notice,
+            real_trade_confirm_open,
+            real_trade_pending_symbol,
             execution_mode,
             api_url,
             api_key,
@@ -563,6 +569,28 @@ impl SocketState {
     }
 
     fn trade_real(&self, symbol: &str) {
+        self.real_trade_pending_symbol.set(Some(symbol.to_string()));
+        self.real_trade_confirm_open.set(true);
+    }
+
+    /// Executes a confirmed real-trading order.
+    pub fn confirm_real_trade(&self) {
+        let Some(symbol) = self.real_trade_pending_symbol.get_untracked() else {
+            self.real_trade_confirm_open.set(false);
+            return;
+        };
+        self.real_trade_confirm_open.set(false);
+        self.real_trade_pending_symbol.set(None);
+        self.execute_real_trade(&symbol);
+    }
+
+    /// Cancels the pending real-trading order.
+    pub fn cancel_real_trade(&self) {
+        self.real_trade_confirm_open.set(false);
+        self.real_trade_pending_symbol.set(None);
+    }
+
+    fn execute_real_trade(&self, symbol: &str) {
         let Some(price) = self
             .tickers
             .get_untracked()
