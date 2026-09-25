@@ -257,3 +257,5 @@ mod tests {
         assert_eq!(service.snapshot()["BTC_USDT"].ranking.ranking_score(), 0);
     }
 }
+
+pub mod mexc_trading;
