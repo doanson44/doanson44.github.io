@@ -1,4 +1,5 @@
 use crate::i18n::Locale;
+use sha2::Digest;
 
 /// Static profile data displayed by the public CV page.
 #[derive(Debug, Clone, PartialEq)]
