@@ -78,21 +78,20 @@ echo.
 echo [5/5] Auditing Bootstrap removal...
 set "FAILED_LABEL=[5/5] Auditing Bootstrap removal..."
 set "FAILED_CMD=Bootstrap reference audit"
+set "AUDIT_CMD=$files=@('src','styles','index.html','package.json','Trunk.toml','public') | Where-Object { Test-Path $_ } | ForEach-Object { if ((Get-Item $_).PSIsContainer) { Get-ChildItem $_ -Recurse -File } else { Get-Item $_ } }; $matches=$files | Select-String -Pattern 'bootstrap|data-bs-|--bs-|bi-[a-z0-9-]+' -CaseSensitive:$false; if ($matches) { $matches | ForEach-Object { $_.ToString() }; exit 1 } else { exit 0 }"
 if "!CLIP_MODE!"=="1" (
-    powershell -NoProfile -Command "$ErrorActionPreference='SilentlyContinue'; $files=@('src','styles','index.html','package.json','Trunk.toml','public') | Where-Object { Test-Path $_ } | ForEach-Object { if ((Get-Item $_).PSIsContainer) { Get-ChildItem $_ -Recurse -File } else { Get-Item $_ } } | Select-String -Pattern 'bootstrap|data-bs-|--bs-|bi-[a-z0-9-]+' -CaseSensitive:$false"
+    powershell -NoProfile -Command "!AUDIT_CMD!" > "!TEMP_LOG!" 2>&1
     set "STEP_EXIT=!ERRORLEVEL!"
+    if exist "!TEMP_LOG!" type "!TEMP_LOG!"
 ) else (
-    powershell -NoProfile -Command "$ErrorActionPreference='SilentlyContinue'; $files=@('src','styles','index.html','package.json','Trunk.toml','public') | Where-Object { Test-Path $_ } | ForEach-Object { if ((Get-Item $_).PSIsContainer) { Get-ChildItem $_ -Recurse -File } else { Get-Item $_ } } | Select-String -Pattern 'bootstrap|data-bs-|--bs-|bi-[a-z0-9-]+' -CaseSensitive:$false"
+    powershell -NoProfile -Command "!AUDIT_CMD!"
     set "STEP_EXIT=!ERRORLEVEL!"
 )
-if "!STEP_EXIT!"=="0" (
+if "!STEP_EXIT!"=="1" (
     echo Bootstrap-era references remain in production files.
-    if "!CLIP_MODE!"=="1" (
-        powershell -NoProfile -Command "$files=@('src','styles','index.html','package.json','Trunk.toml','public') | Where-Object { Test-Path $_ } | ForEach-Object { if ((Get-Item $_).PSIsContainer) { Get-ChildItem $_ -Recurse -File } else { Get-Item $_ } } | Select-String -Pattern 'bootstrap|data-bs-|--bs-|bi-[a-z0-9-]+' -CaseSensitive:$false | Out-File -Encoding utf8 '%TEMP_LOG%'"
-        type "!TEMP_LOG!"
-    )
     goto :failed
 )
+if not "!STEP_EXIT!"=="0" goto :failed
 
 if exist "!TEMP_LOG!" del /f /q "!TEMP_LOG!" >nul 2>&1
 if exist "!TEMP_CLIP!" del /f /q "!TEMP_CLIP!" >nul 2>&1
