@@ -9,7 +9,9 @@ use send_wrapper::SendWrapper;
 use wasm_bindgen::{closure::Closure, JsCast};
 
 use crate::application::{
-    ports::{FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream},
+    ports::{
+        FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream, RealTradingStorage,
+    },
     services::{
         mexc_account::MexcFuturesAccountService, proxy::ProxyService,
         technical_analysis::TechnicalAnalysisService, trading::TradingService, FuturesMarketService,
@@ -487,6 +489,7 @@ impl SocketState {
             let key_signal = self.api_key;
             let secret_signal = self.api_secret;
             let account_signal = self.real_account;
+            let settings_open = self.settings_open;
 
             MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
                 &api_url,
@@ -515,6 +518,7 @@ impl SocketState {
                                     secret_signal.set(api_secret.clone());
                                     account_signal.set(Some(account.clone()));
                                     error.set(None);
+                                    settings_open.set(false);
                                     notice.set(Some(format!(
                                         "Real trading settings saved. MEXC Futures USDT equity: {:.2} USDT.",
                                         account.equity
