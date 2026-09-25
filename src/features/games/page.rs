@@ -733,13 +733,13 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Minesweeper ───────────────────────────────────────────────────────────────
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum MinesweeperSize {
+enum MinesweeperDifficulty {
     Beginner,
     Intermediate,
     Expert,
 }
 
-impl MinesweeperSize {
+impl MinesweeperDifficulty {
     fn all() -> [Self; 3] {
         [Self::Beginner, Self::Intermediate, Self::Expert]
     }
@@ -754,15 +754,23 @@ impl MinesweeperSize {
 
     fn label(self) -> &'static str {
         match self {
-            Self::Beginner => "Beginner — 9×9 · 10 mines",
-            Self::Intermediate => "Intermediate — 16×16 · 40 mines",
-            Self::Expert => "Expert — 30×16 · 99 mines",
+            Self::Beginner => "Beginner",
+            Self::Intermediate => "Intermediate",
+            Self::Expert => "Expert",
+        }
+    }
+
+    fn description(self) -> &'static str {
+        match self {
+            Self::Beginner => "9×9 · 10 mines",
+            Self::Intermediate => "16×16 · 40 mines",
+            Self::Expert => "30×16 · 99 mines",
         }
     }
 }
 
 fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let size = RwSignal::new(MinesweeperSize::Beginner);
+    let size = RwSignal::new(MinesweeperDifficulty::Beginner);
     let (width, height, _) = size.get().dimensions();
     let mines = RwSignal::new(vec![false; width * height]);
     let revealed = RwSignal::new(vec![false; width * height]);
@@ -902,7 +910,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         }
     };
 
-    let reset_to_size = move |new_size: MinesweeperSize| {
+    let reset_to_size = move |new_size: MinesweeperDifficulty| {
         size.set(new_size);
         let (w, h, _) = new_size.dimensions();
         mines.set(vec![false; w * h]);
@@ -971,7 +979,10 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     view! {
         <div class="mx-auto w-full max-w-5xl space-y-4">
             <div class="flex flex-wrap items-center gap-2">
-                {MinesweeperSize::all().into_iter().map(|preset| {
+                <span class="mr-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                    "Difficulty"
+                </span>
+                {MinesweeperDifficulty::all().into_iter().map(|preset| {
                     let active = move || size.get() == preset;
                     view! {
                         <button
@@ -981,6 +992,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                             } else {
                                 "rounded-md border border-[var(--border-color)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
                             }
+                            title=preset.description()
                             on:click=move |_| reset_to_size(preset)
                         >
                             {preset.label()}
@@ -1058,17 +1070,19 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     <span>" — place/remove a flag."</span>
                 </div>
                 <div class="rounded-md border border-[var(--border-color)] p-3">
-                    <strong class="text-[var(--text-primary)]">"Left + Right"</strong>
-                    <span>" — chord a revealed number and open its unflagged neighbours."</span>
+                    <strong class="text-[var(--text-primary)]">"Click revealed number"</strong>
+                    <span>" — chord its adjacent cells when flags match the number."</span>
                 </div>
             </div>
 
             <button
                 type="button"
-                class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm font-medium hover:bg-[var(--surface-hover)]"
+                class="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 border-[var(--border-color)] bg-[var(--surface-hover)] text-xl shadow-sm transition hover:bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                 on:click=move |_| reset()
+                title="New Game"
+                aria-label="New Game"
             >
-                "New Game"
+                {move || if game_over.get() { "😎" } else { "🙂" }}
             </button>
         </div>
     }
