@@ -42,6 +42,7 @@ pub struct RealPosition {
     pub close_average_price: f64,
     pub liquidation_price: f64,
     pub initial_margin: f64,
+    pub leverage: f64,
     pub realized_pnl: f64,
     pub unrealized_pnl: f64,
 }
