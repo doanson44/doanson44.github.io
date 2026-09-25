@@ -751,13 +751,23 @@ impl SocketState {
                                     key_signal.set(saved_api_key.clone());
                                     secret_signal.set(saved_api_secret.clone());
                                     account_signal.set(Some(account.clone()));
-                                    real_positions_signal.set(Vec::new());
                                     error.set(None);
                                     settings_open.set(false);
                                     notice.set(Some(format!(
                                         "Real trading settings saved. MEXC Futures USDT equity: {:.2} USDT.",
                                         account.equity
                                     )));
+                                    MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+                                        &saved_api_url,
+                                        &saved_api_key,
+                                        &saved_api_secret,
+                                        js_sys::Date::now().max(0.0) as i64,
+                                        Rc::new(move |positions_result| {
+                                            if let Ok(positions) = positions_result {
+                                                real_positions_signal.set(positions);
+                                            }
+                                        }),
+                                    );
                                 }
                                 Err(message) => error.set(Some(message)),
                             }
