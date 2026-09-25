@@ -117,7 +117,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct MarketOrderRequest {
     pub symbol: String,
     pub price: f64,
