@@ -374,7 +374,7 @@ impl TypingReactor {
             self.combo += 1;
 
             let multiplier = 1 + (self.combo / 5).min(4);
-            let critical = self.combo > 0 && self.combo % Self::CRITICAL_COMBO == 0;
+            let critical = self.combo.is_multiple_of(Self::CRITICAL_COMBO);
             if critical {
                 self.criticals += 1;
                 self.heat = self.heat.saturating_sub(10);
