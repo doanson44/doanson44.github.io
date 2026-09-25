@@ -75,6 +75,19 @@ pub trait ProxyClient {
         let _ = headers;
         self.fetch(target_url, on_result);
     }
+
+    /// Sends an HTTP request through the configured proxy.
+    fn request(
+        &self,
+        target_url: &str,
+        method: &str,
+        headers: Vec<(String, String)>,
+        body: Option<String>,
+        on_result: Rc<dyn Fn(Result<String, String>)>,
+    ) {
+        let _ = (method, body);
+        self.fetch_with_headers(target_url, headers, on_result);
+    }
 }
 
 /// Application port for direct browser HTTP access to market data.
