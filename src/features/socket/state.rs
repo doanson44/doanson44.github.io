@@ -446,12 +446,43 @@ impl SocketState {
                 .real_positions
                 .get_untracked()
                 .into_iter()
-                .map(|position| HoldingSummary {
-                    symbol: position.symbol,
-                    side: position.side,
-                    quantity: position.hold_volume,
-                    market_value: position.initial_margin,
-                    pnl: position.unrealized_pnl,
+                .map(|position| {
+                    let current_price = self
+                        .tickers
+                        .get_untracked()
+                        .get(&position.symbol)
+                        .and_then(|ticker| ticker.ticker.last_price)
+                        .filter(|price| price.is_finite() && *price > 0.0)
+                        .unwrap_or(position.open_average_price);
+                    let entry_notional = if position.initial_margin > 0.0
+                        && position.leverage > 0.0
+                    {
+                        position.initial_margin * position.leverage
+                    } else {
+                        0.0
+                    };
+                    let price_change = if position.open_average_price > 0.0 {
+                        (current_price - position.open_average_price) / position.open_average_price
+                    } else {
+                        0.0
+                    };
+                    let pnl = match position.side {
+                        PositionSide::Long => entry_notional * price_change,
+                        PositionSide::Short => -entry_notional * price_change,
+                    };
+                    let market_value = entry_notional
+                        * if position.open_average_price > 0.0 {
+                            current_price / position.open_average_price
+                        } else {
+                            0.0
+                        };
+                    HoldingSummary {
+                        symbol: position.symbol,
+                        side: position.side,
+                        quantity: position.hold_volume,
+                        market_value,
+                        pnl,
+                    }
                 })
                 .collect::<Vec<_>>();
             let realized_pnl = self
