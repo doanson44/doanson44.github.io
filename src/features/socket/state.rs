@@ -920,6 +920,42 @@ impl SocketState {
         }
     }
 
+    /// Sets the allocation percentage used for each new position and persists it locally.
+    pub fn set_trade_allocation_percent(&self, value: f64) {
+        if !value.is_finite() || !(0.1..=100.0).contains(&value) {
+            return;
+        }
+
+        let mut snapshot = self.trading_snapshot.get_untracked();
+        snapshot.settings.trade_allocation_percent = value;
+
+        match TradingService::save(&LocalTradingStorage, &snapshot) {
+            Ok(()) => {
+                self.trading_snapshot.set(snapshot);
+                self.trading_error.set(None);
+            }
+            Err(message) => self.trading_error.set(Some(message)),
+        }
+    }
+
+    /// Sets the leverage used for new positions and persists it locally.
+    pub fn set_leverage(&self, value: f64) {
+        if !value.is_finite() || !(1.0..=125.0).contains(&value) {
+            return;
+        }
+
+        let mut snapshot = self.trading_snapshot.get_untracked();
+        snapshot.settings.leverage = value;
+
+        match TradingService::save(&LocalTradingStorage, &snapshot) {
+            Ok(()) => {
+                self.trading_snapshot.set(snapshot);
+                self.trading_error.set(None);
+            }
+            Err(message) => self.trading_error.set(Some(message)),
+        }
+    }
+
     /// Analyzes a MEXC Futures symbol at the requested timeframe.
     pub fn analyze_symbol(&self, symbol: &str, timeframe: &str) {
         self.run_analysis(symbol, timeframe, false);
