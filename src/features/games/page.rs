@@ -1989,7 +1989,10 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             score.update(|s| *s += 20);
             status.set("You got it!".into());
         } else if wrong >= max_wrong {
-            status.set(format!("The word was {}", guess_word_reveal.to_ascii_uppercase()));
+            status.set(format!(
+                "The word was {}",
+                guess_word_reveal.to_ascii_uppercase()
+            ));
         } else {
             status.set(format!("{} guesses left", max_wrong - wrong));
         }
