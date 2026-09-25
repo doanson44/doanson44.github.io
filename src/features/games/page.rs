@@ -762,7 +762,7 @@ impl MinesweeperSize {
 
 fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let size = RwSignal::new(MinesweeperSize::Beginner);
-    let (width, height, mine_count) = size.get().dimensions();
+    let (width, height, _) = size.get().dimensions();
     let mines = RwSignal::new(vec![false; width * height]);
     let revealed = RwSignal::new(vec![false; width * height]);
     let flagged = RwSignal::new(vec![false; width * height]);
@@ -983,7 +983,8 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                 } else if r[i] && m[i] {
                                     "Mine".to_string()
                                 } else if r[i] {
-                                    let n = minesweeper_adjacent_mines_sized(&m, width, height, i);
+                                    let (w, h, _) = size.get().dimensions();
+                                    let n = minesweeper_adjacent_mines_sized(&m, w, h, i);
                                     format!("Revealed cell, {} adjacent mines", n)
                                 } else {
                                     "Hidden cell".to_string()
@@ -1001,7 +1002,8 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                 } else if r[i] && m[i] {
                                     "💣".to_string()
                                 } else if r[i] {
-                                    let n = minesweeper_adjacent_mines_sized(&m, width, height, i);
+                                    let (w, h, _) = size.get().dimensions();
+                                    let n = minesweeper_adjacent_mines_sized(&m, w, h, i);
                                     if n == 0 { String::new() } else { n.to_string() }
                                 } else {
                                     String::new()
