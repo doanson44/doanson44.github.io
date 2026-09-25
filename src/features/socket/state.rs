@@ -22,7 +22,7 @@ use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::domain::technical_analysis::AnalysisResult;
 use crate::domain::trading::{
-    ExecutionMode, ExecutionSettings, PortfolioSummary, PositionSide, RealAccountSnapshot, RealPosition,
+    ExecutionMode, ExecutionSettings, HoldingSummary, PortfolioSummary, PositionSide, RealAccountSnapshot, RealPosition,
     RealTradingSettings, TradingSnapshot,
 };
 use crate::infrastructure::browser;
@@ -525,8 +525,9 @@ impl SocketState {
         };
 
         let positions = self.real_positions.get_untracked();
-        let existing = positions.iter().find(|position| position.symbol == symbol);
+        let existing = positions.iter().find(|position| position.symbol == symbol).cloned();
         let action = existing
+            .as_ref()
             .map(|position| match position.side {
                 PositionSide::Long => "close LONG",
                 PositionSide::Short => "close SHORT",
@@ -572,7 +573,7 @@ impl SocketState {
         let api_secret_for_refresh = api_secret.clone();
 
         let submit = move |contract: crate::application::services::mexc_trading::ContractDetail| {
-            let (side, volume, position_id, reduce_only) = if let Some(position) = existing {
+            let (side, volume, position_id, reduce_only) = if let Some(position) = existing.as_ref() {
                 (
                     match position.side {
                         PositionSide::Long => 4,
