@@ -539,10 +539,10 @@ pub enum PongTickResult {
 pub struct PongGame {
     player_y: i32,
     computer_y: i32,
-    ball_x: f64,
-    ball_y: f64,
-    ball_dx: f64,
-    ball_dy: f64,
+    ball_x: i32,
+    ball_y: i32,
+    ball_dx: i32,
+    ball_dy: i32,
     score: u32,
     game_over: bool,
 }
@@ -689,10 +689,10 @@ const BREAKOUT_BRICK_COUNT: usize = 24;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BreakoutGame {
     paddle_x: f64,
-    ball_x: i32,
-    ball_y: i32,
-    ball_dx: i32,
-    ball_dy: i32,
+    ball_x: f64,
+    ball_y: f64,
+    ball_dx: f64,
+    ball_dy: f64,
     bricks: [bool; BREAKOUT_BRICK_COUNT],
     score: u32,
     lives: u8,
@@ -746,7 +746,7 @@ impl BreakoutGame {
     }
 
     /// Returns the ball position.
-    pub fn ball_position(&self) -> (i32, i32) {
+    pub fn ball_position(&self) -> (f64, f64) {
         (self.ball_x, self.ball_y)
     }
 
