@@ -1542,6 +1542,21 @@ mod tests {
     }
 
     #[test]
+    #[test]
+    fn minesweeper_sized_counts_neighbours() {
+        let mines = vec![false, true, false, false, false, false, true, false, false];
+        assert_eq!(minesweeper_adjacent_mines_sized(&mines, 3, 3, 0), 1);
+        assert_eq!(minesweeper_adjacent_mines_sized(&mines, 3, 3, 4), 2);
+    }
+
+    #[test]
+    fn minesweeper_sized_flood_reveals_region() {
+        let mines = vec![false; 9];
+        let revealed = vec![false; 9];
+        let cells = minesweeper_flood_reveal_sized(&mines, &revealed, 3, 3, 0);
+        assert_eq!(cells.len(), 9);
+    }
+
     fn minesweeper_counts_neighbours() {
         let mut m = [false; 25];
         m[6] = true;
