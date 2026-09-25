@@ -1,8 +1,6 @@
 #![allow(clippy::possible_missing_else)]
 use crate::application::services::games::{BreakoutService, PongService};
 use crate::domain::games::{
-    blackjack_score, blackjack_should_hit, checkers_moves, chess_ai_move, chess_apply_move,
-    chess_glyph, chess_has_move, chess_is_check, chess_legal_moves, chess_start,
     connect_four_ai_column, connect_four_drop, connect_four_winner, hangman_word, has_move_2048,
     lights_toggle, minesweeper_adjacent_mines_sized, minesweeper_flood_reveal_sized,
     puzzle_is_solved, puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given,
@@ -100,12 +98,9 @@ pub enum GameKind {
     Pong,
     Flappy,
     Tetris,
-    Chess,
-    Checkers,
-    Blackjack,
 }
 impl GameKind {
-    fn all() -> [Self; 19] {
+    fn all() -> [Self; 16] {
         [
             Self::TwentyFortyEight,
             Self::TicTacToe,
@@ -123,9 +118,6 @@ impl GameKind {
             Self::Pong,
             Self::Flappy,
             Self::Tetris,
-            Self::Chess,
-            Self::Checkers,
-            Self::Blackjack,
         ]
     }
     fn slug(self) -> &'static str {
@@ -146,9 +138,6 @@ impl GameKind {
             Self::Pong => "pong",
             Self::Flappy => "flappy",
             Self::Tetris => "tetris",
-            Self::Chess => "chess",
-            Self::Checkers => "checkers",
-            Self::Blackjack => "blackjack",
         }
     }
 
@@ -174,9 +163,6 @@ impl GameKind {
             Self::Pong => "Pong",
             Self::Flappy => "Flappy",
             Self::Tetris => "Tetris",
-            Self::Chess => "Chess",
-            Self::Checkers => "Checkers",
-            Self::Blackjack => "Blackjack",
         }
     }
     fn description(self) -> &'static str {
@@ -197,9 +183,6 @@ impl GameKind {
             Self::Pong => "Keep the ball away from your side.",
             Self::Flappy => "Navigate gaps with timed jumps.",
             Self::Tetris => "Clear lines with falling blocks.",
-            Self::Chess => "Play a lightweight local chess board.",
-            Self::Checkers => "Capture pieces on a checkers board.",
-            Self::Blackjack => "Beat the dealer without going over 21.",
         }
     }
     fn icon(self) -> &'static str {
@@ -220,9 +203,6 @@ impl GameKind {
             Self::Pong => "🏓",
             Self::Flappy => "🐦",
             Self::Tetris => "T",
-            Self::Chess => "♟",
-            Self::Checkers => "⚫",
-            Self::Blackjack => "21",
         }
     }
 }
@@ -240,11 +220,11 @@ pub(crate) fn GamesPage(game: Option<GameKind>) -> impl IntoView {
                             {move || t_string!(i18n, games_title)}
                         </h1>
                         <p class="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">
-                            "Nineteen compact browser games — all client-side Rust/WASM, no server needed."
+                            "Sixteen compact browser games — all client-side Rust/WASM, no server needed."
                         </p>
                     </div>
                     <span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-tertiary)]">
-                        "19 games"
+                        "16 games"
                     </span>
                 </div>
                 {match game {
@@ -368,9 +348,6 @@ fn standard_game_view(game: GameKind, score: RwSignal<u32>, status: RwSignal<Str
                 GameKind::Pong => board_pong(score, status),
                 GameKind::Flappy => board_flappy(score, status),
                 GameKind::Tetris => board_tetris(score, status),
-                GameKind::Chess => board_chess(score, status),
-                GameKind::Checkers => board_checkers(score, status),
-                GameKind::Blackjack => board_blackjack(score, status),
                 GameKind::Hangman => unreachable!("Hangman is rendered by hangman_game_view"),
             }}
         </section>
@@ -2319,247 +2296,6 @@ fn board_lights(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     }.into_any()
 }
 
-// ── Checkers ──────────────────────────────────────────────────────────────────
-
-fn board_checkers(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let mut init_board = [0u8; 32];
-    init_board[..12].fill(2);
-    init_board[20..32].fill(1);
-    let board: RwSignal<[u8; 32]> = RwSignal::new(init_board);
-    let selected: RwSignal<Option<usize>> = RwSignal::new(None);
-    let game_over = RwSignal::new(false);
-
-    let legal_moves = move |b: &[u8; 32], piece_idx: usize| -> Vec<usize> {
-        checkers_moves(b, b[piece_idx])
-            .iter()
-            .filter(|(from, _)| *from == piece_idx)
-            .map(|(_, to)| *to)
-            .collect()
-    };
-
-    let click_piece = move |logical: usize| {
-        if game_over.get() {
-            return;
-        }
-        let b = board.get();
-        if b[logical] == 1 {
-            selected.set(Some(logical));
-            let moves = legal_moves(&b, logical);
-            status.set(if moves.is_empty() {
-                "No legal moves".into()
-            } else {
-                format!("{} moves available", moves.len())
-            });
-            return;
-        }
-        if let Some(from) = selected.get() {
-            let moves = legal_moves(&b, from);
-            if moves.contains(&logical) {
-                let mut b2 = b;
-                b2[logical] = b2[from];
-                b2[from] = 0;
-                board.set(b2);
-                selected.set(None);
-                score.update(|s| *s += 1);
-
-                let ai_moves = checkers_moves(&b2, 2);
-                if ai_moves.is_empty() {
-                    game_over.set(true);
-                    status.set("🎉 You win! AI has no moves.".into());
-                    return;
-                }
-                let ai_move = ai_moves[0];
-                let mut b3 = b2;
-                b3[ai_move.1] = b3[ai_move.0];
-                b3[ai_move.0] = 0;
-                board.set(b3);
-
-                let player_moves = checkers_moves(&b3, 1);
-                if player_moves.is_empty() {
-                    game_over.set(true);
-                    status.set("AI wins! No moves left.".into());
-                } else {
-                    status.set("Your turn (light pieces)".into());
-                }
-                return;
-            }
-        }
-        selected.set(None);
-        status.set("Select your piece first".into());
-    };
-
-    view! {
-        <div class="mx-auto max-w-md space-y-3">
-            <div class="grid grid-cols-8 gap-0 rounded-lg overflow-hidden border border-[var(--border-color)]">
-                {(0..8).flat_map(|row| (0..8).map(move |col| {
-                    let is_dark = (row + col) % 2 == 1;
-                    let logical = if is_dark { row / 2 * 4 + if row % 2 == 1 { col / 2 } else { (col - 1) / 2 } } else { usize::MAX };
-
-                    view! {
-                        <button type="button"
-                            disabled=!is_dark
-                            class=move || {
-                                let bg = if !is_dark { "bg-amber-100 dark:bg-amber-200" } else { "bg-amber-800 hover:opacity-90" };
-                                let highlight = if is_dark && logical != usize::MAX && selected.get().is_some_and(|s| legal_moves(&board.get(), s).contains(&logical)) {
-                                    " ring-2 ring-green-400"
-                                } else if is_dark && Some(logical) == selected.get() {
-                                    " ring-2 ring-[var(--accent)]"
-                                } else { "" };
-                                format!("aspect-square text-xl flex items-center justify-center {bg}{highlight}")
-                            }
-                            on:click=move |_| { if is_dark && logical != usize::MAX { click_piece(logical); } }>
-                            {move || {
-                                if !is_dark || logical == usize::MAX { return String::new(); }
-                                match board.get()[logical] {
-                                    1 => "⚪".to_string(),
-                                    2 => "⚫".to_string(),
-                                    _ => String::new(),
-                                }
-                            }}
-                        </button>
-                    }
-                })).collect_view()}
-            </div>
-        </div>
-    }.into_any()
-}
-
-// ── Blackjack ─────────────────────────────────────────────────────────────────
-
-fn card_name(c: u8) -> &'static str {
-    match c {
-        1 => "A",
-        2 => "2",
-        3 => "3",
-        4 => "4",
-        5 => "5",
-        6 => "6",
-        7 => "7",
-        8 => "8",
-        9 => "9",
-        10 => "10",
-        11 => "J",
-        12 => "Q",
-        13 => "K",
-        _ => "?",
-    }
-}
-
-fn draw_card(deck: &mut Vec<u8>) -> u8 {
-    if deck.is_empty() {
-        *deck = shuffle_deck(rand_usize);
-    }
-    deck.pop().unwrap_or(10)
-}
-
-fn board_blackjack(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let make_deck = || shuffle_deck(rand_usize);
-    let deck: RwSignal<Vec<u8>> = RwSignal::new(make_deck());
-    let player: RwSignal<Vec<u8>> = RwSignal::new(vec![]);
-    let dealer: RwSignal<Vec<u8>> = RwSignal::new(vec![]);
-    let dealer_hidden = RwSignal::new(true);
-    let game_over = RwSignal::new(false);
-
-    let deal = move || {
-        let mut d = deck.get();
-        let p = vec![draw_card(&mut d), draw_card(&mut d)];
-        let de = vec![draw_card(&mut d), draw_card(&mut d)];
-        deck.set(d);
-        player.set(p.clone());
-        dealer.set(de);
-        dealer_hidden.set(true);
-        game_over.set(false);
-        let ps = blackjack_score(&p);
-        if ps == 21 {
-            status.set("Blackjack! 🎉".into());
-            game_over.set(true);
-            dealer_hidden.set(false);
-            score.update(|s| *s += 15);
-        } else {
-            status.set(format!("Your score: {ps}"));
-        }
-    };
-
-    let hit = move || {
-        if game_over.get() {
-            return;
-        }
-        let mut d = deck.get();
-        let mut p = player.get();
-        p.push(draw_card(&mut d));
-        deck.set(d);
-        let ps = blackjack_score(&p);
-        player.set(p);
-        if ps > 21 {
-            status.set(format!("Bust! ({ps}) — Dealer wins."));
-            game_over.set(true);
-            dealer_hidden.set(false);
-        } else {
-            status.set(format!("Your score: {ps}"));
-        }
-    };
-
-    let stand = move || {
-        if game_over.get() {
-            return;
-        }
-        dealer_hidden.set(false);
-        let mut d = deck.get();
-        let mut de = dealer.get();
-        while blackjack_should_hit(&de) {
-            de.push(draw_card(&mut d));
-        }
-        deck.set(d);
-        let ps = blackjack_score(&player.get());
-        let ds = blackjack_score(&de);
-        dealer.set(de);
-        game_over.set(true);
-        if ds > 21 || ps > ds {
-            status.set(format!("You win! {ps} vs {ds} 🎉"));
-            score.update(|s| *s += 10);
-        } else if ps == ds {
-            status.set(format!("Push! Both {ps}"));
-        } else {
-            status.set(format!("Dealer wins. {ds} vs {ps}"));
-        }
-    };
-
-    view! {
-        <div class="mx-auto max-w-sm space-y-4">
-            <div class="space-y-2">
-                <p class="text-sm font-semibold text-[var(--text-secondary)]">"Dealer"</p>
-                <div class="flex gap-2">
-                    {move || dealer.get().iter().enumerate().map(|(i, &c)| {
-                        let hidden = dealer_hidden.get() && i == 1;
-                        view! {
-                            <div class="flex h-16 w-12 items-center justify-center rounded-lg border-2 border-[var(--border-color)] bg-[var(--surface-hover)] text-lg font-bold text-[var(--text-primary)]">
-                                {if hidden { "🂠".to_string() } else { card_name(c).to_string() }}
-                            </div>
-                        }
-                    }).collect_view()}
-                </div>
-                <p class="text-sm font-semibold text-[var(--text-secondary)]">"You"</p>
-                <div class="flex gap-2">
-                    {move || player.get().iter().map(|&c| view! {
-                        <div class="flex h-16 w-12 items-center justify-center rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-hover)] text-lg font-bold text-[var(--accent)]">
-                            {card_name(c)}
-                        </div>
-                    }).collect_view()}
-                </div>
-                <p class="text-sm font-bold text-[var(--text-primary)]">{move || {
-                    let p = player.get();
-                    if p.is_empty() { String::new() } else { format!("Score: {}", blackjack_score(&p)) }
-                }}</p>
-            </div>
-            <div class="flex gap-2">
-                <button type="button" class="flex-1 rounded-md border border-[var(--border-color)] py-2 text-sm font-semibold hover:bg-[var(--surface-hover)]" on:click=move|_|deal()>"Deal"</button>
-                <button type="button" class="flex-1 rounded-md border border-green-500 bg-green-500/10 py-2 text-sm font-semibold text-green-600 hover:bg-green-500/20 disabled:opacity-40" disabled=move||game_over.get()||player.get().is_empty() on:click=move|_|hit()>"Hit"</button>
-                <button type="button" class="flex-1 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 py-2 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/20 disabled:opacity-40" disabled=move||game_over.get()||player.get().is_empty() on:click=move|_|stand()>"Stand"</button>
-            </div>
-        </div>
-    }.into_any()
-}
-
 // ── Breakout ──────────────────────────────────────────────────────────────────
 
 fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
@@ -3686,157 +3422,6 @@ fn board_tetris(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     }.into_any()
 }
 
-// ── Chess ──────────────────────────────────────────────────────────────────────
-
-fn board_chess(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let board: RwSignal<[i8; 64]> = RwSignal::new(chess_start());
-    let selected: RwSignal<Option<usize>> = RwSignal::new(None);
-    let game_over = RwSignal::new(false);
-    let busy = RwSignal::new(false);
-    status.set("White to move".into());
-
-    let after_white = move |b: [i8; 64]| {
-        if !chess_has_move(&b, false) {
-            game_over.set(true);
-            if chess_is_check(&b, false) {
-                score.update(|s| *s += 50);
-                status.set("Checkmate — you win!".into());
-            } else {
-                status.set("Stalemate".into());
-            }
-            return;
-        }
-        status.set("Black thinking…".into());
-        busy.set(true);
-        leptos::task::spawn_local(async move {
-            gloo_timers::future::TimeoutFuture::new(300).await;
-            let mut b2 = b;
-            if let Some((from, to)) = chess_ai_move(&b2) {
-                if let Some(n) = chess_apply_move(&b2, from, to) {
-                    b2 = n;
-                }
-            }
-            board.set(b2);
-            busy.set(false);
-            if !chess_has_move(&b2, true) {
-                game_over.set(true);
-                if chess_is_check(&b2, true) {
-                    status.set("Checkmate — Black wins".into());
-                } else {
-                    status.set("Stalemate".into());
-                }
-            } else if chess_is_check(&b2, true) {
-                status.set("Check! Your move".into());
-            } else {
-                status.set("White to move".into());
-            }
-        });
-    };
-
-    let click = move |i: usize| {
-        if game_over.get() || busy.get() {
-            return;
-        }
-        let b = board.get();
-        if let Some(from) = selected.get() {
-            if from == i {
-                selected.set(None);
-                return;
-            }
-            if let Some(n) = chess_apply_move(&b, from, i) {
-                board.set(n);
-                selected.set(None);
-                score.update(|s| *s += 1);
-                after_white(n);
-                return;
-            }
-        }
-        if b[i] > 0 {
-            selected.set(Some(i));
-            let n = chess_legal_moves(&b, i).len();
-            status.set(format!("{} legal move(s)", n));
-        } else {
-            selected.set(None);
-        }
-    };
-
-    view! {
-        <div class="mx-auto w-full max-w-2xl space-y-4">
-            <div class="chess-board mx-auto w-[min(92vw,42rem)] max-w-full overflow-hidden rounded-xl border-4 shadow-lg">
-                {(0..64).map(|i| {
-                    let row = i / 8;
-                    let col = i % 8;
-                    let is_light = (row + col) % 2 == 0;
-                    let square_name = format!(
-                        "{}{}",
-                        (b'a' + col as u8) as char,
-                        8 - row
-                    );
-
-                    view! {
-                        <button
-                            type="button"
-                            class=if is_light {
-                                "chess-square chess-square--light"
-                            } else {
-                                "chess-square chess-square--dark"
-                            }
-                            class=("chess-square--selected", move || selected.get() == Some(i))
-                            class=("chess-square--legal", move || {
-                                selected.get().is_some_and(|from| {
-                                    chess_legal_moves(&board.get(), from).contains(&i)
-                                })
-                            })
-                            on:click=move |_| click(i)
-                            aria-pressed=move || selected.get() == Some(i)
-                            aria-label=move || format!(
-                                "{} {}",
-                                square_name,
-                                match board.get()[i] {
-                                    0 => "empty square",
-                                    p if p > 0 => "white piece",
-                                    _ => "black piece",
-                                }
-                            )
-                        >
-                            <span
-                                class="chess-piece"
-                                class=("chess-piece--light", move || board.get()[i] > 0)
-                                class=("chess-piece--dark", move || board.get()[i] < 0)
-                            >
-                                {move || chess_glyph(board.get()[i])}
-                            </span>
-                        </button>
-                    }
-                }).collect_view()}
-            </div>
-
-            <div class="flex flex-wrap items-center justify-center gap-2">
-                <p
-                    class="text-center text-xs text-[var(--text-tertiary)]"
-                    aria-live="polite"
-                >
-                    "Select a white piece, then choose a highlighted square."
-                </p>
-                <button
-                    type="button"
-                    class="min-h-11 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                    on:click=move |_| {
-                        board.set(chess_start());
-                        selected.set(None);
-                        game_over.set(false);
-                        busy.set(false);
-                        score.set(0);
-                        status.set("White to move".into());
-                    }
-                >
-                    "New Game"
-                </button>
-            </div>
-        </div>
-    }.into_any()
-}
-
 fn localized_game_title(game: GameKind) -> String {
     let i18n = use_i18n();
     if i18n.get_locale() == Locale::en {
@@ -3859,9 +3444,6 @@ fn localized_game_title(game: GameKind) -> String {
         GameKind::Pong => "Pong".into(),
         GameKind::Flappy => "Flappy".into(),
         GameKind::Tetris => "Tetris".into(),
-        GameKind::Chess => "Cờ vua".into(),
-        GameKind::Checkers => "Cờ đam".into(),
-        GameKind::Blackjack => "Blackjack".into(),
     }
 }
 
@@ -3887,8 +3469,5 @@ fn localized_game_description(game: GameKind) -> String {
         GameKind::Pong => "Giữ bóng không đi qua phía của bạn.".into(),
         GameKind::Flappy => "Đi qua các khoảng trống bằng những cú nhảy đúng lúc.".into(),
         GameKind::Tetris => "Xóa các hàng bằng những khối rơi.".into(),
-        GameKind::Chess => "Chơi một bàn cờ vua cục bộ nhẹ.".into(),
-        GameKind::Checkers => "Ăn quân trên bàn cờ đam.".into(),
-        GameKind::Blackjack => "Đánh bại nhà cái mà không vượt quá 21.".into(),
     }
 }
