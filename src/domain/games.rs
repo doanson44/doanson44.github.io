@@ -777,8 +777,8 @@ impl BreakoutGame {
 
     /// Moves the paddle by a continuous amount in logical cells.
     pub fn move_paddle_by(&mut self, delta: f64) {
-        self.paddle_x = (self.paddle_x + delta)
-            .clamp(0.0, (Self::WIDTH - Self::PADDLE_WIDTH) as f64);
+        self.paddle_x =
+            (self.paddle_x + delta).clamp(0.0, (Self::WIDTH - Self::PADDLE_WIDTH) as f64);
     }
 
     /// Advances the game by one fixed simulation step.
