@@ -1741,7 +1741,7 @@ fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                         (70..90).contains(&heat)
                     })
                     class=("bg-red-500", move || reactor.get().heat() >= 90)
-                    style=move || format!("width: {}%", reactor.get().heat())
+                    class=move || reactor_heat_width_class(reactor.get().heat())
                 ></div>
             </div>
 
@@ -1807,6 +1807,22 @@ fn board_typing(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             </div>
         </div>
     }.into_any()
+}
+
+fn reactor_heat_width_class(heat: u8) -> &'static str {
+    match heat {
+        0 => "w-0",
+        1..=10 => "w-1/12",
+        11..=20 => "w-2/12",
+        21..=30 => "w-3/12",
+        31..=40 => "w-4/12",
+        41..=50 => "w-5/12",
+        51..=60 => "w-6/12",
+        61..=70 => "w-7/12",
+        71..=80 => "w-8/12",
+        81..=90 => "w-10/12",
+        _ => "w-full",
+    }
 }
 
 fn accuracy_percent(game: &TypingReactor) -> u32 {
