@@ -1960,13 +1960,22 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let guessed: RwSignal<Vec<char>> = RwSignal::new(vec![]);
     let max_wrong = 6usize;
 
-    let wrong_count = move || guessed.get().iter().filter(|&&c| !word.contains(c)).count();
+    let wrong_word = word.clone();
+    let wrong_count = Memo::new(move |_| {
+        guessed
+            .get()
+            .iter()
+            .filter(|&&c| !wrong_word.contains(c))
+            .count()
+    });
 
-    let is_won = move || word.chars().all(|c| guessed.get().contains(&c));
-    let is_lost = move || wrong_count() >= max_wrong;
+    let won_word = word.clone();
+    let is_won = Memo::new(move |_| won_word.chars().all(|c| guessed.get().contains(&c)));
+    let is_lost = Memo::new(move |_| wrong_count.get() >= max_wrong);
 
+    let guess_word = word.clone();
     let guess = move |c: char| {
-        if is_won() || is_lost() || guessed.get().contains(&c) {
+        if is_won.get() || is_lost.get() || guessed.get().contains(&c) {
             return;
         }
 
@@ -1974,8 +1983,8 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         g.push(c);
         guessed.set(g.clone());
 
-        let wrong = g.iter().filter(|&&ch| !word.contains(ch)).count();
-        if word.chars().all(|ch| g.contains(&ch)) {
+        let wrong = g.iter().filter(|&&ch| !guess_word.contains(ch)).count();
+        if guess_word.chars().all(|ch| g.contains(&ch)) {
             score.update(|s| *s += 20);
             status.set("You got it!".into());
         } else if wrong >= max_wrong {
@@ -2005,18 +2014,6 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         status.set("Choose a letter".into());
     };
 
-    let hangman_part = move |part: usize| -> &'static str {
-        match part {
-            1 => "head",
-            2 => "body",
-            3 => "left-arm",
-            4 => "right-arm",
-            5 => "left-leg",
-            6 => "right-leg",
-            _ => "",
-        }
-    };
-
     view! {
         <div class="mx-auto w-full max-w-4xl space-y-5">
             <div class="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -2027,11 +2024,11 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                 "Mistakes"
                             </p>
                             <p class="mt-1 text-2xl font-black tabular-nums text-[var(--text-primary)]">
-                                {move || format!("{}/{}", wrong_count(), max_wrong)}
+                                {move || format!("{}/{}", wrong_count.get(), max_wrong)}
                             </p>
                         </div>
                         <span class="rounded-full border border-[var(--border-color)] px-2.5 py-1 text-xs font-semibold text-[var(--text-secondary)]">
-                            {move || if is_won() { "Solved" } else if is_lost() { "Finished" } else { "Playing" }}
+                            {move || if is_won.get() { "Solved" } else if is_lost.get() { "Finished" } else { "Playing" }}
                         </span>
                     </div>
 
