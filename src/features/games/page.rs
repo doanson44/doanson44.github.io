@@ -3017,12 +3017,10 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         }
     });
     on_cleanup({
-        let animation_id = animation_id.clone();
-        let callback_window = frame_window.clone();
         move || {
-            if let Some(id) = animation_id.get() {
-                let _ = callback_window.cancel_animation_frame(id);
-            }
+            running.set(false);
+            up_pressed.set(false);
+            down_pressed.set(false);
             keyup_handle.remove();
         }
     });
