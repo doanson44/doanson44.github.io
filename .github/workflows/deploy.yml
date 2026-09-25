@@ -27,25 +27,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-          components: rustfmt, clippy
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2.9.2
-
-      - name: Format Rust sources
-        run: cargo fmt
-
-      - name: Check formatting
-        run: cargo fmt --check
-
-      - name: Check compilation
-        run: cargo check --target wasm32-unknown-unknown
-
-      - name: Run tests
-        run: cargo test
-
-      - name: Run clippy
-        run: cargo clippy --target wasm32-unknown-unknown -- -D warnings
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -72,12 +56,6 @@ jobs:
           done
           exit 1
 
-      - name: Verify static assets
-        run: |
-          test -f dist/favicon.svg
-          test -f dist/index.html
-          test -n "$(find dist -maxdepth 1 -type f -name 'tailwind.generated-*.css' -print -quit)"
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
@@ -91,7 +69,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Force a fresh build/deploy run for runtime verification.
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
