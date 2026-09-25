@@ -2895,6 +2895,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         *tick_frame.borrow_mut() = Some(Box::new(move |timestamp| {
             if !running.get() {
                 last_time_clone.set(None);
+                animation_id_clone.set(None);
                 return;
             }
 
@@ -2926,7 +2927,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 let callback_ref = tick_frame_clone.borrow();
                 if let Some(callback) = callback_ref.as_ref() {
                     if let Ok(id) = callback_window
-                        .request_animation_frame(callback.as_ref().unchecked_ref())
+                    .request_animation_frame(callback.as_ref().unchecked_ref())
                     {
                         animation_id_clone.set(Some(id));
                     }
@@ -2948,6 +2949,10 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         running.set(false);
         up_pressed.set(false);
         down_pressed.set(false);
+        if let Some(id) = animation_id.get() {
+            let _ = callback_window.cancel_animation_frame(id);
+            animation_id.set(None);
+        }
     };
 
     let set_input = move |up: bool, pressed: bool| {
