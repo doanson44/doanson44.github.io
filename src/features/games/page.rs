@@ -2577,6 +2577,7 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         let last_time = Rc::new(RefCell::new(None::<f64>));
         let accumulator = Rc::new(RefCell::new(0.0f64));
         let frame_window = window();
+        let callback_window = frame_window.clone();
 
         let frame = Closure::wrap(Box::new(move |now: f64| {
             if !running.get_untracked() {
@@ -2644,7 +2645,7 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             let request_id = {
                 let callback_ref = callback_ref.borrow();
                 callback_ref.as_ref().and_then(|cb| {
-                    frame_window
+                    callback_window
                         .request_animation_frame(cb.as_ref().unchecked_ref())
                         .ok()
                 })
@@ -2789,7 +2790,6 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 {(0..BreakoutGame::BRICK_ROWS)
                     .flat_map(|row| {
                         (0..BreakoutGame::BRICK_COLS).map(move |col| {
-                            let index = row * BreakoutGame::BRICK_COLS + col;
                             let x = (3 + col as i32) * 40;
                             let y = row as i32 * 40;
                             view! {
