@@ -1393,26 +1393,75 @@ fn board_connect_four(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView
 
 // ── Memory Cards ──────────────────────────────────────────────────────────────
 
-fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let emojis = ["🍎", "🍊", "🍋", "🍇", "🍓", "🍒", "🍑", "🥝"];
-    let mut deck: Vec<usize> = (0..8).chain(0..8).collect();
-    for i in (1..deck.len()).rev() {
-        let j = rand_usize(i + 1);
-        deck.swap(i, j);
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MemorySize {
+    Small,
+    Medium,
+    Large,
+}
+
+impl MemorySize {
+    fn dimensions(self) -> usize {
+        match self {
+            Self::Small => 4,
+            Self::Medium => 6,
+            Self::Large => 8,
+        }
     }
-    let cards = RwSignal::new(deck);
-    let revealed: RwSignal<Vec<bool>> = RwSignal::new(vec![false; 16]);
-    let matched: RwSignal<Vec<bool>> = RwSignal::new(vec![false; 16]);
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::Small => "4 × 4",
+            Self::Medium => "6 × 6",
+            Self::Large => "8 × 8",
+        }
+    }
+}
+
+fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
+    let emojis = [
+        "🍎", "🍊", "🍋", "🍇", "🍓", "🍒", "🍑", "🥝",
+        "🥑", "🍉", "🍌", "🍍", "🥭", "🍐", "🍑", "🥥",
+        "🥕", "🌽", "🍄", "🥨", "🍪", "🍩", "🍰", "🍫",
+        "⚽", "🏀", "🎸", "🎹", "🚗", "🚲", "🚀", "⭐",
+    ];
+
+    let size = RwSignal::new(MemorySize::Small);
+    let cards: RwSignal<Vec<usize>> = RwSignal::new(Vec::new());
+    let revealed: RwSignal<Vec<bool>> = RwSignal::new(Vec::new());
+    let matched: RwSignal<Vec<bool>> = RwSignal::new(Vec::new());
     let first: RwSignal<Option<usize>> = RwSignal::new(None);
     let locked = RwSignal::new(false);
+
+    let new_game = move |new_size: MemorySize| {
+        let cells = new_size.dimensions() * new_size.dimensions();
+        let pairs = cells / 2;
+        let mut deck: Vec<usize> = (0..pairs).chain(0..pairs).collect();
+        for i in (1..deck.len()).rev() {
+            let j = rand_usize(i + 1);
+            deck.swap(i, j);
+        }
+
+        size.set(new_size);
+        cards.set(deck);
+        revealed.set(vec![false; cells]);
+        matched.set(vec![false; cells]);
+        first.set(None);
+        locked.set(false);
+        score.set(0);
+        status.set(format!("{} × {} — find all pairs", new_size.dimensions(), new_size.dimensions()));
+    };
+
+    new_game(MemorySize::Small);
 
     let click = move |i: usize| {
         if locked.get() || revealed.get()[i] || matched.get()[i] {
             return;
         }
+
         let mut r = revealed.get();
         r[i] = true;
-        revealed.set(r.clone());
+        revealed.set(r);
 
         match first.get() {
             None => first.set(Some(i)),
@@ -1430,7 +1479,7 @@ fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     } else {
                         status.set(format!(
                             "Match! {} pairs left",
-                            (16 - m.iter().filter(|&&v| v).count()) / 2
+                            (m.len() - m.iter().filter(|&&v| v).count()) / 2
                         ));
                     }
                 } else {
@@ -1451,22 +1500,79 @@ fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     };
 
     view! {
-        <div class="mx-auto grid max-w-sm grid-cols-4 gap-2">
-            {(0..16).map(|i| view! {
-                <button type="button"
-                    class=move || {
-                        if matched.get()[i] { "aspect-square rounded-lg border-2 border-green-500 bg-green-100 dark:bg-green-900/30 text-2xl" }
-                        else if revealed.get()[i] { "aspect-square rounded-lg border border-[var(--accent)] bg-[var(--surface-hover)] text-2xl" }
-                        else { "aspect-square rounded-lg border border-[var(--border-color)] hover:bg-[var(--surface-hover)] text-2xl" }
-                    }
-                    on:click=move |_| click(i)>
-                    {move || {
-                        let c = cards.get();
-                        if revealed.get()[i] || matched.get()[i] { emojis[c[i]].to_string() }
-                        else { "?".to_string() }
-                    }}
-                </button>
-            }).collect_view()}
+        <div class="mx-auto w-full max-w-2xl space-y-4">
+            <div class="flex flex-wrap justify-center gap-2" role="group" aria-label="Memory board size">
+                {(MemorySize::Small, MemorySize::Medium, MemorySize::Large)
+                    .into_iter()
+                    .map(|option| view! {
+                        <button
+                            type="button"
+                            class=move || {
+                                if size.get() == option {
+                                    "min-h-10 rounded-md border-2 border-[var(--accent)] bg-[var(--surface-hover)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                                } else {
+                                    "min-h-10 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                                }
+                            }
+                            on:click=move |_| new_game(option)
+                            aria-pressed=move || size.get() == option
+                        >
+                            {option.label()}
+                        </button>
+                    })
+                    .collect_view()}
+            </div>
+
+            <div
+                class=move || {
+                    format!(
+                        "mx-auto grid w-full gap-2 {}",
+                        match size.get() {
+                            MemorySize::Small => "max-w-sm grid-cols-4",
+                            MemorySize::Medium => "max-w-md grid-cols-6",
+                            MemorySize::Large => "max-w-lg grid-cols-8",
+                        }
+                    )
+                }
+            >
+                {move || {
+                    let cells = size.get().dimensions().pow(2);
+                    (0..cells)
+                        .map(|i| view! {
+                            <button
+                                type="button"
+                                class=move || {
+                                    if matched.get()[i] {
+                                        "aspect-square rounded-lg border-2 border-green-500 bg-green-100 dark:bg-green-900/30 text-lg sm:text-2xl"
+                                    } else if revealed.get()[i] {
+                                        "aspect-square rounded-lg border border-[var(--accent)] bg-[var(--surface-hover)] text-lg sm:text-2xl"
+                                    } else {
+                                        "aspect-square rounded-lg border border-[var(--border-color)] hover:bg-[var(--surface-hover)] text-lg sm:text-2xl"
+                                    }
+                                }
+                                on:click=move |_| click(i)
+                            >
+                                {move || {
+                                    let c = cards.get();
+                                    if revealed.get()[i] || matched.get()[i] {
+                                        emojis[c[i]].to_string()
+                                    } else {
+                                        "?".to_string()
+                                    }
+                                }}
+                            </button>
+                        })
+                        .collect_view()
+                }}
+            </div>
+
+            <button
+                type="button"
+                class="min-h-11 w-full rounded-md border-2 border-[var(--border-color)] bg-[var(--surface)] py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                on:click=move |_| new_game(size.get())
+            >
+                "New Game"
+            </button>
         </div>
     }.into_any()
 }
