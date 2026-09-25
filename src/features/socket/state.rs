@@ -694,18 +694,22 @@ impl SocketState {
                             position_id,
                             reduce_only,
                         },
-                        Rc::new(move |result| match result {
-                            Ok(order_id) => {
-                                notice_signal
-                                    .set(Some(format!("MEXC order {order_id} submitted.")));
-                                let positions_signal = positions_signal;
-                                let account_signal = account_signal;
-                                let api_url = api_url_for_refresh.clone();
-                                let api_key = api_key_for_refresh.clone();
-                                let api_secret = api_secret_for_refresh.clone();
-                                let positions_api_url = api_url.clone();
-                                let positions_api_key = api_key.clone();
-                                let positions_api_secret = api_secret.clone();
+                        {
+                            let refresh_api_url = api_url_for_refresh.clone();
+                            let refresh_api_key = api_key_for_refresh.clone();
+                            let refresh_api_secret = api_secret_for_refresh.clone();
+                            Rc::new(move |result| match result {
+                                Ok(order_id) => {
+                                    notice_signal
+                                        .set(Some(format!("MEXC order {order_id} submitted.")));
+                                    let positions_signal = positions_signal;
+                                    let account_signal = account_signal;
+                                    let api_url = refresh_api_url.clone();
+                                    let api_key = refresh_api_key.clone();
+                                    let api_secret = refresh_api_secret.clone();
+                                    let positions_api_url = api_url.clone();
+                                    let positions_api_key = api_key.clone();
+                                    let positions_api_secret = api_secret.clone();
                                 MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
                                     &api_url,
                                     &api_key,
@@ -730,7 +734,8 @@ impl SocketState {
                                 );
                             }
                             Err(message) => error_signal.set(Some(message)),
-                        }),
+                            }),
+                        }
                     );
                 },
             )
