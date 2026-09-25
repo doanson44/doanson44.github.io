@@ -2053,36 +2053,36 @@ mod tests {
     #[test]
     fn pong_player_paddle_stays_inside_board() {
         let mut game = PongGame::new();
-        game.move_player(-100);
-        assert_eq!(game.player_y(), 1);
+        game.move_player_by(-1000.0);
+        assert_eq!(game.player_y(), PongGame::PADDLE_HEIGHT / 2.0);
 
-        game.move_player(100);
-        assert_eq!(game.player_y(), PongGame::HEIGHT - 2);
+        game.move_player_by(1000.0);
+        assert_eq!(game.player_y(), PongGame::HEIGHT - PongGame::PADDLE_HEIGHT / 2.0);
     }
 
     #[test]
     fn pong_scores_when_computer_misses() {
         let mut game = PongGame::new();
-        game.ball_x = PongGame::WIDTH - 2;
-        game.ball_y = 0;
-        game.ball_dx = 1;
-        game.ball_dy = 0;
-        game.computer_y = PongGame::HEIGHT - 2;
+        game.ball_x = PongGame::WIDTH - PongGame::BALL_RADIUS - 1.0;
+        game.ball_y = PongGame::HEIGHT / 2.0;
+        game.ball_dx = PongGame::BALL_SPEED;
+        game.ball_dy = 0.0;
+        game.computer_y = 0.0;
 
-        assert_eq!(game.tick(), PongTickResult::PlayerScored);
+        assert_eq!(game.tick(0.01, false, false), PongTickResult::PlayerScored);
         assert_eq!(game.score(), 1);
     }
 
     #[test]
     fn pong_stops_when_player_misses() {
         let mut game = PongGame::new();
-        game.ball_x = 1;
-        game.ball_y = 0;
-        game.ball_dx = -1;
-        game.ball_dy = 0;
-        game.player_y = PongGame::HEIGHT - 2;
+        game.ball_x = PongGame::BALL_RADIUS + 1.0;
+        game.ball_y = PongGame::HEIGHT / 2.0;
+        game.ball_dx = -PongGame::BALL_SPEED;
+        game.ball_dy = 0.0;
+        game.player_y = 0.0;
 
-        assert_eq!(game.tick(), PongTickResult::ComputerScored);
+        assert_eq!(game.tick(0.01, false, false), PongTickResult::ComputerScored);
         assert!(game.is_game_over());
     }
 
