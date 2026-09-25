@@ -1211,17 +1211,26 @@ fn board_snake(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Sudoku ────────────────────────────────────────────────────────────────────
 
 fn board_sudoku(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let puzzle = sudoku_puzzle();
-    let given = sudoku_given(&puzzle);
-    let board = RwSignal::new(puzzle);
+    let initial_puzzle = sudoku_puzzle();
+    let board = RwSignal::new(initial_puzzle);
+    let given: RwSignal<[bool; 81]> = RwSignal::new(sudoku_given(&initial_puzzle));
     let conflicts: RwSignal<[bool; 81]> = RwSignal::new([false; 81]);
 
     let check_complete = move |b: &[u8; 81]| -> bool {
         b.iter().all(|&v| v != 0) && (0..81).all(|i| sudoku_valid(b, i, b[i]))
     };
 
+    let reset = move || {
+        let puzzle = sudoku_puzzle();
+        board.set(puzzle);
+        given.set(sudoku_given(&puzzle));
+        conflicts.set([false; 81]);
+        score.set(0);
+        status.set("New puzzle".into());
+    };
+
     let click = move |i: usize| {
-        if given[i] {
+        if given.get()[i] {
             return;
         }
         let mut b = board.get();
@@ -1249,28 +1258,60 @@ fn board_sudoku(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
     view! {
         <div class="mx-auto max-w-md space-y-3">
-            <div class="grid grid-cols-9 gap-0 rounded-md border-2 border-[var(--border-color)] overflow-hidden">
+            <div class="grid grid-cols-9 gap-0 overflow-hidden rounded-md border-2 border-[var(--text-primary)]">
                 {(0..81).map(|i| view! {
                     <button type="button"
                         class=move || {
-                            let is_given = given[i];
+                            let is_given = given.get()[i];
                             let conflict = conflicts.get()[i];
                             let col = i % 9;
                             let row = i / 9;
-                            let left = if col == 0 || col == 3 || col == 6 { "border-l-2" } else { "border-l" };
-                            let right = if col == 2 || col == 5 || col == 8 { "border-r-2" } else { "border-r" };
-                            let top = if row == 0 || row == 3 || row == 6 { "border-t-2" } else { "border-t" };
-                            let bottom = if row == 2 || row == 5 || row == 8 { "border-b-2" } else { "border-b" };
-                            format!("aspect-square text-xs font-bold border-[var(--border-color)] {left} {right} {top} {bottom} {}",
-                                if conflict { "text-red-500 bg-red-50 dark:bg-red-900/20" }
-                                else if is_given { "text-[var(--text-primary)] bg-[var(--surface-hover)]" }
-                                else { "text-[var(--accent)] hover:bg-[var(--surface-hover)]" })
+                            let right = if col == 2 || col == 5 || col == 8 {
+                                "border-r-4 border-r-[var(--text-primary)]"
+                            } else {
+                                "border-r border-r-[var(--border-color)]"
+                            };
+                            let bottom = if row == 2 || row == 5 || row == 8 {
+                                "border-b-4 border-b-[var(--text-primary)]"
+                            } else {
+                                "border-b border-b-[var(--border-color)]"
+                            };
+                            let left = if col == 0 {
+                                "border-l border-l-[var(--border-color)]"
+                            } else {
+                                "border-l border-l-[var(--border-color)]"
+                            };
+                            let top = if row == 0 {
+                                "border-t border-t-[var(--border-color)]"
+                            } else {
+                                "border-t border-t-[var(--border-color)]"
+                            };
+                            format!(
+                                "aspect-square text-xs font-bold {left} {right} {top} {bottom} {}",
+                                if conflict {
+                                    "text-red-500 bg-red-50 dark:bg-red-900/20"
+                                } else if is_given {
+                                    "text-[var(--text-primary)] bg-[var(--surface-hover)]"
+                                } else {
+                                    "text-[var(--accent)] hover:bg-[var(--surface-hover)]"
+                                }
+                            )
                         }
                         on:click=move |_| click(i)>
-                        {move || { let v = board.get()[i]; if v == 0 { String::new() } else { v.to_string() } }}
+                        {move || {
+                            let v = board.get()[i];
+                            if v == 0 { String::new() } else { v.to_string() }
+                        }}
                     </button>
                 }).collect_view()}
             </div>
+            <button
+                type="button"
+                class="min-h-11 w-full rounded-md border-2 border-[var(--border-color)] bg-[var(--surface)] py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                on:click=move |_| reset()
+            >
+                "New Game"
+            </button>
         </div>
     }.into_any()
 }
