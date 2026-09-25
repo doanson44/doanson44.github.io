@@ -68,7 +68,9 @@ pub fn profile(locale: Locale) -> Profile {
 /// with the application because the browser needs it to reveal the contact data.
 const CONTACT_KEY: &[u8] = b"cv-contact-v1:doanson44:reveal";
 const ENCRYPTED_PHONE: &[u8] = &[67, 0, 238, 211, 124, 85, 14, 171, 18, 144];
-const ENCRYPTED_EMAIL: &[u8] = &[23, 87, 190, 137, 59, 12, 86, 175, 22, 232, 179, 163, 0, 145, 215, 158, 168, 73, 21];
+const ENCRYPTED_EMAIL: &[u8] = &[
+    23, 87, 190, 137, 59, 12, 86, 175, 22, 232, 179, 163, 0, 145, 215, 158, 168, 73, 21,
+];
 
 /// Decrypts a contact value only when the UI explicitly asks to reveal it.
 fn decrypt_contact(ciphertext: &[u8]) -> String {
