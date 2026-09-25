@@ -28,12 +28,42 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                     </span>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
-                    <span class="rounded-md border border-[var(--border-color)] px-2 py-1">
-                        {move || format!("{}: {:.1}%", t_string!(i18n, socket_trade_allocation), state.trading_snapshot.get().settings.trade_allocation_percent)}
-                    </span>
-                    <span class="rounded-md border border-[var(--border-color)] px-2 py-1">
-                        {move || format!("{}: {:.1}x", t_string!(i18n, socket_leverage), state.trading_snapshot.get().settings.leverage)}
-                    </span>
+                    <label class="flex items-center gap-2 rounded-md border border-[var(--border-color)] px-2 py-1">
+                        <span>{move || t_string!(i18n, socket_trade_allocation)}</span>
+                        <input
+                            type="number"
+                            min="0.1"
+                            max="100"
+                            step="0.1"
+                            class="w-20 rounded border-0 bg-transparent px-1 py-0.5 text-xs font-medium text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                            aria-label=move || t_string!(i18n, socket_trade_allocation)
+                            prop:value=move || state.trading_snapshot.get().settings.trade_allocation_percent.to_string()
+                            on:change=move |ev| {
+                                if let Ok(value) = event_target_value(&ev).parse::<f64>() {
+                                    state.set_trade_allocation_percent(value);
+                                }
+                            }
+                        />
+                        <span>"%"</span>
+                    </label>
+                    <label class="flex items-center gap-2 rounded-md border border-[var(--border-color)] px-2 py-1">
+                        <span>{move || t_string!(i18n, socket_leverage)}</span>
+                        <input
+                            type="number"
+                            min="1"
+                            max="125"
+                            step="1"
+                            class="w-16 rounded border-0 bg-transparent px-1 py-0.5 text-xs font-medium text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                            aria-label=move || t_string!(i18n, socket_leverage)
+                            prop:value=move || state.trading_snapshot.get().settings.leverage.to_string()
+                            on:change=move |ev| {
+                                if let Ok(value) = event_target_value(&ev).parse::<f64>() {
+                                    state.set_leverage(value);
+                                }
+                            }
+                        />
+                        <span>"x"</span>
+                    </label>
                     <label class="flex items-center gap-2 rounded-md border border-[var(--border-color)] px-2 py-1">
                         <span>{move || t_string!(i18n, socket_position_side)}</span>
                         <select
