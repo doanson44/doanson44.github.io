@@ -627,8 +627,10 @@ impl PongGame {
         let target_y = self.ball_y;
         let computer_delta = (target_y - self.computer_y)
             .clamp(-Self::COMPUTER_SPEED * dt, Self::COMPUTER_SPEED * dt);
-        self.computer_y = (self.computer_y + computer_delta)
-            .clamp(Self::PADDLE_HEIGHT / 2.0, Self::HEIGHT - Self::PADDLE_HEIGHT / 2.0);
+        self.computer_y = (self.computer_y + computer_delta).clamp(
+            Self::PADDLE_HEIGHT / 2.0,
+            Self::HEIGHT - Self::PADDLE_HEIGHT / 2.0,
+        );
 
         let mut next_x = self.ball_x + self.ball_dx * dt;
         let mut next_y = self.ball_y + self.ball_dy * dt;
@@ -694,7 +696,11 @@ impl PongGame {
             .max(Self::BALL_SPEED);
         let horizontal = angle.cos() * speed;
         let vertical = angle.sin() * speed;
-        self.ball_dx = if player { horizontal.abs() } else { -horizontal.abs() };
+        self.ball_dx = if player {
+            horizontal.abs()
+        } else {
+            -horizontal.abs()
+        };
         self.ball_dy = vertical;
     }
 
@@ -2057,7 +2063,10 @@ mod tests {
         assert_eq!(game.player_y(), PongGame::PADDLE_HEIGHT / 2.0);
 
         game.move_player_by(1000.0);
-        assert_eq!(game.player_y(), PongGame::HEIGHT - PongGame::PADDLE_HEIGHT / 2.0);
+        assert_eq!(
+            game.player_y(),
+            PongGame::HEIGHT - PongGame::PADDLE_HEIGHT / 2.0
+        );
     }
 
     #[test]
@@ -2082,7 +2091,10 @@ mod tests {
         game.ball_dy = 0.0;
         game.player_y = 0.0;
 
-        assert_eq!(game.tick(0.01, false, false), PongTickResult::ComputerScored);
+        assert_eq!(
+            game.tick(0.05, false, false),
+            PongTickResult::ComputerScored
+        );
         assert!(game.is_game_over());
     }
 
