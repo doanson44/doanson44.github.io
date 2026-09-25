@@ -909,7 +909,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         let f = flagged.get();
 
         if r[i] && m[i] {
-            "aspect-square min-w-5 border border-[var(--mines-revealed-border)] bg-[var(--mines-mine)] text-white text-[clamp(0.55rem,1.4vw,0.85rem)] font-bold leading-none"
+            "aspect-square min-w-5 border border-[var(--mines-revealed-border)] bg-[var(--mines-mine)] text-white text-[clamp(0.55rem,1.4vw,0.85rem)] font-bold leading-none".to_string()
         } else if r[i] {
             let number_color = match minesweeper_adjacent_mines_sized(
                 &m,
@@ -925,9 +925,9 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             };
             format!("aspect-square min-w-5 border border-[var(--mines-revealed-border)] bg-[var(--mines-revealed)] {number_color} text-[clamp(0.55rem,1.4vw,0.85rem)] font-bold leading-none")
         } else if f[i] {
-            "aspect-square min-w-5 border-2 border-[var(--mines-raised-border)] bg-[var(--mines-raised)] text-[clamp(0.55rem,1.4vw,0.85rem)] font-bold leading-none"
+            "aspect-square min-w-5 border-2 border-[var(--mines-raised-border)] bg-[var(--mines-raised)] text-[clamp(0.55rem,1.4vw,0.85rem)] font-bold leading-none".to_string()
         } else {
-            "aspect-square min-w-5 border-2 border-[var(--mines-raised-border)] bg-[var(--mines-covered)] text-[clamp(0.55rem,1.4vw,0.85rem)] leading-none hover:bg-[var(--mines-covered-hover)]"
+            "aspect-square min-w-5 border-2 border-[var(--mines-raised-border)] bg-[var(--mines-covered)] text-[clamp(0.55rem,1.4vw,0.85rem)] leading-none hover:bg-[var(--mines-covered-hover)]".to_string()
         }
     };
 
