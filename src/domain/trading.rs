@@ -12,6 +12,52 @@ pub const DEFAULT_LEVERAGE: f64 = 1.0;
 pub const DEFAULT_TRADE_ALLOCATION_PERCENT: f64 = 10.0;
 pub const MAX_LEVERAGE: f64 = 125.0;
 
+/// The trading execution path selected by the user.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ExecutionMode {
+    #[default]
+    Paper,
+    Real,
+}
+
+/// The latest USDT Futures account values returned by MEXC.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct RealAccountSnapshot {
+    pub equity: f64,
+    pub available_balance: f64,
+    pub cash_balance: f64,
+    pub unrealized: f64,
+    pub position_margin: f64,
+    pub frozen_balance: f64,
+}
+
+/// Client-only configuration for the real execution mode.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RealTradingSettings {
+    pub api_url: String,
+    pub api_key: String,
+    pub api_secret: String,
+    pub account: Option<RealAccountSnapshot>,
+}
+
+impl Default for RealTradingSettings {
+    fn default() -> Self {
+        Self {
+            api_url: "https://api.mexc.com".to_string(),
+            api_key: String::new(),
+            api_secret: String::new(),
+            account: None,
+        }
+    }
+}
+
+/// Persisted execution configuration. Paper portfolio state remains separate.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ExecutionSettings {
+    pub mode: ExecutionMode,
+    pub real: RealTradingSettings,
+}
+
 /// Configured direction for new paper-trading positions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum PositionSide {
