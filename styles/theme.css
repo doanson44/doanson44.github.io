@@ -27,6 +27,15 @@
     --chess-piece-light-shadow: rgba(0, 0, 0, 0.28);
     --chess-piece-dark-shadow: rgba(0, 0, 0, 0.35);
 
+    --connect-four-board: #596257;
+    --connect-four-board-border: #41483f;
+    --connect-four-slot: #30362f;
+    --connect-four-slot-border: #252a24;
+    --connect-four-red: #c75b50;
+    --connect-four-red-border: #963f37;
+    --connect-four-yellow: #d4ae52;
+    --connect-four-yellow-border: #a98332;
+
     --ms-bg-primary: var(--bg-primary);
     --ms-bg-secondary: var(--surface);
     --ms-bg-surface: var(--surface-hover);
@@ -70,6 +79,15 @@ html[data-theme="light"] {
     --chess-piece-dark: #1a1815;
     --chess-piece-light-shadow: rgba(0, 0, 0, 0.24);
     --chess-piece-dark-shadow: rgba(0, 0, 0, 0.32);
+
+    --connect-four-board: #687263;
+    --connect-four-board-border: #4e574a;
+    --connect-four-slot: #3f473d;
+    --connect-four-slot-border: #333a31;
+    --connect-four-red: #bd554b;
+    --connect-four-red-border: #8e3d36;
+    --connect-four-yellow: #caa64c;
+    --connect-four-yellow-border: #9c7c30;
 }
 
 html[data-theme="dark"] {
@@ -86,10 +104,47 @@ html[data-theme="dark"] {
     --chess-piece-dark: #171513;
     --chess-piece-light-shadow: rgba(0, 0, 0, 0.34);
     --chess-piece-dark-shadow: rgba(0, 0, 0, 0.42);
+
+    --connect-four-board: #3f483e;
+    --connect-four-board-border: #2e352d;
+    --connect-four-slot: #252b24;
+    --connect-four-slot-border: #1d221c;
+    --connect-four-red: #b94f47;
+    --connect-four-red-border: #843b35;
+    --connect-four-yellow: #c39b43;
+    --connect-four-yellow-border: #8f6e2d;
 }
 
 html[data-theme="light"] {
     color-scheme: light;
+}
+
+.connect-four-board {
+    border-color: var(--connect-four-board-border);
+    background: var(--connect-four-board);
+}
+
+.connect-four-disc {
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    border-width: 2px;
+    border-style: solid;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.14);
+}
+
+.connect-four-disc--red {
+    border-color: var(--connect-four-red-border);
+    background: var(--connect-four-red);
+}
+
+.connect-four-disc--yellow {
+    border-color: var(--connect-four-yellow-border);
+    background: var(--connect-four-yellow);
+}
+
+.connect-four-disc--empty {
+    border-color: var(--connect-four-slot-border);
+    background: var(--connect-four-slot);
 }
 
 .chess-board {
