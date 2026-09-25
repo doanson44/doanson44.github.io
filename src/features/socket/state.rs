@@ -640,36 +640,38 @@ impl SocketState {
             let service = service.clone();
             Rc::new(
                 move |contract: crate::application::services::mexc_trading::ContractDetail| {
-                    let (side, volume, position_id, reduce_only) = if let Some(position) =
-                        existing.as_ref()
-                    {
-                        (
-                            match position.side {
-                                PositionSide::Long => 4,
-                                PositionSide::Short => 2,
-                            },
-                            position.hold_volume,
-                            Some(position.position_id),
-                            Some(true),
-                        )
-                    } else {
-                        let allocation = settings.trade_allocation_percent / 100.0;
-                        let margin = account.available_balance * allocation;
-                        let notional = margin * settings.leverage;
-                        let raw_volume = notional / (price * contract.contract_size);
-                        let volume = (raw_volume / contract.vol_unit).floor() * contract.vol_unit;
-                        (
-                            match settings.position_side {
-                                PositionSide::Long => 1,
-                                PositionSide::Short => 3,
-                            },
-                            volume,
-                            None,
-                            None,
-                        )
-                    };
+                    let (side, volume, position_id, reduce_only) =
+                        if let Some(position) = existing.as_ref() {
+                            (
+                                match position.side {
+                                    PositionSide::Long => 4,
+                                    PositionSide::Short => 2,
+                                },
+                                position.hold_volume,
+                                Some(position.position_id),
+                                Some(true),
+                            )
+                        } else {
+                            let allocation = settings.trade_allocation_percent / 100.0;
+                            let margin = account.available_balance * allocation;
+                            let notional = margin * settings.leverage;
+                            let raw_volume = notional / (price * contract.contract_size);
+                            let volume =
+                                (raw_volume / contract.vol_unit).floor() * contract.vol_unit;
+                            (
+                                match settings.position_side {
+                                    PositionSide::Long => 1,
+                                    PositionSide::Short => 3,
+                                },
+                                volume,
+                                None,
+                                None,
+                            )
+                        };
 
-                    if !volume.is_finite() || volume < contract.min_vol || volume > contract.max_vol
+                    if !volume.is_finite()
+                        || volume < contract.min_vol
+                        || volume > contract.max_vol
                     {
                         error_signal.set(Some(
                             "Calculated order volume is outside the MEXC contract limits."
@@ -679,64 +681,65 @@ impl SocketState {
                     }
 
                     let refresh_api_url = api_url_for_refresh.clone();
-                let refresh_api_key = api_key_for_refresh.clone();
-                let refresh_api_secret = api_secret_for_refresh.clone();
+                    let refresh_api_key = api_key_for_refresh.clone();
+                    let refresh_api_secret = api_secret_for_refresh.clone();
 
-                service.submit_market_order(
-                    &order_api_url,
-                    &order_api_key,
-                    &order_api_secret,
-                    js_sys::Date::now().max(0.0) as i64,
-                    MarketOrderRequest {
-                        symbol: symbol_owned.clone(),
-                        price,
-                        vol: volume,
-                        leverage: settings.leverage.max(1.0) as u32,
-                        side,
-                        order_type: 5,
-                        open_type: 1,
-                        position_id,
-                        reduce_only,
-                    },
-                    Rc::new(move |result| match result {
-                        Ok(order_id) => {
-                            notice_signal
-                                .set(Some(format!("MEXC order {order_id} submitted.")));
-                            let positions_signal = positions_signal;
-                            let account_signal = account_signal;
-                            let api_url = refresh_api_url.clone();
-                            let api_key = refresh_api_key.clone();
-                            let api_secret = refresh_api_secret.clone();
-                            let positions_api_url = api_url.clone();
-                            let positions_api_key = api_key.clone();
-                            let positions_api_secret = api_secret.clone();
-                            MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
-                                &api_url,
-                                &api_key,
-                                &api_secret,
-                                js_sys::Date::now().max(0.0) as i64,
-                                Rc::new(move |account_result| {
-                                    if let Ok(account) = account_result {
-                                        account_signal.set(Some(account));
-                                    }
-                                    MexcFuturesTradingService::new(ProxyApi).fetch_positions(
-                                        &positions_api_url,
-                                        &positions_api_key,
-                                        &positions_api_secret,
-                                        js_sys::Date::now().max(0.0) as i64,
-                                        Rc::new(move |positions_result| {
-                                            if let Ok(positions) = positions_result {
-                                                positions_signal.set(positions);
-                                            }
-                                        }),
-                                    );
-                                }),
-                            );
-                        }
-                        Err(message) => error_signal.set(Some(message)),
-                    }),
-                );
-
+                    service.submit_market_order(
+                        &order_api_url,
+                        &order_api_key,
+                        &order_api_secret,
+                        js_sys::Date::now().max(0.0) as i64,
+                        MarketOrderRequest {
+                            symbol: symbol_owned.clone(),
+                            price,
+                            vol: volume,
+                            leverage: settings.leverage.max(1.0) as u32,
+                            side,
+                            order_type: 5,
+                            open_type: 1,
+                            position_id,
+                            reduce_only,
+                        },
+                        Rc::new(move |result| match result {
+                            Ok(order_id) => {
+                                notice_signal
+                                    .set(Some(format!("MEXC order {order_id} submitted.")));
+                                let positions_signal = positions_signal;
+                                let account_signal = account_signal;
+                                let api_url = refresh_api_url.clone();
+                                let api_key = refresh_api_key.clone();
+                                let api_secret = refresh_api_secret.clone();
+                                let positions_api_url = api_url.clone();
+                                let positions_api_key = api_key.clone();
+                                let positions_api_secret = api_secret.clone();
+                                MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
+                                    &api_url,
+                                    &api_key,
+                                    &api_secret,
+                                    js_sys::Date::now().max(0.0) as i64,
+                                    Rc::new(move |account_result| {
+                                        if let Ok(account) = account_result {
+                                            account_signal.set(Some(account));
+                                        }
+                                        MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+                                            &positions_api_url,
+                                            &positions_api_key,
+                                            &positions_api_secret,
+                                            js_sys::Date::now().max(0.0) as i64,
+                                            Rc::new(move |positions_result| {
+                                                if let Ok(positions) = positions_result {
+                                                    positions_signal.set(positions);
+                                                }
+                                            }),
+                                        );
+                                    }),
+                                );
+                            }
+                            Err(message) => error_signal.set(Some(message)),
+                        }),
+                    );
+                },
+            )
         };
         let submit_for_callback = submit.clone();
         service.fetch_contract(
