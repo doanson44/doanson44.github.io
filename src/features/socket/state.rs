@@ -14,7 +14,8 @@ use crate::application::{
     },
     services::{
         mexc_account::MexcFuturesAccountService, proxy::ProxyService,
-        technical_analysis::TechnicalAnalysisService, trading::TradingService, FuturesMarketService,
+        technical_analysis::TechnicalAnalysisService, trading::TradingService,
+        FuturesMarketService,
     },
 };
 use crate::domain::funding::FundingRateSnapshot;
