@@ -564,7 +564,7 @@ impl SocketState {
                         .load()
                         .ok()
                         .flatten()
-                        .unwrap_or_else(ExecutionSettings::default);
+                        .unwrap_or_default();
                     settings.mode = ExecutionMode::Paper;
                     if let Err(message) = LocalExecutionStorage.save(&settings) {
                         self.trading_error.set(Some(message));
