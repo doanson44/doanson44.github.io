@@ -3,7 +3,7 @@ use crate::application::services::games::{BreakoutService, PongService};
 use crate::domain::games::{
     connect_four_ai_column, connect_four_drop, connect_four_winner, hangman_word, has_move_2048,
     lights_toggle, minesweeper_adjacent_mines_sized, minesweeper_flood_reveal_sized,
-    puzzle_is_solved, puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given,
+    puzzle_is_solved, puzzle_move, slide_2048, snake_step, sudoku_given,
     sudoku_puzzle_with_seed, sudoku_valid, tetris_clear_filled, tetris_rotate_cw,
     ttt_best_move_sized, ttt_is_draw_sized, ttt_winner_sized, typing_reactor_tasks, wordle_check,
     wordle_word, BreakoutGame, BreakoutTickResult, FlappyGame, PongGame, TypingReactor,
