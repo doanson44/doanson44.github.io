@@ -11,15 +11,19 @@ use wasm_bindgen::{closure::Closure, JsCast};
 use crate::application::{
     ports::{FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream},
     services::{
-        proxy::ProxyService, technical_analysis::TechnicalAnalysisService, trading::TradingService,
-        FuturesMarketService,
+        mexc_account::MexcFuturesAccountService, proxy::ProxyService,
+        technical_analysis::TechnicalAnalysisService, trading::TradingService, FuturesMarketService,
     },
 };
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::TrackedFuturesTicker;
 use crate::domain::technical_analysis::AnalysisResult;
-use crate::domain::trading::{PortfolioSummary, PositionSide, TradingSnapshot};
+use crate::domain::trading::{
+    ExecutionMode, ExecutionSettings, PortfolioSummary, PositionSide, RealAccountSnapshot,
+    RealTradingSettings, TradingSnapshot,
+};
 use crate::infrastructure::browser;
+use crate::infrastructure::execution::LocalExecutionStorage;
 use crate::infrastructure::proxy::ProxyApi;
 use crate::infrastructure::trading::LocalTradingStorage;
 
@@ -93,7 +97,12 @@ pub struct SocketState {
     pub settings_open: RwSignal<bool>,
     pub trading_error: RwSignal<Option<String>>,
     pub trading_notice: RwSignal<Option<String>>,
+    pub execution_mode: RwSignal<ExecutionMode>,
+    pub api_url: RwSignal<String>,
     pub api_key: RwSignal<String>,
+    pub api_secret: RwSignal<String>,
+    pub real_account: RwSignal<Option<RealAccountSnapshot>>,
+    pub real_account_loading: RwSignal<bool>,
     pub reset_metrics_request: RwSignal<u64>,
 }
 
@@ -135,10 +144,20 @@ impl SocketState {
         let analysis_error = RwSignal::new(None);
         let analysis_copied = RwSignal::new(false);
         let trading_snapshot = RwSignal::new(loaded_snapshot);
+        let execution_settings = LocalExecutionStorage
+            .load()
+            .ok()
+            .flatten()
+            .unwrap_or_else(ExecutionSettings::default);
         let settings_open = RwSignal::new(false);
         let trading_error = RwSignal::new(None);
         let trading_notice = RwSignal::new(None);
-        let api_key = RwSignal::new(String::new());
+        let execution_mode = RwSignal::new(execution_settings.mode);
+        let api_url = RwSignal::new(execution_settings.real.api_url.clone());
+        let api_key = RwSignal::new(execution_settings.real.api_key.clone());
+        let api_secret = RwSignal::new(execution_settings.real.api_secret.clone());
+        let real_account = RwSignal::new(execution_settings.real.account.clone());
+        let real_account_loading = RwSignal::new(false);
         let reset_metrics_request = RwSignal::new(0u64);
         let service = Rc::new(RefCell::new(FuturesMarketService::new()));
 
@@ -240,7 +259,12 @@ impl SocketState {
             settings_open,
             trading_error,
             trading_notice,
+            execution_mode,
+            api_url,
             api_key,
+            api_secret,
+            real_account,
+            real_account_loading,
             reset_metrics_request,
         }
     }
@@ -301,8 +325,16 @@ impl SocketState {
         save_pinned_symbols(&self.pinned_symbols.get_untracked());
     }
 
-    /// Opens or closes the paper position using the configured long or short side.
+    /// Executes the selected trading mode. Real order execution is intentionally
+    /// not wired here until the authenticated order executor is added.
     pub fn trade(&self, symbol: &str) {
+        if self.execution_mode.get_untracked() == ExecutionMode::Real {
+            self.trading_error.set(None);
+            self.trading_notice.set(Some(
+                "Real trading execution is not enabled yet. No order was sent.".to_string(),
+            ));
+            return;
+        }
         let Some(price) = self
             .tickers
             .get_untracked()
@@ -415,16 +447,89 @@ impl SocketState {
         self.settings_open.set(false);
     }
 
-    /// Saves paper-trading settings and resets the paper portfolio.
+    /// Saves execution settings. Real mode validates the MEXC account first and
+    /// only persists the settings after the account request succeeds.
     pub fn save_settings(
         &self,
         initial_capital: f64,
         fee_percent: f64,
         leverage: f64,
         trade_allocation_percent: f64,
+        execution_mode: ExecutionMode,
+        api_url: String,
+        api_key: String,
+        api_secret: String,
     ) {
         let fee_rate = fee_percent / 100.0;
         let position_side = self.trading_snapshot.get_untracked().settings.position_side;
+
+        if execution_mode == ExecutionMode::Real {
+            let api_url = api_url.trim().trim_end_matches('/').to_string();
+            let api_key = api_key.trim().to_string();
+            let api_secret = api_secret.trim().to_string();
+
+            if api_url.is_empty() || api_key.is_empty() || api_secret.is_empty() {
+                self.trading_error.set(Some(
+                    "API URL, API key, and API secret are required for real trading.".to_string(),
+                ));
+                return;
+            }
+
+            self.real_account_loading.set(true);
+            self.trading_error.set(None);
+            self.trading_notice.set(None);
+
+            let loading = self.real_account_loading;
+            let error = self.trading_error;
+            let notice = self.trading_notice;
+            let mode = self.execution_mode;
+            let url_signal = self.api_url;
+            let key_signal = self.api_key;
+            let secret_signal = self.api_secret;
+            let account_signal = self.real_account;
+
+            MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
+                &api_url,
+                &api_key,
+                &api_secret,
+                js_sys::Date::now().max(0.0) as i64,
+                Rc::new(move |result| {
+                    loading.set(false);
+                    match result {
+                        Ok(account) => {
+                            let settings = ExecutionSettings {
+                                mode: ExecutionMode::Real,
+                                real: RealTradingSettings {
+                                    api_url: api_url.clone(),
+                                    api_key: api_key.clone(),
+                                    api_secret: api_secret.clone(),
+                                    account: Some(account.clone()),
+                                },
+                            };
+
+                            match LocalExecutionStorage.save(&settings) {
+                                Ok(()) => {
+                                    mode.set(ExecutionMode::Real);
+                                    url_signal.set(api_url.clone());
+                                    key_signal.set(api_key.clone());
+                                    secret_signal.set(api_secret.clone());
+                                    account_signal.set(Some(account.clone()));
+                                    error.set(None);
+                                    notice.set(Some(format!(
+                                        "Real trading settings saved. MEXC Futures USDT equity: {:.2} USDT.",
+                                        account.equity
+                                    )));
+                                }
+                                Err(message) => error.set(Some(message)),
+                            }
+                        }
+                        Err(message) => error.set(Some(message)),
+                    }
+                }),
+            );
+            return;
+        }
+
         match TradingService::reset_with_settings(
             initial_capital,
             fee_rate,
@@ -434,7 +539,15 @@ impl SocketState {
         ) {
             Ok(snapshot) => match TradingService::save(&LocalTradingStorage, &snapshot) {
                 Ok(()) => {
+                    let settings = ExecutionSettings::default();
+                    if let Err(message) = LocalExecutionStorage.save(&settings) {
+                        self.trading_error.set(Some(message));
+                        return;
+                    }
+
                     self.trading_snapshot.set(snapshot);
+                    self.execution_mode.set(ExecutionMode::Paper);
+                    self.real_account.set(None);
                     self.pinned_symbols.set(Vec::new());
                     save_pinned_symbols(&[]);
                     self.trading_error.set(None);
