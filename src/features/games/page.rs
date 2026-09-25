@@ -2845,18 +2845,12 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 </button>
 
                 {dpad(
-                    {
-                        let toggle = Rc::clone(&toggle);
-                        move || toggle();
-                    },
+                    move || {},
                     {
                         let left_pressed = left_pressed;
                         move || left_pressed.set(true)
                     },
-                    {
-                        let toggle = Rc::clone(&toggle);
-                        move || toggle();
-                    },
+                    move || {},
                     {
                         let right_pressed = right_pressed;
                         move || right_pressed.set(true)
