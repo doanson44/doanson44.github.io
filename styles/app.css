@@ -613,6 +613,69 @@ body {
 
 
 
+/* Responsive game surfaces.
+ * Keep logical game dimensions in the feature/domain layer and let CSS scale
+ * the presentation to the available viewport. */
+.game-shell {
+    width: 100%;
+    max-width: 100%;
+}
+
+.game-shell > div {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.game-shell button,
+.game-shell a {
+    max-width: 100%;
+}
+
+.tetris-board {
+    width: min(100%, 24rem);
+    aspect-ratio: 1 / 2;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    grid-template-rows: repeat(20, minmax(0, 1fr));
+}
+
+.tetris-board > div {
+    min-width: 0;
+    min-height: 0;
+}
+
+@media (max-width: 576px) {
+    .game-shell {
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    .game-shell > div {
+        width: 100%;
+    }
+
+    .tetris-board {
+        width: min(100%, calc(62dvh / 2));
+        max-width: 100%;
+    }
+
+    .game-shell .pong-board,
+    .game-shell .breakout-board,
+    .game-shell .flappy-stage {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 375px) {
+    .game-shell {
+        padding: 0.625rem;
+    }
+
+    .tetris-board {
+        width: min(100%, calc(58dvh / 2));
+    }
+}
+
+
 .market-analysis-backdrop {
     background: color-mix(in srgb, var(--ms-bg-primary) 55%, transparent);
 }
