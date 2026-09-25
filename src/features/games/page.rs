@@ -491,6 +491,7 @@ fn board_2048(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 // ── Tic-Tac-Toe ───────────────────────────────────────────────────────────────
 
 fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
+    let i18n = use_i18n();
     let size = RwSignal::new(3usize);
     let win_len = RwSignal::new(3usize);
     let board = RwSignal::new(vec![' '; 9]);
@@ -499,10 +500,15 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
     let reset = move || {
         let n = size.get();
+        let target = win_len.get();
         board.set(vec![' '; n * n]);
         player_turn.set(true);
         game_over.set(false);
-        status.set(format!("Your turn (X) — {n}×{n}, first to {n} in a row"));
+        if i18n.get_locale() == Locale::en {
+            status.set(format!("Your turn (X) — {n}×{n}, first to {target} in a row"));
+        } else {
+            status.set(format!("Lượt của bạn (X) — {n}×{n}, thắng khi có {target} quân liên tiếp"));
+        }
     };
 
     let set_size = move |value: usize| {
@@ -513,7 +519,11 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         board.set(vec![' '; n * n]);
         player_turn.set(true);
         game_over.set(false);
-        status.set(format!("Your turn (X) — {n}×{n}, first to {target} in a row"));
+        if i18n.get_locale() == Locale::en {
+            status.set(format!("Your turn (X) — {n}×{n}, first to {target} in a row"));
+        } else {
+            status.set(format!("Lượt của bạn (X) — {n}×{n}, thắng khi có {target} quân liên tiếp"));
+        }
     };
 
     status.set("Your turn (X) — 3×3, first to 3 in a row".into());
@@ -532,7 +542,11 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         board.set(b.clone());
 
         if let Some(w) = ttt_winner_sized(&b, n, target) {
-            status.set(format!("{w} wins! 🎉"));
+            if i18n.get_locale() == Locale::en {
+                status.set(format!("{w} wins! 🎉"));
+            } else {
+                status.set(format!("{w} thắng! 🎉"));
+            }
             game_over.set(true);
             if w == 'X' {
                 score.update(|s| *s += 10);
@@ -540,13 +554,22 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             return;
         }
         if ttt_is_draw_sized(&b, n, target) {
-            status.set("Draw!".into());
+            status.set(if i18n.get_locale() == Locale::en {
+                "Draw!".into()
+            } else {
+                "Hòa!".into()
+            });
             game_over.set(true);
             return;
         }
 
         player_turn.set(false);
-        status.set("AI thinking…".into());
+        status.set(if i18n.get_locale() == Locale::en {
+            "AI thinking…".into()
+        } else {
+            "AI đang suy nghĩ…".into()
+        });
+
         let b_copy = b;
         leptos::task::spawn_local(async move {
             gloo_timers::future::TimeoutFuture::new(300).await;
@@ -554,14 +577,26 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 let mut b2 = b_copy;
                 b2[ai_idx] = 'O';
                 board.set(b2.clone());
-                if let Some(w) = crate::domain::games::ttt_winner_sized(&b2, n, target) {
-                    status.set(format!("{w} wins!"));
+                if let Some(w) = ttt_winner_sized(&b2, n, target) {
+                    status.set(if i18n.get_locale() == Locale::en {
+                        format!("{w} wins!")
+                    } else {
+                        format!("{w} thắng!")
+                    });
                     game_over.set(true);
-                } else if crate::domain::games::ttt_is_draw_sized(&b2, n, target) {
-                    status.set("Draw!".into());
+                } else if ttt_is_draw_sized(&b2, n, target) {
+                    status.set(if i18n.get_locale() == Locale::en {
+                        "Draw!".into()
+                    } else {
+                        "Hòa!".into()
+                    });
                     game_over.set(true);
                 } else {
-                    status.set("Your turn (X)".into());
+                    status.set(if i18n.get_locale() == Locale::en {
+                        "Your turn (X)".into()
+                    } else {
+                        "Lượt của bạn (X)".into()
+                    });
                     player_turn.set(true);
                 }
             } else {
@@ -571,66 +606,116 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     };
 
     view! {
-        <div class="mx-auto w-full max-w-2xl space-y-4">
-            <div class="flex flex-wrap items-center justify-center gap-2">
-                <span class="text-sm font-medium text-[var(--text-secondary)]">"Board"</span>
-                {[3usize, 4, 5, 6].into_iter().map(|n| {
-                    view! {
-                        <button
-                            type="button"
-                            class=move || format!(
-                                "min-h-10 rounded-md border px-3 py-2 text-sm font-semibold {}",
-                                if size.get() == n {
-                                    "border-[var(--accent)] bg-[var(--surface-hover)] text-[var(--text-primary)]"
-                                } else {
-                                    "border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
-                                }
-                            )
-                            aria-pressed=move || size.get() == n
-                            on:click=move |_| set_size(n)
-                        >
-                            {format!("{n}×{n}")}
-                        </button>
-                    }
-                }).collect_view()}
-            </div>
-
-            <div
-                class=move || {
-                    let grid_class = match size.get() {
-                        3 => "ttt-board--3",
-                        4 => "ttt-board--4",
-                        5 => "ttt-board--5",
-                        _ => "ttt-board--6",
-                    };
-                    format!("ttt-board mx-auto grid w-full max-w-xl gap-1.5 sm:gap-2 {grid_class}")
-                }
-            >
-                {(0..36).map(|i| view! {
-                    <button
-                        type="button"
-                        class=move || {
-                            let b = board.get();
-                            if i >= b.len() {
-                                "hidden".to_string()
-                            } else {
-                                format!(
-                                    "aspect-square rounded-lg border border-[var(--border-color)] text-3xl font-bold hover:bg-[var(--surface-hover)] sm:text-4xl {}",
-                                    match b[i] {
-                                        'X' => "text-[var(--accent)]",
-                                        'O' => "text-red-500",
-                                        _ => "text-[var(--text-primary)]",
+        <div class="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+            <div class="min-w-0 space-y-4">
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <span class="text-sm font-medium text-[var(--text-secondary)]">
+                        {move || if i18n.get_locale() == Locale::en { "Board" } else { "Bàn cờ" }}
+                    </span>
+                    {[3usize, 4, 5, 6].into_iter().map(|n| {
+                        view! {
+                            <button
+                                type="button"
+                                class=move || format!(
+                                    "min-h-10 rounded-md border px-3 py-2 text-sm font-semibold {}",
+                                    if size.get() == n {
+                                        "border-[var(--accent)] bg-[var(--surface-hover)] text-[var(--text-primary)]"
+                                    } else {
+                                        "border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
                                     }
                                 )
-                            }
+                                aria-pressed=move || size.get() == n
+                                on:click=move |_| set_size(n)
+                            >
+                                {format!("{n}×{n}")}
+                            </button>
                         }
-                        on:click=move |_| click(i)
-                    >
-                        {move || board.get().get(i).copied().unwrap_or(' ').to_string()}
-                    </button>
-                }).collect_view()}
+                    }).collect_view()}
+                </div>
+
+                <div
+                    class=move || {
+                        let grid_class = match size.get() {
+                            3 => "ttt-board--3",
+                            4 => "ttt-board--4",
+                            5 => "ttt-board--5",
+                            _ => "ttt-board--6",
+                        };
+                        format!("ttt-board mx-auto grid w-full max-w-xl gap-1.5 sm:gap-2 {grid_class}")
+                    }
+                >
+                    {(0..36).map(|i| view! {
+                        <button
+                            type="button"
+                            class=move || {
+                                let b = board.get();
+                                if i >= b.len() {
+                                    "hidden".to_string()
+                                } else {
+                                    format!(
+                                        "aspect-square rounded-lg border border-[var(--border-color)] text-3xl font-bold hover:bg-[var(--surface-hover)] sm:text-4xl {}",
+                                        match b[i] {
+                                            'X' => "text-[var(--accent)]",
+                                            'O' => "text-red-500",
+                                            _ => "text-[var(--text-primary)]",
+                                        }
+                                    )
+                                }
+                            }
+                            on:click=move |_| click(i)
+                        >
+                            {move || board.get().get(i).copied().unwrap_or(' ').to_string()}
+                        </button>
+                    }).collect_view()}
+                </div>
+                <button
+                    type="button"
+                    class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm"
+                    on:click=move|_|reset()
+                >
+                    {move || if i18n.get_locale() == Locale::en { "New Game" } else { "Ván mới" }}
+                </button>
             </div>
-            <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|reset()>"New Game"</button>
+
+            <aside class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-4">
+                <h3 class="text-base font-semibold text-[var(--text-primary)]">
+                    {move || if i18n.get_locale() == Locale::en { "How to play" } else { "Cách chơi" }}
+                </h3>
+                <div class="mt-3 space-y-3 text-sm text-[var(--text-secondary)]">
+                    <p>
+                        {move || if i18n.get_locale() == Locale::en {
+                            "Choose a board size, then place X before the AI places O."
+                        } else {
+                            "Chọn kích thước bàn cờ, sau đó đặt X trước khi AI đặt O."
+                        }}
+                    </p>
+                    <p>
+                        {move || if i18n.get_locale() == Locale::en {
+                            "Win by getting the required number of your symbols in a straight line: horizontal, vertical, or diagonal."
+                        } else {
+                            "Thắng bằng cách tạo đủ số quân liên tiếp theo hàng ngang, hàng dọc hoặc đường chéo."
+                        }}
+                    </p>
+                    <div class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3">
+                        <p class="font-medium text-[var(--text-primary)]">
+                            {move || if i18n.get_locale() == Locale::en { "Win condition" } else { "Điều kiện thắng" }}
+                        </p>
+                        <ul class="mt-2 space-y-1">
+                            <li>"3×3 → 3 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
+                            <li>"4×4 → 4 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
+                            <li>"5×5 → 5 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
+                            <li>"6×6 → 5 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
+                        </ul>
+                    </div>
+                    <p>
+                        {move || if i18n.get_locale() == Locale::en {
+                            "If every cell is filled without a winner, the game is a draw."
+                        } else {
+                            "Nếu tất cả ô đều được đánh mà không có người thắng, ván đấu hòa."
+                        }}
+                    </p>
+                </div>
+            </aside>
         </div>
     }.into_any()
 }
