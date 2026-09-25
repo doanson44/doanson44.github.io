@@ -791,11 +791,91 @@ pub fn wordle_check(guess: &str, answer: &str) -> [u8; 5] {
 
 /// Returns a hardcoded easy Sudoku puzzle (0 = empty cell).
 pub fn sudoku_puzzle() -> [u8; 81] {
-    [
+    sudoku_puzzle_with_seed(0)
+}
+
+/// Returns a Sudoku puzzle derived from the starter puzzle using a deterministic seed.
+///
+/// The transformation preserves the puzzle's validity while changing its digit and
+/// row/column arrangement, so a new seed produces a different board without introducing
+/// randomness into the domain layer.
+pub fn sudoku_puzzle_with_seed(seed: u64) -> [u8; 81] {
+    let base = [
         5, 3, 0, 0, 7, 0, 0, 0, 0, 6, 0, 0, 1, 9, 5, 0, 0, 0, 0, 9, 8, 0, 0, 0, 0, 6, 0, 8, 0, 0,
         0, 6, 0, 0, 0, 3, 4, 0, 0, 8, 0, 3, 0, 0, 1, 7, 0, 0, 0, 2, 0, 0, 0, 6, 0, 6, 0, 0, 0, 0,
         2, 8, 0, 0, 0, 0, 4, 1, 9, 0, 0, 5, 0, 0, 0, 0, 8, 0, 0, 7, 9,
-    ]
+    ];
+
+    let mut state = seed.wrapping_mul(0x9E3779B97F4A7C15).wrapping_add(0xBF58476D1CE4E5B9);
+    let mut next = || {
+        state ^= state >> 30;
+        state = state.wrapping_mul(0xBF58476D1CE4E5B9);
+        state ^= state >> 27;
+        state = state.wrapping_mul(0x94D049BB133111EB);
+        state ^= state >> 31;
+        state
+    };
+
+    let mut digits = [1u8, 2, 3, 4, 5, 6, 7, 8, 9];
+    for i in (1..digits.len()).rev() {
+        let j = (next() as usize) % (i + 1);
+        digits.swap(i, j);
+    }
+
+    let mut row_order = [0usize; 9];
+    for band in 0..3 {
+        let mut rows = [0usize, 1, 2];
+        for i in (1..rows.len()).rev() {
+            let j = (next() as usize) % (i + 1);
+            rows.swap(i, j);
+        }
+        for offset in 0..3 {
+            row_order[band * 3 + offset] = band * 3 + rows[offset];
+        }
+    }
+    let mut bands = [0usize, 1, 2];
+    for i in (1..bands.len()).rev() {
+        let j = (next() as usize) % (i + 1);
+        bands.swap(i, j);
+    }
+    let mut reordered_rows = [0usize; 9];
+    for band in 0..3 {
+        for offset in 0..3 {
+            reordered_rows[band * 3 + offset] = row_order[bands[band] * 3 + offset];
+        }
+    }
+
+    let mut col_order = [0usize; 9];
+    for stack in 0..3 {
+        let mut cols = [0usize, 1, 2];
+        for i in (1..cols.len()).rev() {
+            let j = (next() as usize) % (i + 1);
+            cols.swap(i, j);
+        }
+        for offset in 0..3 {
+            col_order[stack * 3 + offset] = stack * 3 + cols[offset];
+        }
+    }
+    let mut stacks = [0usize, 1, 2];
+    for i in (1..stacks.len()).rev() {
+        let j = (next() as usize) % (i + 1);
+        stacks.swap(i, j);
+    }
+    let mut reordered_cols = [0usize; 9];
+    for stack in 0..3 {
+        for offset in 0..3 {
+            reordered_cols[stack * 3 + offset] = col_order[stacks[stack] * 3 + offset];
+        }
+    }
+
+    let mut puzzle = [0u8; 81];
+    for row in 0..9 {
+        for col in 0..9 {
+            let value = base[reordered_rows[row] * 9 + reordered_cols[col]];
+            puzzle[row * 9 + col] = if value == 0 { 0 } else { digits[value as usize - 1] };
+        }
+    }
+    puzzle
 }
 
 /// Returns which cells are pre-filled (given) and must not be edited.
