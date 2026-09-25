@@ -1,4 +1,5 @@
 pub mod browser;
+pub mod execution;
 pub mod funding_rate;
 pub mod market;
 pub mod mermaid;
