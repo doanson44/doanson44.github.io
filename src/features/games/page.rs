@@ -18,6 +18,8 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 
+type PongAnimationFrame = Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>>;
+
 use crate::i18n::*;
 
 fn toggle_browser_fullscreen() {
@@ -2890,7 +2892,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             status.set("Rally!".into());
             last_time.set(None);
 
-            let tick_frame: Rc<RefCell<Option<Closure<dyn FnMut(f64)>>>> =
+            let tick_frame: PongAnimationFrame =
                 Rc::new(RefCell::new(None));
             let tick_frame_clone = tick_frame.clone();
             let last_time_clone = last_time.clone();
