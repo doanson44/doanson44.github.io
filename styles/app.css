@@ -621,3 +621,25 @@ body {
 .market-analysis-backdrop {
     background: color-mix(in srgb, var(--ms-bg-primary) 55%, transparent);
 }
+
+
+/* Classic Windows-inspired Minesweeper board tokens. */
+:root {
+    --mines-covered: #c0c0c0;
+    --mines-covered-hover: #d0d0d0;
+    --mines-raised: #c0c0c0;
+    --mines-raised-border: #ffffff;
+    --mines-revealed: #d3d3d3;
+    --mines-revealed-border: #808080;
+    --mines-mine: #b91c1c;
+}
+
+[data-theme="dark"] {
+    --mines-covered: #59605a;
+    --mines-covered-hover: #687068;
+    --mines-raised: #59605a;
+    --mines-raised-border: #9aa19a;
+    --mines-revealed: #343a35;
+    --mines-revealed-border: #1f241f;
+    --mines-mine: #b94a43;
+}
