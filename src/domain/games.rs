@@ -1880,7 +1880,6 @@ mod tests {
         assert_eq!(d.iter().filter(|&&c| c == 1).count(), 4);
     }
 
-
     #[test]
     fn tetris_rotate_turns_i_piece() {
         let p = [(0, 0), (1, 0), (2, 0), (3, 0)];
