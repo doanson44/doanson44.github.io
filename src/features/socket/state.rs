@@ -454,9 +454,8 @@ impl SocketState {
                         .and_then(|ticker| ticker.ticker.last_price)
                         .filter(|price| price.is_finite() && *price > 0.0)
                         .unwrap_or(position.open_average_price);
-                    let entry_notional = if position.initial_margin > 0.0
-                        && position.leverage > 0.0
-                    {
+                    let entry_notional =
+                        if position.initial_margin > 0.0 && position.leverage > 0.0 {
                         position.initial_margin * position.leverage
                     } else {
                         0.0
