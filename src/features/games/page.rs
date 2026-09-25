@@ -1505,7 +1505,7 @@ fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     view! {
         <div class="mx-auto w-full max-w-2xl space-y-4">
             <div class="flex flex-wrap justify-center gap-2" role="group" aria-label="Memory board size">
-                {(MemorySize::Small, MemorySize::Medium, MemorySize::Large)
+                {[MemorySize::Small, MemorySize::Medium, MemorySize::Large]
                     .into_iter()
                     .map(|option| view! {
                         <button
