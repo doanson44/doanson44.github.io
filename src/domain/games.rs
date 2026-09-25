@@ -1770,7 +1770,6 @@ mod tests {
     }
 
     #[test]
-    #[test]
     fn minesweeper_sized_counts_neighbours() {
         let mines = vec![false, true, false, false, false, false, true, false, false];
         assert_eq!(minesweeper_adjacent_mines_sized(&mines, 3, 3, 0), 1);
@@ -1989,10 +1988,10 @@ mod tests {
         let mut game = BreakoutGame::new();
         game.bricks.fill(false);
         game.bricks[0] = true;
-        game.ball_x = 3;
-        game.ball_y = 1;
-        game.ball_dx = 0;
-        game.ball_dy = -1;
+        game.ball_x = 3.0;
+        game.ball_y = 1.0;
+        game.ball_dx = 0.0;
+        game.ball_dy = -1.0;
 
         assert_eq!(game.tick(), BreakoutTickResult::Won);
         assert_eq!(game.score(), 10);
