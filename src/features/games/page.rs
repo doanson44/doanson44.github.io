@@ -2563,156 +2563,274 @@ fn board_blackjack(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let game = RwSignal::new(BreakoutService::new_game());
     let running = RwSignal::new(false);
+    let left_pressed = RwSignal::new(false);
+    let right_pressed = RwSignal::new(false);
+    let animation_frame = RwSignal::new(None::<i32>);
 
-    let step = move || {
-        if !running.get() {
+    let start_loop = Rc::new(move || {
+        if animation_frame.get_untracked().is_some() {
             return;
         }
 
-        match BreakoutService::tick(&mut game.write()) {
-            BreakoutTickResult::Rally => {}
-            BreakoutTickResult::BrickHit => {
-                score.set(game.get().score());
-                status.set(format!("Brick hit · {} points", game.get().score()));
+        let callback = Rc::new(RefCell::new(None::<Closure<dyn FnMut(f64)>>));
+        let callback_ref = Rc::clone(&callback);
+        let last_time = Rc::new(RefCell::new(None::<f64>));
+        let accumulator = Rc::new(RefCell::new(0.0f64));
+        let frame_window = window();
+
+        let frame = Closure::wrap(Box::new(move |now: f64| {
+            if !running.get_untracked() {
+                animation_frame.set(None);
+                return;
             }
-            BreakoutTickResult::LifeLost => {
-                score.set(game.get().score());
-                status.set(format!("Life lost · {} lives left", game.get().lives()));
+
+            let previous = last_time.borrow_mut().replace(now).unwrap_or(now);
+            let dt = ((now - previous) / 1000.0).clamp(0.0, 0.05);
+
+            let direction = match (left_pressed.get_untracked(), right_pressed.get_untracked()) {
+                (true, false) => -1.0,
+                (false, true) => 1.0,
+                _ => 0.0,
+            };
+            if direction != 0.0 {
+                let mut current = game.get_untracked();
+                current.move_paddle_by(direction * 7.5 * dt);
+                game.set(current);
             }
-            BreakoutTickResult::Won => {
-                running.set(false);
-                score.set(game.get().score());
-                status.set("All bricks cleared!".into());
-            }
-            BreakoutTickResult::GameOver => {
-                running.set(false);
-                score.set(game.get().score());
-                status.set("Game over · press Space to restart".into());
-            }
-        }
-    };
 
-    let start_game = move || {
-        if running.get() {
-            return;
-        }
+            {
+                let mut accumulated = accumulator.borrow_mut();
+                *accumulated += dt;
+                while *accumulated >= 1.0 / 60.0 {
+                    let mut current = game.get_untracked();
+                    let result = BreakoutService::tick(&mut current);
+                    let current_score = current.score();
+                    let current_lives = current.lives();
+                    let finished = current.is_finished();
+                    game.set(current);
+                    score.set(current_score);
 
-        if game.get().is_finished() {
-            BreakoutService::reset(&mut game.write());
-            score.set(0);
-        }
+                    match result {
+                        BreakoutTickResult::Rally => {}
+                        BreakoutTickResult::BrickHit => {
+                            status.set(format!("Brick hit · {} points", current_score));
+                        }
+                        BreakoutTickResult::LifeLost => {
+                            status.set(format!("Life lost · {} lives left", current_lives));
+                        }
+                        BreakoutTickResult::Won => {
+                            running.set(false);
+                            status.set("All bricks cleared!".into());
+                        }
+                        BreakoutTickResult::GameOver => {
+                            running.set(false);
+                            status.set("Game over · press Space to restart".into());
+                        }
+                    }
 
-        running.set(true);
-        status.set("Ball in play".into());
-
-        leptos::task::spawn_local(async move {
-            loop {
-                gloo_timers::future::TimeoutFuture::new(80).await;
-                if !running.get() {
-                    break;
-                }
-                step();
-            }
-        });
-    };
-
-    let pause = move || {
-        if running.get() {
-            running.set(false);
-            status.set("Paused · press Space to resume".into());
-        }
-    };
-
-    let toggle = move || {
-        if running.get() {
-            pause();
-        } else {
-            start_game();
-        }
-    };
-
-    let nudge = move |delta: i32| {
-        BreakoutService::move_paddle(&mut game.write(), delta);
-    };
-
-    bind_keys(move |e: web_sys::KeyboardEvent| {
-        if is_text_input(&e) {
-            return;
-        }
-
-        match e.key().as_str() {
-            " " => {
-                e.prevent_default();
-                if !e.repeat() {
-                    toggle();
+                    if finished {
+                        running.set(false);
+                        break;
+                    }
+                    *accumulated -= 1.0 / 60.0;
                 }
             }
-            "ArrowLeft" | "a" | "A" => {
-                e.prevent_default();
-                nudge(-1);
+
+            if !running.get_untracked() {
+                animation_frame.set(None);
+                return;
             }
-            "ArrowRight" | "d" | "D" => {
-                e.prevent_default();
-                nudge(1);
-            }
-            _ => {}
+
+            let request_id = {
+                let callback_ref = callback_ref.borrow();
+                callback_ref.as_ref().and_then(|cb| {
+                    frame_window
+                        .request_animation_frame(cb.as_ref().unchecked_ref())
+                        .ok()
+                })
+            };
+            animation_frame.set(request_id);
+        }) as Box<dyn FnMut(f64)>);
+
+        *callback.borrow_mut() = Some(frame);
+        let request_id = {
+            let callback_ref = callback.borrow();
+            callback_ref.as_ref().and_then(|cb| {
+                frame_window
+                    .request_animation_frame(cb.as_ref().unchecked_ref())
+                    .ok()
+            })
+        };
+        animation_frame.set(request_id);
+    });
+
+    let stop_loop = Rc::new(move || {
+        if let Some(id) = animation_frame.get_untracked() {
+            let _ = window().cancel_animation_frame(id);
+            animation_frame.set(None);
         }
+        left_pressed.set(false);
+        right_pressed.set(false);
+    });
+
+    on_cleanup(move || {
+        if let Some(id) = animation_frame.get_untracked() {
+            let _ = window().cancel_animation_frame(id);
+        }
+        animation_frame.set(None);
+        left_pressed.set(false);
+        right_pressed.set(false);
+    });
+
+    let start_game = {
+        let start_loop = Rc::clone(&start_loop);
+        move || {
+            if running.get() {
+                return;
+            }
+
+            if game.get().is_finished() {
+                BreakoutService::reset(&mut game.write());
+                score.set(0);
+            }
+
+            running.set(true);
+            status.set("Ball in play".into());
+            start_loop();
+        }
+    };
+
+    let pause = {
+        let stop_loop = Rc::clone(&stop_loop);
+        move || {
+            if running.get() {
+                running.set(false);
+                stop_loop();
+                status.set("Paused · press Space to resume".into());
+            }
+        }
+    };
+
+    let toggle = {
+        let start_game = start_game.clone();
+        let pause = pause.clone();
+        move || {
+            if running.get() {
+                pause();
+            } else {
+                start_game();
+            }
+        }
+    };
+
+    let keydown = {
+        let toggle = toggle.clone();
+        move |e: web_sys::KeyboardEvent| {
+            if is_text_input(&e) {
+                return;
+            }
+
+            match e.key().as_str() {
+                " " => {
+                    e.prevent_default();
+                    if !e.repeat() {
+                        toggle();
+                    }
+                }
+                "ArrowLeft" | "a" | "A" => {
+                    e.prevent_default();
+                    left_pressed.set(true);
+                }
+                "ArrowRight" | "d" | "D" => {
+                    e.prevent_default();
+                    right_pressed.set(true);
+                }
+                _ => {}
+            }
+        }
+    };
+    let keyup = move |e: web_sys::KeyboardEvent| match e.key().as_str() {
+        "ArrowLeft" | "a" | "A" => left_pressed.set(false),
+        "ArrowRight" | "d" | "D" => right_pressed.set(false),
+        _ => {}
+    };
+
+    let keydown_handle = window_event_listener(ev::keydown, keydown);
+    let keyup_handle = window_event_listener(ev::keyup, keyup);
+    on_cleanup(move || {
+        keydown_handle.remove();
+        keyup_handle.remove();
     });
 
     view! {
-        <div class="breakout-container mx-auto d-flex flex-column gap-3">
-            <div class="d-flex flex-wrap justify-content-center gap-2">
-                <span class="badge bg-primary bg-opacity-25 text-primary-emphasis border border-primary-subtle">
+        <div class="mx-auto w-full max-w-xl space-y-3">
+            <div class="flex flex-wrap justify-center gap-2">
+                <span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs font-semibold text-[var(--text-primary)]">
                     {move || format!("Score {}", game.get().score())}
                 </span>
-                <span class="badge bg-danger bg-opacity-25 text-danger-emphasis border border-danger-subtle">
+                <span class="rounded-full border border-[var(--border-color)] px-3 py-1 text-xs font-semibold text-[var(--text-primary)]">
                     {move || format!("Lives {}", game.get().lives())}
                 </span>
             </div>
 
-            <div class="breakout-board border border-secondary rounded-3 overflow-hidden"
-                role="application"
-                aria-label="Breakout game board">
-                {(0..(BreakoutGame::WIDTH * BreakoutGame::HEIGHT))
-                    .map(|i| {
-                        view! {
-                            <div
-                                class=move || {
-                                    let current = game.get();
-                                    let col = i % BreakoutGame::WIDTH;
-                                    let row = i / BreakoutGame::WIDTH;
-                                    let (ball_x, ball_y) = current.ball_position();
-
-                                    if ball_x == col && ball_y == row {
-                                        "breakout-cell breakout-ball"
-                                    } else if row == BreakoutGame::PADDLE_Y
-                                        && col >= current.paddle_x()
-                                        && col < current.paddle_x() + BreakoutGame::PADDLE_WIDTH
-                                    {
-                                        "breakout-cell breakout-paddle"
-                                    } else if row < BreakoutGame::BRICK_ROWS as i32
-                                        && col >= 3
-                                        && current.brick_active(
-                                            row as usize,
-                                            (col - 3) as usize,
-                                        )
-                                    {
-                                        "breakout-cell breakout-brick"
-                                    } else {
-                                        "breakout-cell"
+            <svg
+                viewBox="0 0 480 720"
+                class="mx-auto block w-full max-w-md rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] shadow-sm"
+                role="img"
+                aria-label="Breakout game board"
+                tabindex="0"
+                on:pointerdown=move |_| {
+                    if !running.get() {
+                        start_game();
+                    }
+                }
+            >
+                <rect x="0" y="0" width="480" height="720" fill="currentColor" opacity="0.04"/>
+                {(0..BreakoutGame::BRICK_ROWS)
+                    .flat_map(|row| {
+                        (0..BreakoutGame::BRICK_COLS).map(move |col| {
+                            let index = row * BreakoutGame::BRICK_COLS + col;
+                            let x = (BreakoutGame::BRICK_START_X + col as i32) * 40;
+                            let y = row as i32 * 40;
+                            view! {
+                                <rect
+                                    x=x
+                                    y=y
+                                    width="38"
+                                    height="34"
+                                    rx="5"
+                                    class=move || {
+                                        if game.get()[index] {
+                                            "breakout-brick"
+                                        } else {
+                                            "opacity-0"
+                                        }
                                     }
-                                }
-                                aria-hidden="true"
-                            ></div>
-                        }
+                                />
+                            }
+                        })
                     })
                     .collect_view()}
-            </div>
+                <rect
+                    x=move || game.get().paddle_position() * 40.0
+                    y={(BreakoutGame::PADDLE_Y * 40)}
+                    width={(BreakoutGame::PADDLE_WIDTH * 40)}
+                    height="18"
+                    rx="9"
+                    class="breakout-paddle"
+                />
+                <circle
+                    cx=move || (game.get().ball_position().0 as f64 + 0.5) * 40.0
+                    cy=move || (game.get().ball_position().1 as f64 + 0.5) * 40.0
+                    r="13"
+                    class="breakout-ball"
+                />
+            </svg>
 
-            <div class="d-flex flex-column gap-2">
+            <div class="flex flex-col gap-2">
                 <button
                     type="button"
-                    class="btn btn-primary w-100"
+                    class="min-h-11 w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                     on:click=move |_| toggle()
                 >
                     {move || {
@@ -2727,18 +2845,31 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 </button>
 
                 {dpad(
-                    move || {},
-                    move || nudge(-1),
-                    move || {},
-                    move || nudge(1),
+                    {
+                        let start_game = start_game.clone();
+                        move || start_game();
+                    },
+                    {
+                        let left_pressed = left_pressed;
+                        move || left_pressed.set(true)
+                    },
+                    {
+                        let start_game = start_game.clone();
+                        move || start_game();
+                    },
+                    {
+                        let right_pressed = right_pressed;
+                        move || right_pressed.set(true)
+                    },
                 )}
 
-                <p class="mb-0 text-center text-body-secondary small">
-                    "Space start/pause · ← → / A D move paddle"
+                <p class="text-center text-xs text-[var(--text-tertiary)]">
+                    "Hold ← → / A D for smooth paddle movement · Space start/pause"
                 </p>
             </div>
         </div>
-    }.into_any()
+    }
+    .into_any()
 }
 
 // ── Pong ──────────────────────────────────────────────────────────────────────
