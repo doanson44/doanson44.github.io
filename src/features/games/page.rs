@@ -1960,13 +1960,7 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     let guessed: RwSignal<Vec<char>> = RwSignal::new(vec![]);
     let max_wrong = 6usize;
 
-    let wrong_count = move || {
-        guessed
-            .get()
-            .iter()
-            .filter(|&&c| !word.contains(c))
-            .count()
-    };
+    let wrong_count = move || guessed.get().iter().filter(|&&c| !word.contains(c)).count();
 
     let is_won = move || word.chars().all(|c| guessed.get().contains(&c));
     let is_lost = move || wrong_count() >= max_wrong;
