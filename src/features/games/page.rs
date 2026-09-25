@@ -966,14 +966,14 @@ fn board_connect_four(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView
                     <button type="button" class="rounded-md border border-[var(--border-color)] py-1 text-xs hover:bg-[var(--surface-hover)]" on:click=move|_|drop_col(col)>"▼"</button>
                 }).collect_view()}
             </div>
-            <div class="grid grid-cols-7 gap-1 rounded-lg border border-[var(--border-color)] bg-blue-600 p-2">
+            <div class="connect-four-board grid grid-cols-7 gap-1 rounded-lg border p-2">
                 {(0..42).map(|i| view! {
                     <div class=move || {
                         let v = board.get()[i];
                         match v {
-                            1 => "aspect-square rounded-full bg-red-500 border-2 border-red-700",
-                            2 => "aspect-square rounded-full bg-yellow-400 border-2 border-yellow-600",
-                            _ => "aspect-square rounded-full bg-blue-900/50 border border-blue-800",
+                            1 => "connect-four-disc connect-four-disc--red",
+                            2 => "connect-four-disc connect-four-disc--yellow",
+                            _ => "connect-four-disc connect-four-disc--empty",
                         }
                     }></div>
                 }).collect_view()}
