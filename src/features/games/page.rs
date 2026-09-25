@@ -4,7 +4,7 @@ use crate::domain::games::{
     blackjack_score, blackjack_should_hit, checkers_moves, chess_ai_move, chess_apply_move,
     chess_glyph, chess_has_move, chess_is_check, chess_legal_moves, chess_start,
     connect_four_ai_column, connect_four_drop, connect_four_winner, hangman_word, has_move_2048,
-    lights_toggle, minesweeper_adjacent_mines, minesweeper_flood_reveal, puzzle_is_solved,
+    lights_toggle, minesweeper_adjacent_mines_sized, minesweeper_flood_reveal_sized, puzzle_is_solved,
     puzzle_move, shuffle_deck, slide_2048, snake_step, sudoku_given, sudoku_puzzle, sudoku_valid,
     tetris_clear_filled, tetris_rotate_cw, tower_wave_countdown, tower_wave_damage,
     ttt_best_move_sized, ttt_is_draw_sized, ttt_winner_sized, typing_words, wordle_check,
@@ -731,21 +731,53 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
 // ── Minesweeper ───────────────────────────────────────────────────────────────
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MinesweeperSize {
+    Beginner,
+    Intermediate,
+    Expert,
+}
+
+impl MinesweeperSize {
+    fn all() -> [Self; 3] {
+        [Self::Beginner, Self::Intermediate, Self::Expert]
+    }
+
+    fn dimensions(self) -> (usize, usize, usize) {
+        match self {
+            Self::Beginner => (9, 9, 10),
+            Self::Intermediate => (16, 16, 40),
+            Self::Expert => (30, 16, 99),
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::Beginner => "Beginner — 9×9 · 10 mines",
+            Self::Intermediate => "Intermediate — 16×16 · 40 mines",
+            Self::Expert => "Expert — 30×16 · 99 mines",
+        }
+    }
+}
+
 fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let mines: RwSignal<[bool; 25]> = RwSignal::new([false; 25]);
-    let revealed: RwSignal<[bool; 25]> = RwSignal::new([false; 25]);
-    let flagged: RwSignal<[bool; 25]> = RwSignal::new([false; 25]);
+    let size = RwSignal::new(MinesweeperSize::Beginner);
+    let (width, height, mine_count) = size.get().dimensions();
+    let mines = RwSignal::new(vec![false; width * height]);
+    let revealed = RwSignal::new(vec![false; width * height]);
+    let flagged = RwSignal::new(vec![false; width * height]);
     let first_click = RwSignal::new(true);
     let game_over = RwSignal::new(false);
 
     let reset = move || {
-        mines.set([false; 25]);
-        revealed.set([false; 25]);
-        flagged.set([false; 25]);
+        let (w, h, _) = size.get().dimensions();
+        mines.set(vec![false; w * h]);
+        revealed.set(vec![false; w * h]);
+        flagged.set(vec![false; w * h]);
         first_click.set(true);
         game_over.set(false);
         score.set(0);
-        status.set("Ready — click to reveal".into());
+        status.set("Ready — left click to reveal".into());
     };
 
     let reveal = move |i: usize| {
@@ -753,20 +785,22 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             return;
         }
 
+        let (w, h, mine_count) = size.get().dimensions();
         let mut m = mines.get();
+
         if first_click.get() {
             first_click.set(false);
             let mut placed = 0;
-            while placed < 5 {
-                let idx = rand_usize(25);
+            while placed < mine_count {
+                let idx = rand_usize(w * h);
                 if idx != i && !m[idx] {
                     m[idx] = true;
                     placed += 1;
                 }
             }
-            mines.set(m);
+            mines.set(m.clone());
         }
-        let m = mines.get();
+
         if m[i] {
             let mut r = revealed.get();
             r[i] = true;
@@ -775,15 +809,18 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             status.set("💥 Mine! Game over.".into());
             return;
         }
+
         let mut r = revealed.get();
-        let newly = minesweeper_flood_reveal(&m, &r, i);
-        for idx in &newly {
-            r[*idx] = true;
+        let newly = minesweeper_flood_reveal_sized(&m, &r, w, h, i);
+        for idx in newly {
+            r[idx] = true;
         }
-        revealed.set(r);
+        revealed.set(r.clone());
+
         let safe_count = r.iter().filter(|&&v| v).count();
         score.set(safe_count as u32);
-        if safe_count == 20 {
+
+        if safe_count + mine_count == w * h {
             game_over.set(true);
             status.set("🎉 You cleared the field!".into());
         } else {
@@ -798,42 +835,199 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         flagged.update(|f| f[i] = !f[i]);
     };
 
+    let chord = move |i: usize| {
+        if game_over.get() || !revealed.get()[i] {
+            return;
+        }
+
+        let (w, h, _) = size.get().dimensions();
+        let m = mines.get();
+        let r = revealed.get();
+        let f = flagged.get();
+        let adjacent_mines = minesweeper_adjacent_mines_sized(&m, w, h, i);
+
+        let row = i / w;
+        let col = i % w;
+        let mut adjacent_flags = 0usize;
+        let mut neighbours = Vec::new();
+
+        for dr in -1i32..=1 {
+            for dc in -1i32..=1 {
+                if dr == 0 && dc == 0 {
+                    continue;
+                }
+                let nr = row as i32 + dr;
+                let nc = col as i32 + dc;
+                if (0..h as i32).contains(&nr) && (0..w as i32).contains(&nc) {
+                    let ni = nr as usize * w + nc as usize;
+                    if f[ni] {
+                        adjacent_flags += 1;
+                    } else if !r[ni] {
+                        neighbours.push(ni);
+                    }
+                }
+            }
+        }
+
+        if adjacent_flags != adjacent_mines as usize {
+            return;
+        }
+
+        for ni in neighbours {
+            reveal(ni);
+            if game_over.get() {
+                break;
+            }
+        }
+    };
+
+    let reset_to_size = move |new_size: MinesweeperSize| {
+        size.set(new_size);
+        let (w, h, _) = new_size.dimensions();
+        mines.set(vec![false; w * h]);
+        revealed.set(vec![false; w * h]);
+        flagged.set(vec![false; w * h]);
+        first_click.set(true);
+        game_over.set(false);
+        score.set(0);
+        status.set("Ready — left click to reveal".into());
+    };
+
+    let handle_mouse_down = move |i: usize, e: web_sys::MouseEvent| {
+        e.prevent_default();
+        match e.buttons() {
+            3 => chord(i),
+            2 => flag(i),
+            1 => reveal(i),
+            _ => {}
+        }
+    };
+
+    let cell_class = move |i: usize| {
+        let m = mines.get();
+        let r = revealed.get();
+        let f = flagged.get();
+
+        if r[i] && m[i] {
+            "mines-cell mines-cell--mine"
+        } else if r[i] {
+            "mines-cell mines-cell--revealed"
+        } else if f[i] {
+            "mines-cell mines-cell--flagged"
+        } else {
+            "mines-cell"
+        }
+    };
+
+    let grid_class = move || {
+        let (w, _, _) = size.get().dimensions();
+        match w {
+            9 => "grid grid-cols-9",
+            16 => "grid grid-cols-16",
+            _ => "grid grid-cols-[repeat(30,minmax(0,1fr))]",
+        }
+    };
+
     view! {
-        <div class="mx-auto max-w-sm space-y-3">
-            <div class="grid grid-cols-5 gap-1">
-                {(0..25).map(|i| view! {
-                    <button type="button"
-                        class=move || {
-                            let m = mines.get();
-                            let r = revealed.get();
-                            let f = flagged.get();
-                            if r[i] && m[i] { "aspect-square rounded border bg-red-500 text-white text-xs font-bold".into() }
-                            else if r[i] {
-                                let n = minesweeper_adjacent_mines(&m, i);
-                                let color = match n { 1 => "text-blue-500", 2 => "text-green-500", 3 => "text-red-500", _ => "text-[var(--text-primary)]" };
-                                format!("aspect-square rounded border border-[var(--border-color)] bg-[var(--surface-hover)] text-xs font-bold {color}")
-                            } else if f[i] { "aspect-square rounded border border-[var(--border-color)] bg-yellow-400 text-xs".into() }
-                            else { "aspect-square rounded border border-[var(--border-color)] text-xs hover:bg-[var(--surface-hover)]".into() }
-                        }
-                        on:click=move |_| reveal(i)
-                        on:contextmenu=move |e| { e.prevent_default(); flag(i); }>
-                        {move || {
-                            let m = mines.get();
-                            let r = revealed.get();
-                            let f = flagged.get();
-                            if f[i] && !r[i] { "🚩".to_string() }
-                            else if r[i] && m[i] { "💣".to_string() }
-                            else if r[i] {
-                                let n = minesweeper_adjacent_mines(&m, i);
-                                if n == 0 { String::new() } else { n.to_string() }
-                            } else { String::new() }
-                        }}
-                    </button>
+        <div class="mx-auto w-full max-w-5xl space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+                {MinesweeperSize::all().into_iter().map(|preset| {
+                    let active = move || size.get() == preset;
+                    view! {
+                        <button
+                            type="button"
+                            class=move || if active() {
+                                "rounded-md border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2 text-xs font-semibold text-[var(--text-primary)]"
+                            } else {
+                                "rounded-md border border-[var(--border-color)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
+                            }
+                            on:click=move |_| reset_to_size(preset)
+                        >
+                            {preset.label()}
+                        </button>
+                    }
                 }).collect_view()}
             </div>
-            <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|reset()>"New Game"</button>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2 text-xs">
+                <span class="font-semibold text-[var(--text-primary)]">
+                    {move || {
+                        let (_, _, mines_count) = size.get().dimensions();
+                        format!("Mines: {} · Flags: {}", mines_count, flagged.get().iter().filter(|&&v| v).count())
+                    }}
+                </span>
+                <span class="text-[var(--text-secondary)]">{move || status.get()}</span>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border-4 border-[var(--border-color)] bg-[var(--surface-hover)] p-1 shadow-sm">
+                <div class=grid_class()>
+                    {(0..width * height).map(|i| view! {
+                        <button
+                            type="button"
+                            class=move || cell_class(i)
+                            aria-label=move || {
+                                let m = mines.get();
+                                let r = revealed.get();
+                                let f = flagged.get();
+                                if f[i] && !r[i] {
+                                    "Flagged cell".to_string()
+                                } else if r[i] && m[i] {
+                                    "Mine".to_string()
+                                } else if r[i] {
+                                    let n = minesweeper_adjacent_mines_sized(&m, width, height, i);
+                                    format!("Revealed cell, {} adjacent mines", n)
+                                } else {
+                                    "Hidden cell".to_string()
+                                }
+                            }
+                            on:mousedown=move |e| handle_mouse_down(i, e)
+                            on:contextmenu=move |e| e.prevent_default()
+                        >
+                            {move || {
+                                let m = mines.get();
+                                let r = revealed.get();
+                                let f = flagged.get();
+                                if f[i] && !r[i] {
+                                    "🚩".to_string()
+                                } else if r[i] && m[i] {
+                                    "💣".to_string()
+                                } else if r[i] {
+                                    let n = minesweeper_adjacent_mines_sized(&m, width, height, i);
+                                    if n == 0 { String::new() } else { n.to_string() }
+                                } else {
+                                    String::new()
+                                }
+                            }}
+                        </button>
+                    }).collect_view()}
+                </div>
+            </div>
+
+            <div class="grid gap-2 text-xs text-[var(--text-secondary)] sm:grid-cols-3">
+                <div class="rounded-md border border-[var(--border-color)] p-3">
+                    <strong class="text-[var(--text-primary)]">"Left click"</strong>
+                    <span>" — reveal a cell."</span>
+                </div>
+                <div class="rounded-md border border-[var(--border-color)] p-3">
+                    <strong class="text-[var(--text-primary)]">"Right click"</strong>
+                    <span>" — place/remove a flag."</span>
+                </div>
+                <div class="rounded-md border border-[var(--border-color)] p-3">
+                    <strong class="text-[var(--text-primary)]">"Left + Right"</strong>
+                    <span>" — chord a revealed number and open its unflagged neighbours."</span>
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm font-medium hover:bg-[var(--surface-hover)]"
+                on:click=move |_| reset()
+            >
+                "New Game"
+            </button>
         </div>
-    }.into_any()
+    }
+    .into_any()
 }
 
 // ── Snake ─────────────────────────────────────────────────────────────────────
