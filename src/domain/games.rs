@@ -1784,6 +1784,7 @@ mod tests {
         assert_eq!(cells.len(), 9);
     }
 
+    #[test]
     fn minesweeper_counts_neighbours() {
         let mut m = [false; 25];
         m[6] = true;
@@ -1967,7 +1968,7 @@ mod tests {
     fn breakout_life_loss_resets_ball_until_final_life() {
         let mut game = BreakoutGame::new();
         game.ball_x = 0.0;
-        game.ball_y = BreakoutGame::HEIGHT as f64 - 1.0;
+        game.ball_y = BreakoutGame::HEIGHT as f64 - BreakoutGame::BALL_SPEED * 0.5;
         game.ball_dx = 0.0;
         game.ball_dy = BreakoutGame::BALL_SPEED;
 
@@ -1976,7 +1977,7 @@ mod tests {
         assert!(!game.is_finished());
 
         game.lives = 1;
-        game.ball_y = BreakoutGame::HEIGHT as f64 - 1.0;
+        game.ball_y = BreakoutGame::HEIGHT as f64 - BreakoutGame::BALL_SPEED * 0.5;
         game.ball_dy = BreakoutGame::BALL_SPEED;
         assert_eq!(game.tick(), BreakoutTickResult::GameOver);
         assert_eq!(game.lives(), 0);
