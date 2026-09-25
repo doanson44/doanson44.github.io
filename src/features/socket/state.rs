@@ -639,7 +639,6 @@ impl SocketState {
         let submit = {
             let service = service.clone();
             move |contract: crate::application::services::mexc_trading::ContractDetail| {
-            move |contract: crate::application::services::mexc_trading::ContractDetail| {
                 let (side, volume, position_id, reduce_only) =
                     if let Some(position) = existing.as_ref() {
                         (
