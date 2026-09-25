@@ -1,7 +1,10 @@
 use leptos::prelude::*;
 
 use super::components::{CvSection, EducationCard, ExperienceCard, SkillGroup};
-use super::data::{competencies, education, experiences, highlights, profile, reveal_email, reveal_phone, skill_categories};
+use super::data::{
+    competencies, education, experiences, highlights, profile, reveal_email, reveal_phone,
+    skill_categories,
+};
 use crate::i18n::*;
 use crate::infrastructure::browser::{print_page, scroll_to_element};
 
