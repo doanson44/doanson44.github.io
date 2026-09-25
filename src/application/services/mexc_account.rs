@@ -34,7 +34,9 @@ where
         let api_secret = api_secret.trim().to_string();
 
         if api_url.is_empty() || api_key.is_empty() || api_secret.is_empty() {
-            on_result(Err("API URL, API key, and API secret are required.".to_string()));
+            on_result(Err(
+                "API URL, API key, and API secret are required.".to_string()
+            ));
             return;
         }
 
@@ -89,7 +91,10 @@ fn parse_account_response(raw: String) -> Result<RealAccountSnapshot, String> {
 
     if !response.success || response.code != 0 {
         return Err(response.message.unwrap_or_else(|| {
-            format!("MEXC Futures account request failed with code {}.", response.code)
+            format!(
+                "MEXC Futures account request failed with code {}.",
+                response.code
+            )
         }));
     }
 
