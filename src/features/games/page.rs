@@ -554,11 +554,11 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     };
 
     view! {
-        <div class="mx-auto max-w-xs space-y-3">
-            <div class="grid grid-cols-3 gap-2">
+        <div class="mx-auto w-full max-w-md space-y-4">
+            <div class="grid grid-cols-3 gap-3">
                 {(0..9).map(|i| view! {
                     <button type="button"
-                        class=move || format!("aspect-square rounded-lg border border-[var(--border-color)] text-3xl font-bold hover:bg-[var(--surface-hover)] {}",
+                        class=move || format!("aspect-square rounded-lg border border-[var(--border-color)] text-5xl font-bold hover:bg-[var(--surface-hover)] {}",
                             match board.get()[i] { 'X' => "text-[var(--accent)]", 'O' => "text-red-500", _ => "text-[var(--text-primary)]" })
                         on:click=move |_| click(i)>
                         {move || board.get()[i].to_string()}
