@@ -17,16 +17,28 @@ pub struct ProxyApi;
 
 impl ProxyClient for ProxyApi {
     fn fetch(&self, target_url: &str, on_result: Rc<dyn Fn(Result<String, String>)>) {
+        self.fetch_with_headers(target_url, Vec::new(), on_result);
+    }
+
+    fn fetch_with_headers(
+        &self,
+        target_url: &str,
+        headers: Vec<(String, String)>,
+        on_result: Rc<dyn Fn(Result<String, String>)>,
+    ) {
         let target_url = target_url.trim().to_string();
 
         wasm_bindgen_futures::spawn_local(async move {
-            let result = fetch_text(&target_url).await;
+            let result = fetch_text(&target_url, headers).await;
             on_result(result);
         });
     }
 }
 
-async fn fetch_text(target_url: &str) -> Result<String, String> {
+async fn fetch_text(
+    target_url: &str,
+    forwarded_headers: Vec<(String, String)>,
+) -> Result<String, String> {
     if !(target_url.starts_with("https://") || target_url.starts_with("http://")) {
         return Err("Target URL must use http:// or https://.".into());
     }
@@ -42,9 +54,15 @@ async fn fetch_text(target_url: &str) -> Result<String, String> {
         .set("Content-Type", "application/json")
         .map_err(|error| format!("Failed to set Content-Type header: {}", js_error(&error)))?;
 
+    let forwarded_headers = forwarded_headers
+        .into_iter()
+        .map(|(name, value)| (name, serde_json::Value::String(value)))
+        .collect::<serde_json::Map<_, _>>();
+
     let body = serde_json::json!({
         "targetUrl": target_url,
         "method": "GET",
+        "headers": forwarded_headers,
     })
     .to_string();
 
