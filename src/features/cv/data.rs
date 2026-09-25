@@ -67,9 +67,9 @@ pub fn profile(locale: Locale) -> Profile {
 /// This is client-side obfuscation rather than a security boundary: the decryption key must ship
 /// with the application because the browser needs it to reveal the contact data.
 const CONTACT_KEY: &[u8] = b"cv-contact-v1:doanson44:reveal";
-const ENCRYPTED_PHONE: &[u8] = &[67, 0, 238, 211, 124, 85, 14, 171, 18, 144];
+const ENCRYPTED_PHONE: &[u8] = &[67, 9, 237, 212, 124, 86, 14, 172, 26, 145];
 const ENCRYPTED_EMAIL: &[u8] = &[
-    23, 87, 190, 137, 59, 12, 86, 175, 22, 232, 179, 163, 0, 145, 215, 158, 168, 73, 21,
+    16, 89, 177, 131, 33, 7, 89, 239, 71, 232, 177, 182, 0, 149, 203, 220, 174, 8, 27, 77, 153,
 ];
 
 /// Decrypts a contact value only when the UI explicitly asks to reveal it.
