@@ -2682,9 +2682,9 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         right_pressed.set(false);
     });
 
-    let start_game = {
+    let start_game: Rc<dyn Fn()> = {
         let start_loop = Rc::clone(&start_loop);
-        move || {
+        Rc::new(move || {
             if running.get() {
                 return;
             }
@@ -2697,30 +2697,30 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             running.set(true);
             status.set("Ball in play".into());
             start_loop();
-        }
+        })
     };
 
-    let pause = {
+    let pause: Rc<dyn Fn()> = {
         let stop_loop = Rc::clone(&stop_loop);
-        move || {
+        Rc::new(move || {
             if running.get() {
                 running.set(false);
                 stop_loop();
                 status.set("Paused · press Space to resume".into());
             }
-        }
+        })
     };
 
-    let toggle = {
-        let start_game = start_game.clone();
-        let pause = pause.clone();
-        move || {
+    let toggle: Rc<dyn Fn()> = {
+        let start_game = Rc::clone(&start_game);
+        let pause = Rc::clone(&pause);
+        Rc::new(move || {
             if running.get() {
                 pause();
             } else {
                 start_game();
             }
-        }
+        })
     };
 
     let keydown = {
@@ -2790,7 +2790,7 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     .flat_map(|row| {
                         (0..BreakoutGame::BRICK_COLS).map(move |col| {
                             let index = row * BreakoutGame::BRICK_COLS + col;
-                            let x = (BreakoutGame::BRICK_START_X + col as i32) * 40;
+                            let x = (3 + col as i32) * 40;
                             let y = row as i32 * 40;
                             view! {
                                 <rect
@@ -2846,16 +2846,16 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
                 {dpad(
                     {
-                        let start_game = start_game.clone();
-                        move || start_game();
+                        let toggle = Rc::clone(&toggle);
+                        move || toggle();
                     },
                     {
                         let left_pressed = left_pressed;
                         move || left_pressed.set(true)
                     },
                     {
-                        let start_game = start_game.clone();
-                        move || start_game();
+                        let toggle = Rc::clone(&toggle);
+                        move || toggle();
                     },
                     {
                         let right_pressed = right_pressed;
