@@ -2040,27 +2040,27 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
                         <div class=move || format!(
                             "absolute left-[8.25rem] top-12 h-10 w-10 rounded-full border-4 border-[var(--text-primary)] {}",
-                            if wrong_count() >= 1 { "" } else { "invisible" }
+                            if wrong_count.get() >= 1 { "" } else { "invisible" }
                         )></div>
                         <div class=move || format!(
                             "absolute left-[8.75rem] top-[5.5rem] h-16 w-1 rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count() >= 2 { "" } else { "invisible" }
+                            if wrong_count.get() >= 2 { "" } else { "invisible" }
                         )></div>
                         <div class=move || format!(
                             "absolute left-[7.15rem] top-[6.25rem] h-1 w-8 origin-right rotate-[-25deg] rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count() >= 3 { "" } else { "invisible" }
+                            if wrong_count.get() >= 3 { "" } else { "invisible" }
                         )></div>
                         <div class=move || format!(
                             "absolute left-[9.05rem] top-[6.25rem] h-1 w-8 origin-left rotate-[25deg] rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count() >= 4 { "" } else { "invisible" }
+                            if wrong_count.get() >= 4 { "" } else { "invisible" }
                         )></div>
                         <div class=move || format!(
                             "absolute left-[8.05rem] top-[9.2rem] h-1 w-8 origin-right rotate-[-60deg] rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count() >= 5 { "" } else { "invisible" }
+                            if wrong_count.get() >= 5 { "" } else { "invisible" }
                         )></div>
                         <div class=move || format!(
                             "absolute left-[9.05rem] top-[9.2rem] h-1 w-8 origin-left rotate-[60deg] rounded-full bg-[var(--text-primary)] {}",
-                            if wrong_count() >= 6 { "" } else { "invisible" }
+                            if wrong_count.get() >= 6 { "" } else { "invisible" }
                         )></div>
                     </div>
                 </section>
@@ -2084,7 +2084,7 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     <div class="mt-8 flex min-h-24 flex-wrap items-end justify-center gap-x-2 gap-y-3">
                         {word.chars().map(|c| view! {
                             <span class="flex h-12 w-8 items-center justify-center border-b-2 border-[var(--text-primary)] text-2xl font-bold uppercase text-[var(--text-primary)] sm:w-10 sm:text-3xl">
-                                {move || if guessed.get().contains(&c) || is_lost() {
+                                {move || if guessed.get().contains(&c) || is_lost.get() {
                                     c.to_string()
                                 } else {
                                     String::new()
@@ -2114,7 +2114,7 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                         }
                                     }
                                     on:click=move |_| guess(c)
-                                    disabled=move || guessed.get().contains(&c) || is_won() || is_lost()
+                                    disabled=move || guessed.get().contains(&c) || is_won.get() || is_lost.get()
                                     aria-label=format!("Guess letter {}", c.to_ascii_uppercase())
                                 >
                                     {c.to_ascii_uppercase().to_string()}
@@ -2142,8 +2142,8 @@ fn board_hangman(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             </div>
 
             <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-[var(--text-tertiary)]">
-                <span>{move || format!("Wrong guesses: {}", wrong_count())}</span>
-                <span>{move || format!("Remaining: {}", max_wrong - wrong_count().min(max_wrong))}</span>
+                <span>{move || format!("Wrong guesses: {}", wrong_count.get())}</span>
+                <span>{move || format!("Remaining: {}", max_wrong - wrong_count.get().min(max_wrong))}</span>
             </div>
         </div>
     }.into_any()
