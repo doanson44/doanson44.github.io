@@ -411,9 +411,9 @@ fn socket_mobile_sort_button(
         <button
             type="button"
             class=move || if state.sort_mode.get() == selected {
-                "min-h-9 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 text-xs font-medium text-[var(--accent)]"
+                "min-h-9 whitespace-nowrap rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 text-xs font-medium text-[var(--accent)]"
             } else {
-                "min-h-9 rounded-md border border-[var(--border-color)] px-2 text-xs text-[var(--text-primary)] hover:bg-[var(--surface)]"
+                "min-h-9 whitespace-nowrap rounded-md border border-[var(--border-color)] px-2 text-xs text-[var(--text-primary)] hover:bg-[var(--surface)]"
             }
             on:click=move |_| state.set_sort(selected)
             aria-label=move || format!("{} {}", t_string!(i18n, socket_sort), socket_sort_label(i18n, key))
@@ -601,7 +601,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 {socket_analysis_actions(symbol.clone(), state)}
             </div>
             <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-                <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
+                <div><span class="block whitespace-nowrap text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span><span class=move || funding_rate_class(funding_rate.get())>{move || format_funding_rate(funding_rate.get())}</span></div>
                 <div class="text-right"><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_ranking)}</span><span class="font-mono text-[var(--accent)]">{ticker.ranking.ranking_score()}</span></div>
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_direction)}</span><span class="font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</span></div>
                 <div><span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_change15s)}</span><span class="font-mono">{format_short_percent(ticker.ranking.return_15s())}</span></div>
