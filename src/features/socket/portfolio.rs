@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::domain::trading::{PortfolioSummary, PositionSide};
+use crate::domain::trading::{ExecutionMode, PortfolioSummary, PositionSide};
 use crate::features::socket::state::SocketState;
 use crate::i18n::*;
 
@@ -20,7 +20,11 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                         {move || t_string!(i18n, socket_portfolio)}
                     </h3>
                     <span class="text-xs text-[var(--text-secondary)]">
-                        {move || t_string!(i18n, socket_paper_trading)}
+                        {move || if state.execution_mode.get() == ExecutionMode::Real {
+                            t_string!(i18n, socket_real_trading)
+                        } else {
+                            t_string!(i18n, socket_paper_trading)
+                        }}
                     </span>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
@@ -201,16 +205,30 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
     let fee_percent = RwSignal::new((snapshot.settings.fee_rate * 100.0).to_string());
     let leverage = RwSignal::new(snapshot.settings.leverage.to_string());
     let trade_allocation = RwSignal::new(snapshot.settings.trade_allocation_percent.to_string());
+    let mode = RwSignal::new(state.execution_mode.get_untracked());
+    let api_url = RwSignal::new(state.api_url.get_untracked());
+    let api_key = RwSignal::new(state.api_key.get_untracked());
+    let api_secret = RwSignal::new(state.api_secret.get_untracked());
 
     let save = move |_| {
         let initial = initial_capital.get_untracked().trim().parse::<f64>();
         let fee = fee_percent.get_untracked().trim().parse::<f64>();
         let leverage = leverage.get_untracked().trim().parse::<f64>();
         let trade_allocation = trade_allocation.get_untracked().trim().parse::<f64>();
+        let execution_mode = mode.get_untracked();
 
         match (initial, fee, leverage, trade_allocation) {
             (Ok(initial), Ok(fee), Ok(leverage), Ok(trade_allocation)) => {
-                state.save_settings(initial, fee, leverage, trade_allocation)
+                state.save_settings(
+                    initial,
+                    fee,
+                    leverage,
+                    trade_allocation,
+                    execution_mode,
+                    api_url.get_untracked(),
+                    api_key.get_untracked(),
+                    api_secret.get_untracked(),
+                )
             }
             _ => state
                 .trading_error
@@ -232,7 +250,11 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
                             {move || t_string!(i18n, socket_settings)}
                         </h3>
                         <p class="mt-1 text-xs text-[var(--text-secondary)]">
-                            {move || t_string!(i18n, socket_paper_trading)}
+                            {move || if mode.get() == crate::domain::trading::ExecutionMode::Real {
+                                t_string!(i18n, socket_real_trading)
+                            } else {
+                                t_string!(i18n, socket_paper_trading)
+                            }}
                         </p>
                     </div>
                     <button
@@ -246,6 +268,43 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
                 </div>
 
                 <div class="mt-4 space-y-3">
+                    <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] p-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-sm font-medium text-[var(--text-primary)]">
+                                    {move || t_string!(i18n, socket_execution_mode)}
+                                </div>
+                                <div class="mt-1 text-xs text-[var(--text-secondary)]">
+                                    {move || if mode.get() == crate::domain::trading::ExecutionMode::Real {
+                                        t_string!(i18n, socket_real_trading_hint)
+                                    } else {
+                                        t_string!(i18n, socket_paper_trading_hint)
+                                    }}
+                                </div>
+                            </div>
+                            <label class="inline-flex cursor-pointer items-center gap-2">
+                                <span class="text-xs font-medium text-[var(--text-secondary)]">
+                                    {move || t_string!(i18n, socket_real_trading)}
+                                </span>
+                                <input
+                                    type="checkbox"
+                                    class="peer sr-only"
+                                    prop:checked=move || mode.get() == crate::domain::trading::ExecutionMode::Real
+                                    on:change=move |ev| {
+                                        mode.set(if event_target_checked(&ev) {
+                                            crate::domain::trading::ExecutionMode::Real
+                                        } else {
+                                            crate::domain::trading::ExecutionMode::Paper
+                                        });
+                                    }
+                                />
+                                <span class="relative h-6 w-11 rounded-full bg-[var(--border-color)] transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-[var(--accent)] peer-checked:bg-[var(--accent)]">
+                                    <span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-[var(--surface)] transition peer-checked:translate-x-5"></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
                     <label class="block text-sm">
                         <span class="mb-1 block font-medium text-[var(--text-primary)]">
                             {move || t_string!(i18n, socket_initial_capital)}
@@ -254,11 +313,76 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
                             type="number"
                             min="1"
                             step="0.01"
-                            class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
-                            prop:value=move || initial_capital.get()
+                            disabled=move || mode.get() == crate::domain::trading::ExecutionMode::Real
+                            class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60 focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                            prop:value=move || if mode.get() == crate::domain::trading::ExecutionMode::Real {
+                                state.real_account.get().map(|account| account.equity.to_string()).unwrap_or_else(|| initial_capital.get())
+                            } else {
+                                initial_capital.get()
+                            }
                             on:input=move |ev| initial_capital.set(event_target_value(&ev))
                         />
+                        <span class="mt-1 block text-xs text-[var(--text-secondary)]">
+                            {move || if mode.get() == crate::domain::trading::ExecutionMode::Real {
+                                t_string!(i18n, socket_real_initial_capital_hint)
+                            } else {
+                                t_string!(i18n, socket_paper_initial_capital_hint)
+                            }}
+                        </span>
                     </label>
+
+                    {move || if mode.get() == crate::domain::trading::ExecutionMode::Real {
+                        view! {
+                            <div class="space-y-3 rounded-md border border-[var(--warning)]/40 bg-[var(--warning)]/5 p-3">
+                                <label class="block text-sm">
+                                    <span class="mb-1 block font-medium text-[var(--text-primary)]">
+                                        {move || t_string!(i18n, socket_api_url)}
+                                    </span>
+                                    <input
+                                        type="url"
+                                        autocomplete="url"
+                                        class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                                        prop:value=move || api_url.get()
+                                        on:input=move |ev| api_url.set(event_target_value(&ev))
+                                    />
+                                </label>
+
+                                <label class="block text-sm">
+                                    <span class="mb-1 block font-medium text-[var(--text-primary)]">
+                                        {move || t_string!(i18n, socket_api_key)}
+                                    </span>
+                                    <input
+                                        type="password"
+                                        autocomplete="off"
+                                        class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                                        prop:value=move || api_key.get()
+                                        on:input=move |ev| api_key.set(event_target_value(&ev))
+                                    />
+                                </label>
+
+                                <label class="block text-sm">
+                                    <span class="mb-1 block font-medium text-[var(--text-primary)]">
+                                        {move || t_string!(i18n, socket_api_secret)}
+                                    </span>
+                                    <input
+                                        type="password"
+                                        autocomplete="off"
+                                        class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
+                                        prop:value=move || api_secret.get()
+                                        on:input=move |ev| api_secret.set(event_target_value(&ev))
+                                    />
+                                </label>
+
+                                <div class="rounded-md border border-[var(--warning)]/40 px-3 py-2 text-xs text-[var(--warning)]">
+                                    {move || t_string!(i18n, socket_real_trading_warning)}
+                                </div>
+                            </div>
+                        }.into_any()
+                    } else {
+                        view! {
+                            <span></span>
+                        }.into_any()
+                    }}
 
                     <label class="block text-sm">
                         <span class="mb-1 block font-medium text-[var(--text-primary)]">
@@ -314,24 +438,12 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
                         </span>
                     </label>
 
-                    <label class="block text-sm">
-                        <span class="mb-1 block font-medium text-[var(--text-primary)]">
-                            {move || t_string!(i18n, socket_api_key)}
-                        </span>
-                        <input
-                            type="password"
-                            autocomplete="off"
-                            class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25"
-                            prop:value=move || state.api_key.get()
-                            on:input=move |ev| state.api_key.set(event_target_value(&ev))
-                        />
-                        <span class="mt-1 block text-xs text-[var(--text-secondary)]">
-                            {move || t_string!(i18n, socket_api_key_hint)}
-                        </span>
-                    </label>
-
-                    <div class="rounded-md border border-[var(--warning)]/40 bg-[var(--warning)]/10 px-3 py-2 text-xs text-[var(--warning)]">
-                        {move || t_string!(i18n, socket_settings_reset_warning)}
+                    <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+                        {move || if mode.get() == crate::domain::trading::ExecutionMode::Real {
+                            t_string!(i18n, socket_real_storage_hint)
+                        } else {
+                            t_string!(i18n, socket_settings_reset_warning)
+                        }}
                     </div>
                 </div>
 
@@ -345,10 +457,15 @@ fn TradingSettingsModal(state: SocketState) -> impl IntoView {
                     </button>
                     <button
                         type="button"
-                        class="min-h-10 rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                        class="min-h-10 rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled=move || state.real_account_loading.get()
                         on:click=save
                     >
-                        {move || t_string!(i18n, socket_save_settings)}
+                        {move || if state.real_account_loading.get() {
+                            t_string!(i18n, socket_loading_account)
+                        } else {
+                            t_string!(i18n, socket_save_settings)
+                        }}
                     </button>
                 </div>
             </div>
