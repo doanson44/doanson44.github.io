@@ -582,22 +582,17 @@ body {
 }
 
 .breakout-brick {
-    background: var(--accent);
-    border: 1px solid var(--accent);
+    fill: var(--accent);
+    stroke: var(--accent);
+    stroke-width: 1;
 }
 
 .breakout-paddle {
-    background: var(--accent);
-    border-radius: 0.3rem;
+    fill: var(--accent);
 }
 
 .breakout-ball {
-    align-self: center;
-    justify-self: center;
-    width: 72%;
-    height: 72%;
-    border-radius: 50%;
-    background: var(--text-primary);
+    fill: var(--text-primary);
 }
 
 @media (max-width: 576px) {
