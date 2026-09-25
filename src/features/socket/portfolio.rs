@@ -64,7 +64,15 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                         {move || t_string!(i18n, socket_initial_capital)}
                     </div>
                     <div class="mt-1 font-mono text-sm font-semibold text-[var(--text-primary)]">
-                        {move || format_currency(state.trading_snapshot.get().settings.initial_capital)}
+                        {move || if state.execution_mode.get() == ExecutionMode::Real {
+                            state
+                                .real_account
+                                .get()
+                                .map(|account| format_currency(account.equity))
+                                .unwrap_or_else(|| "—".to_string())
+                        } else {
+                            format_currency(state.trading_snapshot.get().settings.initial_capital)
+                        }}
                     </div>
                 </div>
                 <div class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2">
