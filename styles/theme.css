@@ -24,6 +24,8 @@
     --chess-board-border: #5f4a2f;
     --chess-piece-light: #fffaf0;
     --chess-piece-dark: #1b1a17;
+    --chess-piece-light-shadow: rgba(0, 0, 0, 0.28);
+    --chess-piece-dark-shadow: rgba(0, 0, 0, 0.35);
 
     --ms-bg-primary: var(--bg-primary);
     --ms-bg-secondary: var(--surface);
@@ -66,6 +68,8 @@ html[data-theme="light"] {
     --chess-board-border: #7a5a38;
     --chess-piece-light: #fffdf7;
     --chess-piece-dark: #1a1815;
+    --chess-piece-light-shadow: rgba(0, 0, 0, 0.24);
+    --chess-piece-dark-shadow: rgba(0, 0, 0, 0.32);
 }
 
 html[data-theme="dark"] {
@@ -80,6 +84,8 @@ html[data-theme="dark"] {
     --chess-board-border: #453522;
     --chess-piece-light: #fffdf5;
     --chess-piece-dark: #171513;
+    --chess-piece-light-shadow: rgba(0, 0, 0, 0.34);
+    --chess-piece-dark-shadow: rgba(0, 0, 0, 0.42);
 }
 
 html[data-theme="light"] {
@@ -160,14 +166,14 @@ html[data-theme="light"] {
         1px 0 0 var(--chess-piece-dark),
         0 -1px 0 var(--chess-piece-dark),
         -1px 0 0 var(--chess-piece-dark),
-        0 3px 5px rgba(0, 0, 0, 0.28);
+        0 3px 5px var(--chess-piece-light-shadow);
 }
 
 .chess-piece--dark {
     color: var(--chess-piece-dark);
     text-shadow:
         0 1px 0 rgba(255, 255, 255, 0.28),
-        0 2px 4px rgba(0, 0, 0, 0.35);
+        0 2px 4px var(--chess-piece-dark-shadow);
 }
 
 @media (prefers-reduced-motion: reduce) {
