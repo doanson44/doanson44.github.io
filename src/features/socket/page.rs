@@ -698,14 +698,25 @@ fn socket_analysis_actions(symbol: String, state: SocketState) -> impl IntoView 
     let i18n = use_i18n();
     view! {
         <div class="flex flex-wrap gap-1">
-            <button type="button" class="min-h-9 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 py-1 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() on:click=move |_| state.analyze_symbol(&symbol_4h, "4H")>{move || t_string!(i18n, socket_analyze_4h)}</button>
-            <button type="button" class="min-h-9 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 py-1 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() on:click=move |_| state.analyze_symbol(&symbol_1d, "1D")>{move || t_string!(i18n, socket_analyze_1d)}</button>
-            <button type="button" class="min-h-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() on:click=move |_| state.copy_symbol_analysis(&symbol_copy_4h, "4H")>{move || t_string!(i18n, socket_copy_4h)}</button>
-            <button type="button" class="min-h-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() on:click=move |_| state.copy_symbol_analysis(&symbol_copy_1d, "1D")>{move || t_string!(i18n, socket_copy_1d)}</button>
+            <button type="button" class="min-h-9 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 py-1 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() title=move || t_string!(i18n, socket_analyze_4h) on:click=move |_| state.analyze_symbol(&symbol_4h, "4H")>
+                <span class="md:hidden">"4H"</span>
+                <span class="hidden md:inline">{move || t_string!(i18n, socket_analyze_4h)}</span>
+            </button>
+            <button type="button" class="min-h-9 rounded-md border border-[var(--accent)] bg-[var(--accent)]/10 px-2 py-1 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() title=move || t_string!(i18n, socket_analyze_1d) on:click=move |_| state.analyze_symbol(&symbol_1d, "1D")>
+                <span class="md:hidden">"1D"</span>
+                <span class="hidden md:inline">{move || t_string!(i18n, socket_analyze_1d)}</span>
+            </button>
+            <button type="button" class="min-h-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() title=move || t_string!(i18n, socket_copy_4h) on:click=move |_| state.copy_symbol_analysis(&symbol_copy_4h, "4H")>
+                <span class="md:hidden">"Copy 4H"</span>
+                <span class="hidden md:inline">{move || t_string!(i18n, socket_copy_4h)}</span>
+            </button>
+            <button type="button" class="min-h-9 rounded-md border border-[var(--border-color)] px-2 py-1 text-xs text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50" disabled=move || state.analysis_loading.get() title=move || t_string!(i18n, socket_copy_1d) on:click=move |_| state.copy_symbol_analysis(&symbol_copy_1d, "1D")>
+                <span class="md:hidden">"Copy 1D"</span>
+                <span class="hidden md:inline">{move || t_string!(i18n, socket_copy_1d)}</span>
+            </button>
         </div>
     }
 }
-
 fn socket_analysis_term(i18n: leptos_i18n::I18nContext<Locale>, value: &str) -> String {
     match value {
         "bullish" => t_string!(i18n, market_analysis_bullish).to_string(),
