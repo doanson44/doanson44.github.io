@@ -155,7 +155,7 @@ pub fn CvPage() -> impl IntoView {
                 <div class="mt-12 space-y-12 sm:mt-16 sm:space-y-16">
                     <CvSection id="cv-about" title_key="competencies" eyebrow_key="what_i_do">
                         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            {competencies_data.get().into_iter().map(|item| view! {
+                            {move || competencies_data.get().into_iter().map(|item| view! {
                                 <div class="flex gap-3 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-4 py-3">
                                     <span class="mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]" aria-hidden="true"></span>
                                     <span class="text-sm leading-6 text-[var(--text-secondary)]">{item.name}</span>
@@ -166,7 +166,7 @@ pub fn CvPage() -> impl IntoView {
 
                     <CvSection id="cv-skills" title_key="skills" eyebrow_key="technology">
                         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {skills_data.get().into_iter().map(|category| view! {
+                            {move || skills_data.get().into_iter().map(|category| view! {
                                 <SkillGroup category=category />
                             }).collect_view()}
                         </div>
@@ -174,7 +174,7 @@ pub fn CvPage() -> impl IntoView {
 
                     <CvSection id="cv-experience" title_key="experience" eyebrow_key="career">
                         <div class="space-y-6">
-                            {experiences_data.get().into_iter().map(|experience| view! {
+                            {move || experiences_data.get().into_iter().map(|experience| view! {
                                 <ExperienceCard experience=experience />
                             }).collect_view()}
                         </div>
@@ -183,7 +183,7 @@ pub fn CvPage() -> impl IntoView {
                     <CvSection id="cv-highlights" title_key="highlights" eyebrow_key="engineering_focus">
                         <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-6">
                             <ul class="grid gap-3 sm:grid-cols-2">
-                                {highlights_data.get().into_iter().map(|highlight| view! {
+                                {move || highlights_data.get().into_iter().map(|highlight| view! {
                                     <li class="flex gap-3 text-sm leading-7 text-[var(--text-secondary)]">
                                         <span class="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" aria-hidden="true"></span>
                                         <span>{highlight}</span>
@@ -195,7 +195,7 @@ pub fn CvPage() -> impl IntoView {
 
                     <CvSection id="cv-education" title_key="education" eyebrow_key="academic_background">
                         <div class="space-y-4">
-                            {education_data.get().into_iter().map(|value| view! {
+                            {move || education_data.get().into_iter().map(|value| view! {
                                 <EducationCard value=value />
                             }).collect_view()}
                         </div>
