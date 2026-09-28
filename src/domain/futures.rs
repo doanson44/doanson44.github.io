@@ -482,7 +482,7 @@ mod tests {
         assert!(ranking.return_5m().unwrap() > 0.0);
         assert_eq!(ranking.ranking_direction(), 1);
 
-        ranking.observe_at(Some(100.0), Some(420_000));
+        ranking.observe_at(Some(101.5), Some(420_000));
         assert!(ranking.return_1m().unwrap() < 0.0);
         assert!(ranking.return_5m().unwrap() > 0.0);
         assert_eq!(ranking.ranking_direction(), 0);
