@@ -26,7 +26,6 @@ pub struct FuturesTickerUpdate {
 const FAST_WINDOW_MS: u64 = 15 * 1_000;
 const MEDIUM_WINDOW_MS: u64 = 60 * 1_000;
 const RANKING_WINDOW_MS: u64 = 5 * 60 * 1_000;
-const DIRECTION_THRESHOLD: f64 = 0.15;
 
 /// A price observation used by the short-term market ranking engine.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -114,17 +113,18 @@ impl FuturesTickerRanking {
         (signal.abs() * 100.0).round().clamp(0.0, 100.0) as u8
     }
 
-    /// Returns the current momentum direction.
+    /// Returns the confirmed short-term price direction.
+    ///
+    /// A direction is reported only when the one-minute and five-minute
+    /// returns agree. Conflicting horizons remain neutral so the UI arrow
+    /// cannot contradict the displayed 1m and 5m price changes.
     pub fn ranking_direction(&self) -> i8 {
-        let Some(signal) = self.momentum_signal() else {
-            return 0;
-        };
-        if signal >= DIRECTION_THRESHOLD {
-            1
-        } else if signal <= -DIRECTION_THRESHOLD {
-            -1
-        } else {
-            0
+        match (self.return_1m(), self.return_5m()) {
+            (Some(one_minute), Some(five_minutes))
+                if one_minute > 0.0 && five_minutes > 0.0 => 1,
+            (Some(one_minute), Some(five_minutes))
+                if one_minute < 0.0 && five_minutes < 0.0 => -1,
+            _ => 0,
         }
     }
 
@@ -466,6 +466,28 @@ mod tests {
         ranking.observe_at(Some(101.0), Some(60_000));
         assert!(ranking.ranking_score() > 0);
         assert_eq!(ranking.ranking_direction(), 1);
+    }
+
+    #[test]
+    fn ranking_direction_requires_one_minute_and_five_minute_confirmation() {
+        let mut ranking = FuturesTickerRanking::default();
+        ranking.observe_at(Some(100.0), Some(0));
+        ranking.observe_at(Some(101.0), Some(60_000));
+        ranking.observe_at(Some(99.0), Some(300_000));
+
+        assert!(ranking.return_1m().unwrap() < 0.0);
+        assert!(ranking.return_5m().unwrap() < 0.0);
+        assert_eq!(ranking.ranking_direction(), -1);
+
+        ranking.observe_at(Some(101.0), Some(360_000));
+        assert!(ranking.return_1m().unwrap() > 0.0);
+        assert!(ranking.return_5m().unwrap() > 0.0);
+        assert_eq!(ranking.ranking_direction(), 1);
+
+        ranking.observe_at(Some(99.0), Some(420_000));
+        assert!(ranking.return_1m().unwrap() < 0.0);
+        assert!(ranking.return_5m().unwrap() > 0.0);
+        assert_eq!(ranking.ranking_direction(), 0);
     }
 
     #[test]
