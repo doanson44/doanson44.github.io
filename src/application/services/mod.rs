@@ -13,6 +13,7 @@ pub mod trading;
 
 use std::collections::HashMap;
 
+use crate::application::ports::ProxyClient;
 use crate::domain::futures::{
     FuturesTickerRanking, FuturesTickerRegistry, FuturesTickerUpdate, TrackedFuturesTicker,
 };
@@ -90,6 +91,53 @@ impl FuturesMarketService {
                 *ranking = FuturesTickerRanking::baseline(ticker.last_price);
             }
         }
+    }
+}
+
+/// Application service for loading MEXC Futures monthly price history.
+#[derive(Debug, Clone, Copy)]
+pub struct FuturesHistoryService<C> {
+    client: C,
+}
+
+impl<C> FuturesHistoryService<C>
+where
+    C: ProxyClient + Clone + 'static,
+{
+    pub fn new(client: C) -> Self {
+        Self { client }
+    }
+
+    /// Loads monthly contract candles and calculates historical/52-week extremes.
+    pub fn load_history(
+        &self,
+        symbol: &str,
+        week_52_cutoff: u64,
+        on_result: std::rc::Rc<
+            dyn Fn(Result<crate::domain::futures::FuturesPriceExtremes, String>),
+        >,
+    ) {
+        let symbol = symbol.trim().to_ascii_uppercase();
+        let url = format!(
+            "https://contract.mexc.com/api/v1/contract/kline/{symbol}?interval=Month1"
+        );
+        let callback_symbol = symbol.clone();
+        self.client.fetch(
+            &url,
+            std::rc::Rc::new(move |result| {
+                let parsed = result.and_then(|raw| {
+                    let candles = crate::domain::futures::parse_mexc_futures_monthly_klines(
+                        &raw,
+                        &callback_symbol,
+                    )?;
+                    Ok(crate::domain::futures::FuturesPriceExtremes::from_monthly_candles(
+                        &candles,
+                        week_52_cutoff,
+                    ))
+                });
+                on_result(parsed);
+            }),
+        );
     }
 }
 
