@@ -42,6 +42,54 @@ pub struct MarketPriceHistory {
     pub candles: Vec<MarketPriceHistoryCandle>,
 }
 
+/// Historical low/high values for a market price history.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct MarketPriceExtremes {
+    pub week_52_low: Option<f64>,
+    pub week_52_high: Option<f64>,
+    pub historical_low: Option<f64>,
+    pub historical_high: Option<f64>,
+}
+
+impl MarketPriceHistory {
+    /// Calculates historical and trailing 52-week price extremes.
+    pub fn extremes(&self, week_52_cutoff: &str) -> MarketPriceExtremes {
+        let mut historical_low = None;
+        let mut historical_high = None;
+        let mut week_52_low = None;
+        let mut week_52_high = None;
+
+        for candle in &self.candles {
+            if candle.low.is_finite() {
+                historical_low =
+                    Some(historical_low.map_or(candle.low, |value: f64| value.min(candle.low)));
+            }
+            if candle.high.is_finite() {
+                historical_high =
+                    Some(historical_high.map_or(candle.high, |value: f64| value.max(candle.high)));
+            }
+
+            if candle.timestamp.as_str() >= week_52_cutoff {
+                if candle.low.is_finite() {
+                    week_52_low =
+                        Some(week_52_low.map_or(candle.low, |value: f64| value.min(candle.low)));
+                }
+                if candle.high.is_finite() {
+                    week_52_high =
+                        Some(week_52_high.map_or(candle.high, |value: f64| value.max(candle.high)));
+                }
+            }
+        }
+
+        MarketPriceExtremes {
+            week_52_low,
+            week_52_high,
+            historical_low,
+            historical_high,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct CafeFPriceHistoryRecord {
     #[serde(rename = "Symbol")]
@@ -259,6 +307,48 @@ mod tests {
         assert_eq!(result.candles[0].close, 61372.97);
         assert_eq!(result.candles[0].volume, 2447.30963309);
         assert_eq!(result.candles[0].total_value, Some(149274811.89));
+    }
+
+    #[test]
+    fn calculates_price_extremes() {
+        let history = MarketPriceHistory {
+            symbol: "FPT".to_string(),
+            candles: vec![
+                MarketPriceHistoryCandle {
+                    symbol: "FPT".to_string(),
+                    timestamp: "2025-09-20T00:00:00".to_string(),
+                    basic_price: 90.0,
+                    open: 91.0,
+                    high: 95.0,
+                    low: 88.0,
+                    close: 93.0,
+                    volume: 1_000.0,
+                    ceiling: None,
+                    floor: None,
+                    total_value: None,
+                },
+                MarketPriceHistoryCandle {
+                    symbol: "FPT".to_string(),
+                    timestamp: "2026-09-20T00:00:00".to_string(),
+                    basic_price: 120.0,
+                    open: 121.0,
+                    high: 130.0,
+                    low: 118.0,
+                    close: 128.0,
+                    volume: 2_000.0,
+                    ceiling: None,
+                    floor: None,
+                    total_value: None,
+                },
+            ],
+        };
+
+        let extremes = history.extremes("2026-01-01T00:00:00");
+
+        assert_eq!(extremes.historical_low, Some(88.0));
+        assert_eq!(extremes.historical_high, Some(130.0));
+        assert_eq!(extremes.week_52_low, Some(118.0));
+        assert_eq!(extremes.week_52_high, Some(130.0));
     }
 
     #[test]
