@@ -495,6 +495,8 @@ impl FuturesTickerRegistry {
 }
 
 #[cfg(test)]
+mod tests {
+    use super::*;
     #[test]
     fn parses_mexc_futures_monthly_klines() {
         let candles = parse_mexc_futures_monthly_klines(
@@ -524,9 +526,6 @@ impl FuturesTickerRegistry {
         assert_eq!(extremes.week_52_high, Some(125.0));
     }
 
-
-mod tests {
-    use super::*;
 
     fn update(symbol: &str, price: f64, volume: f64) -> FuturesTickerUpdate {
         FuturesTickerUpdate {
