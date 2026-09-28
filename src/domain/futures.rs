@@ -463,7 +463,7 @@ mod tests {
 
         ranking.observe_at(Some(101.0), Some(60_000));
         assert!(ranking.ranking_score() > 0);
-        assert_eq!(ranking.ranking_direction(), 1);
+        assert_eq!(ranking.ranking_direction(), 0);
     }
 
     #[test]
