@@ -33,7 +33,7 @@ mod tests {
     #[test]
     fn service_samples_json() {
         let result = JsonService::sample(r#"{"items":[1,2,3]}"#, 2).unwrap();
-        assert!(result.contains(""items": ["));
+        assert!(result.contains("\"items\": ["));
         assert!(result.contains("1,"));
         assert!(result.contains("2"));
         assert!(!result.contains("3"));
