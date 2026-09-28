@@ -174,6 +174,8 @@ pub fn SocketPage(
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Change24h align="right">"24h" </SortHeader>
                                         </th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_52w_range)}</th>
+                                        <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_historical_range)}</th>
                                         <th class="px-3 py-2 text-right font-medium" scope="col">
                                             <SortHeader state=state mode=SocketSortMode::Funding align="right">{move || t_string!(i18n, socket_funding)} </SortHeader>
                                         </th>
@@ -521,6 +523,8 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             </td>
             <td class="px-3 py-2 text-right font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</td>
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
+            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, &symbol, true)}</td>
+            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, &symbol, false)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
             <td class="px-3 py-2 text-right font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</td>
             <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_15s())}</td>
@@ -600,6 +604,18 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
             <div class="mt-3 flex flex-wrap gap-2">
                 {socket_analysis_actions(symbol.clone(), state)}
             </div>
+            <Show when=move || is_pinned.get()>
+                <div class="mt-3 grid grid-cols-2 gap-2 rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] p-2 text-sm">
+                    <div>
+                        <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_52w_range)}</span>
+                        <span class="font-mono text-xs">{move || format_history_range(state, &symbol, true)}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_historical_range)}</span>
+                        <span class="font-mono text-xs">{move || format_history_range(state, &symbol, false)}</span>
+                    </div>
+                </div>
+            </Show>
             <div class="mt-3 grid grid-cols-3 gap-x-2 gap-y-2 text-sm">
                 <div>
                     <span class="block whitespace-nowrap text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_funding)}</span>
@@ -874,6 +890,31 @@ fn build_visible(
     output.extend(pinned);
     output.extend(dynamic);
     output
+}
+
+fn format_history_range(state: SocketState, symbol: &str, week_52: bool) -> String {
+    let symbol = symbol.trim().to_ascii_uppercase();
+    if !state.pinned_symbols.get().iter().any(|item| item == &symbol) {
+        return "—".to_string();
+    }
+
+    if let Some(extremes) = state.history.get().get(&symbol).copied() {
+        let (low, high) = if week_52 {
+            (extremes.week_52_low, extremes.week_52_high)
+        } else {
+            (extremes.historical_low, extremes.historical_high)
+        };
+        return match (low, high) {
+            (Some(low), Some(high)) => format!("{} — {}", format_number(Some(low)), format_number(Some(high))),
+            _ => "—".to_string(),
+        };
+    }
+
+    if state.history_loading.get().contains(&symbol) {
+        "…".to_string()
+    } else {
+        "—".to_string()
+    }
 }
 
 fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
