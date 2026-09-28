@@ -39,8 +39,10 @@ where
             &symbol,
             Rc::new(move |result| {
                 let parsed = result.and_then(|raw| {
-                    let history =
-                        crate::domain::market::parse_price_history_response(&raw, &callback_symbol)?;
+                    let history = crate::domain::market::parse_price_history_response(
+                        &raw,
+                        &callback_symbol,
+                    )?;
                     Ok(history.extremes(&cutoff))
                 });
                 on_result(parsed);
