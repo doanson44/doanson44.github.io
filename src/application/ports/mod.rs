@@ -95,7 +95,10 @@ pub trait MarketClient {
     /// Fetches market data from the configured public endpoint.
     fn fetch(&self, on_result: Rc<dyn Fn(Result<String, String>)>);
 
-    /// Fetches historical market data directly from a public endpoint.
+    /// Fetches historical daily price data for one market symbol.
+    fn fetch_history(&self, symbol: &str, on_result: Rc<dyn Fn(Result<String, String>)>);
+
+    /// Fetches market data from an explicit public endpoint.
     fn fetch_url(&self, target_url: &str, on_result: Rc<dyn Fn(Result<String, String>)>);
 }
 
