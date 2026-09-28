@@ -1,6 +1,6 @@
 use std::{
     cell::{Cell, RefCell},
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     rc::Rc,
 };
 
@@ -18,11 +18,12 @@ use crate::application::{
         proxy::ProxyService,
         technical_analysis::TechnicalAnalysisService,
         trading::TradingService,
+        FuturesHistoryService,
         FuturesMarketService,
     },
 };
 use crate::domain::funding::FundingRateSnapshot;
-use crate::domain::futures::TrackedFuturesTicker;
+use crate::domain::futures::{FuturesPriceExtremes, TrackedFuturesTicker};
 use crate::domain::technical_analysis::AnalysisResult;
 use crate::domain::trading::{
     ExecutionMode, ExecutionSettings, HoldingSummary, PortfolioSummary, PositionSide,
@@ -101,6 +102,9 @@ pub struct SocketState {
     pub sort_direction: RwSignal<SocketSortDirection>,
     pub search_query: RwSignal<String>,
     pub pinned_symbols: RwSignal<Vec<String>>,
+    pub history: RwSignal<HashMap<String, FuturesPriceExtremes>>,
+    pub history_loading: RwSignal<HashSet<String>>,
+    pub history_errors: RwSignal<HashMap<String, String>>,
     pub page_size: RwSignal<usize>,
     pub current_page: RwSignal<usize>,
     pub connection_status: RwSignal<FuturesConnectionStatus>,
@@ -146,6 +150,9 @@ impl SocketState {
         save_position_side(position_side);
         loaded_snapshot.settings.position_side = position_side;
         let pinned_symbols = RwSignal::new(load_pinned_symbols());
+        let history = RwSignal::new(HashMap::new());
+        let history_loading = RwSignal::new(HashSet::new());
+        let history_errors = RwSignal::new(HashMap::new());
         let page_size = RwSignal::new(DEFAULT_PAGE_SIZE);
         let current_page = RwSignal::new(1usize);
         let connection_status = RwSignal::new(FuturesConnectionStatus::Connecting);
@@ -261,6 +268,9 @@ impl SocketState {
             sort_direction,
             search_query,
             pinned_symbols,
+            history,
+            history_loading,
+            history_errors,
             page_size,
             current_page,
             connection_status,
@@ -287,6 +297,7 @@ impl SocketState {
             real_account_loading,
             reset_metrics_request,
         };
+        state.load_pinned_history();
         if execution_settings.mode == ExecutionMode::Real {
             state.refresh_real_account();
         }
@@ -335,18 +346,111 @@ impl SocketState {
 
     /// Toggles a ticker pin without affecting its paper-trading position.
     pub fn toggle_pin(&self, symbol: &str) {
+        let symbol = symbol.trim().to_ascii_uppercase();
         let mut symbols = self.pinned_symbols.get_untracked();
-        if let Some(index) = symbols.iter().position(|item| item == symbol) {
+        if let Some(index) = symbols.iter().position(|item| item == &symbol) {
             symbols.remove(index);
+            self.history.update(|items| {
+                items.remove(&symbol);
+            });
+            self.history_loading.update(|items| {
+                items.remove(&symbol);
+            });
+            self.history_errors.update(|items| {
+                items.remove(&symbol);
+            });
             self.trading_notice.set(Some(format!("Unpinned {symbol}.")));
         } else {
-            symbols.push(symbol.to_owned());
+            symbols.push(symbol.clone());
             self.trading_notice.set(Some(format!("Pinned {symbol}.")));
+            self.load_history_for_symbol(&symbol);
         }
 
         self.trading_error.set(None);
         self.pinned_symbols.set(symbols);
         save_pinned_symbols(&self.pinned_symbols.get_untracked());
+    }
+
+    /// Loads historical price extremes for all currently pinned Futures symbols sequentially.
+    pub fn load_pinned_history(&self) {
+        let symbols = self
+            .pinned_symbols
+            .get_untracked()
+            .into_iter()
+            .map(|symbol| symbol.trim().to_ascii_uppercase())
+            .filter(|symbol| !symbol.is_empty())
+            .collect::<Vec<_>>();
+
+        self.load_history_sequence(Rc::new(symbols), 0);
+    }
+
+    fn load_history_sequence(&self, symbols: Rc<Vec<String>>, index: usize) {
+        let Some(symbol) = symbols.get(index).cloned() else {
+            return;
+        };
+
+        let state = *self;
+        let next_symbols = symbols.clone();
+        let next = Rc::new(move || {
+            state.load_history_sequence(next_symbols.clone(), index + 1);
+        });
+        self.load_history_for_symbol_with_next(&symbol, next);
+    }
+
+    /// Loads historical price extremes for one pinned Futures symbol.
+    pub fn load_history_for_symbol(&self, symbol: &str) {
+        self.load_history_for_symbol_with_next(symbol, Rc::new(|| {}));
+    }
+
+    fn load_history_for_symbol_with_next(&self, symbol: &str, next: Rc<dyn Fn()>) {
+        let symbol = symbol.trim().to_ascii_uppercase();
+        if symbol.is_empty() {
+            next();
+            return;
+        }
+
+        if self.history.get_untracked().contains_key(&symbol)
+            || self.history_loading.get_untracked().contains(&symbol)
+        {
+            next();
+            return;
+        }
+
+        self.history_loading.update(|symbols| {
+            symbols.insert(symbol.clone());
+        });
+        self.history_errors.update(|errors| {
+            errors.remove(&symbol);
+        });
+
+        let history = self.history;
+        let loading = self.history_loading;
+        let errors = self.history_errors;
+        let callback_symbol = symbol.clone();
+        FuturesHistoryService::new(ProxyApi).load_history(
+            &symbol,
+            browser::days_ago_unix_seconds(364),
+            Rc::new(move |result| {
+                loading.update(|symbols| {
+                    symbols.remove(&callback_symbol);
+                });
+
+                match result {
+                    Ok(extremes) => {
+                        history.update(|items| {
+                            items.insert(callback_symbol.clone(), extremes);
+                        });
+                    }
+                    Err(message) => {
+                        errors.update(|items| {
+                            items.insert(callback_symbol.clone(), message);
+                        });
+                    }
+                }
+
+                next();
+            }),
+        );
     }
 
     /// Executes the selected trading mode. Real order execution is intentionally
