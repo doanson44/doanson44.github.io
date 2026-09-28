@@ -120,10 +120,8 @@ impl FuturesTickerRanking {
     /// cannot contradict the displayed 1m and 5m price changes.
     pub fn ranking_direction(&self) -> i8 {
         match (self.return_1m(), self.return_5m()) {
-            (Some(one_minute), Some(five_minutes))
-                if one_minute > 0.0 && five_minutes > 0.0 => 1,
-            (Some(one_minute), Some(five_minutes))
-                if one_minute < 0.0 && five_minutes < 0.0 => -1,
+            (Some(one_minute), Some(five_minutes)) if one_minute > 0.0 && five_minutes > 0.0 => 1,
+            (Some(one_minute), Some(five_minutes)) if one_minute < 0.0 && five_minutes < 0.0 => -1,
             _ => 0,
         }
     }
