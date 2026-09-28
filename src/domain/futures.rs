@@ -479,12 +479,12 @@ mod tests {
         assert!(ranking.return_5m().unwrap() < 0.0);
         assert_eq!(ranking.ranking_direction(), -1);
 
-        ranking.observe_at(Some(101.0), Some(360_000));
+        ranking.observe_at(Some(102.0), Some(360_000));
         assert!(ranking.return_1m().unwrap() > 0.0);
         assert!(ranking.return_5m().unwrap() > 0.0);
         assert_eq!(ranking.ranking_direction(), 1);
 
-        ranking.observe_at(Some(99.0), Some(420_000));
+        ranking.observe_at(Some(100.0), Some(420_000));
         assert!(ranking.return_1m().unwrap() < 0.0);
         assert!(ranking.return_5m().unwrap() > 0.0);
         assert_eq!(ranking.ranking_direction(), 0);
