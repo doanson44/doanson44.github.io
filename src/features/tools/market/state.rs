@@ -70,6 +70,7 @@ impl MarketState {
 
     fn load_history_for_symbol(&self, symbol: &str) {
         let symbol = symbol.trim().to_ascii_uppercase();
+        let callback_symbol = symbol.clone();
         if symbol.is_empty() {
             return;
         }
@@ -92,18 +93,18 @@ impl MarketState {
             &cutoff,
             Rc::new(move |result| {
                 let mut loading = history_loading.get_untracked();
-                loading.remove(&symbol);
+                loading.remove(&callback_symbol);
                 history_loading.set(loading);
 
                 match result {
                     Ok(extremes) => {
                         let mut values = history.get_untracked();
-                        values.insert(symbol.clone(), extremes);
+                        values.insert(callback_symbol.clone(), extremes);
                         history.set(values);
                     }
                     Err(message) => {
                         let mut errors = history_errors.get_untracked();
-                        errors.insert(symbol.clone(), message);
+                        errors.insert(callback_symbol.clone(), message);
                         history_errors.set(errors);
                     }
                 }
@@ -117,6 +118,7 @@ impl MarketState {
         }
 
         let symbol = symbols[index].clone();
+        let callback_symbol = symbol.clone();
         let next_state = *self;
         let symbols_for_next = Rc::clone(&symbols);
         let mut loading = self.history_loading.get_untracked();
@@ -133,23 +135,23 @@ impl MarketState {
             &cutoff,
             Rc::new(move |result| {
                 let mut loading = next_state.history_loading.get_untracked();
-                loading.remove(&symbol);
+                loading.remove(&callback_symbol);
                 next_state.history_loading.set(loading);
 
                 match result {
                     Ok(extremes) => {
                         let mut values = next_state.history.get_untracked();
-                        values.insert(symbol.clone(), extremes);
+                        values.insert(callback_symbol.clone(), extremes);
                         next_state.history.set(values);
                     }
                     Err(message) => {
                         let mut errors = next_state.history_errors.get_untracked();
-                        errors.insert(symbol.clone(), message);
+                        errors.insert(callback_symbol.clone(), message);
                         next_state.history_errors.set(errors);
                     }
                 }
 
-                next_state.load_history_sequence(symbols_for_next, index + 1);
+                next_state.load_history_sequence(Rc::clone(&symbols_for_next), index + 1);
             }),
         );
     }
