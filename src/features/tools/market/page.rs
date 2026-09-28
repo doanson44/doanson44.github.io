@@ -188,7 +188,7 @@ pub fn MarketPage() -> impl IntoView {
 
             <div class="min-h-0 flex-grow overflow-auto p-3">
                 <div class="hidden overflow-x-auto rounded-lg border border-[var(--border-color)] bg-[var(--surface)] md:block">
-                    <table class="w-full min-w-[820px] border-collapse text-sm">
+                    <table class="w-full min-w-[1120px] border-collapse text-sm">
                         <caption class="sr-only">{move || t_string!(i18n, market_table_caption)}</caption>
                         <thead>
                             <tr class="border-b border-[var(--border-color)] bg-[var(--surface-hover)] text-left text-[var(--text-secondary)]">
@@ -200,6 +200,8 @@ pub fn MarketPage() -> impl IntoView {
                                 {sortable_header("change_percent", MarketSort::ChangePercent, sort, descending, toggle_sort, i18n)}
                                 {sortable_header("volume", MarketSort::Volume, sort, descending, toggle_sort, i18n)}
                                 {sortable_header("market_cap", MarketSort::MarketCap, sort, descending, toggle_sort, i18n)}
+                                <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, market_52w_range)}</th>
+                                <th class="px-3 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, market_historical_range)}</th>
                                 <th class="px-3 py-2 font-medium" scope="col">{move || t_string!(i18n, market_actions)}</th>
                             </tr>
                         </thead>
@@ -413,6 +415,15 @@ fn market_table_row(
             .iter()
             .any(|item| item == &symbol)
     });
+    let history_symbol = stock.symbol.clone();
+    let history = Memo::new(move |_| state.history.get().get(&history_symbol).copied());
+    let history_loading_symbol = stock.symbol.clone();
+    let history_loading = Memo::new(move |_| {
+        state
+            .history_loading
+            .get()
+            .contains(&history_loading_symbol)
+    });
 
     view! {
         <tr class=move || if is_pinned.get() {
@@ -428,6 +439,12 @@ fn market_table_row(
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(stock.change_percent)}</td>
             <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.total_volume)}</td>
             <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.market_cap)}</td>
+            <td class="px-3 py-2 text-right text-[var(--text-secondary)]">
+                {move || format_history_range(history.get(), history_loading.get(), true)}
+            </td>
+            <td class="px-3 py-2 text-right text-[var(--text-secondary)]">
+                {move || format_history_range(history.get(), history_loading.get(), false)}
+            </td>
             <td class="px-3 py-2">{analysis_actions(stock.symbol.clone(), state, i18n)}</td>
         </tr>
     }
@@ -447,6 +464,16 @@ fn market_mobile_card(
             .get()
             .iter()
             .any(|item| item == &symbol)
+    });
+
+    let history_symbol = stock.symbol.clone();
+    let history = Memo::new(move |_| state.history.get().get(&history_symbol).copied());
+    let history_loading_symbol = stock.symbol.clone();
+    let history_loading = Memo::new(move |_| {
+        state
+            .history_loading
+            .get()
+            .contains(&history_loading_symbol)
     });
 
     view! {
@@ -483,10 +510,55 @@ fn market_mobile_card(
                     <span class="font-medium text-[var(--text-primary)]">{format_integer(stock.market_cap)}</span>
                 </div>
             </div>
+            {move || if is_pinned.get() {
+                view! {
+                    <dl class="mt-3 grid grid-cols-1 gap-2 border-t border-[var(--border-color)] pt-3 text-sm sm:grid-cols-2">
+                        <div>
+                            <dt class="text-xs text-[var(--text-secondary)]">{move || t_string!(i18n, market_52w_range)}</dt>
+                            <dd class="m-0 font-medium text-[var(--text-primary)]">
+                                {move || format_history_range(history.get(), history_loading.get(), true)}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-[var(--text-secondary)]">{move || t_string!(i18n, market_historical_range)}</dt>
+                            <dd class="m-0 font-medium text-[var(--text-primary)]">
+                                {move || format_history_range(history.get(), history_loading.get(), false)}
+                            </dd>
+                        </div>
+                    </dl>
+                }.into_any()
+            } else {
+                view! { <span></span> }.into_any()
+            }}
             <div class="mt-3 flex justify-end">
                 {analysis_actions(stock.symbol.clone(), state, i18n)}
             </div>
         </article>
+    }
+}
+
+fn format_history_range(
+    extremes: Option<crate::domain::market::MarketPriceExtremes>,
+    loading: bool,
+    week_52: bool,
+) -> String {
+    if loading {
+        return "…".to_string();
+    }
+
+    let Some(extremes) = extremes else {
+        return "—".to_string();
+    };
+
+    let (low, high) = if week_52 {
+        (extremes.week_52_low, extremes.week_52_high)
+    } else {
+        (extremes.historical_low, extremes.historical_high)
+    };
+
+    match (low, high) {
+        (Some(low), Some(high)) => format!("{low:.2} — {high:.2}"),
+        _ => "—".to_string(),
     }
 }
 
