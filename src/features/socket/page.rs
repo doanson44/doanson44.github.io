@@ -473,8 +473,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
     let trade_label_title = symbol.clone();
     let trade_label_aria = symbol.clone();
     let trade_click_symbol = symbol.clone();
-    let history_52_symbol = symbol.clone();
-    let history_symbol = symbol.clone();
+    let history_symbol = RwSignal::new(symbol.clone());
     let is_held = Memo::new({
         let trading_snapshot = state.trading_snapshot;
         let execution_mode = state.execution_mode;
@@ -525,8 +524,8 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             </td>
             <td class="px-3 py-2 text-right font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</td>
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
-            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, &history_52_symbol.clone(), true)}</td>
-            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, &history_symbol.clone(), false)}</td>
+            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, &history_symbol.get(), true)}</td>
+            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, &history_symbol.get(), false)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
             <td class="px-3 py-2 text-right font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</td>
             <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_15s())}</td>
