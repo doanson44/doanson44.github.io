@@ -18,8 +18,7 @@ use crate::application::{
         proxy::ProxyService,
         technical_analysis::TechnicalAnalysisService,
         trading::TradingService,
-        FuturesHistoryService,
-        FuturesMarketService,
+        FuturesHistoryService, FuturesMarketService,
     },
 };
 use crate::domain::funding::FundingRateSnapshot;
