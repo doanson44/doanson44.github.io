@@ -569,7 +569,7 @@ fn format_history_range(
             );
             match (from_low, from_high) {
                 (Some(from_low), Some(from_high)) => {
-                    format!("{low:.2} — {high:.2} · L {from_low:+.1}% · H {from_high:+.1}%")
+                    format!("{low:.2} ({from_low:+.1}%) — {high:.2} ({from_high:+.1}%)")
                 }
                 _ => format!("{low:.2} — {high:.2}"),
             }
