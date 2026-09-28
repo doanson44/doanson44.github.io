@@ -29,10 +29,7 @@ struct MexcFuturesKlineData {
 
 impl FuturesPriceExtremes {
     /// Calculates historical and trailing 52-week price extremes from monthly candles.
-    pub fn from_monthly_candles(
-        candles: &[(u64, f64, f64)],
-        week_52_cutoff: u64,
-    ) -> Self {
+    pub fn from_monthly_candles(candles: &[(u64, f64, f64)], week_52_cutoff: u64) -> Self {
         let mut result = Self {
             week_52_low: None,
             week_52_high: None,
