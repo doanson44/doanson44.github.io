@@ -78,6 +78,62 @@ impl FuturesPriceExtremes {
     }
 }
 
+/// Parses the MEXC Spot monthly K-line response returned by the public v3 endpoint.
+///
+/// MEXC returns each candle as:
+/// [open_time_ms, open, high, low, close, volume, close_time_ms, ...].
+pub fn parse_mexc_spot_monthly_klines(
+    raw: &str,
+    symbol: &str,
+) -> Result<Vec<(u64, f64, f64)>, String> {
+    let rows: Vec<Vec<serde_json::Value>> = serde_json::from_str(raw)
+        .map_err(|error| format!("Invalid MEXC Spot kline response: {error}"))?;
+
+    if rows.is_empty() {
+        return Err(format!(
+            "MEXC Spot price history does not contain symbol {}",
+            symbol.trim().to_ascii_uppercase()
+        ));
+    }
+
+    let mut candles = rows
+        .into_iter()
+        .enumerate()
+        .map(|(index, row)| {
+            if row.len() < 5 {
+                return Err(format!(
+                    "MEXC Spot kline row {index} has fewer than 5 fields"
+                ));
+            }
+
+            let timestamp_ms = row[0]
+                .as_u64()
+                .ok_or_else(|| format!("MEXC Spot kline row {index} has an invalid timestamp"))?;
+            let high = row[2]
+                .as_str()
+                .ok_or_else(|| format!("MEXC Spot kline row {index} has an invalid high"))?
+                .parse::<f64>()
+                .map_err(|_| format!("MEXC Spot kline row {index} has an invalid high"))?;
+            let low = row[3]
+                .as_str()
+                .ok_or_else(|| format!("MEXC Spot kline row {index} has an invalid low"))?
+                .parse::<f64>()
+                .map_err(|_| format!("MEXC Spot kline row {index} has an invalid low"))?;
+
+            if !low.is_finite() || !high.is_finite() {
+                return Err(format!(
+                    "MEXC Spot kline row {index} contains non-finite prices"
+                ));
+            }
+
+            Ok((timestamp_ms / 1_000, low, high))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    candles.sort_unstable_by_key(|candle| candle.0);
+    Ok(candles)
+}
+
 /// Parses the MEXC Futures contract K-line response returned by the Month1 endpoint.
 pub fn parse_mexc_futures_monthly_klines(
     raw: &str,
@@ -523,6 +579,19 @@ mod tests {
         assert_eq!(candles.len(), 2);
         assert_eq!(candles[0], (1757894400, 95.0, 115.0));
         assert_eq!(candles[1], (1780272000, 118.0, 140.0));
+    }
+
+    #[test]
+    fn parses_mexc_spot_monthly_klines() {
+        let candles = parse_mexc_spot_monthly_klines(
+            r#"[[1757894400000,"100.0","115.0","95.0","110.0","1.0"],[1780272000000,"120.0","140.0","118.0","130.0","2.0"]]"#,
+            "BTCUSDT",
+        )
+        .expect("valid MEXC Spot response should parse");
+
+        assert_eq!(candles.len(), 2);
+        assert_eq!(candles[0], (1_757_894_400, 95.0, 115.0));
+        assert_eq!(candles[1], (1_780_272_000, 118.0, 140.0));
     }
 
     #[test]
