@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::application::ports::MarketClient;
-use crate::domain::market::parse_market_response;
+use crate::domain::market::{parse_market_response, MarketPriceExtremes};
 
 /// Application service for retrieving CafeF market data directly from CafeF.
 #[derive(Debug, Clone, Copy)]
@@ -24,6 +24,26 @@ where
         self.client.fetch(Rc::new(move |result| {
             on_result(result.and_then(|raw| parse_market_response(&raw)));
         }));
+    }
+
+    pub fn load_history(
+        &self,
+        symbol: &str,
+        week_52_cutoff: &str,
+        on_result: Rc<dyn Fn(Result<MarketPriceExtremes, String>)>,
+    ) {
+        let symbol = symbol.trim().to_ascii_uppercase();
+        let cutoff = week_52_cutoff.to_string();
+        self.client.fetch_history(
+            &symbol,
+            Rc::new(move |result| {
+                let parsed = result.and_then(|raw| {
+                    let history = crate::domain::market::parse_price_history_response(&raw, &symbol)?;
+                    Ok(history.extremes(&cutoff))
+                });
+                on_result(parsed);
+            }),
+        );
     }
 
     pub fn fetch_url(&self, target_url: &str, on_result: Rc<dyn Fn(Result<String, String>)>) {
