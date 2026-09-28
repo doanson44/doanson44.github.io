@@ -440,10 +440,10 @@ fn market_table_row(
             <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.total_volume)}</td>
             <td class="px-3 py-2 text-right text-[var(--text-secondary)]">{format_integer(stock.market_cap)}</td>
             <td class="px-3 py-2 text-right text-[var(--text-secondary)]">
-                {move || format_history_range(history.get(), history_loading.get(), true)}
+                {move || format_history_range(stock.price, history.get(), history_loading.get(), true)}
             </td>
             <td class="px-3 py-2 text-right text-[var(--text-secondary)]">
-                {move || format_history_range(history.get(), history_loading.get(), false)}
+                {move || format_history_range(stock.price, history.get(), history_loading.get(), false)}
             </td>
             <td class="px-3 py-2">{analysis_actions(stock.symbol.clone(), state, i18n)}</td>
         </tr>
@@ -516,13 +516,13 @@ fn market_mobile_card(
                         <div>
                             <dt class="text-xs text-[var(--text-secondary)]">{move || t_string!(i18n, market_52w_range)}</dt>
                             <dd class="m-0 font-medium text-[var(--text-primary)]">
-                                {move || format_history_range(history.get(), history_loading.get(), true)}
+                                {move || format_history_range(stock.price, history.get(), history_loading.get(), true)}
                             </dd>
                         </div>
                         <div>
                             <dt class="text-xs text-[var(--text-secondary)]">{move || t_string!(i18n, market_historical_range)}</dt>
                             <dd class="m-0 font-medium text-[var(--text-primary)]">
-                                {move || format_history_range(history.get(), history_loading.get(), false)}
+                                {move || format_history_range(stock.price, history.get(), history_loading.get(), false)}
                             </dd>
                         </div>
                     </dl>
