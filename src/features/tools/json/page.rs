@@ -29,7 +29,27 @@ pub fn JsonPage() -> impl IntoView {
     view! {
         <main class="flex flex-1 flex-col overflow-hidden">
             <div class="flex flex-nowrap items-center gap-1 border-b border-[var(--border-color)] p-2" id="json-toolbar">
-                <div class="ml-auto flex flex-nowrap gap-1">
+                <div class="ml-auto flex flex-wrap items-center justify-end gap-1">
+                    <div class="flex items-center gap-1 rounded border border-[var(--border-color)] px-1" role="group" aria-label="JSON sample options">
+                        <label for="json-sample-limit" class="px-1 text-xs text-[var(--text-secondary)]">{move || if i18n.get_locale() == Locale::vi { "Sample" } else { "Sample" }}</label>
+                        <input
+                            id="json-sample-limit"
+                            type="number"
+                            min="1"
+                            max="100"
+                            step="1"
+                            class="w-12 bg-transparent px-1 py-1 text-center text-xs text-[var(--text-primary)] outline-none"
+                            prop:value=move || state.sample_limit.get().to_string()
+                            on:input=move |ev| {
+                                if let Ok(value) = event_target_value(&ev).parse::<usize>() {
+                                    state.set_sample_limit(value);
+                                }
+                            }
+                            aria-label="Maximum array items in sample"
+                        />
+                        <span class="pr-1 text-xs text-[var(--text-secondary)]">{move || if i18n.get_locale() == Locale::vi { "phần tử/mảng" } else { "items/array" }}</span>
+                    </div>
+                    <button type="button" class=button title="Generate JSON response sample" on:click=move |_| state.sample()><span aria-hidden="true">"▾"</span><span class="ml-1 hidden lg:inline">{move || if i18n.get_locale() == Locale::vi { "Tạo sample" } else { "Sample" }}</span></button>
                     <button type="button" class=button title="Format JSON" on:click=move |_| state.format()><span aria-hidden="true">"≡"</span><span class="ml-1 hidden lg:inline">{move || if i18n.get_locale() == Locale::vi { "Định dạng" } else { "Format" }}</span></button>
                     <button type="button" class=button title="Minify JSON" on:click=move |_| state.minify()><span aria-hidden="true">"↕"</span><span class="ml-1 hidden lg:inline">{move || if i18n.get_locale() == Locale::vi { "Thu gọn" } else { "Minify" }}</span></button>
                     <button type="button" class=button title="Reset to sample JSON" on:click=move |_| state.reset()><span aria-hidden="true">"↶"</span><span class="ml-1 hidden lg:inline">{move || t_string!(i18n, common_reset)}</span></button>
@@ -46,7 +66,7 @@ pub fn JsonPage() -> impl IntoView {
                     <div class="flex h-full flex-col overflow-hidden">
                         <div class="flex items-center border-b border-[var(--border-color)] px-3 py-2"><span class="font-medium text-[var(--text-primary)]"><span class="mr-2" aria-hidden="true">"◉"</span>{move || t_string!(i18n, common_preview)}</span><button type="button" class=format!("{} ml-auto", button) disabled=move || state.output.get().is_empty() on:click=on_copy title="Copy formatted JSON" aria-label="Copy formatted JSON"><span aria-hidden="true">"⧉"</span><span class="ml-1 hidden md:inline" aria-live="polite">{move || if state.copied.get() { t_string!(i18n, common_copied) } else { t_string!(i18n, common_copy) }}</span></button></div>
                         <div class="flex-1 overflow-auto p-3">
-                            {move || { let output = state.output.get(); if output.is_empty() { view! { <div class="flex h-full items-center justify-center text-sm text-[var(--text-secondary)]"><div class="text-center"><div class="mb-2 text-3xl" aria-hidden="true">"{}"</div><span>{move || if i18n.get_locale() == Locale::vi { "Định dạng hoặc thu gọn JSON để xem kết quả." } else { "Format or minify JSON to see the result." }}</span></div></div> }.into_any() } else { view! { <pre class="m-0 whitespace-pre-wrap"><code class="font-mono text-sm text-[var(--text-primary)]">{output}</code></pre> }.into_any() } }}
+                            {move || { let output = state.output.get(); if output.is_empty() { view! { <div class="flex h-full items-center justify-center text-sm text-[var(--text-secondary)]"><div class="text-center"><div class="mb-2 text-3xl" aria-hidden="true">"{}"</div><span>{move || if i18n.get_locale() == Locale::vi { "Định dạng, thu gọn hoặc tạo sample JSON để xem kết quả." } else { "Format, minify, or generate a JSON sample to see the result." }}</span></div></div> }.into_any() } else { view! { <pre class="m-0 whitespace-pre-wrap"><code class="font-mono text-sm text-[var(--text-primary)]">{output}</code></pre> }.into_any() } }}
                         </div>
                     </div>
                 </ToolPanel>
