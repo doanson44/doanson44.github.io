@@ -352,6 +352,25 @@ mod tests {
     }
 
     #[test]
+    fn calculates_current_price_distance_from_extremes() {
+        let low = Some(100.0);
+        let high = Some(150.0);
+
+        assert_eq!(
+            MarketPriceExtremes::distance_from_low(120.0, low),
+            Some(20.0)
+        );
+        assert_eq!(
+            MarketPriceExtremes::distance_from_high(120.0, high),
+            Some(-20.0)
+        );
+        assert_eq!(
+            MarketPriceExtremes::distance_from_low(120.0, Some(0.0)),
+            None
+        );
+    }
+
+    #[test]
     fn rejects_invalid_response() {
         assert!(parse_market_response("not-json").is_err());
     }
