@@ -129,10 +129,12 @@ where
                         &raw,
                         &callback_symbol,
                     )?;
-                    Ok(crate::domain::futures::FuturesPriceExtremes::from_monthly_candles(
-                        &candles,
-                        week_52_cutoff,
-                    ))
+                    Ok(
+                        crate::domain::futures::FuturesPriceExtremes::from_monthly_candles(
+                            &candles,
+                            week_52_cutoff,
+                        ),
+                    )
                 });
                 on_result(parsed);
             }),
