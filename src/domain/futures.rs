@@ -520,7 +520,6 @@ mod tests {
         assert_eq!(extremes.week_52_high, Some(125.0));
     }
 
-
     fn update(symbol: &str, price: f64, volume: f64) -> FuturesTickerUpdate {
         FuturesTickerUpdate {
             symbol: symbol.into(),
