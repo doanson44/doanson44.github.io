@@ -510,10 +510,7 @@ mod tests {
     #[test]
     fn calculates_futures_price_extremes() {
         let extremes = FuturesPriceExtremes::from_monthly_candles(
-            &[
-                (1_700_000_000, 90.0, 110.0),
-                (1_750_000_000, 95.0, 125.0),
-            ],
+            &[(1_700_000_000, 90.0, 110.0), (1_750_000_000, 95.0, 125.0)],
             1_720_000_000,
         );
 
