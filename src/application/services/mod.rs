@@ -118,9 +118,8 @@ where
         >,
     ) {
         let symbol = symbol.trim().to_ascii_uppercase();
-        let url = format!(
-            "https://contract.mexc.com/api/v1/contract/kline/{symbol}?interval=Month1"
-        );
+        let url =
+            format!("https://contract.mexc.com/api/v1/contract/kline/{symbol}?interval=Month1");
         let callback_symbol = symbol.clone();
         self.client.fetch(
             &url,
