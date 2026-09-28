@@ -186,6 +186,8 @@
   "market_change": "Change",
   "market_volume": "Volume",
   "market_market_cap": "Market Cap",
+  "market_52w_range": "52W Range",
+  "market_historical_range": "Historical Range",
   "market_ascending": "ascending",
   "market_descending": "descending",
   "market_sort_label_symbol": "Symbol",
