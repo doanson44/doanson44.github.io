@@ -1,3 +1,4 @@
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use leptos::prelude::*;
@@ -5,7 +6,7 @@ use leptos::prelude::*;
 use crate::application::ports::MarketPinStore;
 use crate::application::services::market::MarketService;
 use crate::application::services::technical_analysis::TechnicalAnalysisService;
-use crate::domain::market::MarketStock;
+use crate::domain::market::{MarketPriceExtremes, MarketStock};
 use crate::domain::technical_analysis::AnalysisResult;
 use crate::infrastructure::browser;
 use crate::infrastructure::market::MarketApi;
@@ -19,6 +20,9 @@ pub struct MarketState {
     pub error: RwSignal<Option<String>>,
     pub loading: RwSignal<bool>,
     pub pinned_symbols: RwSignal<Vec<String>>,
+    pub history: RwSignal<HashMap<String, MarketPriceExtremes>>,
+    pub history_loading: RwSignal<HashSet<String>>,
+    pub history_errors: RwSignal<HashMap<String, String>>,
     pub analysis_loading: RwSignal<bool>,
     pub analysis_json: RwSignal<Option<String>>,
     pub analysis_result: RwSignal<Option<AnalysisResult>>,
@@ -44,6 +48,9 @@ impl MarketState {
             error: RwSignal::new(None),
             loading: RwSignal::new(false),
             pinned_symbols: RwSignal::new(Vec::new()),
+            history: RwSignal::new(HashMap::new()),
+            history_loading: RwSignal::new(HashSet::new()),
+            history_errors: RwSignal::new(HashMap::new()),
             analysis_loading: RwSignal::new(false),
             analysis_json: RwSignal::new(None),
             analysis_result: RwSignal::new(None),
@@ -61,12 +68,113 @@ impl MarketState {
         }
     }
 
+    fn load_history_for_symbol(&self, symbol: &str) {
+        let symbol = symbol.trim().to_ascii_uppercase();
+        if symbol.is_empty() {
+            return;
+        }
+
+        let mut loading = self.history_loading.get_untracked();
+        loading.insert(symbol.clone());
+        self.history_loading.set(loading);
+
+        let mut errors = self.history_errors.get_untracked();
+        errors.remove(&symbol);
+        self.history_errors.set(errors);
+
+        let history = self.history;
+        let history_loading = self.history_loading;
+        let history_errors = self.history_errors;
+        let cutoff = browser::days_ago_iso8601(364);
+
+        self.service.load_history(
+            &symbol,
+            &cutoff,
+            Rc::new(move |result| {
+                let mut loading = history_loading.get_untracked();
+                loading.remove(&symbol);
+                history_loading.set(loading);
+
+                match result {
+                    Ok(extremes) => {
+                        let mut values = history.get_untracked();
+                        values.insert(symbol.clone(), extremes);
+                        history.set(values);
+                    }
+                    Err(message) => {
+                        let mut errors = history_errors.get_untracked();
+                        errors.insert(symbol.clone(), message);
+                        history_errors.set(errors);
+                    }
+                }
+            }),
+        );
+    }
+
+    fn load_history_sequence(&self, symbols: Rc<Vec<String>>, index: usize) {
+        if index >= symbols.len() {
+            return;
+        }
+
+        let symbol = symbols[index].clone();
+        let next_state = *self;
+        let symbols_for_next = Rc::clone(&symbols);
+        let mut loading = self.history_loading.get_untracked();
+        loading.insert(symbol.clone());
+        self.history_loading.set(loading);
+
+        let mut errors = self.history_errors.get_untracked();
+        errors.remove(&symbol);
+        self.history_errors.set(errors);
+
+        let cutoff = browser::days_ago_iso8601(364);
+        self.service.load_history(
+            &symbol,
+            &cutoff,
+            Rc::new(move |result| {
+                let mut loading = next_state.history_loading.get_untracked();
+                loading.remove(&symbol);
+                next_state.history_loading.set(loading);
+
+                match result {
+                    Ok(extremes) => {
+                        let mut values = next_state.history.get_untracked();
+                        values.insert(symbol.clone(), extremes);
+                        next_state.history.set(values);
+                    }
+                    Err(message) => {
+                        let mut errors = next_state.history_errors.get_untracked();
+                        errors.insert(symbol.clone(), message);
+                        next_state.history_errors.set(errors);
+                    }
+                }
+
+                next_state.load_history_sequence(symbols_for_next, index + 1);
+            }),
+        );
+    }
+
+    fn load_pinned_history(&self) {
+        let symbols = self
+            .pinned_symbols
+            .get_untracked()
+            .into_iter()
+            .map(|symbol| symbol.trim().to_ascii_uppercase())
+            .filter(|symbol| !symbol.is_empty())
+            .collect::<Vec<_>>();
+
+        self.load_history_sequence(Rc::new(symbols), 0);
+    }
+
     pub fn toggle_pin(&self, symbol: &str) {
         let mut symbols = self.pinned_symbols.get_untracked();
-        if let Some(index) = symbols.iter().position(|item| item == symbol) {
-            symbols.remove(index);
+        let symbol = symbol.trim().to_ascii_uppercase();
+        let was_pinned = symbols.iter().any(|item| item == &symbol);
+
+        if was_pinned {
+            symbols.retain(|item| item != &symbol);
         } else {
-            symbols.push(symbol.to_string());
+            symbols.push(symbol.clone());
         }
 
         if let Err(message) = MarketApi.save(&symbols) {
@@ -75,6 +183,18 @@ impl MarketState {
         }
 
         self.pinned_symbols.set(symbols);
+
+        if was_pinned {
+            let mut history = self.history.get_untracked();
+            history.remove(&symbol);
+            self.history.set(history);
+
+            let mut errors = self.history_errors.get_untracked();
+            errors.remove(&symbol);
+            self.history_errors.set(errors);
+        } else {
+            self.load_history_for_symbol(&symbol);
+        }
     }
 
     pub fn analyze_symbol(&self, symbol: &str) {
@@ -188,6 +308,7 @@ impl MarketState {
         let displayed_items = self.displayed_items;
         let error = self.error;
         let loading = self.loading;
+        let state = *self;
         self.service.load(Rc::new(move |result| {
             loading.set(false);
             match result {
@@ -196,6 +317,7 @@ impl MarketState {
                     total_items.set(response.total_items);
                     displayed_items.set(response.displayed_items);
                     error.set(None);
+                    state.load_pinned_history();
                 }
                 Err(message) => {
                     stocks.set(Vec::new());
