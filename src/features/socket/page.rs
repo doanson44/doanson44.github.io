@@ -613,11 +613,11 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 <div class="mt-3 grid grid-cols-2 gap-2 rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] p-2 text-sm">
                     <div>
                         <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_52w_range)}</span>
-                        <span class="font-mono text-xs">{move || format_history_range(state, &history_symbol.get(), true)}</span>
+                        <span class="font-mono text-xs">{move || format_history_range(state, ticker.ticker.last_price.unwrap_or(f64::NAN), &history_symbol.get(), true)}</span>
                     </div>
                     <div class="text-right">
                         <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_historical_range)}</span>
-                        <span class="font-mono text-xs">{move || format_history_range(state, &history_symbol.get(), false)}</span>
+                        <span class="font-mono text-xs">{move || format_history_range(state, ticker.ticker.last_price.unwrap_or(f64::NAN), &history_symbol.get(), false)}</span>
                     </div>
                 </div>
             </Show>
