@@ -33,12 +33,14 @@ where
         on_result: Rc<dyn Fn(Result<MarketPriceExtremes, String>)>,
     ) {
         let symbol = symbol.trim().to_ascii_uppercase();
+        let callback_symbol = symbol.clone();
         let cutoff = week_52_cutoff.to_string();
         self.client.fetch_history(
             &symbol,
             Rc::new(move |result| {
                 let parsed = result.and_then(|raw| {
-                    let history = crate::domain::market::parse_price_history_response(&raw, &symbol)?;
+                    let history =
+                        crate::domain::market::parse_price_history_response(&raw, &callback_symbol)?;
                     Ok(history.extremes(&cutoff))
                 });
                 on_result(parsed);
