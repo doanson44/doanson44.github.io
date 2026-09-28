@@ -150,6 +150,12 @@ pub fn days_ago_iso8601(days: i64) -> String {
         .into()
 }
 
+/// Returns the current browser time shifted backwards by the requested number of days as Unix seconds.
+pub fn days_ago_unix_seconds(days: i64) -> u64 {
+    let millis = js_sys::Date::new_0().get_time() - (days as f64 * 86_400_000.0);
+    (millis.max(0.0) / 1_000.0) as u64
+}
+
 /// Get an element by ID, returning a typed element.
 pub fn get_element_by_id<T: wasm_bindgen::JsCast>(id: &str) -> Option<T> {
     get_document().get_element_by_id(id)?.dyn_into::<T>().ok()
