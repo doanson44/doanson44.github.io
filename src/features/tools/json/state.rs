@@ -21,6 +21,7 @@ pub struct JsonState {
     pub output: RwSignal<String>,
     pub error: RwSignal<Option<String>>,
     pub copied: RwSignal<bool>,
+    pub sample_limit: RwSignal<usize>,
 }
 
 impl Default for JsonState {
@@ -43,6 +44,7 @@ impl JsonState {
             output: RwSignal::new(String::new()),
             error: RwSignal::new(None),
             copied: RwSignal::new(false),
+            sample_limit: RwSignal::new(5),
         }
     }
 
@@ -66,6 +68,26 @@ impl JsonState {
 
     pub fn minify(&self) {
         self.run(JsonService::minify);
+    }
+
+    /// Generate a response sample by recursively limiting every array to the selected size.
+    pub fn sample(&self) {
+        self.copied.set(false);
+        let limit = self.sample_limit.get().max(1);
+        match JsonService::sample(&self.source.get(), limit) {
+            Ok(output) => {
+                self.output.set(output);
+                self.error.set(None);
+            }
+            Err(error) => {
+                self.output.set(String::new());
+                self.error.set(Some(error));
+            }
+        }
+    }
+
+    pub fn set_sample_limit(&self, limit: usize) {
+        self.sample_limit.set(limit.clamp(1, 100));
     }
 
     fn run(&self, operation: fn(&str) -> Result<String, String>) {
