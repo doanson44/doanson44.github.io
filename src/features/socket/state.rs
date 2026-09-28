@@ -1216,7 +1216,8 @@ fn load_pinned_symbols() -> Vec<String> {
         .and_then(|raw| serde_json::from_str::<Vec<String>>(&raw).ok())
         .unwrap_or_default()
         .into_iter()
-        .filter(|symbol| !symbol.trim().is_empty())
+        .map(|symbol| symbol.trim().to_ascii_uppercase())
+        .filter(|symbol| !symbol.is_empty())
         .collect()
 }
 
