@@ -11,6 +11,8 @@ const DESKTOP_MARKET_URL: &str =
 const MOBILE_MARKET_URL: &str =
     "https://m.cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx";
 const PIN_CACHE_KEY: &str = "market.pinned-symbols.v1";
+const PRICE_HISTORY_URL_TEMPLATE: &str =
+    "https://cafefnew.mediacdn.vn/Images/Uploaded/DuLieuDownload/Liveboard/{}_PriceHistory.json";
 
 /// Browser implementation of the direct CafeF market-data client.
 #[derive(Debug, Default, Clone, Copy)]
@@ -20,6 +22,14 @@ impl MarketClient for MarketApi {
     fn fetch(&self, on_result: Rc<dyn Fn(Result<String, String>)>) {
         wasm_bindgen_futures::spawn_local(async move {
             on_result(fetch_market_data().await);
+        });
+    }
+
+    fn fetch_history(&self, symbol: &str, on_result: Rc<dyn Fn(Result<String, String>)>) {
+        let symbol = symbol.trim().to_ascii_uppercase();
+        let target_url = PRICE_HISTORY_URL_TEMPLATE.replace("{}", &symbol);
+        wasm_bindgen_futures::spawn_local(async move {
+            on_result(fetch_market_url(&target_url).await);
         });
     }
 
