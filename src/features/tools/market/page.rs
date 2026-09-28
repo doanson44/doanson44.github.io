@@ -538,6 +538,7 @@ fn market_mobile_card(
 }
 
 fn format_history_range(
+    current_price: f64,
     extremes: Option<crate::domain::market::MarketPriceExtremes>,
     loading: bool,
     week_52: bool,
@@ -557,11 +558,21 @@ fn format_history_range(
     };
 
     match (low, high) {
-        (Some(low), Some(high)) => format!("{low:.2} — {high:.2}"),
+        (Some(low), Some(high)) => {
+            let from_low =
+                crate::domain::market::MarketPriceExtremes::distance_from_low(current_price, Some(low));
+            let from_high =
+                crate::domain::market::MarketPriceExtremes::distance_from_high(current_price, Some(high));
+            match (from_low, from_high) {
+                (Some(from_low), Some(from_high)) => {
+                    format!("{low:.2} — {high:.2} · L {from_low:+.1}% · H {from_high:+.1}%")
+                }
+                _ => format!("{low:.2} — {high:.2}"),
+            }
+        }
         _ => "—".to_string(),
     }
 }
-
 fn analysis_actions(
     symbol: String,
     state: MarketState,
