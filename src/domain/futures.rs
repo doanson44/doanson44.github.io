@@ -1,6 +1,114 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 
+/// Historical price extremes for a Futures contract. 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FuturesPriceExtremes {
+    pub week_52_low: Option<f64>,
+    pub week_52_high: Option<f64>,
+    pub historical_low: Option<f64>,
+    pub historical_high: Option<f64>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MexcFuturesKlineResponse {
+    success: bool,
+    #[serde(default)]
+    message: Option<String>,
+    data: Option<MexcFuturesKlineData>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MexcFuturesKlineData {
+    time: Vec<u64>,
+    open: Vec<f64>,
+    close: Vec<f64>,
+    high: Vec<f64>,
+    low: Vec<f64>,
+}
+
+impl FuturesPriceExtremes {
+    /// Calculates historical and trailing 52-week price extremes from monthly candles.
+    pub fn from_monthly_candles(
+        candles: &[(u64, f64, f64)],
+        week_52_cutoff: u64,
+    ) -> Self {
+        let mut result = Self {
+            week_52_low: None,
+            week_52_high: None,
+            historical_low: None,
+            historical_high: None,
+        };
+
+        for &(timestamp, low, high) in candles {
+            if low.is_finite() {
+                result.historical_low =
+                    Some(result.historical_low.map_or(low, |value| value.min(low)));
+                if timestamp >= week_52_cutoff {
+                    result.week_52_low =
+                        Some(result.week_52_low.map_or(low, |value| value.min(low)));
+                }
+            }
+            if high.is_finite() {
+                result.historical_high =
+                    Some(result.historical_high.map_or(high, |value| value.max(high)));
+                if timestamp >= week_52_cutoff {
+                    result.week_52_high =
+                        Some(result.week_52_high.map_or(high, |value| value.max(high)));
+                }
+            }
+        }
+
+        result
+    }
+}
+
+/// Parses the MEXC Futures contract K-line response returned by the Month1 endpoint.
+pub fn parse_mexc_futures_monthly_klines(
+    raw: &str,
+    symbol: &str,
+) -> Result<Vec<(u64, f64, f64)>, String> {
+    let response: MexcFuturesKlineResponse = serde_json::from_str(raw)
+        .map_err(|error| format!("Invalid MEXC Futures kline response: {error}"))?;
+
+    if !response.success {
+        return Err(response
+            .message
+            .unwrap_or_else(|| "MEXC Futures kline request was unsuccessful".to_string()));
+    }
+
+    let data = response
+        .data
+        .ok_or_else(|| "MEXC Futures kline response has no data".to_string())?;
+
+    let lengths = [
+        data.time.len(),
+        data.open.len(),
+        data.close.len(),
+        data.high.len(),
+        data.low.len(),
+    ];
+    if lengths.windows(2).any(|pair| pair[0] != pair[1]) {
+        return Err("MEXC Futures kline arrays have inconsistent lengths".to_string());
+    }
+    if data.time.is_empty() {
+        return Err(format!(
+            "MEXC Futures price history does not contain symbol {}",
+            symbol.trim().to_ascii_uppercase()
+        ));
+    }
+
+    let mut candles = data
+        .time
+        .into_iter()
+        .zip(data.low)
+        .zip(data.high)
+        .map(|((timestamp, low), high)| (timestamp, low, high))
+        .collect::<Vec<_>>();
+    candles.sort_unstable_by_key(|candle| candle.0);
+    Ok(candles)
+}
+
 /// Public Futures ticker state and update primitives.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FuturesTicker {
@@ -387,6 +495,36 @@ impl FuturesTickerRegistry {
 }
 
 #[cfg(test)]
+    #[test]
+    fn parses_mexc_futures_monthly_klines() {
+        let candles = parse_mexc_futures_monthly_klines(
+            r#"{"success":true,"code":0,"data":{"time":[1757894400,1780272000],"open":[100.0,120.0],"close":[110.0,130.0],"high":[115.0,140.0],"low":[95.0,118.0],"vol":[1.0,2.0],"amount":[100.0,200.0]}}"#,
+            "BTC_USDT",
+        )
+        .expect("valid MEXC Futures response should parse");
+
+        assert_eq!(candles.len(), 2);
+        assert_eq!(candles[0], (1757894400, 95.0, 115.0));
+        assert_eq!(candles[1], (1780272000, 118.0, 140.0));
+    }
+
+    #[test]
+    fn calculates_futures_price_extremes() {
+        let extremes = FuturesPriceExtremes::from_monthly_candles(
+            &[
+                (1_700_000_000, 90.0, 110.0),
+                (1_750_000_000, 95.0, 125.0),
+            ],
+            1_720_000_000,
+        );
+
+        assert_eq!(extremes.historical_low, Some(90.0));
+        assert_eq!(extremes.historical_high, Some(125.0));
+        assert_eq!(extremes.week_52_low, Some(95.0));
+        assert_eq!(extremes.week_52_high, Some(125.0));
+    }
+
+
 mod tests {
     use super::*;
 
