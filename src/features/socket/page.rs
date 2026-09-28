@@ -561,7 +561,10 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
     let trade_label_title = symbol.clone();
     let trade_label_aria = symbol.clone();
     let trade_click_symbol = symbol.clone();
-    let history_symbol = symbol.clone();
+    let history_symbol = Memo::new({
+        let symbol = symbol.clone();
+        move |_| symbol.clone()
+    });
     let is_held = Memo::new({
         let trading_snapshot = state.trading_snapshot;
         let execution_mode = state.execution_mode;
@@ -610,11 +613,11 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                 <div class="mt-3 grid grid-cols-2 gap-2 rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] p-2 text-sm">
                     <div>
                         <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_52w_range)}</span>
-                        <span class="font-mono text-xs">{move || format_history_range(state, &history_symbol, true)}</span>
+                        <span class="font-mono text-xs">{move || format_history_range(state, &history_symbol.get(), true)}</span>
                     </div>
                     <div class="text-right">
                         <span class="block text-xs text-[var(--text-secondary)]">{move || t_string!(use_i18n(),socket_historical_range)}</span>
-                        <span class="font-mono text-xs">{move || format_history_range(state, &history_symbol, false)}</span>
+                        <span class="font-mono text-xs">{move || format_history_range(state, &history_symbol.get(), false)}</span>
                     </div>
                 </div>
             </Show>
