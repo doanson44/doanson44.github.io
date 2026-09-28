@@ -186,6 +186,8 @@
   "market_change": "Thay đổi",
   "market_volume": "Khối lượng",
   "market_market_cap": "Vốn hóa",
+  "market_52w_range": "Biên độ 52 tuần",
+  "market_historical_range": "Biên độ lịch sử",
   "market_ascending": "tăng dần",
   "market_descending": "giảm dần",
   "market_sort_label_symbol": "Mã",
