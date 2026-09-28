@@ -898,7 +898,12 @@ fn build_visible(
 
 fn format_history_range(state: SocketState, symbol: &str, week_52: bool) -> String {
     let symbol = symbol.trim().to_ascii_uppercase();
-    if !state.pinned_symbols.get().iter().any(|item| item == &symbol) {
+    if !state
+        .pinned_symbols
+        .get()
+        .iter()
+        .any(|item| item == &symbol)
+    {
         return "—".to_string();
     }
 
@@ -909,7 +914,11 @@ fn format_history_range(state: SocketState, symbol: &str, week_52: bool) -> Stri
             (extremes.historical_low, extremes.historical_high)
         };
         return match (low, high) {
-            (Some(low), Some(high)) => format!("{} — {}", format_number(Some(low)), format_number(Some(high))),
+            (Some(low), Some(high)) => format!(
+                "{} — {}",
+                format_number(Some(low)),
+                format_number(Some(high))
+            ),
             _ => "—".to_string(),
         };
     }
