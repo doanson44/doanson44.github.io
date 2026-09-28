@@ -28,6 +28,24 @@ struct MexcFuturesKlineData {
 }
 
 impl FuturesPriceExtremes {
+    /// Returns the current price distance from the selected low as a percentage.
+    pub fn distance_from_low(current_price: f64, low: Option<f64>) -> Option<f64> {
+        let low = low.filter(|value| value.is_finite() && *value > 0.0)?;
+        if !current_price.is_finite() {
+            return None;
+        }
+        Some((current_price - low) / low * 100.0)
+    }
+
+    /// Returns the current price distance from the selected high as a percentage.
+    pub fn distance_from_high(current_price: f64, high: Option<f64>) -> Option<f64> {
+        let high = high.filter(|value| value.is_finite() && *value > 0.0)?;
+        if !current_price.is_finite() {
+            return None;
+        }
+        Some((current_price - high) / high * 100.0)
+    }
+
     /// Calculates historical and trailing 52-week price extremes from monthly candles.
     pub fn from_monthly_candles(candles: &[(u64, f64, f64)], week_52_cutoff: u64) -> Self {
         let mut result = Self {
