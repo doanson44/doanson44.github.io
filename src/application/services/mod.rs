@@ -94,7 +94,7 @@ impl FuturesMarketService {
     }
 }
 
-/// Application service for loading MEXC Futures monthly price history.
+/// Application service for loading MEXC Spot monthly price history for Futures symbols.
 #[derive(Debug, Clone, Copy)]
 pub struct FuturesHistoryService<C> {
     client: C,
@@ -108,7 +108,7 @@ where
         Self { client }
     }
 
-    /// Loads monthly contract candles and calculates historical/52-week extremes.
+    /// Loads monthly Spot candles and calculates historical/52-week extremes.
     pub fn load_history(
         &self,
         symbol: &str,
@@ -117,15 +117,15 @@ where
             dyn Fn(Result<crate::domain::futures::FuturesPriceExtremes, String>),
         >,
     ) {
-        let symbol = symbol.trim().to_ascii_uppercase();
+        let symbol = symbol.trim().to_ascii_uppercase().replace('_', "");
         let url =
-            format!("https://contract.mexc.com/api/v1/contract/kline/{symbol}?interval=Month1");
+            format!("https://api.mexc.com/api/v3/klines?symbol={symbol}&interval=1M&limit=500");
         let callback_symbol = symbol.clone();
         self.client.fetch(
             &url,
             std::rc::Rc::new(move |result| {
                 let parsed = result.and_then(|raw| {
-                    let candles = crate::domain::futures::parse_mexc_futures_monthly_klines(
+                    let candles = crate::domain::futures::parse_mexc_spot_monthly_klines(
                         &raw,
                         &callback_symbol,
                     )?;
