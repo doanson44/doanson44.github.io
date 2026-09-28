@@ -524,8 +524,8 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
             </td>
             <td class="px-3 py-2 text-right font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</td>
             <td class=format!("px-3 py-2 text-right font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</td>
-            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, &history_symbol.get(), true)}</td>
-            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, &history_symbol.get(), false)}</td>
+            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, ticker.ticker.last_price.unwrap_or(f64::NAN), &history_symbol.get(), true)}</td>
+            <td class="px-3 py-2 text-right font-mono text-xs">{move || format_history_range(state, ticker.ticker.last_price.unwrap_or(f64::NAN), &history_symbol.get(), false)}</td>
             <td class=move || format!("px-3 py-2 text-right {}", funding_rate_class(funding_rate.get()))>{move || format_funding_rate(funding_rate.get())}</td>
             <td class="px-3 py-2 text-right font-semibold">{ranking_direction_label(ticker.ranking.ranking_direction())}</td>
             <td class="px-3 py-2 text-right font-mono">{format_short_percent(ticker.ranking.return_15s())}</td>
@@ -897,7 +897,12 @@ fn build_visible(
     output
 }
 
-fn format_history_range(state: SocketState, symbol: &str, week_52: bool) -> String {
+fn format_history_range(
+    state: SocketState,
+    current_price: f64,
+    symbol: &str,
+    week_52: bool,
+) -> String {
     let symbol = symbol.trim().to_ascii_uppercase();
     if !state
         .pinned_symbols
@@ -915,11 +920,28 @@ fn format_history_range(state: SocketState, symbol: &str, week_52: bool) -> Stri
             (extremes.historical_low, extremes.historical_high)
         };
         return match (low, high) {
-            (Some(low), Some(high)) => format!(
-                "{} — {}",
-                format_number(Some(low)),
-                format_number(Some(high))
-            ),
+            (Some(low), Some(high)) => {
+                let from_low = crate::domain::futures::FuturesPriceExtremes::distance_from_low(
+                    current_price,
+                    Some(low),
+                );
+                let from_high = crate::domain::futures::FuturesPriceExtremes::distance_from_high(
+                    current_price,
+                    Some(high),
+                );
+                match (from_low, from_high) {
+                    (Some(from_low), Some(from_high)) => format!(
+                        "{} — {} · L {from_low:+.1}% · H {from_high:+.1}%",
+                        format_number(Some(low)),
+                        format_number(Some(high))
+                    ),
+                    _ => format!(
+                        "{} — {}",
+                        format_number(Some(low)),
+                        format_number(Some(high))
+                    ),
+                }
+            }
             _ => "—".to_string(),
         };
     }
@@ -930,7 +952,6 @@ fn format_history_range(state: SocketState, symbol: &str, week_52: bool) -> Stri
         "—".to_string()
     }
 }
-
 fn status_badge(status: FuturesConnectionStatus) -> impl IntoView {
     let i18n = use_i18n();
     match status {
