@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 
-/// Historical price extremes for a Futures contract. 
+/// Historical price extremes for a Futures contract.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FuturesPriceExtremes {
     pub week_52_low: Option<f64>,
