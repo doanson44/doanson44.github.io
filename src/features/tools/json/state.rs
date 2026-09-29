@@ -200,10 +200,8 @@ impl JsonState {
                     },
                     Err(_) => {
                         self.output.set(String::new());
-                        self.error.set(Some(format!(
-                            "Invalid number for {}.",
-                            draft.path.trim()
-                        )));
+                        self.error
+                            .set(Some(format!("Invalid number for {}.", draft.path.trim())));
                         return;
                     }
                 },
