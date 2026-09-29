@@ -38,45 +38,50 @@ mod tests {
 
     #[test]
     fn service_formats_json() {
-        let result = JsonService::format("{\"name\":\"Son\"}").unwrap();
-        assert!(result.contains("\"name\": \"Son\""));
+        let result = JsonService::format("{\"name\":\"Son\"}");
+        assert!(result.is_ok());
+        assert!(result.unwrap().contains("\"name\": \"Son\""));
     }
 
     #[test]
     fn service_samples_json() {
-        let result = JsonService::sample(r#"{"items":[1,2,3]}"#, 2).unwrap();
-        assert!(result.contains("\"items\": ["));
-        assert!(result.contains("1,"));
-        assert!(result.contains("2"));
-        assert!(!result.contains("3"));
+        let result = JsonService::sample(r#"{"items":[1,2,3]}"#, 2);
+        assert!(result.is_ok());
+
+        let output = result.unwrap();
+        assert!(output.contains("\"items\": ["));
+        assert!(output.contains("1,"));
+        assert!(output.contains("2"));
+        assert!(!output.contains("3"));
     }
 
     #[test]
     fn service_minifies_json() {
-        assert_eq!(
-            JsonService::minify(r#"{ "ok": true }"#).unwrap(),
-            r#"{"ok":true}"#
-        );
+        let result = JsonService::minify(r#"{ "ok": true }"#);
+        assert_eq!(result.unwrap(), r#"{"ok":true}"#);
     }
 
     #[test]
     fn service_generates_fixed_values() {
-        let result = JsonService::generate(
-            r#"{"extId":"string"}"#,
-            &JsonGenerateOptions {
-                count: 2,
-                seed: 7,
-                overrides: vec![JsonOverride {
-                    path: "$.extId".to_string(),
-                    value: Value::String("123".to_string()),
-                }],
-            },
-        )
-        .unwrap();
+        let options = JsonGenerateOptions {
+            count: 2,
+            seed: 7,
+            overrides: vec![JsonOverride {
+                path: "$.extId".to_string(),
+                value: Value::String("123".to_string()),
+            }],
+        };
 
-        let value: Value = serde_json::from_str(&result).unwrap();
+        let result = JsonService::generate(r#"{"extId":"string"}"#, &options);
+        assert!(result.is_ok());
+
+        let value: Value = serde_json::from_str(&result.unwrap()).unwrap();
         let records = value.as_array().unwrap();
+
         assert_eq!(records.len(), 2);
-        assert!(records.iter().all(|record| record["extId"] == "123"));
+
+        for record in records {
+            assert_eq!(record["extId"], "123");
+        }
     }
 }
