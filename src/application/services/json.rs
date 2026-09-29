@@ -22,10 +22,7 @@ impl JsonService {
     }
 
     /// Generate deterministic dummy JSON from a template and apply fixed overrides.
-    pub fn generate(
-        source: &str,
-        options: &JsonGenerateOptions,
-    ) -> Result<String, String> {
+    pub fn generate(source: &str, options: &JsonGenerateOptions) -> Result<String, String> {
         generate_dummy_json(source, options)
     }
 }
