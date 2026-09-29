@@ -273,7 +273,8 @@ impl JsonState {
     }
 
     pub fn add_override(&self) {
-        self.overrides.update(|items| items.push(JsonOverrideDraft::default()));
+        self.overrides
+            .update(|items| items.push(JsonOverrideDraft::default()));
         self.save_generator();
     }
 
