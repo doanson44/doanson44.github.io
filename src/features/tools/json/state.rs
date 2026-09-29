@@ -193,10 +193,8 @@ impl JsonState {
                         Some(number) => serde_json::Value::Number(number),
                         None => {
                             self.output.set(String::new());
-                            self.error.set(Some(format!(
-                                "Invalid number for {}.",
-                                draft.path.trim()
-                            )));
+                            self.error
+                                .set(Some(format!("Invalid number for {}.", draft.path.trim())));
                             return;
                         }
                     },
