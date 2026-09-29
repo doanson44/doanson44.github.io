@@ -12,7 +12,6 @@ pub fn JsonPage() -> impl IntoView {
     let i18n = use_i18n();
     let button = "inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
     let input = "min-h-8 rounded border border-[var(--border-color)] bg-[var(--surface)] px-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]";
-    let is_vi = move || i18n.get_locale() == Locale::vi;
 
     let on_copy = move |_| {
         let output = state.output.get_untracked();
@@ -55,27 +54,27 @@ pub fn JsonPage() -> impl IntoView {
                             {move || t_string!(i18n, json_sample_items)}
                         </span>
                     </div>
-                    <button type="button" class=button title=move || t_string!(i18n, json_sample_title) on:click=move |_| state.sample>
+                    <button type="button" class=button title=move || t_string!(i18n, json_sample_title) on:click=move |_| state.sample()>
                         <span aria-hidden="true">"▾"</span>
                         <span class="ml-1 hidden lg:inline">{move || t_string!(i18n, json_sample)}</span>
                     </button>
                     <button type="button" class=button title="Format JSON" on:click=move |_| state.format()>
                         <span aria-hidden="true">"≡"</span>
-                        <span class="ml-1 hidden lg:inline">{move || if is_vi() { "Định dạng" } else { "Format" }}</span>
+                        <span class="ml-1 hidden lg:inline">{move || if i18n.get_locale() == Locale::vi { "Định dạng" } else { "Format" }}</span>
                     </button>
                     <button type="button" class=button title="Minify JSON" on:click=move |_| state.minify()>
                         <span aria-hidden="true">"↕"</span>
-                        <span class="ml-1 hidden lg:inline">{move || if is_vi() { "Thu gọn" } else { "Minify" }}</span>
+                        <span class="ml-1 hidden lg:inline">{move || if i18n.get_locale() == Locale::vi { "Thu gọn" } else { "Minify" }}</span>
                     </button>
                     <button
                         type="button"
                         class=format!("{} border-[var(--accent)] text-[var(--accent)]", button)
-                        title=move || if is_vi() { "Mở trình tạo dữ liệu giả" } else { "Open dummy data generator" }
+                        title=move || if i18n.get_locale() == Locale::vi { "Mở trình tạo dữ liệu giả" } else { "Open dummy data generator" }
                         aria-expanded=move || state.generator_open.get().to_string()
                         on:click=move |_| state.generator_open.update(|open| *open = !*open)
                     >
                         <span aria-hidden="true">"✦"</span>
-                        <span class="ml-1 hidden md:inline">{move || if is_vi() { "Tạo dữ liệu" } else { "Generate" }}</span>
+                        <span class="ml-1 hidden md:inline">{move || if i18n.get_locale() == Locale::vi { "Tạo dữ liệu" } else { "Generate" }}</span>
                     </button>
                     <button type="button" class=button title="Reset to sample JSON" on:click=move |_| state.reset()>
                         <span aria-hidden="true">"↶"</span>
@@ -89,15 +88,15 @@ pub fn JsonPage() -> impl IntoView {
             </div>
 
             {move || state.generator_open.get().then(|| view! {
-                <section class="border-b border-[var(--border-color)] bg-[var(--surface)] px-3 py-3" aria-label=move || if is_vi() { "Trình tạo dữ liệu giả" } else { "Dummy data generator" }>
+                <section class="border-b border-[var(--border-color)] bg-[var(--surface)] px-3 py-3" aria-label=move || if i18n.get_locale() == Locale::vi { "Trình tạo dữ liệu giả" } else { "Dummy data generator" }>
                     <div class="mx-auto max-w-6xl">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
                                 <h2 class="text-sm font-semibold text-[var(--text-primary)]">
-                                    {move || if is_vi() { "Tạo Dummy JSON" } else { "Generate Dummy JSON" }}
+                                    {move || if i18n.get_locale() == Locale::vi { "Tạo Dummy JSON" } else { "Generate Dummy JSON" }}
                                 </h2>
                                 <p class="mt-1 max-w-3xl text-xs text-[var(--text-secondary)]">
-                                    {move || if is_vi() {
+                                    {move || if i18n.get_locale() == Locale::vi {
                                         "Dùng JSON hiện tại làm template. "string", 0 và boolean là type hint; giá trị cố định sẽ được áp dụng sau khi generate."
                                     } else {
                                         "Use the current JSON as a template. "string", 0, and booleans act as type hints; fixed values are applied after generation."
@@ -107,10 +106,10 @@ pub fn JsonPage() -> impl IntoView {
                             <div class="flex gap-1">
                                 <button type="button" class=button on:click=move |_| state.generate()>
                                     <span aria-hidden="true">"▶"</span>
-                                    <span class="ml-1">{move || if is_vi() { "Generate JSON" } else { "Generate JSON" }}</span>
+                                    <span class="ml-1">{move || if i18n.get_locale() == Locale::vi { "Generate JSON" } else { "Generate JSON" }}</span>
                                 </button>
                                 <button type="button" class=button on:click=move |_| state.generator_open.set(false)>
-                                    {move || if is_vi() { "Đóng" } else { "Close" }}
+                                    {move || if i18n.get_locale() == Locale::vi { "Đóng" } else { "Close" }}
                                 </button>
                             </div>
                         </div>
@@ -119,7 +118,7 @@ pub fn JsonPage() -> impl IntoView {
                             <div class="rounded border border-[var(--border-color)] p-3">
                                 <div class="grid gap-2 sm:grid-cols-2">
                                     <label class="grid gap-1 text-xs text-[var(--text-secondary)]">
-                                        <span>{move || if is_vi() { "Số lượng record" } else { "Records" }}</span>
+                                        <span>{move || if i18n.get_locale() == Locale::vi { "Số lượng record" } else { "Records" }}</span>
                                         <input
                                             type="number"
                                             min="1"
@@ -135,7 +134,7 @@ pub fn JsonPage() -> impl IntoView {
                                         />
                                     </label>
                                     <label class="grid gap-1 text-xs text-[var(--text-secondary)]">
-                                        <span>{move || if is_vi() { "Seed" } else { "Seed" }}</span>
+                                        <span>{move || if i18n.get_locale() == Locale::vi { "Seed" } else { "Seed" }}</span>
                                         <input
                                             type="text"
                                             class=input
@@ -146,7 +145,7 @@ pub fn JsonPage() -> impl IntoView {
                                     </label>
                                 </div>
                                 <p class="mt-2 text-[11px] text-[var(--text-secondary)]">
-                                    {move || if is_vi() {
+                                    {move || if i18n.get_locale() == Locale::vi {
                                         "Cùng template + seed sẽ tạo cùng dataset, phù hợp cho test/reproduce."
                                     } else {
                                         "The same template and seed produce the same dataset for reproducible tests."
@@ -158,18 +157,18 @@ pub fn JsonPage() -> impl IntoView {
                                 <div class="flex items-center justify-between gap-2">
                                     <div>
                                         <h3 class="text-xs font-semibold text-[var(--text-primary)]">
-                                            {move || if is_vi() { "Fixed values" } else { "Fixed values" }}
+                                            {move || if i18n.get_locale() == Locale::vi { "Fixed values" } else { "Fixed values" }}
                                         </h3>
                                         <p class="mt-1 text-[11px] text-[var(--text-secondary)]">
-                                            {move || if is_vi() { "Ví dụ: $.extId = "123"" } else { "Example: $.extId = "123"" }}
+                                            {move || if i18n.get_locale() == Locale::vi { "Ví dụ: $.extId = "123"" } else { "Example: $.extId = "123"" }}
                                         </p>
                                     </div>
                                     <div class="flex gap-1">
-                                        <button type="button" class=button on:click=move |_| state.add_override>
-                                            {move || if is_vi() { "+ Thêm" } else { "+ Add" }}
+                                        <button type="button" class=button on:click=move |_| state.add_override()>
+                                            {move || if i18n.get_locale() == Locale::vi { "+ Thêm" } else { "+ Add" }}
                                         </button>
-                                        <button type="button" class=button on:click=move |_| state.clear_overrides>
-                                            {move || if is_vi() { "Xóa hết" } else { "Clear" }}
+                                        <button type="button" class=button on:click=move |_| state.clear_overrides()>
+                                            {move || if i18n.get_locale() == Locale::vi { "Xóa hết" } else { "Clear" }}
                                         </button>
                                     </div>
                                 </div>
@@ -213,7 +212,7 @@ pub fn JsonPage() -> impl IntoView {
                                                     type="button"
                                                     class=button
                                                     aria-label="Remove fixed value"
-                                                    title=move || if is_vi() { "Xóa fixed value" } else { "Remove fixed value" }
+                                                    title=move || if i18n.get_locale() == Locale::vi { "Xóa fixed value" } else { "Remove fixed value" }
                                                     on:click=move |_| state.remove_override(index)
                                                 >
                                                     "×"
@@ -277,7 +276,7 @@ pub fn JsonPage() -> impl IntoView {
                                             <div class="text-center">
                                                 <div class="mb-2 text-3xl" aria-hidden="true">"{}"</div>
                                                 <span>
-                                                    {move || if is_vi() {
+                                                    {move || if i18n.get_locale() == Locale::vi {
                                                         "Định dạng, thu gọn, tạo sample hoặc generate JSON để xem kết quả."
                                                     } else {
                                                         "Format, minify, sample, or generate JSON to see the result."
