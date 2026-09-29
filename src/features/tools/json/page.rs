@@ -97,9 +97,9 @@ pub fn JsonPage() -> impl IntoView {
                                 </h2>
                                 <p class="mt-1 max-w-3xl text-xs text-[var(--text-secondary)]">
                                     {move || if i18n.get_locale() == Locale::vi {
-                                        "Dùng JSON hiện tại làm template. "string", 0 và boolean là type hint; giá trị cố định sẽ được áp dụng sau khi generate."
+                                        r#"Dùng JSON hiện tại làm template. "string", 0 và boolean là type hint; giá trị cố định sẽ được áp dụng sau khi generate."#
                                     } else {
-                                        "Use the current JSON as a template. "string", 0, and booleans act as type hints; fixed values are applied after generation."
+                                        r#"Use the current JSON as a template. "string", 0, and booleans act as type hints; fixed values are applied after generation."#
                                     }}
                                 </p>
                             </div>
@@ -160,7 +160,7 @@ pub fn JsonPage() -> impl IntoView {
                                             {move || if i18n.get_locale() == Locale::vi { "Fixed values" } else { "Fixed values" }}
                                         </h3>
                                         <p class="mt-1 text-[11px] text-[var(--text-secondary)]">
-                                            {move || if i18n.get_locale() == Locale::vi { "Ví dụ: $.extId = "123"" } else { "Example: $.extId = "123"" }}
+                                            {move || if i18n.get_locale() == Locale::vi { r#"Ví dụ: $.extId = "123""# } else { r#"Example: $.extId = "123""# }}
                                         </p>
                                     </div>
                                     <div class="flex gap-1">
