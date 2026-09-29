@@ -106,7 +106,7 @@ pub fn JsonPage() -> impl IntoView {
                             <div class="flex gap-1">
                                 <button type="button" class=button on:click=move |_| state.generate()>
                                     <span aria-hidden="true">"▶"</span>
-                                    <span class="ml-1">{move || if i18n.get_locale() == Locale::vi { "Generate JSON" } else { "Generate JSON" }}</span>
+                                    <span class="ml-1">"Generate JSON"</span>
                                 </button>
                                 <button type="button" class=button on:click=move |_| state.generator_open.set(false)>
                                     {move || if i18n.get_locale() == Locale::vi { "Đóng" } else { "Close" }}
@@ -134,7 +134,7 @@ pub fn JsonPage() -> impl IntoView {
                                         />
                                     </label>
                                     <label class="grid gap-1 text-xs text-[var(--text-secondary)]">
-                                        <span>{move || if i18n.get_locale() == Locale::vi { "Seed" } else { "Seed" }}</span>
+                                        <span>"Seed"</span>
                                         <input
                                             type="text"
                                             class=input
@@ -157,7 +157,7 @@ pub fn JsonPage() -> impl IntoView {
                                 <div class="flex items-center justify-between gap-2">
                                     <div>
                                         <h3 class="text-xs font-semibold text-[var(--text-primary)]">
-                                            {move || if i18n.get_locale() == Locale::vi { "Fixed values" } else { "Fixed values" }}
+                                            "Fixed values"
                                         </h3>
                                         <p class="mt-1 text-[11px] text-[var(--text-secondary)]">
                                             {move || if i18n.get_locale() == Locale::vi { r#"Ví dụ: $.extId = "123""# } else { r#"Example: $.extId = "123""# }}
