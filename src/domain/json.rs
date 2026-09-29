@@ -40,10 +40,7 @@ pub struct JsonGenerateOptions {
 /// In generator mode, the placeholders `"string"`, `0`, `true`, and `false`
 /// are treated as type hints. Other literal values are preserved. A root object,
 /// array, or scalar becomes an array containing `count` generated records/values.
-pub fn generate_dummy_json(
-    source: &str,
-    options: &JsonGenerateOptions,
-) -> Result<String, String> {
+pub fn generate_dummy_json(source: &str, options: &JsonGenerateOptions) -> Result<String, String> {
     let template: Value = serde_json::from_str(source).map_err(format_json_error)?;
     let count = options.count.clamp(1, 1000);
     let mut rng = DeterministicRng::new(options.seed);
