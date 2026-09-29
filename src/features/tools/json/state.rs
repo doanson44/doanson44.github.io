@@ -97,7 +97,7 @@ impl JsonState {
                         .collect(),
                 )
             })
-            .unwrap_or((10, 12345, Vec::new()));
+            .unwrap_or((10, "12345".to_string(), Vec::new()));
 
         Self {
             source: RwSignal::new(initial_content),
