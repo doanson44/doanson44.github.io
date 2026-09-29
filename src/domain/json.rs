@@ -1,4 +1,4 @@
-use serde_json::{Map, Number, Value};
+use serde_json::{Number, Value};
 
 /// Format valid JSON using two-space indentation.
 pub fn format_json(source: &str) -> Result<String, String> {
