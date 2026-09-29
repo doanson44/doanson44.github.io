@@ -1,6 +1,8 @@
-use crate::domain::json::{format_json, minify_json, sample_json};
+use crate::domain::json::{
+    format_json, generate_dummy_json, minify_json, sample_json, JsonGenerateOptions,
+};
 
-/// Application service coordinating JSON formatting use cases.
+/// Application service coordinating JSON formatting and dummy-data generation use cases.
 pub struct JsonService;
 
 impl JsonService {
@@ -18,11 +20,21 @@ impl JsonService {
     pub fn sample(source: &str, max_items: usize) -> Result<String, String> {
         sample_json(source, max_items)
     }
+
+    /// Generate deterministic dummy JSON from a template and apply fixed overrides.
+    pub fn generate(
+        source: &str,
+        options: &JsonGenerateOptions,
+    ) -> Result<String, String> {
+        generate_dummy_json(source, options)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::json::JsonOverride;
+    use serde_json::Value;
 
     #[test]
     fn service_formats_json() {
@@ -42,8 +54,26 @@ mod tests {
     #[test]
     fn service_minifies_json() {
         assert_eq!(
-            JsonService::minify("{ \"ok\": true }").unwrap(),
-            "{\"ok\":true}"
+            JsonService::minify(r#"{ "ok": true }"#).unwrap(),
+            r#"{"ok":true}"#
         );
+    }
+
+    #[test]
+    fn service_generates_fixed_values() {
+        let result = JsonService::generate(
+            r#"{"extId":"string"}"#,
+            &JsonGenerateOptions {
+                count: 2,
+                seed: 7,
+                overrides: vec![JsonOverride {
+                    path: "$.extId".to_string(),
+                    value: Value::String("123".to_string()),
+                }],
+            },
+        )
+        .unwrap();
+
+        assert!(result.matches("\"extId\": \"123\"").count() == 2);
     }
 }
