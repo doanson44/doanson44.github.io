@@ -98,9 +98,7 @@ fn generate_value(value: &Value, rng: &mut DeterministicRng, index: usize) -> Va
                 Value::Array(Vec::new())
             }
         }
-        Value::String(value) if value == "string" => {
-            Value::String(format!("string-{index:03}"))
-        }
+        Value::String(value) if value == "string" => Value::String(format!("string-{index:03}")),
         Value::Number(number) if number.is_i64() || number.is_u64() => {
             Value::Number(Number::from(rng.range_u64(1, 1000)))
         }
