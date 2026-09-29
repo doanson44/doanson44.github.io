@@ -74,6 +74,9 @@ mod tests {
         )
         .unwrap();
 
-        assert!(result.matches("\"extId\": \"123\"").count() == 2);
+        let value: Value = serde_json::from_str(&result).unwrap();
+        let records = value.as_array().unwrap();
+        assert_eq!(records.len(), 2);
+        assert!(records.iter().all(|record| record["extId"] == "123"));
     }
 }
