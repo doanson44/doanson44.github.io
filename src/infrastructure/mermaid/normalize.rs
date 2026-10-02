@@ -6,6 +6,57 @@
 
 use std::borrow::Cow;
 
+/// Mermaid diagram families supported by the renderer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MermaidDiagramType {
+    Flowchart, Sequence, Class, State, Gantt, Pie, Git, Timeline, Mindmap, Er,
+    Journey, QuadrantChart, XyChart, Requirement, C4, ZenUml, Unknown,
+}
+
+impl MermaidDiagramType {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Flowchart => "flowchart", Self::Sequence => "sequence", Self::Class => "class",
+            Self::State => "state", Self::Gantt => "gantt", Self::Pie => "pie", Self::Git => "git",
+            Self::Timeline => "timeline", Self::Mindmap => "mindmap", Self::Er => "er",
+            Self::Journey => "journey", Self::QuadrantChart => "quadrantChart", Self::XyChart => "xyChart",
+            Self::Requirement => "requirement", Self::C4 => "c4", Self::ZenUml => "zenuml", Self::Unknown => "unknown",
+        }
+    }
+}
+
+/// Detect the Mermaid diagram family from its first meaningful statement.
+pub fn detect_mermaid_diagram_type(code: &str) -> MermaidDiagramType {
+    let mut in_frontmatter = false;
+    for line in code.lines() {
+        let t = line.trim();
+        if t == "---" { in_frontmatter = !in_frontmatter; continue; }
+        if in_frontmatter || t.is_empty() || t.starts_with("%%") { continue; }
+        let lower = t.to_ascii_lowercase();
+        let token = lower.split_whitespace().next().unwrap_or_default();
+        return match token {
+            "flowchart" | "graph" => MermaidDiagramType::Flowchart,
+            "sequencediagram" => MermaidDiagramType::Sequence,
+            "classdiagram" => MermaidDiagramType::Class,
+            "statediagram" | "statediagram-v2" => MermaidDiagramType::State,
+            "gantt" => MermaidDiagramType::Gantt,
+            "pie" => MermaidDiagramType::Pie,
+            "gitgraph" => MermaidDiagramType::Git,
+            "timeline" => MermaidDiagramType::Timeline,
+            "mindmap" => MermaidDiagramType::Mindmap,
+            "erdiagram" | "erdiagram-v2" => MermaidDiagramType::Er,
+            "journey" => MermaidDiagramType::Journey,
+            "quadrantchart" => MermaidDiagramType::QuadrantChart,
+            "xychart" | "xychart-beta" => MermaidDiagramType::XyChart,
+            "requirementdiagram" => MermaidDiagramType::Requirement,
+            "c4context" | "c4container" | "c4component" | "c4dynamic" | "c4deployment" => MermaidDiagramType::C4,
+            "zenuml" => MermaidDiagramType::ZenUml,
+            _ => MermaidDiagramType::Unknown,
+        };
+    }
+    MermaidDiagramType::Unknown
+}
+
 /// Return a Mermaid-safe version of `code` for passing to Mermaid.js.
 ///
 /// Only flowchart/graph node labels that are known to be ambiguous are quoted:
@@ -13,7 +64,7 @@ use std::borrow::Cow;
 /// Mermaid syntax characters such as `{}`. Quoted labels, comments, edge labels,
 /// unsafe labels, and non-flowchart diagrams are left unchanged.
 pub fn normalize_mermaid_source(code: &str) -> String {
-    if !is_flowchart(code) {
+    if detect_mermaid_diagram_type(code) != MermaidDiagramType::Flowchart {
         return code.to_owned();
     }
 
@@ -242,6 +293,18 @@ mod tests {
     fn preserves_unsafe_label() {
         let line = "  B[/foo\"bar]";
         assert_eq!(normalize_line(line), line);
+    }
+
+    #[test]
+    fn detects_class_and_gantt_diagrams() {
+        assert_eq!(detect_mermaid_diagram_type("classDiagram\n  A <|-- B"), MermaidDiagramType::Class);
+        assert_eq!(detect_mermaid_diagram_type("gantt\n  title G"), MermaidDiagramType::Gantt);
+    }
+
+    #[test]
+    fn frontmatter_does_not_hide_diagram_type() {
+        let src = "---\ntitle: Example\n---\nclassDiagram\n  A <|-- B";
+        assert_eq!(detect_mermaid_diagram_type(src), MermaidDiagramType::Class);
     }
 
     #[test]
