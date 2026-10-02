@@ -151,7 +151,6 @@ fn append_normalized_line(line: &str, output: &mut String, changed: &mut bool) {
     output.push_str(normalized.as_ref());
 }
 
-
 fn normalize_line(line: &str) -> Cow<'_, str> {
     let bytes = line.as_bytes();
     let len = bytes.len();
