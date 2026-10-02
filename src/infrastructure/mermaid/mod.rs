@@ -9,7 +9,11 @@ extern "C" {
     /// Calls the global `__mermaid_render(id, code)` function defined in index.html.
     /// Returns a JSON string with `{ ok: bool, svg?: string, error?: string }`.
     #[wasm_bindgen(js_name = "__mermaid_render", catch)]
-    async fn mermaid_render_js(id: &str, code: &str, diagram_type: &str) -> Result<JsValue, JsValue>;
+    async fn mermaid_render_js(
+        id: &str,
+        code: &str,
+        diagram_type: &str,
+    ) -> Result<JsValue, JsValue>;
 }
 
 /// Result of a Mermaid rendering attempt.
