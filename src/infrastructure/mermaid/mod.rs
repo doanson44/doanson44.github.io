@@ -1,5 +1,5 @@
 mod normalize;
-pub use normalize::normalize_mermaid_source;
+pub use normalize::{detect_mermaid_diagram_type, normalize_mermaid_source};
 
 use serde::Deserialize;
 use wasm_bindgen::prelude::*;
@@ -9,7 +9,7 @@ extern "C" {
     /// Calls the global `__mermaid_render(id, code)` function defined in index.html.
     /// Returns a JSON string with `{ ok: bool, svg?: string, error?: string }`.
     #[wasm_bindgen(js_name = "__mermaid_render", catch)]
-    async fn mermaid_render_js(id: &str, code: &str) -> Result<JsValue, JsValue>;
+    async fn mermaid_render_js(id: &str, code: &str, diagram_type: &str) -> Result<JsValue, JsValue>;
 }
 
 /// Result of a Mermaid rendering attempt.
@@ -49,7 +49,8 @@ pub async fn render_mermaid(id: &str, code: &str) -> MermaidResult {
     // The original `code` is never mutated; `normalized` is a local value used
     // only for rendering. Copy/export functionality continues to use `code`.
     let normalized = normalize_mermaid_source(code);
-    match mermaid_render_js(id, &normalized).await {
+    let diagram_type = detect_mermaid_diagram_type(&normalized);
+    match mermaid_render_js(id, &normalized, diagram_type.as_str()).await {
         Ok(js_value) => {
             let json_str = match js_value.as_string() {
                 Some(s) => s,
