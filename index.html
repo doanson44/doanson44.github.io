@@ -39,7 +39,7 @@
     <script>
         window.__mermaid_render_counter = 0;
 
-        window.__mermaid_render = async function(id, code) {
+        window.__mermaid_render = async function(id, code, diagramType) {
             try {
                 let retries = 0;
                 while (!window.__mermaid && retries < 50) {
@@ -49,6 +49,16 @@
                 if (!window.__mermaid) throw new Error("Mermaid library failed to load");
                 window.__mermaid_render_counter += 1;
                 const uniqueId = 'mermaid-svg-' + id + '-' + window.__mermaid_render_counter;
+                const currentTheme = (document.documentElement.getAttribute('data-theme') || 'dark') === 'light' ? 'default' : 'dark';
+                if (diagramType === 'class') {
+                    window.__mermaid.initialize({
+                        class: { theme: currentTheme, hideEmptyMembersBox: true }
+                    });
+                } else if (diagramType === 'gantt') {
+                    window.__mermaid.initialize({
+                        gantt: { topAxis: true }
+                    });
+                }
                 const { svg } = await window.__mermaid.render(uniqueId, code);
                 return JSON.stringify({ ok: true, svg: svg });
             } catch (e) {
@@ -129,7 +139,11 @@
                 window.setTimeout(function() { html.removeAttribute('data-theme-transition'); html.style.removeProperty('--theme-transition-color'); }, 320);
             }
             if (window.__mermaid) {
-                window.__mermaid.initialize({ theme: next === 'light' ? 'default' : 'dark' });
+                window.__mermaid.initialize({
+                    theme: next === 'light' ? 'default' : 'dark',
+                    class: { theme: next === 'light' ? 'default' : 'dark', hideEmptyMembersBox: true },
+                    gantt: { topAxis: true }
+                });
                 document.querySelectorAll('[data-mermaid-code]').forEach(function(el) {
                     const code = el.getAttribute('data-mermaid-code');
                     if (code) {
