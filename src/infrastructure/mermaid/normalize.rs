@@ -151,28 +151,6 @@ fn append_normalized_line(line: &str, output: &mut String, changed: &mut bool) {
     output.push_str(normalized.as_ref());
 }
 
-fn is_flowchart(code: &str) -> bool {
-    for line in code.lines() {
-        let t = line.trim();
-        if t.is_empty() || t.starts_with("%%") {
-            continue;
-        }
-        let lower = t.to_ascii_lowercase();
-        return is_keyword_token(&lower, "flowchart") || is_keyword_token(&lower, "graph");
-    }
-    false
-}
-
-fn is_keyword_token(s: &str, keyword: &str) -> bool {
-    if !s.starts_with(keyword) {
-        return false;
-    }
-
-    matches!(
-        s.as_bytes().get(keyword.len()),
-        None | Some(&b' ') | Some(&b'\t')
-    )
-}
 
 fn normalize_line(line: &str) -> Cow<'_, str> {
     let bytes = line.as_bytes();
