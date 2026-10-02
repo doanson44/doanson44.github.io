@@ -356,18 +356,45 @@ mod tests {
 
     #[test]
     fn detects_flowchart_and_graph_variants() {
-        assert!(is_flowchart("flowchart TD\n  A-->B"));
-        assert!(is_flowchart("flowchart LR\n  A-->B"));
-        assert!(is_flowchart("FLOWCHART TD\n  A-->B"));
-        assert!(is_flowchart("graph TD\n  A-->B"));
-        assert!(is_flowchart("GRAPH LR\n  A-->B"));
+        assert_eq!(
+            detect_mermaid_diagram_type("flowchart TD\n  A-->B"),
+            MermaidDiagramType::Flowchart
+        );
+        assert_eq!(
+            detect_mermaid_diagram_type("flowchart LR\n  A-->B"),
+            MermaidDiagramType::Flowchart
+        );
+        assert_eq!(
+            detect_mermaid_diagram_type("FLOWCHART TD\n  A-->B"),
+            MermaidDiagramType::Flowchart
+        );
+        assert_eq!(
+            detect_mermaid_diagram_type("graph TD\n  A-->B"),
+            MermaidDiagramType::Flowchart
+        );
+        assert_eq!(
+            detect_mermaid_diagram_type("GRAPH LR\n  A-->B"),
+            MermaidDiagramType::Flowchart
+        );
     }
 
     #[test]
     fn flowchart_keyword_is_token_aware() {
-        assert!(!is_flowchart("flowchartSomething\n  A-->B"));
-        assert!(!is_flowchart("graphSomething\n  A-->B"));
-        assert!(!is_flowchart("flowchartTD\n  A-->B"));
-        assert!(!is_flowchart("graphLR\n  A-->B"));
+        assert_eq!(
+            detect_mermaid_diagram_type("flowchartSomething\n  A-->B"),
+            MermaidDiagramType::Unknown
+        );
+        assert_eq!(
+            detect_mermaid_diagram_type("graphSomething\n  A-->B"),
+            MermaidDiagramType::Unknown
+        );
+        assert_eq!(
+            detect_mermaid_diagram_type("flowchartTD\n  A-->B"),
+            MermaidDiagramType::Unknown
+        );
+        assert_eq!(
+            detect_mermaid_diagram_type("graphLR\n  A-->B"),
+            MermaidDiagramType::Unknown
+        );
     }
 }
