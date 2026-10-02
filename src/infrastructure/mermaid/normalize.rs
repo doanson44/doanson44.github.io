@@ -9,18 +9,45 @@ use std::borrow::Cow;
 /// Mermaid diagram families supported by the renderer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MermaidDiagramType {
-    Flowchart, Sequence, Class, State, Gantt, Pie, Git, Timeline, Mindmap, Er,
-    Journey, QuadrantChart, XyChart, Requirement, C4, ZenUml, Unknown,
+    Flowchart,
+    Sequence,
+    Class,
+    State,
+    Gantt,
+    Pie,
+    Git,
+    Timeline,
+    Mindmap,
+    Er,
+    Journey,
+    QuadrantChart,
+    XyChart,
+    Requirement,
+    C4,
+    ZenUml,
+    Unknown,
 }
 
 impl MermaidDiagramType {
     pub const fn as_str(self) -> &'static str {
         match self {
-            Self::Flowchart => "flowchart", Self::Sequence => "sequence", Self::Class => "class",
-            Self::State => "state", Self::Gantt => "gantt", Self::Pie => "pie", Self::Git => "git",
-            Self::Timeline => "timeline", Self::Mindmap => "mindmap", Self::Er => "er",
-            Self::Journey => "journey", Self::QuadrantChart => "quadrantChart", Self::XyChart => "xyChart",
-            Self::Requirement => "requirement", Self::C4 => "c4", Self::ZenUml => "zenuml", Self::Unknown => "unknown",
+            Self::Flowchart => "flowchart",
+            Self::Sequence => "sequence",
+            Self::Class => "class",
+            Self::State => "state",
+            Self::Gantt => "gantt",
+            Self::Pie => "pie",
+            Self::Git => "git",
+            Self::Timeline => "timeline",
+            Self::Mindmap => "mindmap",
+            Self::Er => "er",
+            Self::Journey => "journey",
+            Self::QuadrantChart => "quadrantChart",
+            Self::XyChart => "xyChart",
+            Self::Requirement => "requirement",
+            Self::C4 => "c4",
+            Self::ZenUml => "zenuml",
+            Self::Unknown => "unknown",
         }
     }
 }
@@ -30,8 +57,13 @@ pub fn detect_mermaid_diagram_type(code: &str) -> MermaidDiagramType {
     let mut in_frontmatter = false;
     for line in code.lines() {
         let t = line.trim();
-        if t == "---" { in_frontmatter = !in_frontmatter; continue; }
-        if in_frontmatter || t.is_empty() || t.starts_with("%%") { continue; }
+        if t == "---" {
+            in_frontmatter = !in_frontmatter;
+            continue;
+        }
+        if in_frontmatter || t.is_empty() || t.starts_with("%%") {
+            continue;
+        }
         let lower = t.to_ascii_lowercase();
         let token = lower.split_whitespace().next().unwrap_or_default();
         return match token {
@@ -49,7 +81,9 @@ pub fn detect_mermaid_diagram_type(code: &str) -> MermaidDiagramType {
             "quadrantchart" => MermaidDiagramType::QuadrantChart,
             "xychart" | "xychart-beta" => MermaidDiagramType::XyChart,
             "requirementdiagram" => MermaidDiagramType::Requirement,
-            "c4context" | "c4container" | "c4component" | "c4dynamic" | "c4deployment" => MermaidDiagramType::C4,
+            "c4context" | "c4container" | "c4component" | "c4dynamic" | "c4deployment" => {
+                MermaidDiagramType::C4
+            }
             "zenuml" => MermaidDiagramType::ZenUml,
             _ => MermaidDiagramType::Unknown,
         };
@@ -297,8 +331,14 @@ mod tests {
 
     #[test]
     fn detects_class_and_gantt_diagrams() {
-        assert_eq!(detect_mermaid_diagram_type("classDiagram\n  A <|-- B"), MermaidDiagramType::Class);
-        assert_eq!(detect_mermaid_diagram_type("gantt\n  title G"), MermaidDiagramType::Gantt);
+        assert_eq!(
+            detect_mermaid_diagram_type("classDiagram\n  A <|-- B"),
+            MermaidDiagramType::Class
+        );
+        assert_eq!(
+            detect_mermaid_diagram_type("gantt\n  title G"),
+            MermaidDiagramType::Gantt
+        );
     }
 
     #[test]
