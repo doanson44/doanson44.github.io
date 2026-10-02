@@ -155,6 +155,55 @@ graph TD
     PORT -.-> BR
 ```
 
+### Class Diagram
+
+```mermaid
+classDiagram
+    class MarkdownDocument {
+        +String id
+        +String title
+        +String content
+        +String created_at
+        +String updated_at
+        +new(title, content)
+        +sample()
+    }
+
+    class MarkdownService {
+        +render(content)
+    }
+
+    class MermaidRenderer {
+        +render(id, code)
+    }
+
+    MarkdownService --> MarkdownDocument : processes
+    MarkdownService --> MermaidRenderer : renders
+    MermaidRenderer ..> MarkdownDocument : supports
+```
+
+### Gantt Chart
+
+```mermaid
+gantt
+    title Markdown Studio Development
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+
+    section Planning
+        Requirements :done, requirements, 2026-10-01, 2d
+        Design        :done, design, after requirements, 2d
+
+    section Development
+        Markdown editor :active, editor, after design, 4d
+        Mermaid support :mermaid, after editor, 3d
+        Testing         :testing, after mermaid, 2d
+
+    section Release
+        Documentation :docs, after testing, 2d
+        Release        :milestone, release, after docs, 0d
+```
+
 ---
 
 ### Horizontal Rule
