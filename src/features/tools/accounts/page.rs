@@ -56,6 +56,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                 let id_for_name = id.clone();
                                 let id_for_environment_count = id.clone();
                                 let id_for_delete_label = id.clone();
+                                let id_for_edit_label = id.clone();
                                 view! {
                                     <div class=move || if state.selected_project.get().as_deref() == Some(id_for_class.as_str()) { "flex items-start gap-1 rounded-md bg-[var(--accent)]/10 p-1 ring-1 ring-[var(--accent)]/40" } else { "flex items-start gap-1 rounded-md p-1 hover:bg-[var(--surface-hover)]" }>
                                         <button type="button" class="min-w-0 flex-1 rounded px-2 py-1 text-left text-sm text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.select_project(id_for_select.clone())>
@@ -63,7 +64,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                             <span class="mt-1 block text-xs text-[var(--text-secondary)]">{move || project_by_id(&state, &id_for_environment_count).map(|item| format!("{} environments", item.environments.len())).unwrap_or_else(|| "0 environments".into())}</span>
                                         </button>
                                         <div class="flex shrink-0 flex-col items-stretch gap-1">
-                                        <button type="button" class="shrink-0 rounded px-2 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Edit project {}", project_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) title="Edit project" on:click=move |_| {
+                                        <button type="button" class="shrink-0 rounded px-2 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Edit project {}", project_by_id(&state, &id_for_edit_label).map(|item| item.name).unwrap_or_default()) title="Edit project" on:click=move |_| {
                                             modal_snapshot.set(Some(snapshot_state(&state)));
                                             state.defer_persistence.set(true);
                                             state.select_project(id_for_edit.clone());
@@ -229,7 +230,9 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         let id_for_username = id.clone();
                                         let id_for_username_title = id.clone();
                                         let id_for_username_copy = id.clone();
+                                        let id_for_username_copy_disabled = id.clone();
                                         let id_for_password_copy = id.clone();
+                                        let id_for_password_copy_disabled = id.clone();
                                         let id_for_password_display = id.clone();
                                         let id_for_otp = id.clone();
                                         let id_for_otp_copy = id.clone();
@@ -249,13 +252,13 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"Username"</span>
                                                     <span class="truncate font-mono text-xs text-[var(--text-primary)]" title=move || account_by_id(&state, &id_for_username_title).map(|item| item.username).unwrap_or_default()>{move || account_by_id(&state, &id_for_username).map(|item| if item.username.is_empty() { "—".into() } else { item.username }).unwrap_or_else(|| "—".into())}</span>
-                                                    <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_username_copy).is_none_or(|item| item.username.is_empty())
+                                                    <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_username_copy_disabled).is_none_or(|item| item.username.is_empty())
                                                         on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_username_copy) { copy_value(item.username, "Username", state.message); } }>"Copy"</button>
                                                 </div>
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"Password"</span>
                                                     <span class="truncate font-mono text-xs text-[var(--text-primary)]" title="Password">{move || account_by_id(&state, &id_for_password_display).map(|item| if item.password.is_empty() { "—".to_string() } else { "••••••••".to_string() }).unwrap_or_else(|| "—".into())}</span>
-                                                    <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_password_copy).is_none_or(|item| item.password.is_empty())
+                                                    <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_password_copy_disabled).is_none_or(|item| item.password.is_empty())
                                                         on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_password_copy) { copy_value(item.password, "Password", state.message); } }>"Copy"</button>
                                                 </div>
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
