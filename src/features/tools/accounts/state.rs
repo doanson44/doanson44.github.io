@@ -13,6 +13,7 @@ pub struct AccountManagerState {
     pub now_seconds: RwSignal<u64>,
     pub message: RwSignal<Option<String>>,
     pub transfer_json: RwSignal<String>,
+    pub defer_persistence: RwSignal<bool>,
 }
 
 impl Default for AccountManagerState {
@@ -45,10 +46,14 @@ impl AccountManagerState {
             now_seconds: RwSignal::new((js_sys::Date::now() / 1000.0) as u64),
             message: RwSignal::new(None),
             transfer_json: RwSignal::new(String::new()),
+            defer_persistence: RwSignal::new(false),
         }
     }
 
     pub fn save(&self) {
+        if self.defer_persistence.get_untracked() {
+            return;
+        }
         match self.storage.save(&self.projects.get_untracked()) {
             Ok(()) => self.message.set(None),
             Err(error) => self.message.set(Some(error)),
