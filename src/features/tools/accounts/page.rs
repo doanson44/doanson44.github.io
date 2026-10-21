@@ -62,6 +62,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                             <span class="block truncate font-semibold">{move || project_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</span>
                                             <span class="mt-1 block text-xs text-[var(--text-secondary)]">{move || project_by_id(&state, &id_for_environment_count).map(|item| format!("{} environments", item.environments.len())).unwrap_or_else(|| "0 environments".into())}</span>
                                         </button>
+                                        <div class="flex shrink-0 flex-col items-stretch gap-1">
                                         <button type="button" class="shrink-0 rounded px-2 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Edit project {}", project_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) title="Edit project" on:click=move |_| {
                                             modal_snapshot.set(Some(snapshot_state(&state)));
                                             state.defer_persistence.set(true);
@@ -74,6 +75,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                 if modal.get() == Some("project") { modal.set(None); modal_snapshot.set(None); }
                                             }
                                         }>"Delete"</button>
+                                        </div>
                                     </div>
                                 }
                             }
