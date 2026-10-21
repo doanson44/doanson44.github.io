@@ -30,7 +30,8 @@ pub fn ToolsPage() -> impl IntoView {
                         <ToolCard href="#/tools/base64" title="Base64 Encoder / Decoder" description=Signal::derive(move || t_string!(i18n, tools_base64_desc).to_string()) />
                         <ToolCard href="#/tools/time" title="Time & Utilities" description=Signal::derive(move || t_string!(i18n, tools_time_desc).to_string()) />
                         <ToolCard href="#/tools/market" title="Market" description=Signal::derive(move || t_string!(i18n, tools_market_desc).to_string()) />
-                        <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description=Signal::derive(move || t_string!(i18n, tools_proxy_desc).to_string()) />\n                        <ToolCard href="#/tools/accounts" title="Project & Account Manager" description=Signal::derive(move || "Manage projects, environment URLs, credentials, and TOTP codes locally.".to_string()) />
+                        <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description=Signal::derive(move || t_string!(i18n, tools_proxy_desc).to_string()) />
+                        <ToolCard href="#/tools/accounts" title="Project & Account Manager" description=Signal::derive(move || "Manage projects, environment URLs, credentials, and TOTP codes locally.".to_string()) />
                     </ToolSection>
                     <ToolSection title=Signal::derive(move || t_string!(i18n, tools_developer)) icon="</>">
                         {ToolId::all()
