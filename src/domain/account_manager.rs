@@ -56,6 +56,88 @@ pub fn generate_totp(secret: &str, unix_seconds: u64) -> Result<String, String> 
     Ok(format!("{:06}", binary % 1_000_000))
 }
 
+
+/// Computes HMAC-SHA1 without relying on browser APIs or external crypto crates.
+fn hmac_sha1(key: &[u8], message: &[u8]) -> [u8; 20] {
+    const BLOCK_SIZE: usize = 64;
+    let mut normalized_key = [0u8; BLOCK_SIZE];
+    if key.len() > BLOCK_SIZE {
+        normalized_key[..20].copy_from_slice(&sha1(key));
+    } else {
+        normalized_key[..key.len()].copy_from_slice(key);
+    }
+
+    let mut inner = Vec::with_capacity(BLOCK_SIZE + message.len());
+    let mut outer = Vec::with_capacity(BLOCK_SIZE + 20);
+    for byte in normalized_key {
+        inner.push(byte ^ 0x36);
+        outer.push(byte ^ 0x5c);
+    }
+    inner.extend_from_slice(message);
+    outer.extend_from_slice(&sha1(&inner));
+    sha1(&outer)
+}
+
+/// SHA-1 digest implementation used only by the RFC 6238 TOTP helper.
+fn sha1(input: &[u8]) -> [u8; 20] {
+    let bit_len = (input.len() as u64).wrapping_mul(8);
+    let mut message = Vec::with_capacity(input.len() + 72);
+    message.extend_from_slice(input);
+    message.push(0x80);
+    while message.len() % 64 != 56 {
+        message.push(0);
+    }
+    message.extend_from_slice(&bit_len.to_be_bytes());
+
+    let mut h0 = 0x67452301u32;
+    let mut h1 = 0xEFCDAB89u32;
+    let mut h2 = 0x98BADCFEu32;
+    let mut h3 = 0x10325476u32;
+    let mut h4 = 0xC3D2E1F0u32;
+
+    for chunk in message.chunks_exact(64) {
+        let mut words = [0u32; 80];
+        for (index, bytes) in chunk.chunks_exact(4).enumerate() {
+            words[index] = u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+        }
+        for index in 16..80 {
+            words[index] = (words[index - 3] ^ words[index - 8] ^ words[index - 14] ^ words[index - 16]).rotate_left(1);
+        }
+
+        let (mut a, mut b, mut c, mut d, mut e) = (h0, h1, h2, h3, h4);
+        for (index, word) in words.iter().enumerate() {
+            let (function, constant) = match index {
+                0..=19 => ((b & c) | ((!b) & d), 0x5A827999),
+                20..=39 => (b ^ c ^ d, 0x6ED9EBA1),
+                40..=59 => ((b & c) | (b & d) | (c & d), 0x8F1BBCDC),
+                _ => (b ^ c ^ d, 0xCA62C1D6),
+            };
+            let temp = a.rotate_left(5)
+                .wrapping_add(function)
+                .wrapping_add(e)
+                .wrapping_add(constant)
+                .wrapping_add(*word);
+            e = d;
+            d = c;
+            c = b.rotate_left(30);
+            b = a;
+            a = temp;
+        }
+
+        h0 = h0.wrapping_add(a);
+        h1 = h1.wrapping_add(b);
+        h2 = h2.wrapping_add(c);
+        h3 = h3.wrapping_add(d);
+        h4 = h4.wrapping_add(e);
+    }
+
+    let mut digest = [0u8; 20];
+    for (chunk, word) in digest.chunks_exact_mut(4).zip([h0, h1, h2, h3, h4]) {
+        chunk.copy_from_slice(&word.to_be_bytes());
+    }
+    digest
+}
+
 fn decode_base32(input: &str) -> Result<Vec<u8>, String> {
     let mut output = Vec::new();
     let mut buffer = 0u32;
