@@ -1,6 +1,4 @@
-use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
-use sha1::Sha1;
 
 /// All account-manager data is stored locally by the browser adapter.
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -49,10 +47,7 @@ pub fn generate_totp(secret: &str, unix_seconds: u64) -> Result<String, String> 
     }
 
     let counter = unix_seconds / 30;
-    let mut mac = Hmac::<Sha1>::new_from_slice(&key)
-        .map_err(|_| "Invalid TOTP secret key.".to_string())?;
-    mac.update(&counter.to_be_bytes());
-    let digest = mac.finalize().into_bytes();
+    let digest = hmac_sha1(&key, &counter.to_be_bytes());
     let offset = (digest[digest.len() - 1] & 0x0f) as usize;
     let binary = ((u32::from(digest[offset]) & 0x7f) << 24)
         | (u32::from(digest[offset + 1]) << 16)
