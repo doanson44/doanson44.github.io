@@ -41,7 +41,6 @@ pub fn AccountManagerPage() -> impl IntoView {
                 <aside class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3">
                     <div class="mb-3 flex items-center justify-between gap-2">
                         <h2 class="text-sm font-semibold uppercase tracking-wide text-[var(--text-secondary)]">"Projects"</h2>
-                        <button type="button" class="rounded px-2 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)] disabled:opacity-50" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); modal.set(Some("project")); } disabled=move || state.selected_project.get().is_none()>"Edit"</button>
                         <button type="button" class="rounded px-2 py-1 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.add_project(); modal.set(Some("project")); } aria-label="Add project">"+" </button>
                     </div>
                     <div class="flex flex-col gap-1">
@@ -53,6 +52,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                 let id_for_class = id.clone();
                                 let id_for_select = id.clone();
                                 let id_for_delete = id.clone();
+                                let id_for_edit = id.clone();
                                 let id_for_name = id.clone();
                                 let id_for_environment_count = id.clone();
                                 let id_for_delete_label = id.clone();
@@ -62,6 +62,12 @@ pub fn AccountManagerPage() -> impl IntoView {
                                             <span class="block truncate font-semibold">{move || project_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</span>
                                             <span class="mt-1 block text-xs text-[var(--text-secondary)]">{move || project_by_id(&state, &id_for_environment_count).map(|item| format!("{} environments", item.environments.len())).unwrap_or_else(|| "0 environments".into())}</span>
                                         </button>
+                                        <button type="button" class="shrink-0 rounded px-2 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Edit project {}", project_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) title="Edit project" on:click=move |_| {
+                                            modal_snapshot.set(Some(snapshot_state(&state)));
+                                            state.defer_persistence.set(true);
+                                            state.select_project(id_for_edit.clone());
+                                            modal.set(Some("project"));
+                                        }>"Edit"</button>
                                         <button type="button" class="shrink-0 rounded px-2 py-1 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Delete project {}", project_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) title="Delete project" on:click=move |_| {
                                             if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this project and all its environments/accounts?").unwrap_or(false)) {
                                                 state.select_project(id_for_delete.clone()); state.delete_selected_project();
@@ -126,17 +132,18 @@ pub fn AccountManagerPage() -> impl IntoView {
                                     let id_for_delete_label = id.clone();
                                     view! {
                                         <div class=move || if state.selected_environment.get().as_deref() == Some(id_for_class.as_str()) {
-                                            "rounded-md border border-[var(--accent)] bg-[var(--accent)]/5 p-3"
+                                            "cursor-pointer rounded-md border border-[var(--accent)] bg-[var(--accent)]/5 p-3"
                                         } else {
-                                            "rounded-md border border-[var(--border-color)] p-3 hover:bg-[var(--surface-hover)]"
-                                        }>
+                                            "cursor-pointer rounded-md border border-[var(--border-color)] p-3 hover:bg-[var(--surface-hover)]"
+                                        }
+                                            on:click=move |_| state.select_environment(id_for_select.clone())>
                                             <div class="flex items-start justify-between gap-2">
                                                 <button type="button" class="min-w-0 text-left font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
                                                     on:click=move |_| state.select_environment(id_for_select.clone())>{move || environment_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</button>
                                                 <div class="flex items-center gap-1">
                                                     <span class="shrink-0 rounded bg-[var(--surface-hover)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{move || environment_by_id(&state, &id_for_account_count).map(|item| item.accounts.len()).unwrap_or_default()}</span>
                                                     <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.select_environment(id_for_edit_environment.clone()); modal.set(Some("environment")); }>"Edit"</button>
-                                                    <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Delete environment {}", environment_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) on:click=move |_| { if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this environment and all its accounts?").unwrap_or(false)) { state.select_environment(id_for_delete_environment.clone()); state.delete_selected_environment(); } }>"Delete"</button>
+                                                    <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Delete environment {}", environment_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) on:click=move |event: web_sys::MouseEvent| { event.stop_propagation(); if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this environment and all its accounts?").unwrap_or(false)) { state.select_environment(id_for_delete_environment.clone()); state.delete_selected_environment(); } }>"Delete"</button>
                                                 </div>
                                             </div>
                                             <button type="button" class="mt-2 block max-w-full truncate text-left text-xs text-[var(--accent)] underline underline-offset-2"
