@@ -148,7 +148,7 @@ pub fn AccountManagerPage() -> impl IntoView {
 
                     <Show when=move || selected_environment(&state).is_some()>
                         <Show when=move || modal.get() == Some("environment")>
-                            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+                            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" on:keydown=move |event: web_sys::KeyboardEvent| { if event.key() == "Escape" { cancel_modal(&state, modal, modal_snapshot); } }>
                                 <div class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-[var(--surface)] shadow-xl" role="dialog" aria-modal="true" aria-label="Environment settings">
                                     <section class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4">
                             <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -245,7 +245,7 @@ pub fn AccountManagerPage() -> impl IntoView {
 
                     <Show when=move || selected_account(&state).is_some()>
                         <Show when=move || modal.get() == Some("account")>
-                            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+                            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" on:keydown=move |event: web_sys::KeyboardEvent| { if event.key() == "Escape" { cancel_modal(&state, modal, modal_snapshot); } }>
                                 <div class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-[var(--surface)] shadow-xl" role="dialog" aria-modal="true" aria-label="Account details">
                                     <section class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4">
                             <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
