@@ -26,7 +26,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                 <div class="flex flex-wrap gap-2">
                     <button type="button" class=button_class() on:click=move |_| state.export_json()>"Export JSON"</button>
                     <button type="button" class=button_class() on:click=move |_| state.import_json()>"Import JSON"</button>
-                    <button type="button" class=primary_button_class() on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.add_project(); modal.set(Some("project")); }>"+ New Project"</button>
+                    <button type="button" class=primary_button_class() on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.add_project(); modal.set(Some("project")); }>"+ New Project"</button>
                 </div>
             </header>
 
@@ -41,7 +41,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                 <aside class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3">
                     <div class="mb-3 flex items-center justify-between gap-2">
                         <h2 class="text-sm font-semibold uppercase tracking-wide text-[var(--text-secondary)]">"Projects"</h2>
-                        <button type="button" class="rounded px-2 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)] disabled:opacity-50" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); modal.set(Some("project")); } disabled=move || state.selected_project.get().is_none()>"Edit"</button>
+                        <button type="button" class="rounded px-2 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)] disabled:opacity-50" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); modal.set(Some("project")); } disabled=move || state.selected_project.get().is_none()>"Edit"</button>
                         <button type="button" class="rounded px-2 py-1 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.add_project(); modal.set(Some("project")); } aria-label="Add project">"+" </button>
                     </div>
                     <div class="flex flex-col gap-1">
@@ -93,7 +93,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                             disabled=move || state.selected_project.get().is_none() />
                         <div class="mt-5 flex justify-end gap-2 border-t border-[var(--border-color)] pt-4">
                             <button type="button" class=button_class() on:click=move |_| cancel_modal(&state, modal, modal_snapshot)>"Cancel"</button>
-                            <button type="button" class=primary_button_class() on:click=move |_| { state.save(); modal_snapshot.set(None); modal.set(None); }>"Save"</button>
+                            <button type="button" class=primary_button_class() on:click=move |_| { state.defer_persistence.set(false); state.save(); modal_snapshot.set(None); modal.set(None); }>"Save"</button>
                         </div>
                     </section>
                                 </div>
@@ -103,7 +103,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                     <section class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4">
                         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
                             <h2 class="text-lg font-semibold text-[var(--text-primary)]">"Environments"</h2>
-                            <button type="button" class=primary_button_class() on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.add_environment(); modal.set(Some("environment")); } disabled=move || state.selected_project.get().is_none()>"+ Add Environment"</button>
+                            <button type="button" class=primary_button_class() on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.add_environment(); modal.set(Some("environment")); } disabled=move || state.selected_project.get().is_none()>"+ Add Environment"</button>
                         </div>
                         <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             <For
@@ -129,7 +129,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                     on:click=move |_| state.select_environment(id_for_select.clone())>{environment.name.clone()}</button>
                                                 <div class="flex items-center gap-1">
                                                     <span class="shrink-0 rounded bg-[var(--surface-hover)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{environment.accounts.len()}</span>
-                                                    <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.select_environment(id_for_edit_environment.clone()); modal.set(Some("environment")); }>"Edit"</button>
+                                                    <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.select_environment(id_for_edit_environment.clone()); modal.set(Some("environment")); }>"Edit"</button>
                                                     <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=format!("Delete environment {}", environment.name) on:click=move |_| { if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this environment and all its accounts?").unwrap_or(false)) { state.select_environment(id_for_delete_environment.clone()); state.delete_selected_environment(); } }>"Delete"</button>
                                                 </div>
                                             </div>
@@ -193,7 +193,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                 <h2 class="text-lg font-semibold text-[var(--text-primary)]">"Accounts"</h2>
                                 <div class="flex items-center gap-2">
                                     <span class="text-sm text-[var(--text-secondary)]">{move || selected_environment(&state).map(|e| format!("{} accounts", e.accounts.len())).unwrap_or_default()}</span>
-                                    <button type="button" class=primary_button_class() on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.add_account(); modal.set(Some("account")); }>"+ Add Account"</button>
+                                    <button type="button" class=primary_button_class() on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.add_account(); modal.set(Some("account")); }>"+ Add Account"</button>
                                 </div>
                             </div>
                             <div class="grid gap-3 xl:grid-cols-2">
@@ -215,9 +215,9 @@ pub fn AccountManagerPage() -> impl IntoView {
                                             <article class="min-w-0 rounded-md border border-[var(--border-color)] p-3">
                                                 <div class="mb-3 flex items-center justify-between gap-2">
                                                     <button type="button" class="truncate text-left font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
-                                                        on:click=move |_| { state.selected_account.set(Some(id.clone())); modal.set(Some("account")); }>{account.name.clone()}</button>
+                                                        on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.selected_account.set(Some(id.clone())); modal.set(Some("account")); }>{account.name.clone()}</button>
                                                     <div class="flex shrink-0 items-center gap-1">
-                                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.selected_account.set(Some(id_for_edit.clone())); modal.set(Some("account")); }>"Edit"</button>
+                                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.selected_account.set(Some(id_for_edit.clone())); modal.set(Some("account")); }>"Edit"</button>
                                                         <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=format!("Delete account {}", account.name) on:click=move |_| { if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this account?").unwrap_or(false)) { state.selected_account.set(Some(id_for_delete.clone())); state.delete_selected_account(); } }>"Delete"</button>
                                                     </div>
                                                 </div>
@@ -360,6 +360,7 @@ fn cancel_modal(state: &AccountManagerState, modal: RwSignal<Option<&'static str
         state.selected_project.set(snapshot.selected_project);
         state.selected_environment.set(snapshot.selected_environment);
         state.selected_account.set(snapshot.selected_account);
+        state.defer_persistence.set(false);
         state.save();
     }
     modal_snapshot.set(None);
