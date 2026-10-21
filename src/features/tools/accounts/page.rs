@@ -42,7 +42,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                     <div class="mb-3 flex items-center justify-between gap-2">
                         <h2 class="text-sm font-semibold uppercase tracking-wide text-[var(--text-secondary)]">"Projects"</h2>
                         <button type="button" class="rounded px-2 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)] disabled:opacity-50" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); modal.set(Some("project")); } disabled=move || state.selected_project.get().is_none()>"Edit"</button>
-                        <button type="button" class="rounded px-2 py-1 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.add_project(); modal.set(Some("project")); } aria-label="Add project">"+" </button>
+                        <button type="button" class="rounded px-2 py-1 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.add_project(); modal.set(Some("project")); } aria-label="Add project">"+" </button>
                     </div>
                     <div class="flex flex-col gap-1">
                         <For
@@ -179,7 +179,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                             </div>
                             <div class="mt-5 flex justify-end gap-2 border-t border-[var(--border-color)] pt-4">
                                 <button type="button" class=button_class() on:click=move |_| cancel_modal(&state, modal, modal_snapshot)>"Cancel"</button>
-                                <button type="button" class=primary_button_class() on:click=move |_| { state.save(); modal_snapshot.set(None); modal.set(None); }>"Save"</button>
+                                <button type="button" class=primary_button_class() on:click=move |_| { state.defer_persistence.set(false); state.save(); modal_snapshot.set(None); modal.set(None); }>"Save"</button>
                             </div>
                         </section>
                                 </div>
@@ -360,9 +360,9 @@ fn cancel_modal(state: &AccountManagerState, modal: RwSignal<Option<&'static str
         state.selected_project.set(snapshot.selected_project);
         state.selected_environment.set(snapshot.selected_environment);
         state.selected_account.set(snapshot.selected_account);
-        state.defer_persistence.set(false);
-        state.save();
     }
+    state.defer_persistence.set(false);
+    state.save();
     modal_snapshot.set(None);
     modal.set(None);
 }
