@@ -220,6 +220,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         let id_for_username_title = id.clone();
                                         let id_for_username_copy = id.clone();
                                         let id_for_password_copy = id.clone();
+                                        let id_for_password_display = id.clone();
                                         let id_for_otp = id.clone();
                                         let id_for_otp_copy = id.clone();
                                         let id_for_otp_disabled = id.clone();
@@ -243,7 +244,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                 </div>
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"Password"</span>
-                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]" title="Password">"••••••••"</span>
+                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]" title="Password">{move || account_by_id(&state, &id_for_password_display).map(|item| if item.password.is_empty() { "—".to_string() } else { "••••••••".to_string() }).unwrap_or_else(|| "—".into())}</span>
                                                     <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_password_copy).is_none_or(|item| item.password.is_empty())
                                                         on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_password_copy) { copy_value(item.password, "Password", state.message); } }>"Copy"</button>
                                                 </div>
