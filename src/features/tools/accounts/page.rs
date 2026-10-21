@@ -219,7 +219,6 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         let id_for_username = id.clone();
                                         let id_for_username_title = id.clone();
                                         let id_for_username_copy = id.clone();
-                                        let id_for_password = id.clone();
                                         let id_for_password_copy = id.clone();
                                         let id_for_otp = id.clone();
                                         let id_for_otp_copy = id.clone();
@@ -390,22 +389,6 @@ fn cancel_modal(state: &AccountManagerState, modal: RwSignal<Option<&'static str
     state.save();
     modal_snapshot.set(None);
     modal.set(None);
-}
-
-#[component]
-fn CredentialRow(
-    label: &'static str,
-    value: String,
-    on_copy: impl Fn(String) + 'static + Clone,
-) -> impl IntoView {
-    let copy_value = value.clone();
-    view! {
-        <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
-            <span class="text-xs text-[var(--text-secondary)]">{label}</span>
-            <span class="truncate font-mono text-xs text-[var(--text-primary)]" title=value.clone()>{if value.is_empty() { "—".into() } else if label == "Password" { "••••••••".into() } else { value.clone() }}</span>
-            <button type="button" class=button_class() disabled=copy_value.is_empty() on:click=move |_| on_copy(copy_value.clone())>"Copy"</button>
-        </div>
-    }
 }
 
 fn copy_value(value: String, label: &'static str, message: RwSignal<Option<String>>) {
