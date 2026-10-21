@@ -183,6 +183,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                     key=|account| account.id.clone()
                                     children=move |account| {
                                         let id = account.id.clone();
+                                        let id_for_edit = id.clone();
                                         let username = account.username.clone();
                                         let password = account.password.clone();
                                         let otp_account = account.clone();
@@ -195,15 +196,15 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                     <button type="button" class="truncate text-left font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
                                                         on:click=move |_| state.selected_account.set(Some(id.clone()))>{account.name.clone()}</button>
                                                     <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]"
-                                                        on:click=move |_| state.selected_account.set(Some(id.clone()))>"Edit"</button>
+                                                        on:click=move |_| state.selected_account.set(Some(id_for_edit.clone()))>"Edit"</button>
                                                 </div>
                                                 <CredentialRow label="Username" value=username on_copy=move |value| copy(value, "Username") />
                                                 <CredentialRow label="Password" value=password on_copy=move |value| copy(value, "Password") />
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"OTP"</span>
-                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]">{move || account_otp(&account, state.now_seconds.get())}</span>
-                                                    <button type="button" class=button_class() disabled=move || account.otp_mode == OtpMode::None || account_otp(&account, state.now_seconds.get()).is_empty()
-                                                        on:click=move |_| copy(account_otp(&account, state.now_seconds.get()), "OTP")>"Copy"</button>
+                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]">{move || account_otp(&otp_account, state.now_seconds.get())}</span>
+                                                    <button type="button" class=button_class() disabled=move || !has_otp || account_otp(&otp_copy_account, state.now_seconds.get()).is_empty()
+                                                        on:click=move |_| copy(account_otp(&otp_copy_account, state.now_seconds.get()), "OTP")>"Copy"</button>
                                                 </div>
                                                 <Show when=move || is_totp>
                                                     <p class="mt-1 text-right text-xs text-[var(--text-secondary)]">{format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</p>
