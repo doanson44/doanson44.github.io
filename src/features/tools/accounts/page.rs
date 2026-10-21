@@ -375,10 +375,14 @@ fn open_environment_url(url: &str, message: RwSignal<Option<String>>) {
         message.set(Some("Enter a valid http:// or https:// environment URL first.".into()));
         return;
     }
-    let opened = web_sys::window()
-        .and_then(|window| window.open_with_url_and_target_and_features(url, "_blank", "noopener,noreferrer").ok().flatten());
-    if opened.is_none() {
-        message.set(Some("The browser blocked the new tab. Allow pop-ups for this page.".into()));
+    let Some(window) = web_sys::window() else {
+        message.set(Some("Browser window is unavailable.".into()));
+        return;
+    };
+    // A null return value is expected with noopener in some browsers, so do not
+    // mistake it for a blocked popup.
+    if window.open_with_url_and_target_and_features(url, "_blank", "noopener,noreferrer").is_err() {
+        message.set(Some("Could not open the environment URL.".into()));
     }
 }
 
