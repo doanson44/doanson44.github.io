@@ -53,13 +53,16 @@ pub fn AccountManagerPage() -> impl IntoView {
                                 let id_for_class = id.clone();
                                 let id_for_select = id.clone();
                                 let id_for_delete = id.clone();
+                                let id_for_name = id.clone();
+                                let id_for_environment_count = id.clone();
+                                let id_for_delete_label = id.clone();
                                 view! {
                                     <div class=move || if state.selected_project.get().as_deref() == Some(id_for_class.as_str()) { "flex items-start gap-1 rounded-md bg-[var(--accent)]/10 p-1 ring-1 ring-[var(--accent)]/40" } else { "flex items-start gap-1 rounded-md p-1 hover:bg-[var(--surface-hover)]" }>
                                         <button type="button" class="min-w-0 flex-1 rounded px-2 py-1 text-left text-sm text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.select_project(id_for_select.clone())>
-                                            <span class="block truncate font-semibold">{project.name.clone()}</span>
-                                            <span class="mt-1 block text-xs text-[var(--text-secondary)]">{format!("{} environments", project.environments.len())}</span>
+                                            <span class="block truncate font-semibold">{move || project_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</span>
+                                            <span class="mt-1 block text-xs text-[var(--text-secondary)]">{move || project_by_id(&state, &id_for_environment_count).map(|item| format!("{} environments", item.environments.len())).unwrap_or_else(|| "0 environments".into())}</span>
                                         </button>
-                                        <button type="button" class="shrink-0 rounded px-2 py-1 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=format!("Delete project {}", project.name) title="Delete project" on:click=move |_| {
+                                        <button type="button" class="shrink-0 rounded px-2 py-1 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Delete project {}", project_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) title="Delete project" on:click=move |_| {
                                             if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this project and all its environments/accounts?").unwrap_or(false)) {
                                                 state.select_project(id_for_delete.clone()); state.delete_selected_project();
                                                 if modal.get() == Some("project") { modal.set(None); modal_snapshot.set(None); }
@@ -115,9 +118,12 @@ pub fn AccountManagerPage() -> impl IntoView {
                                     let id_for_select = id.clone();
                                     let id_for_edit_environment = id.clone();
                                     let id_for_delete_environment = id.clone();
-                                    let url = environment.url.clone();
-                                    let url_for_click = url.clone();
-                                    let url_for_display = url.clone();
+                                    let id_for_name = id.clone();
+                                    let id_for_account_count = id.clone();
+                                    let id_for_url = id.clone();
+                                    let id_for_url_display = id.clone();
+                                    let id_for_url_title = id.clone();
+                                    let id_for_delete_label = id.clone();
                                     view! {
                                         <div class=move || if state.selected_environment.get().as_deref() == Some(id_for_class.as_str()) {
                                             "rounded-md border border-[var(--accent)] bg-[var(--accent)]/5 p-3"
@@ -126,16 +132,20 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         }>
                                             <div class="flex items-start justify-between gap-2">
                                                 <button type="button" class="min-w-0 text-left font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
-                                                    on:click=move |_| state.select_environment(id_for_select.clone())>{environment.name.clone()}</button>
+                                                    on:click=move |_| state.select_environment(id_for_select.clone())>{move || environment_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</button>
                                                 <div class="flex items-center gap-1">
-                                                    <span class="shrink-0 rounded bg-[var(--surface-hover)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{environment.accounts.len()}</span>
+                                                    <span class="shrink-0 rounded bg-[var(--surface-hover)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{move || environment_by_id(&state, &id_for_account_count).map(|item| item.accounts.len()).unwrap_or_default()}</span>
                                                     <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.select_environment(id_for_edit_environment.clone()); modal.set(Some("environment")); }>"Edit"</button>
-                                                    <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=format!("Delete environment {}", environment.name) on:click=move |_| { if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this environment and all its accounts?").unwrap_or(false)) { state.select_environment(id_for_delete_environment.clone()); state.delete_selected_environment(); } }>"Delete"</button>
+                                                    <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Delete environment {}", environment_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) on:click=move |_| { if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this environment and all its accounts?").unwrap_or(false)) { state.select_environment(id_for_delete_environment.clone()); state.delete_selected_environment(); } }>"Delete"</button>
                                                 </div>
                                             </div>
                                             <button type="button" class="mt-2 block max-w-full truncate text-left text-xs text-[var(--accent)] underline underline-offset-2"
-                                                title=url.clone()
-                                                on:click=move |_| open_environment_url(&url_for_click, state.message)>{if url_for_display.is_empty() { "Set environment URL".to_string() } else { url_for_display.clone() }}</button>
+                                                title=move || environment_by_id(&state, &id_for_url_title).map(|item| item.url).unwrap_or_default()
+                                                on:click=move |_| {
+                                                    if let Some(item) = environment_by_id(&state, &id_for_url) {
+                                                        open_environment_url(&item.url, state.message);
+                                                    }
+                                                }>{move || environment_by_id(&state, &id_for_url_display).map(|item| if item.url.is_empty() { "Set environment URL".to_string() } else { item.url }).unwrap_or_default()}</button>
                                         </div>
                                     }
                                 }
@@ -204,33 +214,46 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         let id = account.id.clone();
                                         let id_for_edit = id.clone();
                                         let id_for_delete = id.clone();
-                                        let username = account.username.clone();
-                                        let password = account.password.clone();
-                                        let otp_account = account.clone();
-                                        let otp_copy_account = account.clone();
-                                        let otp_disabled_account = account.clone();
-                                        let is_totp = account.otp_mode == OtpMode::Totp;
-                                        let has_otp = account.otp_mode != OtpMode::None;
+                                        let id_for_name = id.clone();
+                                        let id_for_username = id.clone();
+                                        let id_for_username_copy = id.clone();
+                                        let id_for_password = id.clone();
+                                        let id_for_password_copy = id.clone();
+                                        let id_for_otp = id.clone();
+                                        let id_for_otp_copy = id.clone();
+                                        let id_for_otp_disabled = id.clone();
+                                        let id_for_totp = id.clone();
+                                        let id_for_delete_label = id.clone();
                                         view! {
                                             <article class="min-w-0 rounded-md border border-[var(--border-color)] p-3">
                                                 <div class="mb-3 flex items-center justify-between gap-2">
                                                     <button type="button" class="truncate text-left font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
-                                                        on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.selected_account.set(Some(id.clone())); modal.set(Some("account")); }>{account.name.clone()}</button>
+                                                        on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.selected_account.set(Some(id_for_name.clone())); modal.set(Some("account")); }>{move || account_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</button>
                                                     <div class="flex shrink-0 items-center gap-1">
                                                         <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.selected_account.set(Some(id_for_edit.clone())); modal.set(Some("account")); }>"Edit"</button>
-                                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=format!("Delete account {}", account.name) on:click=move |_| { if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this account?").unwrap_or(false)) { state.selected_account.set(Some(id_for_delete.clone())); state.delete_selected_account(); } }>"Delete"</button>
+                                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Delete account {}", account_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) on:click=move |_| { if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this account?").unwrap_or(false)) { state.selected_account.set(Some(id_for_delete.clone())); state.delete_selected_account(); } }>"Delete"</button>
                                                     </div>
                                                 </div>
-                                                <CredentialRow label="Username" value=username on_copy=move |value| copy_value(value, "Username", state.message) />
-                                                <CredentialRow label="Password" value=password on_copy=move |value| copy_value(value, "Password", state.message) />
+                                                <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
+                                                    <span class="text-xs text-[var(--text-secondary)]">"Username"</span>
+                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]" title=move || account_by_id(&state, &id_for_username).map(|item| item.username).unwrap_or_default()>{move || account_by_id(&state, &id_for_username).map(|item| if item.username.is_empty() { "—".into() } else { item.username }).unwrap_or_else(|| "—".into())}</span>
+                                                    <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_username_copy).is_none_or(|item| item.username.is_empty())
+                                                        on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_username_copy) { copy_value(item.username, "Username", state.message); } }>"Copy"</button>
+                                                </div>
+                                                <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
+                                                    <span class="text-xs text-[var(--text-secondary)]">"Password"</span>
+                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]" title="Password">"••••••••"</span>
+                                                    <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_password_copy).is_none_or(|item| item.password.is_empty())
+                                                        on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_password_copy) { copy_value(item.password, "Password", state.message); } }>"Copy"</button>
+                                                </div>
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"OTP"</span>
-                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]">{move || account_otp(&otp_account, state.now_seconds.get())}</span>
-                                                    <button type="button" class=button_class() disabled=move || !has_otp || account_otp(&otp_disabled_account, state.now_seconds.get()).is_empty()
-                                                        on:click=move |_| copy_value(account_otp(&otp_copy_account, state.now_seconds.get()), "OTP", state.message)>"Copy"</button>
+                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]">{move || account_by_id(&state, &id_for_otp).map(|item| account_otp(&item, state.now_seconds.get())).unwrap_or_else(|| "—".into())}</span>
+                                                    <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_otp_disabled).is_none_or(|item| item.otp_mode == OtpMode::None)
+                                                        on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_otp_copy) { copy_value(account_otp(&item, state.now_seconds.get()), "OTP", state.message); } }>"Copy"</button>
                                                 </div>
-                                                <Show when=move || is_totp>
-                                                    <p class="mt-1 text-right text-xs text-[var(--text-secondary)]">{format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</p>
+                                                <Show when=move || account_by_id(&state, &id_for_totp).is_some_and(|item| item.otp_mode == OtpMode::Totp)>
+                                                    <p class="mt-1 text-right text-xs text-[var(--text-secondary)]">{move || format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</p>
                                                 </Show>
                                             </article>
                                         }
@@ -390,6 +413,23 @@ fn copy_value(value: String, label: &'static str, message: RwSignal<Option<Strin
             Err(error) => message.set(Some(error)),
         }
     });
+}
+
+fn project_by_id(state: &AccountManagerState, id: &str) -> Option<Project> {
+    state.projects.get().into_iter().find(|project| project.id == id)
+}
+
+fn environment_by_id(state: &AccountManagerState, id: &str) -> Option<Environment> {
+    state.projects.get().into_iter()
+        .flat_map(|project| project.environments)
+        .find(|environment| environment.id == id)
+}
+
+fn account_by_id(state: &AccountManagerState, id: &str) -> Option<Account> {
+    state.projects.get().into_iter()
+        .flat_map(|project| project.environments)
+        .flat_map(|environment| environment.accounts)
+        .find(|account| account.id == id)
 }
 
 fn selected_project(state: &AccountManagerState) -> Option<Project> {
