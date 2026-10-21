@@ -122,6 +122,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                     let id = environment.id.clone();
                                     let id_for_class = id.clone();
                                     let id_for_select = id.clone();
+                                    let id_for_card_click = id.clone();
                                     let id_for_edit_environment = id.clone();
                                     let id_for_delete_environment = id.clone();
                                     let id_for_name = id.clone();
@@ -136,7 +137,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         } else {
                                             "cursor-pointer rounded-md border border-[var(--border-color)] p-3 hover:bg-[var(--surface-hover)]"
                                         }
-                                            on:click=move |_| state.select_environment(id_for_select.clone())>
+                                            on:click=move |_| state.select_environment(id_for_card_click.clone())>
                                             <div class="flex items-start justify-between gap-2">
                                                 <button type="button" class="min-w-0 text-left font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
                                                     on:click=move |_| state.select_environment(id_for_select.clone())>{move || environment_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</button>
