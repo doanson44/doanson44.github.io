@@ -66,18 +66,68 @@ extern "C" {
     pub fn toggle_theme_js() -> String;
 }
 
-/// Copy text to the system clipboard.
+/// Copy text to the system clipboard, including on insecure HTTP origins.
 pub async fn copy_to_clipboard(text: &str) -> Result<(), String> {
-    let navigator = get_window().navigator();
-    let clipboard = navigator.clipboard();
-    let promise = clipboard.write_text(text);
-    let _ = wasm_bindgen_futures::JsFuture::from(promise)
-        .await
-        .map_err(|e| {
-            e.as_string()
-                .unwrap_or_else(|| "Clipboard write failed".into())
-        })?;
-    Ok(())
+    let window = web_sys::window().ok_or_else(|| "Browser window is unavailable.".to_string())?;
+    let navigator = window.navigator();
+
+    // The Async Clipboard API is generally unavailable on plain HTTP. Check the
+    // property safely instead of calling a web-sys getter that assumes it exists.
+    let clipboard_value = js_sys::Reflect::get(
+        navigator.as_ref(),
+        &JsValue::from_str("clipboard"),
+    )
+    .unwrap_or(JsValue::UNDEFINED);
+
+    if !clipboard_value.is_null() && !clipboard_value.is_undefined() {
+        if let Ok(clipboard) = clipboard_value.dyn_into::<web_sys::Clipboard>() {
+            if let Ok(promise) = clipboard.write_text(text) {
+                if wasm_bindgen_futures::JsFuture::from(promise).await.is_ok() {
+                    return Ok(());
+                }
+            }
+        }
+    }
+
+    // Legacy fallback for HTTP and browsers that reject Clipboard API access.
+    // It must remain DOM-only so it works without secure-context clipboard APIs.
+    copy_to_clipboard_legacy(text)
+}
+
+/// Copy through a temporary textarea for browsers/origins without Clipboard API access.
+fn copy_to_clipboard_legacy(text: &str) -> Result<(), String> {
+    let document = web_sys::window()
+        .and_then(|window| window.document())
+        .ok_or_else(|| "Browser document is unavailable.".to_string())?;
+    let textarea = document
+        .create_element("textarea")
+        .map_err(|_| "Could not create a temporary clipboard field.".to_string())?
+        .dyn_into::<web_sys::HtmlTextAreaElement>()
+        .map_err(|_| "Could not create a temporary clipboard field.".to_string())?;
+
+    textarea.set_value(text);
+    textarea.set_attribute("readonly", "")
+        .map_err(|_| "Could not prepare the clipboard field.".to_string())?;
+    textarea.set_attribute(
+        "style",
+        "position:fixed;top:0;left:-10000px;opacity:0;",
+    )
+    .map_err(|_| "Could not prepare the clipboard field.".to_string())?;
+
+    let body = document
+        .body()
+        .ok_or_else(|| "Browser document body is unavailable.".to_string())?;
+    body.append_child(&textarea)
+        .map_err(|_| "Could not prepare the clipboard field.".to_string())?;
+    textarea.select();
+    let copied = document.exec_command("copy").unwrap_or(false);
+    let _ = body.remove_child(&textarea);
+
+    if copied {
+        Ok(())
+    } else {
+        Err("Clipboard access failed. Your browser may block copying on this page.".into())
+    }
 }
 
 /// Open the browser print dialog so the current page can be saved as PDF.
