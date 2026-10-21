@@ -494,7 +494,10 @@ fn export_json_file(state: &AccountManagerState) {
     anchor.set_href(&url);
     anchor.set_download("accounts.json");
     anchor.click();
-    let _ = web_sys::Url::revoke_object_url(&url);
+    Timeout::new(1_000, move || {
+        let _ = web_sys::Url::revoke_object_url(&url);
+    })
+    .forget();
     state.message.set(Some("JSON export downloaded.".into()));
 }
 
