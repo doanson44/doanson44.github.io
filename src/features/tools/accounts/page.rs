@@ -47,9 +47,11 @@ pub fn AccountManagerPage() -> impl IntoView {
                             key=|project| project.id.clone()
                             children=move |project| {
                                 let id = project.id.clone();
+                                let id_for_class = id.clone();
+                                let id_for_select = id.clone();
                                 view! {
                                     <button type="button"
-                                        class=move || if state.selected_project.get().as_deref() == Some(id.as_str()) {
+                                        class=move || if state.selected_project.get().as_deref() == Some(id_for_class.as_str()) {
                                             "w-full rounded-md bg-[var(--accent)]/10 px-3 py-2 text-left text-sm font-semibold text-[var(--text-primary)] ring-1 ring-[var(--accent)]/40"
                                         } else {
                                             "w-full rounded-md px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
