@@ -60,6 +60,11 @@ features = [
     "KeyboardEvent",
     "EventTarget",
     "HtmlInputElement",
+    "HtmlAnchorElement",
+    "Blob",
+    "File",
+    "FileList",
+    "Url",
     "HtmlCanvasElement",
     "CanvasRenderingContext2d",
 ]
