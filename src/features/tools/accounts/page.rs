@@ -14,16 +14,6 @@ pub fn AccountManagerPage() -> impl IntoView {
     })
     .forget();
 
-    let copy = move |value: String, label: &'static str| {
-        let message = state.message;
-        leptos::task::spawn_local(async move {
-            match copy_to_clipboard(&value).await {
-                Ok(()) => message.set(Some(format!("{label} copied."))),
-                Err(error) => message.set(Some(error)),
-            }
-        });
-    };
-
     view! {
         <div class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
             <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -64,7 +54,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         } else {
                                             "w-full rounded-md px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
                                         }
-                                        on:click=move |_| state.select_project(id.clone())>
+                                        on:click=move |_| state.select_project(id_for_select.clone())>
                                         <span class="block truncate">{project.name.clone()}</span>
                                         <span class="mt-1 block text-xs opacity-75">{format!("{} environments", project.environments.len())}</span>
                                     </button>
@@ -108,16 +98,18 @@ pub fn AccountManagerPage() -> impl IntoView {
                                 key=|environment| environment.id.clone()
                                 children=move |environment| {
                                     let id = environment.id.clone();
+                                    let id_for_class = id.clone();
+                                    let id_for_select = id.clone();
                                     let url = environment.url.clone();
                                     view! {
-                                        <div class=move || if state.selected_environment.get().as_deref() == Some(id.as_str()) {
+                                        <div class=move || if state.selected_environment.get().as_deref() == Some(id_for_class.as_str()) {
                                             "rounded-md border border-[var(--accent)] bg-[var(--accent)]/5 p-3"
                                         } else {
                                             "rounded-md border border-[var(--border-color)] p-3 hover:bg-[var(--surface-hover)]"
                                         }>
                                             <div class="flex items-start justify-between gap-2">
                                                 <button type="button" class="min-w-0 text-left font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
-                                                    on:click=move |_| state.select_environment(id.clone())>{environment.name.clone()}</button>
+                                                    on:click=move |_| state.select_environment(id_for_select.clone())>{environment.name.clone()}</button>
                                                 <span class="shrink-0 rounded bg-[var(--surface-hover)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">{environment.accounts.len()}</span>
                                             </div>
                                             <button type="button" class="mt-2 block max-w-full truncate text-left text-xs text-[var(--accent)] underline underline-offset-2"
@@ -198,13 +190,13 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                     <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]"
                                                         on:click=move |_| state.selected_account.set(Some(id_for_edit.clone()))>"Edit"</button>
                                                 </div>
-                                                <CredentialRow label="Username" value=username on_copy=move |value| copy(value, "Username") />
-                                                <CredentialRow label="Password" value=password on_copy=move |value| copy(value, "Password") />
+                                                <CredentialRow label="Username" value=username on_copy=move |value| copy_value(value, "Username", state.message) />
+                                                <CredentialRow label="Password" value=password on_copy=move |value| copy_value(value, "Password", state.message) />
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"OTP"</span>
                                                     <span class="truncate font-mono text-xs text-[var(--text-primary)]">{move || account_otp(&otp_account, state.now_seconds.get())}</span>
                                                     <button type="button" class=button_class() disabled=move || !has_otp || account_otp(&otp_copy_account, state.now_seconds.get()).is_empty()
-                                                        on:click=move |_| copy(account_otp(&otp_copy_account, state.now_seconds.get()), "OTP")>"Copy"</button>
+                                                        on:click=move |_| copy_value(account_otp(&otp_copy_account, state.now_seconds.get()), "OTP", state.message)>"Copy"</button>
                                                 </div>
                                                 <Show when=move || is_totp>
                                                     <p class="mt-1 text-right text-xs text-[var(--text-secondary)]">{format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</p>
@@ -241,7 +233,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                     <div class="flex gap-2">
                                         <input id="account-username" class=input_class() prop:value=move || selected_account(&state).map(|a| a.username).unwrap_or_default()
                                             on:input=move |event| state.update_account("username", event_target_value(&event)) />
-                                        <button type="button" class=button_class() on:click=move |_| copy(selected_account(&state).map(|a| a.username).unwrap_or_default(), "Username")>"Copy"</button>
+                                        <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|a| a.username).unwrap_or_default(), "Username", state.message)>"Copy"</button>
                                     </div>
                                 </div>
                                 <div>
@@ -249,7 +241,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                     <div class="flex gap-2">
                                         <input id="account-password" type="password" class=input_class() prop:value=move || selected_account(&state).map(|a| a.password).unwrap_or_default()
                                             on:input=move |event| state.update_account("password", event_target_value(&event)) />
-                                        <button type="button" class=button_class() on:click=move |_| copy(selected_account(&state).map(|a| a.password).unwrap_or_default(), "Password")>"Copy"</button>
+                                        <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|a| a.password).unwrap_or_default(), "Password", state.message)>"Copy"</button>
                                     </div>
                                 </div>
                                 <div>
@@ -281,7 +273,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         <div class="flex gap-2">
                                             <input id="account-default-otp" class=input_class() prop:value=move || selected_account(&state).map(|a| a.default_otp).unwrap_or_default()
                                                 on:input=move |event| state.update_account("default_otp", event_target_value(&event)) />
-                                            <button type="button" class=button_class() on:click=move |_| copy(selected_account(&state).map(|a| a.default_otp).unwrap_or_default(), "OTP")>"Copy"</button>
+                                            <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|a| a.default_otp).unwrap_or_default(), "OTP", state.message)>"Copy"</button>
                                         </div>
                                     </div>
                                 </Show>
@@ -291,7 +283,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         <output id="account-current-otp" class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2 font-mono text-lg font-semibold tracking-widest text-[var(--text-primary)]">
                                             {move || selected_account(&state).map(|account| account_otp(&account, state.now_seconds.get())).unwrap_or_default()}
                                         </output>
-                                        <button type="button" class=button_class() on:click=move |_| copy(selected_account(&state).map(|account| account_otp(&account, state.now_seconds.get())).unwrap_or_default(), "OTP")>"Copy OTP"</button>
+                                        <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|account| account_otp(&account, state.now_seconds.get())).unwrap_or_default(), "OTP", state.message)>"Copy OTP"</button>
                                         <span class="text-xs text-[var(--text-secondary)]">{move || format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</span>
                                     </div>
                                 </div>
@@ -307,7 +299,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                     <section class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4">
                         <div class="mb-2 flex items-center justify-between gap-2">
                             <h2 class="text-sm font-semibold text-[var(--text-primary)]">"Backup / restore JSON"</h2>
-                            <button type="button" class=button_class() on:click=move |_| copy(state.transfer_json.get_untracked(), "JSON")>"Copy JSON"</button>
+                            <button type="button" class=button_class() on:click=move |_| copy_value(state.transfer_json.get_untracked(), "JSON", state.message)>"Copy JSON"</button>
                         </div>
                         <textarea rows="4" class=input_class() placeholder="Export fills this field; paste JSON here to import." prop:value=move || state.transfer_json.get()
                             on:input=move |event| state.transfer_json.set(event_target_value(&event))></textarea>
@@ -333,6 +325,15 @@ fn CredentialRow(
             <button type="button" class=button_class() disabled=copy_value.is_empty() on:click=move |_| on_copy(copy_value.clone())>"Copy"</button>
         </div>
     }
+}
+
+fn copy_value(value: String, label: &'static str, message: RwSignal<Option<String>>) {
+    leptos::task::spawn_local(async move {
+        match copy_to_clipboard(&value).await {
+            Ok(()) => message.set(Some(format!("{label} copied."))),
+            Err(error) => message.set(Some(error)),
+        }
+    });
 }
 
 fn selected_project(state: &AccountManagerState) -> Option<Project> {
