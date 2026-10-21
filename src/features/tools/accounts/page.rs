@@ -185,7 +185,6 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         let id = account.id.clone();
                                         let username = account.username.clone();
                                         let password = account.password.clone();
-                                        let otp = account_otp(&account, state.now_seconds.get());
                                         view! {
                                             <article class="min-w-0 rounded-md border border-[var(--border-color)] p-3">
                                                 <div class="mb-3 flex items-center justify-between gap-2">
@@ -196,7 +195,12 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                 </div>
                                                 <CredentialRow label="Username" value=username on_copy=move |value| copy(value, "Username") />
                                                 <CredentialRow label="Password" value=password on_copy=move |value| copy(value, "Password") />
-                                                <CredentialRow label="OTP" value=otp on_copy=move |value| copy(value, "OTP") />
+                                                <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
+                                                    <span class="text-xs text-[var(--text-secondary)]">"OTP"</span>
+                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]">{move || account_otp(&account, state.now_seconds.get())}</span>
+                                                    <button type="button" class=button_class() disabled=move || account.otp_mode == OtpMode::None || account_otp(&account, state.now_seconds.get()).is_empty()
+                                                        on:click=move |_| copy(account_otp(&account, state.now_seconds.get()), "OTP")>"Copy"</button>
+                                                </div>
                                                 <Show when=move || account.otp_mode == OtpMode::Totp>
                                                     <p class="mt-1 text-right text-xs text-[var(--text-secondary)]">{format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</p>
                                                 </Show>
