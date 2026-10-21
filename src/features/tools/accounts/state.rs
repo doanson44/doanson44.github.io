@@ -12,7 +12,6 @@ pub struct AccountManagerState {
     pub selected_account: RwSignal<Option<String>>,
     pub now_seconds: RwSignal<u64>,
     pub message: RwSignal<Option<String>>,
-    pub transfer_json: RwSignal<String>,
     pub defer_persistence: RwSignal<bool>,
 }
 
@@ -45,7 +44,6 @@ impl AccountManagerState {
             selected_account: RwSignal::new(selected_account),
             now_seconds: RwSignal::new((js_sys::Date::now() / 1000.0) as u64),
             message: RwSignal::new(None),
-            transfer_json: RwSignal::new(String::new()),
             defer_persistence: RwSignal::new(false),
         }
     }
