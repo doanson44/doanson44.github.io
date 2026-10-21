@@ -362,7 +362,7 @@ fn selected_account(state: &AccountManagerState) -> Option<Account> {
 }
 
 fn account_otp(account: &Account, now_seconds: u64) -> String {
-    match account.otp_mode {
+    match &account.otp_mode {
         OtpMode::Totp => generate_totp(&account.otp_secret, now_seconds).unwrap_or_else(|_| "Invalid secret".into()),
         OtpMode::Default => account.default_otp.clone(),
         OtpMode::None => "—".into(),
