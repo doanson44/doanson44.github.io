@@ -1,4 +1,4 @@
-use gloo_timers::callback::Interval;
+use gloo_timers::callback::{Interval, Timeout};
 use leptos::prelude::*;
 
 use crate::domain::account_manager::{generate_totp, Account, Environment, OtpMode, Project};
@@ -10,6 +10,9 @@ pub fn AccountManagerPage() -> impl IntoView {
     let state = AccountManagerState::new();
     let modal = RwSignal::new(None::<&'static str>);
     let modal_snapshot = RwSignal::new(None::<AccountManagerSnapshot>);
+    let copy_toast = RwSignal::new(None::<String>);
+    let copy_toast_visible = RwSignal::new(false);
+    let copy_toast_generation = RwSignal::new(0_u64);
     let now = state.now_seconds;
     Interval::new(1_000, move || {
         now.set((js_sys::Date::now() / 1000.0) as u64);
@@ -34,6 +37,17 @@ pub fn AccountManagerPage() -> impl IntoView {
                 <div class="flex items-start justify-between gap-3 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-secondary)]" role="status">
                     <span>{message}</span>
                     <button type="button" class="font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.message.set(None) aria-label="Dismiss message">"×"</button>
+                </div>
+            })}
+
+            {move || copy_toast.get().map(|message| view! {
+                <div class=move || if copy_toast_visible.get() {
+                    "pointer-events-none fixed bottom-5 right-5 z-[100] flex max-w-[calc(100vw-2.5rem)] items-center gap-2 rounded-lg border border-[var(--success)]/40 bg-[var(--surface)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] shadow-xl opacity-100 translate-y-0 transition-all duration-300"
+                } else {
+                    "pointer-events-none fixed bottom-5 right-5 z-[100] flex max-w-[calc(100vw-2.5rem)] items-center gap-2 rounded-lg border border-[var(--success)]/40 bg-[var(--surface)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] shadow-xl opacity-0 translate-y-2 transition-all duration-300"
+                } role="status" aria-live="polite">
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--success)]/15 text-[var(--success)]" aria-hidden="true">"✓"</span>
+                    <span>{message}</span>
                 </div>
             })}
 
@@ -381,7 +395,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                     <section class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4">
                         <div class="mb-2 flex items-center justify-between gap-2">
                             <h2 class="text-sm font-semibold text-[var(--text-primary)]">"Backup / restore JSON"</h2>
-                            <button type="button" class=button_class() on:click=move |_| copy_value(state.transfer_json.get_untracked(), "JSON", state.message)>"Copy JSON"</button>
+                            <button type="button" class=button_class() on:click=move |_| copy_value(state.transfer_json.get_untracked(), "JSON", state.message, copy_toast, copy_toast_visible, copy_toast_generation)>"Copy JSON"</button>
                         </div>
                         <textarea rows="4" class=input_class() placeholder="Export fills this field; paste JSON here to import." prop:value=move || state.transfer_json.get()
                             on:input=move |event| state.transfer_json.set(event_target_value(&event))></textarea>
@@ -413,10 +427,36 @@ fn cancel_modal(state: &AccountManagerState, modal: RwSignal<Option<&'static str
     modal.set(None);
 }
 
-fn copy_value(value: String, label: &'static str, message: RwSignal<Option<String>>) {
+fn copy_value(
+    value: String,
+    label: &'static str,
+    message: RwSignal<Option<String>>,
+    toast: RwSignal<Option<String>>,
+    toast_visible: RwSignal<bool>,
+    toast_generation: RwSignal<u64>,
+) {
     leptos::task::spawn_local(async move {
         match copy_to_clipboard(&value).await {
-            Ok(()) => message.set(Some(format!("{label} copied."))),
+            Ok(()) => {
+                let generation = toast_generation.get_untracked().wrapping_add(1);
+                toast_generation.set(generation);
+                toast.set(Some(format!("{label} copied.")));
+                toast_visible.set(true);
+
+                Timeout::new(1_800, move || {
+                    if toast_generation.get_untracked() != generation {
+                        return;
+                    }
+                    toast_visible.set(false);
+                    Timeout::new(300, move || {
+                        if toast_generation.get_untracked() == generation {
+                            toast.set(None);
+                        }
+                    })
+                    .forget();
+                })
+                .forget();
+            }
             Err(error) => message.set(Some(error)),
         }
     });
