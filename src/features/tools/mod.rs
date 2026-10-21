@@ -1,4 +1,5 @@
 /// Tools index page.
+pub mod accounts;
 pub mod base64;
 pub mod developer;
 pub mod finance;

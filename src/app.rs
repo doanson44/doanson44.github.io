@@ -13,6 +13,7 @@ use crate::features::cv::review_page::CvReviewPage;
 use crate::features::games::page::GamesPage;
 use crate::features::home::page::HomePage;
 use crate::features::socket::page::SocketPage;
+use crate::features::tools::accounts::page::AccountManagerPage;
 use crate::features::tools::base64::page::Base64Page;
 use crate::features::tools::developer::page::DeveloperToolPage;
 use crate::features::tools::finance::page::FinancePage;
@@ -131,6 +132,7 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools/json" => view! { <JsonPage /> }.into_any(),
         "/tools/jwt" => view! { <JwtPage /> }.into_any(),
         "/tools/base64" => view! { <Base64Page /> }.into_any(),
+        "/tools/accounts" => view! { <AccountManagerPage /> }.into_any(),
         "/tools/time" => view! { <TimePage /> }.into_any(),
         "/tools/market" => view! { <MarketPage /> }.into_any(),
         "/tools/proxy" => view! { <ProxyPage /> }.into_any(),
