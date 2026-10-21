@@ -1,5 +1,7 @@
 use gloo_timers::callback::{Interval, Timeout};
 use leptos::prelude::*;
+use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen_futures::JsFuture;
 
 use crate::domain::account_manager::{generate_totp, Account, Environment, OtpMode, Project};
 use crate::features::tools::accounts::state::AccountManagerState;
@@ -27,8 +29,36 @@ pub fn AccountManagerPage() -> impl IntoView {
                     <p class="mt-1 text-sm text-[var(--text-secondary)]">"Manage project environments, credentials, and OTPs locally in this browser."</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" class=button_class() on:click=move |_| state.export_json()>"Export JSON"</button>
-                    <button type="button" class=button_class() on:click=move |_| state.import_json()>"Import JSON"</button>
+                    <button type="button" class=button_class() on:click=move |_| export_json_file(&state)>"Export JSON"</button>
+                    <button type="button" class=button_class() on:click=move |_| {
+                        if let Some(document) = web_sys::window().and_then(|window| window.document()) {
+                            if let Some(input) = document.get_element_by_id("accounts-json-import")
+                                .and_then(|element| element.dyn_into::<web_sys::HtmlInputElement>().ok())
+                            {
+                                input.click();
+                            }
+                        }
+                    }>"Import JSON"</button>
+                    <input id="accounts-json-import" type="file" accept=".json,application/json" class="hidden"
+                        on:change=move |event: web_sys::Event| {
+                            let input = event.target().and_then(|target| target.dyn_into::<web_sys::HtmlInputElement>().ok());
+                            let file = input.as_ref().and_then(|element| element.files()).and_then(|files| files.get(0));
+                            let input_for_reset = input;
+                            if let Some(file) = file {
+                                leptos::task::spawn_local(async move {
+                                    match JsFuture::from(file.text()).await {
+                                        Ok(contents) => match contents.as_string() {
+                                            Some(json) => state.import_json(&json),
+                                            None => state.message.set(Some("Could not read the selected JSON file.".into())),
+                                        },
+                                        Err(_) => state.message.set(Some("Could not read the selected JSON file.".into())),
+                                    }
+                                    if let Some(input) = input_for_reset {
+                                        input.set_value("");
+                                    }
+                                });
+                            }
+                        } />
                     <button type="button" class=primary_button_class() on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.add_project(); modal.set(Some("project")); }>"+ New Project"</button>
                 </div>
             </header>
@@ -394,15 +424,6 @@ pub fn AccountManagerPage() -> impl IntoView {
                         </Show>
                     </Show>
 
-                    <section class="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4">
-                        <div class="mb-2 flex items-center justify-between gap-2">
-                            <h2 class="text-sm font-semibold text-[var(--text-primary)]">"Backup / restore JSON"</h2>
-                            <button type="button" class=button_class() on:click=move |_| copy_value(state.transfer_json.get_untracked(), "JSON", state.message, copy_toast, copy_toast_visible, copy_toast_generation)>"Copy JSON"</button>
-                        </div>
-                        <textarea rows="4" class=input_class() placeholder="Export fills this field; paste JSON here to import." prop:value=move || state.transfer_json.get()
-                            on:input=move |event| state.transfer_json.set(event_target_value(&event))></textarea>
-                        <p class="mt-2 text-xs text-[var(--text-secondary)]">"Data is saved to this browser's localStorage. Export a backup before clearing browser data."</p>
-                    </section>
                 </main>
             </div>
         </div>
@@ -427,6 +448,54 @@ fn cancel_modal(state: &AccountManagerState, modal: RwSignal<Option<&'static str
     state.save();
     modal_snapshot.set(None);
     modal.set(None);
+}
+
+fn export_json_file(state: &AccountManagerState) {
+    let json = match state.export_json() {
+        Ok(json) => json,
+        Err(error) => {
+            state.message.set(Some(error));
+            return;
+        }
+    };
+
+    let parts = js_sys::Array::new();
+    parts.push(&JsValue::from_str(&json));
+    let blob = match web_sys::Blob::new_with_str_sequence(&parts) {
+        Ok(blob) => blob,
+        Err(_) => {
+            state.message.set(Some("Could not prepare the JSON file for download.".into()));
+            return;
+        }
+    };
+    let url = match web_sys::Url::create_object_url_with_blob(&blob) {
+        Ok(url) => url,
+        Err(_) => {
+            state.message.set(Some("Could not create a download URL for the JSON file.".into()));
+            return;
+        }
+    };
+
+    let Some(document) = web_sys::window().and_then(|window| window.document()) else {
+        state.message.set(Some("Browser document is unavailable.".into()));
+        let _ = web_sys::Url::revoke_object_url(&url);
+        return;
+    };
+    let anchor = match document.create_element("a").and_then(|element| element.dyn_into::<web_sys::HtmlAnchorElement>().map_err(|_| {
+        wasm_bindgen::JsValue::from_str("Could not create a download link.")
+    })) {
+        Ok(anchor) => anchor,
+        Err(_) => {
+            state.message.set(Some("Could not create a download link.".into()));
+            let _ = web_sys::Url::revoke_object_url(&url);
+            return;
+        }
+    };
+    anchor.set_href(&url);
+    anchor.set_download("accounts.json");
+    anchor.click();
+    let _ = web_sys::Url::revoke_object_url(&url);
+    state.message.set(Some("JSON export downloaded.".into()));
 }
 
 fn copy_value(
