@@ -285,7 +285,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         <output id="account-current-otp" class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2 font-mono text-lg font-semibold tracking-widest text-[var(--text-primary)]">
                                             {move || selected_account(&state).map(|account| account_otp(&account, state.now_seconds.get())).unwrap_or_default()}
                                         </output>
-                                        <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|account| account_otp(&account, state.now_seconds.get())).unwrap_or_default(), "OTP", state.message)>"Copy OTP"</button>
+                                        <button type="button" class=button_class() disabled=move || selected_account(&state).map(|account| account.otp_mode == OtpMode::None).unwrap_or(true) on:click=move |_| copy_value(selected_account(&state).map(|account| account_otp(&account, state.now_seconds.get())).unwrap_or_default(), "OTP", state.message)>"Copy OTP"</button>
                                         <span class="text-xs text-[var(--text-secondary)]">{move || format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</span>
                                     </div>
                                 </div>
@@ -323,7 +323,7 @@ fn CredentialRow(
     view! {
         <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
             <span class="text-xs text-[var(--text-secondary)]">{label}</span>
-            <span class="truncate font-mono text-xs text-[var(--text-primary)]" title=value.clone()>{if value.is_empty() { "—".into() } else { value.clone() }}</span>
+            <span class="truncate font-mono text-xs text-[var(--text-primary)]" title=value.clone()>{if value.is_empty() { "—".into() } else if label == "Password" { "••••••••".into() } else { value.clone() }}</span>
             <button type="button" class=button_class() disabled=copy_value.is_empty() on:click=move |_| on_copy(copy_value.clone())>"Copy"</button>
         </div>
     }
