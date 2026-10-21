@@ -215,7 +215,9 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         let id_for_edit = id.clone();
                                         let id_for_delete = id.clone();
                                         let id_for_name = id.clone();
+                                        let id_for_name_select = id.clone();
                                         let id_for_username = id.clone();
+                                        let id_for_username_title = id.clone();
                                         let id_for_username_copy = id.clone();
                                         let id_for_password = id.clone();
                                         let id_for_password_copy = id.clone();
@@ -228,7 +230,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                             <article class="min-w-0 rounded-md border border-[var(--border-color)] p-3">
                                                 <div class="mb-3 flex items-center justify-between gap-2">
                                                     <button type="button" class="truncate text-left font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
-                                                        on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.selected_account.set(Some(id_for_name.clone())); modal.set(Some("account")); }>{move || account_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</button>
+                                                        on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.selected_account.set(Some(id_for_name_select.clone())); modal.set(Some("account")); }>{move || account_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</button>
                                                     <div class="flex shrink-0 items-center gap-1">
                                                         <button type="button" class="rounded px-2 py-1 text-xs text-[var(--accent)] hover:bg-[var(--surface-hover)]" on:click=move |_| { modal_snapshot.set(Some(snapshot_state(&state))); state.defer_persistence.set(true); state.selected_account.set(Some(id_for_edit.clone())); modal.set(Some("account")); }>"Edit"</button>
                                                         <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Delete account {}", account_by_id(&state, &id_for_delete_label).map(|item| item.name).unwrap_or_default()) on:click=move |_| { if web_sys::window().is_some_and(|window| window.confirm_with_message("Delete this account?").unwrap_or(false)) { state.selected_account.set(Some(id_for_delete.clone())); state.delete_selected_account(); } }>"Delete"</button>
@@ -236,7 +238,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                 </div>
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"Username"</span>
-                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]" title=move || account_by_id(&state, &id_for_username).map(|item| item.username).unwrap_or_default()>{move || account_by_id(&state, &id_for_username).map(|item| if item.username.is_empty() { "—".into() } else { item.username }).unwrap_or_else(|| "—".into())}</span>
+                                                    <span class="truncate font-mono text-xs text-[var(--text-primary)]" title=move || account_by_id(&state, &id_for_username_title).map(|item| item.username).unwrap_or_default()>{move || account_by_id(&state, &id_for_username).map(|item| if item.username.is_empty() { "—".into() } else { item.username }).unwrap_or_else(|| "—".into())}</span>
                                                     <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_username_copy).is_none_or(|item| item.username.is_empty())
                                                         on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_username_copy) { copy_value(item.username, "Username", state.message); } }>"Copy"</button>
                                                 </div>
