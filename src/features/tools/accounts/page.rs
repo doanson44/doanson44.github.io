@@ -185,6 +185,10 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         let id = account.id.clone();
                                         let username = account.username.clone();
                                         let password = account.password.clone();
+                                        let otp_account = account.clone();
+                                        let otp_copy_account = account.clone();
+                                        let is_totp = account.otp_mode == OtpMode::Totp;
+                                        let has_otp = account.otp_mode != OtpMode::None;
                                         view! {
                                             <article class="min-w-0 rounded-md border border-[var(--border-color)] p-3">
                                                 <div class="mb-3 flex items-center justify-between gap-2">
@@ -201,7 +205,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                     <button type="button" class=button_class() disabled=move || account.otp_mode == OtpMode::None || account_otp(&account, state.now_seconds.get()).is_empty()
                                                         on:click=move |_| copy(account_otp(&account, state.now_seconds.get()), "OTP")>"Copy"</button>
                                                 </div>
-                                                <Show when=move || account.otp_mode == OtpMode::Totp>
+                                                <Show when=move || is_totp>
                                                     <p class="mt-1 text-right text-xs text-[var(--text-secondary)]">{format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</p>
                                                 </Show>
                                             </article>
