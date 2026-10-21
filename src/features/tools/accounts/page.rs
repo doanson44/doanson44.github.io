@@ -103,6 +103,8 @@ pub fn AccountManagerPage() -> impl IntoView {
                                     let id_for_class = id.clone();
                                     let id_for_select = id.clone();
                                     let url = environment.url.clone();
+                                    let url_for_click = url.clone();
+                                    let url_for_display = url.clone();
                                     view! {
                                         <div class=move || if state.selected_environment.get().as_deref() == Some(id_for_class.as_str()) {
                                             "rounded-md border border-[var(--accent)] bg-[var(--accent)]/5 p-3"
@@ -116,7 +118,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                             </div>
                                             <button type="button" class="mt-2 block max-w-full truncate text-left text-xs text-[var(--accent)] underline underline-offset-2"
                                                 title=url.clone()
-                                                on:click=move |_| open_environment_url(&url, state.message)>{if url.is_empty() { "Set environment URL" } else { url.as_str() }}</button>
+                                                on:click=move |_| open_environment_url(&url_for_click, state.message)>{if url_for_display.is_empty() { "Set environment URL".to_string() } else { url_for_display.clone() }}</button>
                                         </div>
                                     }
                                 }
@@ -182,6 +184,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         let password = account.password.clone();
                                         let otp_account = account.clone();
                                         let otp_copy_account = account.clone();
+                                        let otp_disabled_account = account.clone();
                                         let is_totp = account.otp_mode == OtpMode::Totp;
                                         let has_otp = account.otp_mode != OtpMode::None;
                                         view! {
@@ -197,7 +200,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"OTP"</span>
                                                     <span class="truncate font-mono text-xs text-[var(--text-primary)]">{move || account_otp(&otp_account, state.now_seconds.get())}</span>
-                                                    <button type="button" class=button_class() disabled=move || !has_otp || account_otp(&otp_copy_account, state.now_seconds.get()).is_empty()
+                                                    <button type="button" class=button_class() disabled=move || !has_otp || account_otp(&otp_disabled_account, state.now_seconds.get()).is_empty()
                                                         on:click=move |_| copy_value(account_otp(&otp_copy_account, state.now_seconds.get()), "OTP", state.message)>"Copy"</button>
                                                 </div>
                                                 <Show when=move || is_totp>
