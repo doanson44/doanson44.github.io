@@ -275,19 +275,19 @@ pub fn AccountManagerPage() -> impl IntoView {
                                                     <span class="text-xs text-[var(--text-secondary)]">"Username"</span>
                                                     <span class="truncate font-mono text-xs text-[var(--text-primary)]" title=move || account_by_id(&state, &id_for_username_title).map(|item| item.username).unwrap_or_default()>{move || account_by_id(&state, &id_for_username).map(|item| if item.username.is_empty() { "—".into() } else { item.username }).unwrap_or_else(|| "—".into())}</span>
                                                     <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_username_copy_disabled).is_none_or(|item| item.username.is_empty())
-                                                        on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_username_copy) { copy_value(item.username, "Username", state.message); } }>"Copy"</button>
+                                                        on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_username_copy) { copy_value(item.username, "Username", state.message, copy_toast, copy_toast_visible, copy_toast_generation); } }>"Copy"</button>
                                                 </div>
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"Password"</span>
                                                     <span class="truncate font-mono text-xs text-[var(--text-primary)]" title="Password">{move || account_by_id(&state, &id_for_password_display).map(|item| if item.password.is_empty() { "—".to_string() } else { "••••••••".to_string() }).unwrap_or_else(|| "—".into())}</span>
                                                     <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_password_copy_disabled).is_none_or(|item| item.password.is_empty())
-                                                        on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_password_copy) { copy_value(item.password, "Password", state.message); } }>"Copy"</button>
+                                                        on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_password_copy) { copy_value(item.password, "Password", state.message, copy_toast, copy_toast_visible, copy_toast_generation); } }>"Copy"</button>
                                                 </div>
                                                 <div class="grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 py-1">
                                                     <span class="text-xs text-[var(--text-secondary)]">"OTP"</span>
                                                     <span class="truncate font-mono text-xs text-[var(--text-primary)]">{move || account_by_id(&state, &id_for_otp).map(|item| account_otp(&item, state.now_seconds.get())).unwrap_or_else(|| "—".into())}</span>
                                                     <button type="button" class=button_class() disabled=move || account_by_id(&state, &id_for_otp_disabled).is_none_or(|item| item.otp_mode == OtpMode::None)
-                                                        on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_otp_copy) { copy_value(account_otp(&item, state.now_seconds.get()), "OTP", state.message); } }>"Copy"</button>
+                                                        on:click=move |_| { if let Some(item) = account_by_id(&state, &id_for_otp_copy) { copy_value(account_otp(&item, state.now_seconds.get()), "OTP", state.message, copy_toast, copy_toast_visible, copy_toast_generation); } }>"Copy"</button>
                                                 </div>
                                                 <Show when=move || account_by_id(&state, &id_for_totp).is_some_and(|item| item.otp_mode == OtpMode::Totp)>
                                                     <p class="mt-1 text-right text-xs text-[var(--text-secondary)]">{move || format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</p>
@@ -322,7 +322,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                     <div class="flex gap-2">
                                         <input id="account-username" class=input_class() prop:value=move || selected_account(&state).map(|a| a.username).unwrap_or_default()
                                             on:input=move |event| state.update_account("username", event_target_value(&event)) />
-                                        <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|a| a.username).unwrap_or_default(), "Username", state.message)>"Copy"</button>
+                                        <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|a| a.username).unwrap_or_default(), "Username", state.message, copy_toast, copy_toast_visible, copy_toast_generation)>"Copy"</button>
                                     </div>
                                 </div>
                                 <div>
@@ -330,7 +330,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                     <div class="flex gap-2">
                                         <input id="account-password" type="password" class=input_class() prop:value=move || selected_account(&state).map(|a| a.password).unwrap_or_default()
                                             on:input=move |event| state.update_account("password", event_target_value(&event)) />
-                                        <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|a| a.password).unwrap_or_default(), "Password", state.message)>"Copy"</button>
+                                        <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|a| a.password).unwrap_or_default(), "Password", state.message, copy_toast, copy_toast_visible, copy_toast_generation)>"Copy"</button>
                                     </div>
                                 </div>
                                 <div>
@@ -362,7 +362,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         <div class="flex gap-2">
                                             <input id="account-default-otp" class=input_class() prop:value=move || selected_account(&state).map(|a| a.default_otp).unwrap_or_default()
                                                 on:input=move |event| state.update_account("default_otp", event_target_value(&event)) />
-                                            <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|a| a.default_otp).unwrap_or_default(), "OTP", state.message)>"Copy"</button>
+                                            <button type="button" class=button_class() on:click=move |_| copy_value(selected_account(&state).map(|a| a.default_otp).unwrap_or_default(), "OTP", state.message, copy_toast, copy_toast_visible, copy_toast_generation)>"Copy"</button>
                                         </div>
                                     </div>
                                 </Show>
@@ -372,7 +372,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                         <output id="account-current-otp" class="rounded-md border border-[var(--border-color)] bg-[var(--surface-hover)] px-3 py-2 font-mono text-lg font-semibold tracking-widest text-[var(--text-primary)]">
                                             {move || selected_account(&state).map(|account| account_otp(&account, state.now_seconds.get())).unwrap_or_default()}
                                         </output>
-                                        <button type="button" class=button_class() disabled=move || selected_account(&state).map(|account| account.otp_mode == OtpMode::None).unwrap_or(true) on:click=move |_| copy_value(selected_account(&state).map(|account| account_otp(&account, state.now_seconds.get())).unwrap_or_default(), "OTP", state.message)>"Copy OTP"</button>
+                                        <button type="button" class=button_class() disabled=move || selected_account(&state).map(|account| account.otp_mode == OtpMode::None).unwrap_or(true) on:click=move |_| copy_value(selected_account(&state).map(|account| account_otp(&account, state.now_seconds.get())).unwrap_or_default(), "OTP", state.message, copy_toast, copy_toast_visible, copy_toast_generation)>"Copy OTP"</button>
                                         <span class="text-xs text-[var(--text-secondary)]">{move || format!("Refreshes in {}s", 30 - (state.now_seconds.get() % 30))}</span>
                                     </div>
                                 </div>
