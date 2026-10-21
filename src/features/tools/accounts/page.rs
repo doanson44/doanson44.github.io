@@ -324,7 +324,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                             </div>
                             <div class="mt-5 flex justify-end gap-2 border-t border-[var(--border-color)] pt-4">
                                 <button type="button" class=button_class() on:click=move |_| cancel_modal(&state, modal, modal_snapshot)>"Cancel"</button>
-                                <button type="button" class=primary_button_class() on:click=move |_| { state.save(); modal_snapshot.set(None); modal.set(None); }>"Save"</button>
+                                <button type="button" class=primary_button_class() on:click=move |_| { state.defer_persistence.set(false); state.save(); modal_snapshot.set(None); modal.set(None); }>"Save"</button>
                             </div>
                         </section>
                                 </div>
