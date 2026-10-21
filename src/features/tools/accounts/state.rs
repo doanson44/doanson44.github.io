@@ -274,12 +274,13 @@ impl AccountManagerState {
         self.save();
     }
 
-    pub fn export_json(&self) {
-        self.transfer_json.set(serde_json::to_string_pretty(&self.projects.get_untracked()).unwrap_or_default());
+    pub fn export_json(&self) -> Result<String, String> {
+        serde_json::to_string_pretty(&self.projects.get_untracked())
+            .map_err(|error| format!("Could not serialize account data: {error}"))
     }
 
-    pub fn import_json(&self) {
-        match serde_json::from_str::<Vec<Project>>(&self.transfer_json.get_untracked()) {
+    pub fn import_json(&self, json: &str) {
+        match serde_json::from_str::<Vec<Project>>(json) {
             Ok(projects) => {
                 let project_id = projects.first().map(|project| project.id.clone());
                 let environment_id = projects.first().and_then(|project| project.environments.first()).map(|env| env.id.clone());
