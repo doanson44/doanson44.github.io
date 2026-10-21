@@ -59,6 +59,7 @@ features = [
     "CloseEvent",
     "KeyboardEvent",
     "EventTarget",
+    "Event",
     "HtmlInputElement",
     "HtmlAnchorElement",
     "Blob",
