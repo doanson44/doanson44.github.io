@@ -81,10 +81,9 @@ pub async fn copy_to_clipboard(text: &str) -> Result<(), String> {
 
     if !clipboard_value.is_null() && !clipboard_value.is_undefined() {
         if let Ok(clipboard) = clipboard_value.dyn_into::<web_sys::Clipboard>() {
-            if let Ok(promise) = clipboard.write_text(text) {
-                if wasm_bindgen_futures::JsFuture::from(promise).await.is_ok() {
-                    return Ok(());
-                }
+            let promise = clipboard.write_text(text);
+            if wasm_bindgen_futures::JsFuture::from(promise).await.is_ok() {
+                return Ok(());
             }
         }
     }
@@ -120,7 +119,16 @@ fn copy_to_clipboard_legacy(text: &str) -> Result<(), String> {
     body.append_child(&textarea)
         .map_err(|_| "Could not prepare the clipboard field.".to_string())?;
     textarea.select();
-    let copied = document.exec_command("copy").unwrap_or(false);
+    let copied = js_sys::Reflect::get(document.as_ref(), &JsValue::from_str("execCommand"))
+        .ok()
+        .and_then(|method| method.dyn_into::<js_sys::Function>().ok())
+        .and_then(|method| {
+            method
+                .call1(document.as_ref(), &JsValue::from_str("copy"))
+                .ok()
+        })
+        .and_then(|result| result.as_bool())
+        .unwrap_or(false);
     let _ = body.remove_child(&textarea);
 
     if copied {
