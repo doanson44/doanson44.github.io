@@ -57,6 +57,10 @@ pub fn AccountManagerPage() -> impl IntoView {
                                 let id_for_environment_count = id.clone();
                                 let id_for_delete_label = id.clone();
                                 let id_for_edit_label = id.clone();
+                                let id_for_move_up = id.clone();
+                                let id_for_move_down = id.clone();
+                                let id_for_move_up_disabled = id.clone();
+                                let id_for_move_down_disabled = id.clone();
                                 view! {
                                     <div class=move || if state.selected_project.get().as_deref() == Some(id_for_class.as_str()) { "flex items-start gap-1 rounded-md bg-[var(--accent)]/10 p-1 ring-1 ring-[var(--accent)]/40" } else { "flex items-start gap-1 rounded-md p-1 hover:bg-[var(--surface-hover)]" }>
                                         <button type="button" class="min-w-0 flex-1 rounded px-2 py-1 text-left text-sm text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.select_project(id_for_select.clone())>
@@ -64,6 +68,8 @@ pub fn AccountManagerPage() -> impl IntoView {
                                             <span class="mt-1 block text-xs text-[var(--text-secondary)]">{move || project_by_id(&state, &id_for_environment_count).map(|item| format!("{} environments", item.environments.len())).unwrap_or_else(|| "0 environments".into())}</span>
                                         </button>
                                         <div class="flex shrink-0 flex-col items-stretch gap-1">
+                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30" aria-label=move || format!("Move project {} up", project_by_id(&state, &id_for_move_up_disabled).map(|item| item.name).unwrap_or_default()) title="Move project up" disabled=move || state.projects.get().iter().position(|item| item.id == id_for_move_up_disabled).is_none_or(|index| index == 0) on:click=move |_| state.move_project(id_for_move_up.clone(), -1)>"↑"</button>
+                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30" aria-label=move || format!("Move project {} down", project_by_id(&state, &id_for_move_down_disabled).map(|item| item.name).unwrap_or_default()) title="Move project down" disabled=move || state.projects.get().iter().position(|item| item.id == id_for_move_down_disabled).is_none_or(|index| index + 1 >= state.projects.get().len()) on:click=move |_| state.move_project(id_for_move_down.clone(), 1)>"↓"</button>
                                         <button type="button" class="shrink-0 rounded px-2 py-1 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" aria-label=move || format!("Edit project {}", project_by_id(&state, &id_for_edit_label).map(|item| item.name).unwrap_or_default()) title="Edit project" on:click=move |_| {
                                             modal_snapshot.set(Some(snapshot_state(&state)));
                                             state.defer_persistence.set(true);
