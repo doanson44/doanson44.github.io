@@ -1,3 +1,4 @@
+pub mod account_manager;
 pub mod base64;
 pub mod developer;
 pub mod document;
