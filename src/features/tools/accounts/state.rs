@@ -74,6 +74,24 @@ impl AccountManagerState {
         self.save();
     }
 
+    /// Move a project one position up or down in the persisted project list.
+    pub fn move_project(&self, project_id: String, direction: i8) {
+        self.projects.update(|projects| {
+            let Some(index) = projects.iter().position(|project| project.id == project_id) else {
+                return;
+            };
+            let target = if direction < 0 {
+                index.checked_sub(1)
+            } else {
+                (index + 1 < projects.len()).then_some(index + 1)
+            };
+            if let Some(target) = target {
+                projects.swap(index, target);
+            }
+        });
+        self.save();
+    }
+
     pub fn add_environment(&self) {
         let Some(project_id) = self.selected_project.get_untracked() else {
             self.message.set(Some("Create or select a project first.".into()));
