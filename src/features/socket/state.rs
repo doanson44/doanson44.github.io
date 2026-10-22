@@ -853,7 +853,41 @@ impl SocketState {
                                             js_sys::Date::now().max(0.0) as i64,
                                             Rc::new(move |positions_result| {
                                                 if let Ok(positions) = positions_result {
+                                                    let retry_liquidation_price = positions.iter().any(|position| {
+                                                        !position.liquidation_price.is_finite()
+                                                            || position.liquidation_price <= 0.0
+                                                    });
                                                     positions_signal.set(positions);
+
+                                                    // MEXC may return a new position before its liquidation
+                                                    // price has been calculated. Retry once after a short delay.
+                                                    if retry_liquidation_price {
+                                                        let retry_api_url = positions_api_url.clone();
+                                                        let retry_api_key = positions_api_key.clone();
+                                                        let retry_api_secret = positions_api_secret.clone();
+                                                        let retry_positions_signal = positions_signal;
+                                                        let callback = Closure::once_into_js(move || {
+                                                            MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+                                                                &retry_api_url,
+                                                                &retry_api_key,
+                                                                &retry_api_secret,
+                                                                js_sys::Date::now().max(0.0) as i64,
+                                                                Rc::new(move |retry_result| {
+                                                                    if let Ok(positions) = retry_result {
+                                                                        retry_positions_signal.set(positions);
+                                                                    }
+                                                                }),
+                                                            );
+                                                        });
+
+                                                        if let Some(window) = web_sys::window() {
+                                                            let _ = window
+                                                                .set_timeout_with_callback_and_timeout_and_arguments_0(
+                                                                    callback.unchecked_ref(),
+                                                                    1_500,
+                                                                );
+                                                        }
+                                                    }
                                                 }
                                             }),
                                         );
