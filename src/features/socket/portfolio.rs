@@ -182,11 +182,23 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                     <th class="px-2 py-2 font-medium" scope="col">{move || t_string!(i18n, socket_position_side)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_quantity)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_market_value)}</th>
+                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || if i18n.get_locale() == Locale::vi { "Giá thanh lý" } else { "Liquidation price" }}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_pnl)}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {move || summary.get().holdings.into_iter().map(|holding| {
+                                    let liquidation_price = if state.execution_mode.get() == ExecutionMode::Real {
+                                        state.real_positions.get().iter()
+                                            .find(|position| position.symbol == holding.symbol)
+                                            .map(|position| position.liquidation_price)
+                                            .filter(|price| price.is_finite() && *price > 0.0)
+                                    } else {
+                                        None
+                                    };
+                                    let liquidation_price_label = liquidation_price
+                                        .map(|price| format!("{price:.8}").trim_end_matches('0').trim_end_matches('.').to_string())
+                                        .unwrap_or_else(|| "—".to_string());
                                     let pnl_class = if holding.pnl > 0.0 {
                                         "text-[var(--success)]"
                                     } else if holding.pnl < 0.0 {
@@ -213,6 +225,9 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                             </td>
                                             <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]">
                                                 {format_currency(holding.market_value)}
+                                            </td>
+                                            <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]" title=move || if state.execution_mode.get() == ExecutionMode::Real { "Liquidation price reported by MEXC" } else { "Only available for live MEXC positions" }>
+                                                {liquidation_price_label}
                                             </td>
                                             <td class=format!("px-2 py-2 text-right font-mono font-medium {pnl_class}")>
                                                 {format_signed_currency(holding.pnl)}
