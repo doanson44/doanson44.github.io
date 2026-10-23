@@ -734,6 +734,7 @@ impl SocketState {
             .iter()
             .find(|position| position.symbol == symbol)
             .cloned();
+        let is_opening_position = existing.is_none();
         let api_url = self.api_url.get_untracked();
         let api_key = self.api_key.get_untracked();
         let api_secret = self.api_secret.get_untracked();
@@ -858,42 +859,34 @@ impl SocketState {
                                             &positions_api_secret,
                                             js_sys::Date::now().max(0.0) as i64,
                                             Rc::new(move |positions_result| {
-                                                if let Ok(positions) = positions_result {
-                                                    let retry_liquidation_price = positions.iter().any(|position| {
-                                                        !position.liquidation_price.is_finite()
-                                                            || position.liquidation_price <= 0.0
-                                                    });
-                                                    positions_signal.set(positions);
-
-                                                    // MEXC may return a new position before its liquidation
-                                                    // price has been calculated. Retry once after a short delay.
-                                                    if retry_liquidation_price {
-                                                        let retry_url_for_timeout = retry_api_url.clone();
-                                                        let retry_key_for_timeout = retry_api_key.clone();
-                                                        let retry_secret_for_timeout = retry_api_secret.clone();
-                                                        let retry_positions_signal = positions_signal;
-                                                        let callback = Closure::once_into_js(move || {
-                                                            MexcFuturesTradingService::new(ProxyApi).fetch_positions(
-                                                                &retry_url_for_timeout,
-                                                                &retry_key_for_timeout,
-                                                                &retry_secret_for_timeout,
-                                                                js_sys::Date::now().max(0.0) as i64,
-                                                                Rc::new(move |retry_result| {
-                                                                    if let Ok(positions) = retry_result {
-                                                                        retry_positions_signal.set(positions);
-                                                                    }
-                                                                }),
-                                                            );
+                                                let target_has_liquidation_price = match positions_result {
+                                                    Ok(positions) => {
+                                                        let ready = positions.iter().any(|position| {
+                                                            position.symbol == symbol_owned
+                                                                && position.liquidation_price.is_finite()
+                                                                && position.liquidation_price > 0.0
                                                         });
-
-                                                        if let Some(window) = web_sys::window() {
-                                                            let _ = window
-                                                                .set_timeout_with_callback_and_timeout_and_arguments_0(
-                                                                    callback.unchecked_ref(),
-                                                                    1_500,
-                                                                );
-                                                        }
+                                                        positions_signal.set(positions);
+                                                        ready
                                                     }
+                                                    Err(message) => {
+                                                        error_signal.set(Some(message));
+                                                        false
+                                                    }
+                                                };
+
+                                                // Opening a position can become visible in MEXC's API
+                                                // shortly after order submission. Retry while this
+                                                // symbol is missing or its liquidation price is invalid.
+                                                if is_opening_position && !target_has_liquidation_price {
+                                                    schedule_liquidation_price_retry(
+                                                        retry_api_url.clone(),
+                                                        retry_api_key.clone(),
+                                                        retry_api_secret.clone(),
+                                                        symbol_owned.clone(),
+                                                        positions_signal,
+                                                        4,
+                                                    );
                                                 }
                                             }),
                                         );
@@ -1239,6 +1232,66 @@ impl SocketState {
                 Err(message) => error.set(Some(message)),
             }
         });
+    }
+}
+
+/// Refreshes an opening position until MEXC reports a valid liquidation price or retries run out.
+fn schedule_liquidation_price_retry(
+    api_url: String,
+    api_key: String,
+    api_secret: String,
+    symbol: String,
+    positions_signal: RwSignal<Vec<RealPosition>>,
+    attempts_remaining: u8,
+) {
+    if attempts_remaining == 0 {
+        return;
+    }
+
+    let callback = Closure::once_into_js(move || {
+        let callback_api_url = api_url.clone();
+        let callback_api_key = api_key.clone();
+        let callback_api_secret = api_secret.clone();
+        let callback_symbol = symbol.clone();
+
+        MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+            &api_url,
+            &api_key,
+            &api_secret,
+            js_sys::Date::now().max(0.0) as i64,
+            Rc::new(move |result| {
+                let ready = match result {
+                    Ok(positions) => {
+                        let ready = positions.iter().any(|position| {
+                            position.symbol == callback_symbol
+                                && position.liquidation_price.is_finite()
+                                && position.liquidation_price > 0.0
+                        });
+                        positions_signal.set(positions);
+                        ready
+                    }
+                    Err(_) => false,
+                };
+
+                if !ready && attempts_remaining > 1 {
+                    schedule_liquidation_price_retry(
+                        callback_api_url.clone(),
+                        callback_api_key.clone(),
+                        callback_api_secret.clone(),
+                        callback_symbol.clone(),
+                        positions_signal,
+                        attempts_remaining - 1,
+                    );
+                }
+            }),
+        );
+    });
+
+    if let Some(window) = web_sys::window() {
+        let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
+            callback.unchecked_ref(),
+            1_500,
+        );
     }
 }
 
