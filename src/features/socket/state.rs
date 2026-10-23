@@ -846,6 +846,12 @@ impl SocketState {
                                         if let Ok(account) = account_result {
                                             account_signal.set(Some(account));
                                         }
+                                        // Clone retry credentials before creating the Fn callback.
+                                        // The callback may be invoked more than once, so it cannot move
+                                        // these captured Strings into a nested closure.
+                                        let retry_api_url = positions_api_url.clone();
+                                        let retry_api_key = positions_api_key.clone();
+                                        let retry_api_secret = positions_api_secret.clone();
                                         MexcFuturesTradingService::new(ProxyApi).fetch_positions(
                                             &positions_api_url,
                                             &positions_api_key,
@@ -862,9 +868,6 @@ impl SocketState {
                                                     // MEXC may return a new position before its liquidation
                                                     // price has been calculated. Retry once after a short delay.
                                                     if retry_liquidation_price {
-                                                        let retry_api_url = positions_api_url.clone();
-                                                        let retry_api_key = positions_api_key.clone();
-                                                        let retry_api_secret = positions_api_secret.clone();
                                                         let retry_positions_signal = positions_signal;
                                                         let callback = Closure::once_into_js(move || {
                                                             MexcFuturesTradingService::new(ProxyApi).fetch_positions(
