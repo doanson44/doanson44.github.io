@@ -31,6 +31,32 @@ pub struct RealAccountSnapshot {
     pub frozen_balance: f64,
 }
 
+/// Estimates an isolated-margin liquidation price from entry price and leverage.
+///
+/// This simplified estimate excludes maintenance-margin tiers, fees, and exchange-specific
+/// risk adjustments. It is intended for display only, not as an execution or risk guarantee.
+pub fn estimate_liquidation_price(
+    entry_price: f64,
+    leverage: f64,
+    side: PositionSide,
+) -> Option<f64> {
+    if !entry_price.is_finite()
+        || entry_price <= 0.0
+        || !leverage.is_finite()
+        || leverage < 1.0
+    {
+        return None;
+    }
+
+    let margin_ratio = 1.0 / leverage;
+    let estimated_price = match side {
+        PositionSide::Long => entry_price * (1.0 - margin_ratio),
+        PositionSide::Short => entry_price * (1.0 + margin_ratio),
+    };
+
+    estimated_price.is_finite().then_some(estimated_price)
+}
+
 /// A live Futures position returned by MEXC.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct RealPosition {
@@ -460,6 +486,30 @@ mod tests {
 
         assert!(portfolio.positions.is_empty());
         assert!((portfolio.realized_pnl - 9.8001998001998).abs() < 1e-9);
+    }
+
+    #[test]
+    fn estimates_isolated_liquidation_price_from_entry_and_leverage() {
+        assert_eq!(
+            estimate_liquidation_price(100.0, 10.0, PositionSide::Long),
+            Some(90.0)
+        );
+        assert_eq!(
+            estimate_liquidation_price(100.0, 10.0, PositionSide::Short),
+            Some(110.00000000000001)
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_liquidation_estimate_inputs() {
+        assert_eq!(
+            estimate_liquidation_price(0.0, 10.0, PositionSide::Long),
+            None
+        );
+        assert_eq!(
+            estimate_liquidation_price(100.0, 0.0, PositionSide::Long),
+            None
+        );
     }
 
     #[test]
