@@ -834,6 +834,9 @@ impl SocketState {
                                 let api_url = refresh_api_url.clone();
                                 let api_key = refresh_api_key.clone();
                                 let api_secret = refresh_api_secret.clone();
+                                let positions_api_url = api_url.clone();
+                                let positions_api_key = api_key.clone();
+                                let positions_api_secret = api_secret.clone();
                                 MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
                                     &api_url,
                                     &api_key,
