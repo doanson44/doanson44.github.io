@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::domain::trading::{ExecutionMode, PortfolioSummary, PositionSide};
+use crate::domain::trading::{estimate_liquidation_price, ExecutionMode, PortfolioSummary, PositionSide};
 use crate::features::socket::state::{SocketState, TradingSettingsInput};
 use crate::i18n::*;
 
@@ -182,7 +182,7 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                     <th class="px-2 py-2 font-medium" scope="col">{move || t_string!(i18n, socket_position_side)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_quantity)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_market_value)}</th>
-                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || if i18n.get_locale() == Locale::vi { "Giá thanh lý" } else { "Liquidation price" }}</th>
+                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || if i18n.get_locale() == Locale::vi { "Giá thanh lý ước tính" } else { "Estimated liquidation" }}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_pnl)}</th>
                                 </tr>
                             </thead>
@@ -191,13 +191,22 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                     let liquidation_price = if state.execution_mode.get() == ExecutionMode::Real {
                                         state.real_positions.get().iter()
                                             .find(|position| position.symbol == holding.symbol)
-                                            .map(|position| position.liquidation_price)
-                                            .filter(|price| price.is_finite() && *price > 0.0)
+                                            .and_then(|position| estimate_liquidation_price(
+                                                position.open_average_price,
+                                                position.leverage,
+                                                position.side,
+                                            ))
                                     } else {
-                                        None
+                                        state.trading_snapshot.get().portfolio.positions.iter()
+                                            .find(|position| position.symbol == holding.symbol)
+                                            .and_then(|position| estimate_liquidation_price(
+                                                position.entry_price,
+                                                position.leverage,
+                                                position.side,
+                                            ))
                                     };
                                     let liquidation_price_label = liquidation_price
-                                        .map(|price| format!("{price:.8}").trim_end_matches('0').trim_end_matches('.').to_string())
+                                        .map(|price| format!("≈ {}", format!("{price:.8}").trim_end_matches('0').trim_end_matches('.')))
                                         .unwrap_or_else(|| "—".to_string());
                                     let pnl_class = if holding.pnl > 0.0 {
                                         "text-[var(--success)]"
@@ -226,7 +235,7 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                             <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]">
                                                 {format_currency(holding.market_value)}
                                             </td>
-                                            <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]" title=move || if state.execution_mode.get() == ExecutionMode::Real { "Liquidation price reported by MEXC" } else { "Only available for live MEXC positions" }>
+                                            <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]" title=move || if i18n.get_locale() == Locale::vi { "Ước tính theo giá vào lệnh và đòn bẩy; chưa tính mức ký quỹ duy trì, phí và điều chỉnh rủi ro của sàn" } else { "Estimated from entry price and leverage; excludes maintenance margin, fees, and exchange risk adjustments" }>
                                                 {liquidation_price_label}
                                             </td>
                                             <td class=format!("px-2 py-2 text-right font-mono font-medium {pnl_class}")>
