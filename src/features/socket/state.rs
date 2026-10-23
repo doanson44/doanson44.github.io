@@ -847,47 +847,14 @@ impl SocketState {
                                         if let Ok(account) = account_result {
                                             account_signal.set(Some(account));
                                         }
-                                        // Clone retry credentials before creating the Fn callback.
-                                        // The callback may be invoked more than once, so it cannot move
-                                        // these captured Strings into a nested closure.
-                                        let retry_api_url = positions_api_url.clone();
-                                        let retry_api_key = positions_api_key.clone();
-                                        let retry_api_secret = positions_api_secret.clone();
                                         MexcFuturesTradingService::new(ProxyApi).fetch_positions(
                                             &positions_api_url,
                                             &positions_api_key,
                                             &positions_api_secret,
                                             js_sys::Date::now().max(0.0) as i64,
-                                            Rc::new(move |positions_result| {
-                                                let target_has_liquidation_price = match positions_result {
-                                                    Ok(positions) => {
-                                                        let ready = positions.iter().any(|position| {
-                                                            position.symbol == symbol_owned
-                                                                && position.liquidation_price.is_finite()
-                                                                && position.liquidation_price > 0.0
-                                                        });
-                                                        positions_signal.set(positions);
-                                                        ready
-                                                    }
-                                                    Err(message) => {
-                                                        error_signal.set(Some(message));
-                                                        false
-                                                    }
-                                                };
-
-                                                // Opening a position can become visible in MEXC's API
-                                                // shortly after order submission. Retry while this
-                                                // symbol is missing or its liquidation price is invalid.
-                                                if is_opening_position && !target_has_liquidation_price {
-                                                    schedule_liquidation_price_retry(
-                                                        retry_api_url.clone(),
-                                                        retry_api_key.clone(),
-                                                        retry_api_secret.clone(),
-                                                        symbol_owned.clone(),
-                                                        positions_signal,
-                                                        4,
-                                                    );
-                                                }
+                                            Rc::new(move |positions_result| match positions_result {
+                                                Ok(positions) => positions_signal.set(positions),
+                                                Err(message) => error_signal.set(Some(message)),
                                             }),
                                         );
                                     }),
@@ -1232,66 +1199,6 @@ impl SocketState {
                 Err(message) => error.set(Some(message)),
             }
         });
-    }
-}
-
-/// Refreshes an opening position until MEXC reports a valid liquidation price or retries run out.
-fn schedule_liquidation_price_retry(
-    api_url: String,
-    api_key: String,
-    api_secret: String,
-    symbol: String,
-    positions_signal: RwSignal<Vec<RealPosition>>,
-    attempts_remaining: u8,
-) {
-    if attempts_remaining == 0 {
-        return;
-    }
-
-    let callback = Closure::once_into_js(move || {
-        let callback_api_url = api_url.clone();
-        let callback_api_key = api_key.clone();
-        let callback_api_secret = api_secret.clone();
-        let callback_symbol = symbol.clone();
-
-        MexcFuturesTradingService::new(ProxyApi).fetch_positions(
-            &api_url,
-            &api_key,
-            &api_secret,
-            js_sys::Date::now().max(0.0) as i64,
-            Rc::new(move |result| {
-                let ready = match result {
-                    Ok(positions) => {
-                        let ready = positions.iter().any(|position| {
-                            position.symbol == callback_symbol
-                                && position.liquidation_price.is_finite()
-                                && position.liquidation_price > 0.0
-                        });
-                        positions_signal.set(positions);
-                        ready
-                    }
-                    Err(_) => false,
-                };
-
-                if !ready && attempts_remaining > 1 {
-                    schedule_liquidation_price_retry(
-                        callback_api_url.clone(),
-                        callback_api_key.clone(),
-                        callback_api_secret.clone(),
-                        callback_symbol.clone(),
-                        positions_signal,
-                        attempts_remaining - 1,
-                    );
-                }
-            }),
-        );
-    });
-
-    if let Some(window) = web_sys::window() {
-        let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(
-            callback.unchecked_ref(),
-            1_500,
-        );
     }
 }
 
