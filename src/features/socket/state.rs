@@ -734,7 +734,6 @@ impl SocketState {
             .iter()
             .find(|position| position.symbol == symbol)
             .cloned();
-        let is_opening_position = existing.is_none();
         let api_url = self.api_url.get_untracked();
         let api_key = self.api_key.get_untracked();
         let api_secret = self.api_secret.get_untracked();
@@ -835,9 +834,6 @@ impl SocketState {
                                 let api_url = refresh_api_url.clone();
                                 let api_key = refresh_api_key.clone();
                                 let api_secret = refresh_api_secret.clone();
-                                let positions_api_url = api_url.clone();
-                                let positions_api_key = api_key.clone();
-                                let positions_api_secret = api_secret.clone();
                                 MexcFuturesAccountService::new(ProxyApi).fetch_usdt_asset(
                                     &api_url,
                                     &api_key,
