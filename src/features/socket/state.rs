@@ -868,12 +868,15 @@ impl SocketState {
                                                     // MEXC may return a new position before its liquidation
                                                     // price has been calculated. Retry once after a short delay.
                                                     if retry_liquidation_price {
+                                                        let retry_url_for_timeout = retry_api_url.clone();
+                                                        let retry_key_for_timeout = retry_api_key.clone();
+                                                        let retry_secret_for_timeout = retry_api_secret.clone();
                                                         let retry_positions_signal = positions_signal;
                                                         let callback = Closure::once_into_js(move || {
                                                             MexcFuturesTradingService::new(ProxyApi).fetch_positions(
-                                                                &retry_api_url,
-                                                                &retry_api_key,
-                                                                &retry_api_secret,
+                                                                &retry_url_for_timeout,
+                                                                &retry_key_for_timeout,
+                                                                &retry_secret_for_timeout,
                                                                 js_sys::Date::now().max(0.0) as i64,
                                                                 Rc::new(move |retry_result| {
                                                                     if let Ok(positions) = retry_result {
