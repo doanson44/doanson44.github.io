@@ -2462,6 +2462,9 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         })
     };
 
+    let left_start_game = Rc::clone(&start_game);
+    let right_start_game = Rc::clone(&start_game);
+
     let keydown = {
         let toggle = toggle.clone();
         move |e: web_sys::KeyboardEvent| {
@@ -2590,7 +2593,7 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                         on:pointerdown=move |e: web_sys::PointerEvent| {
                             e.prevent_default();
                             if !running.get_untracked() {
-                                start_game();
+                                left_start_game();
                             }
                             left_pressed.set(true);
                         }
@@ -2608,7 +2611,7 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                         on:pointerdown=move |e: web_sys::PointerEvent| {
                             e.prevent_default();
                             if !running.get_untracked() {
-                                start_game();
+                                right_start_game();
                             }
                             right_pressed.set(true);
                         }
