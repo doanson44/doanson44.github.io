@@ -2582,15 +2582,47 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     }}
                 </button>
 
-                {dpad(
-                    move || {},
-                    move || left_pressed.set(true),
-                    move || {},
-                    move || right_pressed.set(true),
-                )}
+                <div class="flex justify-center gap-3">
+                    <button
+                        type="button"
+                        class="min-h-14 min-w-24 select-none touch-none rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-6 py-3 text-xl font-bold text-[var(--text-primary)] active:scale-95 active:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                        aria-label="Move paddle left"
+                        on:pointerdown=move |e: web_sys::PointerEvent| {
+                            e.prevent_default();
+                            if !running.get_untracked() {
+                                start_game();
+                            }
+                            left_pressed.set(true);
+                        }
+                        on:pointerup=move |_| left_pressed.set(false)
+                        on:pointerleave=move |_| left_pressed.set(false)
+                        on:pointercancel=move |_| left_pressed.set(false)
+                        on:contextmenu=move |e| e.prevent_default()
+                    >
+                        "←"
+                    </button>
+                    <button
+                        type="button"
+                        class="min-h-14 min-w-24 select-none touch-none rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-6 py-3 text-xl font-bold text-[var(--text-primary)] active:scale-95 active:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                        aria-label="Move paddle right"
+                        on:pointerdown=move |e: web_sys::PointerEvent| {
+                            e.prevent_default();
+                            if !running.get_untracked() {
+                                start_game();
+                            }
+                            right_pressed.set(true);
+                        }
+                        on:pointerup=move |_| right_pressed.set(false)
+                        on:pointerleave=move |_| right_pressed.set(false)
+                        on:pointercancel=move |_| right_pressed.set(false)
+                        on:contextmenu=move |e| e.prevent_default()
+                    >
+                        "→"
+                    </button>
+                </div>
 
                 <p class="text-center text-xs text-[var(--text-tertiary)]">
-                    "Hold ← → / A D for smooth paddle movement · Space start/pause"
+                    "Hold ← → / A D to move the paddle · Space to start/pause"
                 </p>
             </div>
         </div>
