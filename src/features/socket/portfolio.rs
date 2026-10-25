@@ -147,6 +147,78 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                 </div>
             </div>
 
+            <Show when=move || state.trading_snapshot.get().portfolio.liquidated_at_ms.is_some()>
+                <div class="mt-3 rounded-md border border-[var(--danger)]/50 bg-[var(--danger)]/10 px-3 py-2 text-sm font-semibold text-[var(--danger)]" role="alert">
+                    {move || if i18n.get_locale() == Locale::vi {
+                        "Tài khoản Cross Margin đã bị thanh lý trong lịch sử mô phỏng. Equity được đặt về 0 USDT."
+                    } else {
+                        "The cross-margin account was liquidated in historical replay. Equity has been set to 0 USDT."
+                    }}
+                </div>
+            </Show>
+            <div class="mt-3 rounded-md border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-medium text-[var(--text-primary)]">
+                        {move || if i18n.get_locale() == Locale::vi { "Funding lịch sử" } else { "Historical funding" }}
+                    </span>
+                    <span class="font-mono">
+                        {move || {
+                            let portfolio = state.trading_snapshot.get().portfolio;
+                            format!(
+                                "{} · {} {}",
+                                format_signed_currency(portfolio.historical_funding_fee),
+                                portfolio.historical_funding_settlements,
+                                if i18n.get_locale() == Locale::vi { "kỳ" } else { "settlements" }
+                            )
+                        }}
+                    </span>
+                </div>
+                <Show when=move || state.history_replay_loading.get()>
+                    <p class="m-0 mt-1">
+                        {move || if i18n.get_locale() == Locale::vi {
+                            "Đang tải nến giá và funding history từ MEXC…"
+                        } else {
+                            "Loading historical candles and funding from MEXC…"
+                        }}
+                    </p>
+                </Show>
+                <Show when=move || state.history_replay_error.get().is_some()>
+                    <p class="m-0 mt-1 text-[var(--danger)]" role="status">
+                        {move || state.history_replay_error.get().unwrap_or_default()}
+                    </p>
+                </Show>
+                <Show when=move || state.history_replay.get().is_some()>
+                    <p class="m-0 mt-1">
+                        {move || {
+                            let replay = state.history_replay.get().unwrap_or_default();
+                            let mut symbols = replay.observed_lows.keys().cloned().collect::<Vec<_>>();
+                            symbols.sort();
+                            let ranges = symbols.into_iter().filter_map(|symbol| {
+                                let low = replay.observed_lows.get(&symbol)?;
+                                let high = replay.observed_highs.get(&symbol)?;
+                                Some(format!("{symbol}: {} — {}", format_price(*low), format_price(*high)))
+                            }).collect::<Vec<_>>().join(" · ");
+                            if ranges.is_empty() {
+                                if i18n.get_locale() == Locale::vi {
+                                    "Chưa có đủ dữ liệu giá lịch sử.".to_string()
+                                } else {
+                                    "Historical price range is unavailable.".to_string()
+                                }
+                            } else {
+                                format!("{}: {ranges}", if i18n.get_locale() == Locale::vi { "Biên độ lịch sử thấp — cao" } else { "Historical low — high" })
+                            }
+                        }}
+                    </p>
+                    <p class="m-0 mt-1">
+                        {move || if i18n.get_locale() == Locale::vi {
+                            "Mô phỏng dùng nến fair price 5 phút và maintenance margin giả định 0,5%; kết quả có thể khác cơ chế thanh lý thực tế của MEXC."
+                        } else {
+                            "Replay uses 5-minute fair-price candles and an assumed 0.5% maintenance margin; results may differ from MEXC's actual liquidation engine."
+                        }}
+                    </p>
+                </Show>
+            </div>
+
             <div class="mt-3 border-t border-[var(--border-color)] pt-3">
                 <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <h4 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -490,6 +562,14 @@ fn format_signed_currency(value: f64) -> String {
         format!("+{value:.2} USDT")
     } else {
         format!("-{:.2} USDT", value.abs())
+    }
+}
+
+fn format_price(value: f64) -> String {
+    if value.abs() >= 1.0 {
+        format!("{value:.4}")
+    } else {
+        format!("{value:.8}")
     }
 }
 
