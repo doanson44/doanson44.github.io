@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::domain::trading::{estimate_liquidation_price, ExecutionMode, PortfolioSummary, PositionSide};
+use crate::domain::trading::{ExecutionMode, PortfolioSummary, PositionSide};
 use crate::features::socket::state::{SocketState, TradingSettingsInput};
 use crate::i18n::*;
 
@@ -147,6 +147,84 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                 </div>
             </div>
 
+            <Show when=move || state.execution_mode.get() == ExecutionMode::Paper>
+            <Show when=move || state.trading_snapshot.get().portfolio.liquidated_at_ms.is_some()>
+                <div class="mt-3 rounded-md border border-[var(--danger)]/50 bg-[var(--danger)]/10 px-3 py-2 text-sm font-semibold text-[var(--danger)]" role="alert">
+                    {move || if i18n.get_locale() == Locale::vi {
+                        "Tài khoản Cross Margin đã bị thanh lý trong lịch sử mô phỏng. Equity được đặt về 0 USDT."
+                    } else {
+                        "The cross-margin account was liquidated in historical replay. Equity has been set to 0 USDT."
+                    }}
+                </div>
+            </Show>
+            <div class="mt-3 rounded-md border border-[var(--border-color)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-medium text-[var(--text-primary)]">
+                        {move || if i18n.get_locale() == Locale::vi { "Funding lịch sử" } else { "Historical funding" }}
+                    </span>
+                    <span class="font-mono">
+                        {move || {
+                            let portfolio = state.trading_snapshot.get().portfolio;
+                            format!(
+                                "{} · {} {}",
+                                format_signed_currency(
+                                    portfolio.historical_funding_fee + portfolio.realized_funding_fee
+                                ),
+                                portfolio.historical_funding_settlements
+                                    + portfolio.realized_funding_settlements,
+                                if i18n.get_locale() == Locale::vi { "kỳ" } else { "settlements" }
+                            )
+                        }}
+                    </span>
+                </div>
+                <Show when=move || state.history_replay_loading.get()>
+                    <p class="m-0 mt-1">
+                        {move || if i18n.get_locale() == Locale::vi {
+                            "Đang tải nến giá và funding history từ MEXC…"
+                        } else {
+                            "Loading historical candles and funding from MEXC…"
+                        }}
+                    </p>
+                </Show>
+                <Show when=move || state.history_replay_error.get().is_some()>
+                    <p class="m-0 mt-1 text-[var(--danger)]" role="status">
+                        {move || state.history_replay_error.get().unwrap_or_default()}
+                    </p>
+                </Show>
+                <Show when=move || state.history_replay.get().is_some()>
+                    <p class="m-0 mt-1">
+                        {move || {
+                            let replay = state.history_replay.get().unwrap_or_default();
+                            let mut symbols = replay.observed_lows.keys().cloned().collect::<Vec<_>>();
+                            symbols.sort();
+                            let ranges = symbols.into_iter().filter_map(|symbol| {
+                                let low = replay.observed_lows.get(&symbol)?;
+                                let high = replay.observed_highs.get(&symbol)?;
+                                Some(format!("{symbol}: {} — {}", format_price(*low), format_price(*high)))
+                            }).collect::<Vec<_>>().join(" · ");
+                            if ranges.is_empty() {
+                                if i18n.get_locale() == Locale::vi {
+                                    "Chưa có đủ dữ liệu giá lịch sử.".to_string()
+                                } else {
+                                    "Historical price range is unavailable.".to_string()
+                                }
+                            } else {
+                                format!("{}: {ranges}", if i18n.get_locale() == Locale::vi { "Biên độ lịch sử thấp — cao" } else { "Historical low — high" })
+                            }
+                        }}
+                    </p>
+                    <p class="m-0 mt-1">
+                        {move || if i18n.get_locale() == Locale::vi {
+                            "Mô phỏng dùng nến fair price với khung thời gian thích ứng và maintenance margin giả định 0,5%; kết quả có thể khác cơ chế thanh lý thực tế của MEXC."
+                        } else {
+                            "Replay uses adaptive fair-price candle intervals and an assumed 0.5% maintenance margin; results may differ from MEXC's actual liquidation engine."
+                        }}
+                    </p>
+                </Show>
+            </div>
+
+            </Show>
+
             <div class="mt-3 border-t border-[var(--border-color)] pt-3">
                 <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <h4 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -182,32 +260,32 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                     <th class="px-2 py-2 font-medium" scope="col">{move || t_string!(i18n, socket_position_side)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_quantity)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_market_value)}</th>
-                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || if i18n.get_locale() == Locale::vi { "Giá thanh lý ước tính" } else { "Estimated liquidation" }}</th>
+                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || if state.execution_mode.get() == ExecutionMode::Real {
+                                        if i18n.get_locale() == Locale::vi { "Giá thanh lý" } else { "Liquidation price" }
+                                    } else if i18n.get_locale() == Locale::vi {
+                                        "Rủi ro Cross Margin"
+                                    } else {
+                                        "Cross-margin risk"
+                                    }}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_pnl)}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {move || summary.get().holdings.into_iter().map(|holding| {
-                                    let liquidation_price = if state.execution_mode.get() == ExecutionMode::Real {
+                                    let liquidation_price_label = if state.execution_mode.get() == ExecutionMode::Real {
                                         state.real_positions.get().iter()
                                             .find(|position| position.symbol == holding.symbol)
-                                            .and_then(|position| estimate_liquidation_price(
-                                                position.open_average_price,
-                                                position.leverage,
-                                                position.side,
-                                            ))
+                                            .map(|position| position.liquidation_price)
+                                            .filter(|price| price.is_finite() && *price > 0.0)
+                                            .map(format_price)
+                                            .unwrap_or_else(|| "—".to_string())
+                                    } else if state.history_replay_loading.get() {
+                                        if i18n.get_locale() == Locale::vi { "Đang kiểm tra…".to_string() } else { "Checking…".to_string() }
+                                    } else if state.history_replay.get().is_some() {
+                                        if i18n.get_locale() == Locale::vi { "Không phát hiện".to_string() } else { "Not detected".to_string() }
                                     } else {
-                                        state.trading_snapshot.get().portfolio.positions.iter()
-                                            .find(|position| position.symbol == holding.symbol)
-                                            .and_then(|position| estimate_liquidation_price(
-                                                position.entry_price,
-                                                position.leverage,
-                                                position.side,
-                                            ))
+                                        "—".to_string()
                                     };
-                                    let liquidation_price_label = liquidation_price
-                                        .map(|price| format!("≈ {}", format!("{price:.8}").trim_end_matches('0').trim_end_matches('.')))
-                                        .unwrap_or_else(|| "—".to_string());
                                     let pnl_class = if holding.pnl > 0.0 {
                                         "text-[var(--success)]"
                                     } else if holding.pnl < 0.0 {
@@ -235,7 +313,13 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                             <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]">
                                                 {format_currency(holding.market_value)}
                                             </td>
-                                            <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]" title=move || if i18n.get_locale() == Locale::vi { "Ước tính theo giá vào lệnh và đòn bẩy; chưa tính mức ký quỹ duy trì, phí và điều chỉnh rủi ro của sàn" } else { "Estimated from entry price and leverage; excludes maintenance margin, fees, and exchange risk adjustments" }>
+                                            <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]" title=move || if state.execution_mode.get() == ExecutionMode::Real {
+                                                if i18n.get_locale() == Locale::vi { "Giá thanh lý do MEXC trả về." } else { "Liquidation price reported by MEXC." }
+                                            } else if i18n.get_locale() == Locale::vi {
+                                                "Trạng thái được xác định bằng replay Cross Margin cấp tài khoản, không phải giá thanh lý riêng cho từng lệnh."
+                                            } else {
+                                                "Status comes from account-wide cross-margin replay, not a per-position liquidation price."
+                                            }>
                                                 {liquidation_price_label}
                                             </td>
                                             <td class=format!("px-2 py-2 text-right font-mono font-medium {pnl_class}")>
@@ -490,6 +574,14 @@ fn format_signed_currency(value: f64) -> String {
         format!("+{value:.2} USDT")
     } else {
         format!("-{:.2} USDT", value.abs())
+    }
+}
+
+fn format_price(value: f64) -> String {
+    if value.abs() >= 1.0 {
+        format!("{value:.4}")
+    } else {
+        format!("{value:.8}")
     }
 }
 

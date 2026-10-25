@@ -4,6 +4,7 @@ use crate::domain::document::MarkdownDocument;
 use crate::domain::funding::FundingRateSnapshot;
 use crate::domain::futures::FuturesTickerUpdate;
 use crate::domain::trading::{ExecutionSettings, TradingSnapshot};
+use crate::domain::trading_history::TradingMarketHistory;
 
 /// Port for document persistence.
 pub trait DocumentRepository {
@@ -127,4 +128,14 @@ pub trait TradingStorage {
 
     /// Persists the current paper-trading snapshot.
     fn save(&self, snapshot: &TradingSnapshot) -> Result<(), String>;
+}
+
+/// Application port for historical Futures candles and funding settlements.
+pub trait TradingHistoryProvider {
+    /// Loads all available history needed to replay the supplied open positions.
+    fn load_history(
+        &self,
+        snapshot: &TradingSnapshot,
+        on_result: Rc<dyn Fn(Result<TradingMarketHistory, String>)>,
+    );
 }

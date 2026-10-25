@@ -11,13 +11,14 @@ use wasm_bindgen::{closure::Closure, JsCast};
 use crate::application::{
     ports::{
         FundingRateProvider, FuturesConnectionStatus, FuturesMarketStream, RealTradingStorage,
+        TradingHistoryProvider,
     },
     services::{
         mexc_account::MexcFuturesAccountService,
         mexc_trading::{MarketOrderRequest, MexcFuturesTradingService},
         proxy::ProxyService,
         technical_analysis::TechnicalAnalysisService,
-        trading::TradingService,
+        trading::TradingService, trading_history::TradingHistoryService,
         FuturesHistoryService, FuturesMarketService,
     },
 };
@@ -28,10 +29,12 @@ use crate::domain::trading::{
     ExecutionMode, ExecutionSettings, HoldingSummary, PortfolioSummary, PositionSide,
     RealAccountSnapshot, RealPosition, RealTradingSettings, TradingSnapshot,
 };
+use crate::domain::trading_history::CrossMarginReplay;
 use crate::infrastructure::browser;
 use crate::infrastructure::execution::LocalExecutionStorage;
 use crate::infrastructure::proxy::ProxyApi;
 use crate::infrastructure::trading::LocalTradingStorage;
+use crate::infrastructure::trading_history::MexcTradingHistoryApi;
 
 const UI_FLUSH_MS: i32 = 75;
 const PINNED_SYMBOLS_KEY: &str = "socket.pinned-symbols";
@@ -116,6 +119,9 @@ pub struct SocketState {
     pub analysis_error: RwSignal<Option<String>>,
     pub analysis_copied: RwSignal<bool>,
     pub trading_snapshot: RwSignal<TradingSnapshot>,
+    pub history_replay: RwSignal<Option<CrossMarginReplay>>,
+    pub history_replay_loading: RwSignal<bool>,
+    pub history_replay_error: RwSignal<Option<String>>,
     pub settings_open: RwSignal<bool>,
     pub trading_error: RwSignal<Option<String>>,
     pub trading_notice: RwSignal<Option<String>>,
@@ -164,6 +170,9 @@ impl SocketState {
         let analysis_error = RwSignal::new(None);
         let analysis_copied = RwSignal::new(false);
         let trading_snapshot = RwSignal::new(loaded_snapshot);
+        let history_replay = RwSignal::new(None);
+        let history_replay_loading = RwSignal::new(false);
+        let history_replay_error = RwSignal::new(None);
         let execution_settings = LocalExecutionStorage
             .load()
             .ok()
@@ -282,6 +291,9 @@ impl SocketState {
             analysis_error,
             analysis_copied,
             trading_snapshot,
+            history_replay,
+            history_replay_loading,
+            history_replay_error,
             settings_open,
             trading_error,
             trading_notice,
@@ -297,6 +309,7 @@ impl SocketState {
             reset_metrics_request,
         };
         state.load_pinned_history();
+        state.load_paper_trade_history();
         if execution_settings.mode == ExecutionMode::Real {
             state.refresh_real_account();
         }
@@ -539,6 +552,99 @@ impl SocketState {
         self.trading_notice
             .set(Some(format!("{action} {symbol} at market price.")));
         self.trading_snapshot.set(next_snapshot);
+        self.load_paper_trade_history();
+    }
+
+    /// Reconstructs paper-trading funding and cross-margin liquidation from MEXC history.
+    pub fn load_paper_trade_history(&self) {
+        if self.execution_mode.get_untracked() == ExecutionMode::Real {
+            return;
+        }
+        self.history_replay.set(None);
+        if self.history_replay_loading.get_untracked() {
+            return;
+        }
+
+        let snapshot = self.trading_snapshot.get_untracked();
+        if snapshot.portfolio.positions.is_empty()
+            || snapshot.portfolio.liquidated_at_ms.is_some()
+        {
+            return;
+        }
+
+        self.history_replay_loading.set(true);
+        self.history_replay_error.set(None);
+
+        let state = *self;
+        MexcTradingHistoryApi.load_history(
+            &snapshot,
+            Rc::new(move |result| {
+                state.history_replay_loading.set(false);
+                if state.trading_snapshot.get_untracked() != snapshot {
+                    // A user action changed the portfolio while network history was loading.
+                    // Discard the stale result and replay the latest snapshot instead.
+                    state.load_paper_trade_history();
+                    return;
+                }
+                match result {
+                    Ok(history) => {
+                        let replay = TradingHistoryService::replay(&snapshot, &history);
+                        let mut next_snapshot = snapshot.clone();
+                        let mut funding_cash_delta = 0.0;
+                        for position in &mut next_snapshot.portfolio.positions {
+                            let previous_fee = position.historical_funding_fee;
+                            let position_funding = replay
+                                .funding_by_symbol
+                                .get(&position.symbol)
+                                .cloned()
+                                .unwrap_or_default();
+                            // Apply only the delta from the last replay to avoid double-charging
+                            // funding after refreshes or repeated history fetches.
+                            funding_cash_delta += position_funding.fee - previous_fee;
+                            position.historical_funding_fee = position_funding.fee;
+                            position.historical_funding_settlements = position_funding.settlements;
+                        }
+                        next_snapshot.portfolio.cash -= funding_cash_delta;
+                        next_snapshot.portfolio.historical_funding_fee =
+                            next_snapshot.portfolio.positions.iter()
+                                .map(|position| position.historical_funding_fee)
+                                .sum();
+                        next_snapshot.portfolio.historical_funding_settlements =
+                            next_snapshot.portfolio.positions.iter()
+                                .map(|position| position.historical_funding_settlements)
+                                .sum();
+
+                        if replay.liquidated {
+                            next_snapshot.portfolio.realized_funding_fee +=
+                                next_snapshot.portfolio.historical_funding_fee;
+                            next_snapshot.portfolio.realized_funding_settlements +=
+                                next_snapshot.portfolio.historical_funding_settlements;
+                            next_snapshot.portfolio.historical_funding_fee = 0.0;
+                            next_snapshot.portfolio.historical_funding_settlements = 0;
+                            next_snapshot.portfolio.cash = 0.0;
+                            next_snapshot.portfolio.positions.clear();
+                            next_snapshot.portfolio.realized_pnl =
+                                -next_snapshot.settings.initial_capital;
+                            next_snapshot.portfolio.liquidated_at_ms =
+                                replay.liquidation_time_ms;
+                            state.trading_notice.set(Some(
+                                "Cross-margin liquidation detected in historical replay. Paper account equity set to zero.".to_string(),
+                            ));
+                        }
+
+                        if let Err(message) =
+                            TradingService::save(&LocalTradingStorage, &next_snapshot)
+                        {
+                            state.history_replay_error.set(Some(message));
+                            return;
+                        }
+                        state.trading_snapshot.set(next_snapshot);
+                        state.history_replay.set(Some(replay));
+                    }
+                    Err(message) => state.history_replay_error.set(Some(message)),
+                }
+            }),
+        );
     }
 
     /// Returns the current portfolio valuation using the latest socket prices.
@@ -610,7 +716,8 @@ impl SocketState {
             .filter_map(|(symbol, ticker)| {
                 ticker
                     .ticker
-                    .last_price
+                    .fair_price
+                    .or(ticker.ticker.last_price)
                     .filter(|price| price.is_finite() && *price > 0.0)
                     .map(|price| (symbol.clone(), price))
             })

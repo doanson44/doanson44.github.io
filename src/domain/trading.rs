@@ -154,6 +154,15 @@ pub struct Position {
     pub leverage: f64,
     #[serde(default)]
     pub side: PositionSide,
+    /// UTC Unix timestamp in milliseconds when this position was opened.
+    #[serde(default)]
+    pub opened_at_ms: i64,
+    /// Cumulative funding fee for this open position; positive means paid.
+    #[serde(default)]
+    pub historical_funding_fee: f64,
+    /// Funding settlements already replayed for this position.
+    #[serde(default)]
+    pub historical_funding_settlements: usize,
 }
 
 /// The side of a paper-trading transaction.
@@ -174,6 +183,11 @@ pub struct Transaction {
     pub fee: f64,
     pub realized_pnl: f64,
     pub timestamp_ms: i64,
+    /// Funding fee associated with this trade; positive means paid.
+    #[serde(default)]
+    pub funding_fee: f64,
+    #[serde(default)]
+    pub funding_settlements: usize,
 }
 
 /// Client-side paper-trading portfolio state.
@@ -183,6 +197,20 @@ pub struct Portfolio {
     pub positions: Vec<Position>,
     pub transactions: Vec<Transaction>,
     pub realized_pnl: f64,
+    /// Set when the cross-margin simulator has liquidated the paper account.
+    #[serde(default)]
+    pub liquidated_at_ms: Option<i64>,
+    /// Cumulative historical funding fee; positive means paid, negative received.
+    #[serde(default)]
+    pub historical_funding_fee: f64,
+    /// Number of funding settlements replayed from exchange history.
+    #[serde(default)]
+    pub historical_funding_settlements: usize,
+    /// Funding fees already realized by closed positions.
+    #[serde(default)]
+    pub realized_funding_fee: f64,
+    #[serde(default)]
+    pub realized_funding_settlements: usize,
 }
 
 impl Portfolio {
@@ -193,6 +221,11 @@ impl Portfolio {
             positions: Vec::new(),
             transactions: Vec::new(),
             realized_pnl: 0.0,
+            liquidated_at_ms: None,
+            historical_funding_fee: 0.0,
+            historical_funding_settlements: 0,
+            realized_funding_fee: 0.0,
+            realized_funding_settlements: 0,
         }
     }
 
@@ -238,6 +271,9 @@ impl Portfolio {
             margin,
             leverage,
             side,
+            opened_at_ms: timestamp_ms,
+            historical_funding_fee: 0.0,
+            historical_funding_settlements: 0,
         });
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
@@ -251,6 +287,8 @@ impl Portfolio {
             fee,
             realized_pnl: 0.0,
             timestamp_ms,
+            funding_fee: 0.0,
+            funding_settlements: 0,
         });
 
         Ok(())
@@ -292,10 +330,17 @@ impl Portfolio {
             PositionSide::Long => value - position.entry_value,
             PositionSide::Short => position.entry_value - value,
         };
-        let realized_pnl = price_pnl - position.entry_fee - fee;
+        let realized_pnl =
+            price_pnl - position.entry_fee - fee - position.historical_funding_fee;
 
         self.cash += position.margin + price_pnl - fee;
         self.realized_pnl += realized_pnl;
+        self.historical_funding_fee -= position.historical_funding_fee;
+        self.historical_funding_settlements = self
+            .historical_funding_settlements
+            .saturating_sub(position.historical_funding_settlements);
+        self.realized_funding_fee += position.historical_funding_fee;
+        self.realized_funding_settlements += position.historical_funding_settlements;
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
             side: match position.side {
@@ -308,6 +353,8 @@ impl Portfolio {
             fee,
             realized_pnl,
             timestamp_ms,
+            funding_fee: position.historical_funding_fee,
+            funding_settlements: position.historical_funding_settlements,
         });
 
         Ok(())
@@ -382,7 +429,7 @@ pub fn summarize_portfolio(
             PositionSide::Long => value - position.entry_value,
             PositionSide::Short => position.entry_value - value,
         };
-        let pnl = price_pnl - position.entry_fee;
+        let pnl = price_pnl - position.entry_fee - position.historical_funding_fee;
 
         equity += position.margin + price_pnl;
         unrealized_pnl += pnl;
@@ -486,6 +533,30 @@ mod tests {
 
         assert!(portfolio.positions.is_empty());
         assert!((portfolio.realized_pnl - 9.8001998001998).abs() < 1e-9);
+    }
+
+    #[test]
+    fn closing_position_preserves_funding_in_realized_pnl_and_transaction() {
+        let settings = settings();
+        let mut portfolio = Portfolio::new(settings.initial_capital);
+        portfolio.buy(&settings, "BTC_USDT", 100.0, 1).unwrap();
+
+        portfolio.positions[0].historical_funding_fee = 5.0;
+        portfolio.positions[0].historical_funding_settlements = 2;
+        portfolio.historical_funding_fee = 5.0;
+        portfolio.historical_funding_settlements = 2;
+        portfolio.cash -= 5.0;
+
+        portfolio.sell(&settings, "BTC_USDT", 100.0, 2).unwrap();
+
+        let close = portfolio.transactions.last().unwrap();
+        assert_eq!(close.funding_fee, 5.0);
+        assert_eq!(close.funding_settlements, 2);
+        assert!((portfolio.realized_pnl - (-5.1998001998)).abs() < 1e-6);
+        assert_eq!(portfolio.historical_funding_fee, 0.0);
+        assert_eq!(portfolio.historical_funding_settlements, 0);
+        assert_eq!(portfolio.realized_funding_fee, 5.0);
+        assert_eq!(portfolio.realized_funding_settlements, 2);
     }
 
     #[test]
