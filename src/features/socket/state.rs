@@ -552,16 +552,16 @@ impl SocketState {
         self.trading_notice
             .set(Some(format!("{action} {symbol} at market price.")));
         self.trading_snapshot.set(next_snapshot);
-        if !is_held {
-            self.load_paper_trade_history();
-        }
+        self.load_paper_trade_history();
     }
 
     /// Reconstructs paper-trading funding and cross-margin liquidation from MEXC history.
     pub fn load_paper_trade_history(&self) {
-        if self.execution_mode.get_untracked() == ExecutionMode::Real
-            || self.history_replay_loading.get_untracked()
-        {
+        if self.execution_mode.get_untracked() == ExecutionMode::Real {
+            return;
+        }
+        self.history_replay.set(None);
+        if self.history_replay_loading.get_untracked() {
             return;
         }
 
@@ -573,7 +573,6 @@ impl SocketState {
         }
 
         self.history_replay_loading.set(true);
-        self.history_replay.set(None);
         self.history_replay_error.set(None);
 
         let state = *self;
