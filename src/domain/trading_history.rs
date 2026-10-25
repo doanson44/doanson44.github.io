@@ -240,7 +240,7 @@ mod tests {
             initial_capital: 1_000.0,
             fee_rate: 0.001,
             leverage: 10.0,
-            trade_allocation_percent: 10.0,
+            trade_allocation_percent: 100.0,
             position_side: side,
         };
         let mut portfolio = Portfolio::new(settings.initial_capital);
