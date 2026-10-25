@@ -34,6 +34,13 @@ pub struct CrossMarginReplay {
     pub incomplete_symbols: Vec<String>,
 }
 
+/// Collected market history required to replay one cross-margin portfolio.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct TradingMarketHistory {
+    pub candles: HashMap<String, Vec<HistoricalCandle>>,
+    pub funding: HashMap<String, Vec<FundingSettlement>>,
+}
+
 /// Replays funding settlements and adverse candle extremes against one shared
 /// cross-margin account. The maintenance-margin ratio is an explicit simulator
 /// assumption because MEXC risk tiers vary by contract and position size.
@@ -117,7 +124,8 @@ pub fn replay_cross_margin(
         }
     }
 
-    events.sort_by(|left, right| left.0.cmp(&right.0).then_with(|| left.1.cmp(&right.1)));
+    // Apply funding before checking the same timestamp's price extremes.
+    events.sort_by(|left, right| left.0.cmp(&right.0).then_with(|| right.1.cmp(&left.1)));
 
     let mut cash = snapshot.portfolio.cash;
     let mut latest_prices = snapshot
