@@ -12,7 +12,7 @@ pub struct TradingService;
 impl TradingService {
     /// Loads the persisted trading snapshot or creates the default paper portfolio.
     pub fn load(storage: &dyn TradingStorage) -> TradingSnapshot {
-        storage
+        let mut snapshot = storage
             .load()
             .ok()
             .flatten()
@@ -28,7 +28,31 @@ impl TradingService {
                     && snapshot.portfolio.cash.is_finite()
                     && snapshot.portfolio.cash >= 0.0
             })
-            .unwrap_or_default()
+            .unwrap_or_default();
+
+        // Older snapshots did not store the opening time on Position. Recover it
+        // from the latest matching opening transaction when available.
+        for position in &mut snapshot.portfolio.positions {
+            if position.opened_at_ms > 0 {
+                continue;
+            }
+            let opening_side = match position.side {
+                PositionSide::Long => crate::domain::trading::TradeSide::Buy,
+                PositionSide::Short => crate::domain::trading::TradeSide::Sell,
+            };
+            position.opened_at_ms = snapshot
+                .portfolio
+                .transactions
+                .iter()
+                .rev()
+                .find(|transaction| {
+                    transaction.symbol == position.symbol && transaction.side == opening_side
+                })
+                .map(|transaction| transaction.timestamp_ms)
+                .unwrap_or_default();
+        }
+
+        snapshot
     }
 
     /// Persists the current trading snapshot.
