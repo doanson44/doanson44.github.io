@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -136,9 +136,15 @@ pub fn replay_cross_margin(
     // Apply funding before checking the same timestamp's price extremes.
     events.sort_by(|left, right| left.0.cmp(&right.0).then_with(|| right.1.cmp(&left.1)));
 
-    // The persisted cash already includes the previously replayed funding total.
-    // Restore the pre-replay balance so historical funding is applied exactly once.
-    let mut cash = snapshot.portfolio.cash + snapshot.portfolio.historical_funding_fee;
+    // Restore pre-replay cash, then release each position's reserved margin and
+    // entry fee back into the timeline at its actual opening timestamp.
+    let reserved_balance = snapshot.portfolio.positions.iter()
+        .map(|position| position.margin + position.entry_fee)
+        .sum::<f64>();
+    let mut cash = snapshot.portfolio.cash
+        + snapshot.portfolio.historical_funding_fee
+        + reserved_balance;
+    let mut active_symbols = HashSet::new();
     let mut latest_prices = snapshot
         .portfolio
         .positions
@@ -155,8 +161,20 @@ pub fn replay_cross_margin(
         }
         let group = &events[group_start..index];
 
+        // Positions become part of the shared account only from their own opening time.
+        for position in &snapshot.portfolio.positions {
+            if position.opened_at_ms <= timestamp_ms
+                && active_symbols.insert(position.symbol.clone())
+            {
+                cash -= position.margin + position.entry_fee;
+            }
+        }
+
         // Apply all funding settlements first, before checking price risk at the same timestamp.
         for (_, _, symbol, rate, fair_price, _) in group.iter().filter(|event| event.1) {
+            if !active_symbols.contains(symbol.as_str()) {
+                continue;
+            }
             let Some(position) = snapshot
                 .portfolio
                 .positions
@@ -190,9 +208,16 @@ pub fn replay_cross_margin(
 
         // Evaluate the shared account against all positions' adverse extremes
         // from the same candle interval, not one symbol at a time.
+        if active_symbols.is_empty() {
+            continue;
+        }
+
         let mut equity = cash;
         let mut maintenance_margin = 0.0;
         for position in &snapshot.portfolio.positions {
+            if !active_symbols.contains(position.symbol.as_str()) {
+                continue;
+            }
             let candle = candle_events
                 .iter()
                 .find(|event| event.2.as_str() == position.symbol.as_str());
