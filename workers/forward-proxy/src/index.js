@@ -4,6 +4,7 @@ const ALLOWED_ORIGINS = new Set([
 
 const ALLOWED_HOSTS = new Set([
   "api.mexc.com",
+  "contract.mexc.com",
 ]);
 
 export default {
