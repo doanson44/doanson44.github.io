@@ -189,6 +189,12 @@ pub struct Portfolio {
     /// Set when the cross-margin simulator has liquidated the paper account.
     #[serde(default)]
     pub liquidated_at_ms: Option<i64>,
+    /// Cumulative historical funding fee; positive means paid, negative received.
+    #[serde(default)]
+    pub historical_funding_fee: f64,
+    /// Number of funding settlements replayed from exchange history.
+    #[serde(default)]
+    pub historical_funding_settlements: usize,
 }
 
 impl Portfolio {
@@ -200,6 +206,8 @@ impl Portfolio {
             transactions: Vec::new(),
             realized_pnl: 0.0,
             liquidated_at_ms: None,
+            historical_funding_fee: 0.0,
+            historical_funding_settlements: 0,
         }
     }
 
