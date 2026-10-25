@@ -163,6 +163,11 @@ pub struct Position {
     /// Funding settlements already replayed for this position.
     #[serde(default)]
     pub historical_funding_settlements: usize,
+    /// Funding fees already realized by closed positions.
+    #[serde(default)]
+    pub realized_funding_fee: f64,
+    #[serde(default)]
+    pub realized_funding_settlements: usize,
 }
 
 /// The side of a paper-trading transaction.
@@ -183,6 +188,11 @@ pub struct Transaction {
     pub fee: f64,
     pub realized_pnl: f64,
     pub timestamp_ms: i64,
+    /// Funding fee associated with this trade; positive means paid.
+    #[serde(default)]
+    pub funding_fee: f64,
+    #[serde(default)]
+    pub funding_settlements: usize,
 }
 
 /// Client-side paper-trading portfolio state.
@@ -214,6 +224,8 @@ impl Portfolio {
             liquidated_at_ms: None,
             historical_funding_fee: 0.0,
             historical_funding_settlements: 0,
+            realized_funding_fee: 0.0,
+            realized_funding_settlements: 0,
         }
     }
 
@@ -275,6 +287,8 @@ impl Portfolio {
             fee,
             realized_pnl: 0.0,
             timestamp_ms,
+            funding_fee: 0.0,
+            funding_settlements: 0,
         });
 
         Ok(())
@@ -325,6 +339,8 @@ impl Portfolio {
         self.historical_funding_settlements = self
             .historical_funding_settlements
             .saturating_sub(position.historical_funding_settlements);
+        self.realized_funding_fee += position.historical_funding_fee;
+        self.realized_funding_settlements += position.historical_funding_settlements;
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
             side: match position.side {
@@ -337,6 +353,8 @@ impl Portfolio {
             fee,
             realized_pnl,
             timestamp_ms,
+            funding_fee: position.historical_funding_fee,
+            funding_settlements: position.historical_funding_settlements,
         });
 
         Ok(())
