@@ -10,6 +10,7 @@ pub mod proxy;
 pub mod technical_analysis;
 pub mod time;
 pub mod trading;
+pub mod trading_history;
 
 use std::collections::HashMap;
 
