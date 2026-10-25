@@ -20,12 +20,21 @@ pub struct FundingSettlement {
     pub funding_rate: f64,
 }
 
+/// Funding total for one currently open position.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub struct FundingPositionSummary {
+    /// Positive means funding paid; negative means funding received.
+    pub fee: f64,
+    pub settlements: usize,
+}
+
 /// Historical reconstruction for one saved paper-trading portfolio.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct CrossMarginReplay {
     /// Positive means funding paid; negative means funding received.
     pub funding_fee: f64,
     pub funding_settlements: usize,
+    pub funding_by_symbol: HashMap<String, FundingPositionSummary>,
     pub liquidation_time_ms: Option<i64>,
     pub liquidated: bool,
     pub lowest_equity: f64,
@@ -127,7 +136,9 @@ pub fn replay_cross_margin(
     // Apply funding before checking the same timestamp's price extremes.
     events.sort_by(|left, right| left.0.cmp(&right.0).then_with(|| right.1.cmp(&left.1)));
 
-    let mut cash = snapshot.portfolio.cash;
+    // The persisted cash already includes the previously replayed funding total.
+    // Restore the pre-replay balance so historical funding is applied exactly once.
+    let mut cash = snapshot.portfolio.cash + snapshot.portfolio.historical_funding_fee;
     let mut latest_prices = snapshot
         .portfolio
         .positions
@@ -163,6 +174,12 @@ pub fn replay_cross_margin(
                 cash -= fee;
                 result.funding_fee += fee;
                 result.funding_settlements += 1;
+                let position_summary = result
+                    .funding_by_symbol
+                    .entry(symbol.clone())
+                    .or_default();
+                position_summary.fee += fee;
+                position_summary.settlements += 1;
             }
         }
 
