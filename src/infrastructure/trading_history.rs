@@ -107,6 +107,7 @@ async fn fetch_funding_history(
     now_ms: i64,
 ) -> Result<Vec<FundingSettlement>, String> {
     let mut settlements = Vec::new();
+    let mut history_complete = false;
 
     for page in 1..=MAX_FUNDING_PAGES {
         let url = format!(
@@ -115,6 +116,7 @@ async fn fetch_funding_history(
         let body = fetch_target(&url).await?;
         let (mut page_items, oldest_time) = parse_funding_page(&body, symbol)?;
         if page_items.is_empty() {
+            history_complete = true;
             break;
         }
 
@@ -123,8 +125,15 @@ async fn fetch_funding_history(
         }));
 
         if oldest_time.is_some_and(|timestamp| timestamp <= opened_at_ms) {
+            history_complete = true;
             break;
         }
+    }
+
+    if !history_complete {
+        return Err(format!(
+            "Funding history for {symbol} exceeded the pagination limit before reaching the opening time."
+        ));
     }
 
     settlements.sort_by_key(|item| item.settle_time_ms);
@@ -248,7 +257,7 @@ fn parse_funding_page(
         data.get("data").and_then(Value::as_array)
     });
     let Some(rows) = rows else {
-        return Ok((Vec::new(), None));
+        return Err(format!("MEXC funding history response for {symbol} has an unknown format."));
     };
 
     let mut output = Vec::new();
