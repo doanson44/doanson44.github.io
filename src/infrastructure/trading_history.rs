@@ -275,6 +275,11 @@ fn parse_funding_page(
             }
         }
     }
+    if !rows.is_empty() && output.is_empty() {
+        return Err(format!(
+            "MEXC funding history response for {symbol} contained no parseable settlement records."
+        ));
+    }
     Ok((output, oldest_time))
 }
 
