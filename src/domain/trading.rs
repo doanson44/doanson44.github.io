@@ -157,6 +157,12 @@ pub struct Position {
     /// UTC Unix timestamp in milliseconds when this position was opened.
     #[serde(default)]
     pub opened_at_ms: i64,
+    /// Cumulative funding fee for this open position; positive means paid.
+    #[serde(default)]
+    pub historical_funding_fee: f64,
+    /// Funding settlements already replayed for this position.
+    #[serde(default)]
+    pub historical_funding_settlements: usize,
 }
 
 /// The side of a paper-trading transaction.
@@ -254,6 +260,8 @@ impl Portfolio {
             leverage,
             side,
             opened_at_ms: timestamp_ms,
+            historical_funding_fee: 0.0,
+            historical_funding_settlements: 0,
         });
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
@@ -308,10 +316,15 @@ impl Portfolio {
             PositionSide::Long => value - position.entry_value,
             PositionSide::Short => position.entry_value - value,
         };
-        let realized_pnl = price_pnl - position.entry_fee - fee;
+        let realized_pnl =
+            price_pnl - position.entry_fee - fee - position.historical_funding_fee;
 
         self.cash += position.margin + price_pnl - fee;
         self.realized_pnl += realized_pnl;
+        self.historical_funding_fee -= position.historical_funding_fee;
+        self.historical_funding_settlements = self
+            .historical_funding_settlements
+            .saturating_sub(position.historical_funding_settlements);
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
             side: match position.side {
@@ -398,7 +411,7 @@ pub fn summarize_portfolio(
             PositionSide::Long => value - position.entry_value,
             PositionSide::Short => position.entry_value - value,
         };
-        let pnl = price_pnl - position.entry_fee;
+        let pnl = price_pnl - position.entry_fee - position.historical_funding_fee;
 
         equity += position.margin + price_pnl;
         unrealized_pnl += pnl;
