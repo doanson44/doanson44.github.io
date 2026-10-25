@@ -472,6 +472,12 @@ impl SocketState {
             self.trade_real(symbol);
             return;
         }
+        if self.history_replay_loading.get_untracked() {
+            self.trading_error.set(Some(
+                "Wait for historical funding and cross-margin reconciliation before trading.".to_string(),
+            ));
+            return;
+        }
         let Some(price) = self
             .tickers
             .get_untracked()
