@@ -116,7 +116,7 @@ pub fn replay_cross_margin(
                 {
                     let fair_price = symbol_candles
                         .iter()
-                        .filter(|candle| candle.time_ms <= settlement.settle_time_ms)
+                         .filter(|candle| candle.time_ms < settlement.settle_time_ms)
                         .max_by_key(|candle| candle.time_ms)
                         .map(|candle| candle.close)
                         .unwrap_or(position.entry_price);
