@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
 use js_sys::Date;
 use serde_json::Value;
@@ -7,7 +7,7 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::{Headers, Request, RequestInit, RequestMode, Response};
 
 use crate::application::ports::TradingHistoryProvider;
-use crate::domain::trading::{PositionSide, TradingSnapshot};
+use crate::domain::trading::TradingSnapshot;
 use crate::domain::trading_history::{
     FundingSettlement, HistoricalCandle, TradingMarketHistory,
 };
@@ -273,5 +273,3 @@ fn js_error(error: &JsValue) -> String {
     error.as_string().unwrap_or_else(|| "Unknown browser error".into())
 }
 
-#[allow(dead_code)]
-fn _side_type_is_explicit(_: PositionSide) {}
