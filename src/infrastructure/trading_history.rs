@@ -166,18 +166,35 @@ async fn fetch_target(url: &str) -> Result<String, String> {
     let response: Response = response
         .dyn_into()
         .map_err(|_| "Proxy returned an invalid response".to_string())?;
-    if !response.ok() {
-        return Err(format!("MEXC history request returned HTTP {}", response.status()));
-    }
-    JsFuture::from(
+    let response_text = JsFuture::from(
         response
             .text()
-            .map_err(|error| format!("Reading MEXC response failed: {}", js_error(&error)))?,
+            .map_err(|error| format!("Reading proxy response failed: {}", js_error(&error)))?,
     )
     .await
-    .map_err(|error| format!("Reading MEXC response failed: {}", js_error(&error)))?
+    .map_err(|error| format!("Reading proxy response failed: {}", js_error(&error)))?
     .as_string()
-    .ok_or_else(|| "MEXC history response was not text".to_string())
+    .ok_or_else(|| "Proxy response was not text".to_string())?;
+
+    if !response.ok() {
+        let detail = serde_json::from_str::<Value>(&response_text)
+            .ok()
+            .and_then(|payload| {
+                payload.get("error").and_then(Value::as_str)
+                    .or_else(|| payload.get("message").and_then(Value::as_str))
+                    .map(str::to_string)
+            });
+        return Err(match detail {
+            Some(detail) => format!(
+                "MEXC history proxy returned HTTP {}: {}",
+                response.status(),
+                detail
+            ),
+            None => format!("MEXC history proxy returned HTTP {}", response.status()),
+        });
+    }
+
+    Ok(response_text)
 }
 
 fn parse_candles(raw: &str, symbol: &str) -> Result<Vec<HistoricalCandle>, String> {
