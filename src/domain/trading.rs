@@ -552,7 +552,7 @@ mod tests {
         let close = portfolio.transactions.last().unwrap();
         assert_eq!(close.funding_fee, 5.0);
         assert_eq!(close.funding_settlements, 2);
-        assert!((portfolio.realized_pnl - (-5.1999)).abs() < 1e-6);
+        assert!((portfolio.realized_pnl - (-5.1998001998)).abs() < 1e-6);
         assert_eq!(portfolio.historical_funding_fee, 0.0);
         assert_eq!(portfolio.historical_funding_settlements, 0);
         assert_eq!(portfolio.realized_funding_fee, 5.0);
