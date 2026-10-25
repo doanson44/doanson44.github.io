@@ -604,6 +604,12 @@ impl SocketState {
                                 .sum();
 
                         if replay.liquidated {
+                            next_snapshot.portfolio.realized_funding_fee +=
+                                next_snapshot.portfolio.historical_funding_fee;
+                            next_snapshot.portfolio.realized_funding_settlements +=
+                                next_snapshot.portfolio.historical_funding_settlements;
+                            next_snapshot.portfolio.historical_funding_fee = 0.0;
+                            next_snapshot.portfolio.historical_funding_settlements = 0;
                             next_snapshot.portfolio.cash = 0.0;
                             next_snapshot.portfolio.positions.clear();
                             next_snapshot.portfolio.realized_pnl =
