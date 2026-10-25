@@ -8,3 +8,4 @@ pub mod mexc_futures;
 pub mod proxy;
 pub mod time;
 pub mod trading;
+pub mod trading_history;
