@@ -135,66 +135,73 @@ pub fn replay_cross_margin(
         .map(|position| (position.symbol.clone(), position.entry_price))
         .collect::<HashMap<_, _>>();
 
-    for (timestamp_ms, is_funding, symbol, high, low, close) in events {
-        if result.liquidated {
-            break;
+    let mut index = 0;
+    while index < events.len() {
+        let timestamp_ms = events[index].0;
+        let group_start = index;
+        while index < events.len() && events[index].0 == timestamp_ms {
+            index += 1;
         }
+        let group = &events[group_start..index];
 
-        if is_funding {
+        // Apply all funding settlements first, before checking price risk at the same timestamp.
+        for (_, is_funding, symbol, rate, fair_price, _) in group.iter().filter(|event| event.1) {
             let Some(position) = snapshot
                 .portfolio
                 .positions
                 .iter()
-                .find(|position| position.symbol == symbol)
+                .find(|position| position.symbol == *symbol)
             else {
                 continue;
             };
             let signed_rate = match position.side {
-                PositionSide::Long => high,
-                PositionSide::Short => -high,
+                PositionSide::Long => *rate,
+                PositionSide::Short => -*rate,
             };
-            let fee = position.quantity * low * signed_rate;
-            if !fee.is_finite() {
-                continue;
+            let fee = position.quantity * *fair_price * signed_rate;
+            if fee.is_finite() {
+                cash -= fee;
+                result.funding_fee += fee;
+                result.funding_settlements += 1;
             }
-            cash -= fee;
-            result.funding_fee += fee;
-            result.funding_settlements += 1;
-        } else {
-            latest_prices.insert(symbol, close);
+        }
 
-            // Use each open position's adverse extreme for this candle interval.
-            // OHLC does not reveal the exact intrabar ordering, so this is a
-            // conservative approximation rather than an exchange liquidation record.
-            let mut equity = cash;
-            let mut maintenance_margin = 0.0;
-            for position in &snapshot.portfolio.positions {
-                let mark = match latest_prices.get(&position.symbol).copied() {
-                    Some(price) => price,
-                    None => position.entry_price,
-                };
-                let adverse_mark = if position.symbol == symbol {
-                    match position.side {
-                        PositionSide::Long => low,
-                        PositionSide::Short => high,
-                    }
-                } else {
-                    mark
-                };
-                let pnl = match position.side {
-                    PositionSide::Long => position.quantity * (adverse_mark - position.entry_price),
-                    PositionSide::Short => position.quantity * (position.entry_price - adverse_mark),
-                };
-                equity += position.margin + pnl;
-                maintenance_margin += position.quantity * adverse_mark * maintenance_margin_rate;
-            }
+        let candle_events = group.iter().filter(|event| !event.1).collect::<Vec<_>>();
+        for (_, _, symbol, _, _, close) in &candle_events {
+            latest_prices.insert((*symbol).clone(), *close);
+        }
 
-            result.lowest_equity = result.lowest_equity.min(equity);
-            if equity <= maintenance_margin {
-                result.liquidated = true;
-                result.liquidation_time_ms = Some(timestamp_ms);
-                break;
-            }
+        // Evaluate the shared account against all positions' adverse extremes
+        // from the same candle interval, not one symbol at a time.
+        let mut equity = cash;
+        let mut maintenance_margin = 0.0;
+        for position in &snapshot.portfolio.positions {
+            let candle = candle_events
+                .iter()
+                .find(|event| event.2 == position.symbol);
+            let mark = match candle {
+                Some(event) => match position.side {
+                    PositionSide::Long => event.4,
+                    PositionSide::Short => event.3,
+                },
+                None => latest_prices
+                    .get(&position.symbol)
+                    .copied()
+                    .unwrap_or(position.entry_price),
+            };
+            let pnl = match position.side {
+                PositionSide::Long => position.quantity * (mark - position.entry_price),
+                PositionSide::Short => position.quantity * (position.entry_price - mark),
+            };
+            equity += position.margin + pnl;
+            maintenance_margin += position.quantity * mark * maintenance_margin_rate;
+        }
+
+        result.lowest_equity = result.lowest_equity.min(equity);
+        if equity <= maintenance_margin {
+            result.liquidated = true;
+            result.liquidation_time_ms = Some(timestamp_ms);
+            break;
         }
     }
 
