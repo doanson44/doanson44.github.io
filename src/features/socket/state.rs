@@ -716,7 +716,8 @@ impl SocketState {
             .filter_map(|(symbol, ticker)| {
                 ticker
                     .ticker
-                    .last_price
+                    .fair_price
+                    .or(ticker.ticker.last_price)
                     .filter(|price| price.is_finite() && *price > 0.0)
                     .map(|price| (symbol.clone(), price))
             })
