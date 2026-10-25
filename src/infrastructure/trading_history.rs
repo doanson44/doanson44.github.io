@@ -14,8 +14,6 @@ use crate::domain::trading_history::{
 
 const PROXY_ENDPOINT: &str = "https://doanson44-forward-proxy.work-sontd.workers.dev/api/proxy";
 const MEXC_FUTURES_API: &str = "https://contract.mexc.com/api/v1/contract";
-const CANDLE_INTERVAL: &str = "Min5";
-const CANDLE_INTERVAL_SECONDS: i64 = 5 * 60;
 const CANDLES_PER_REQUEST: i64 = 1_500;
 const MAX_FUNDING_PAGES: u32 = 100;
 
@@ -71,17 +69,31 @@ async fn fetch_candles(
     let mut candles = Vec::new();
     let mut chunk_start = (opened_at_ms / 1_000).max(0);
     let end_seconds = now_ms / 1_000;
-    let chunk_seconds = CANDLES_PER_REQUEST * CANDLE_INTERVAL_SECONDS;
+    let duration_seconds = end_seconds.saturating_sub(chunk_start);
+    // Use finer candles for recent trades and coarser candles for long-running
+    // positions to stay within public API limits and avoid hundreds of requests.
+    let (interval, interval_seconds) = if duration_seconds <= 24 * 60 * 60 {
+        ("Min1", 60)
+    } else if duration_seconds <= 14 * 24 * 60 * 60 {
+        ("Min5", 5 * 60)
+    } else if duration_seconds <= 90 * 24 * 60 * 60 {
+        ("Min15", 15 * 60)
+    } else if duration_seconds <= 365 * 24 * 60 * 60 {
+        ("Min60", 60 * 60)
+    } else {
+        ("Hour4", 4 * 60 * 60)
+    };
+    let chunk_seconds = CANDLES_PER_REQUEST * interval_seconds;
 
     while chunk_start < end_seconds {
         let chunk_end = (chunk_start + chunk_seconds).min(end_seconds);
         let url = format!(
-            "{MEXC_FUTURES_API}/kline/fair_price/{symbol}?interval={CANDLE_INTERVAL}&start={chunk_start}&end={chunk_end}"
+            "{MEXC_FUTURES_API}/kline/fair_price/{symbol}?interval={interval}&start={chunk_start}&end={chunk_end}"
         );
         let body = fetch_target(&url).await?;
         let mut parsed = parse_candles(&body, symbol)?;
         candles.append(&mut parsed);
-        chunk_start = chunk_end.saturating_add(CANDLE_INTERVAL_SECONDS);
+        chunk_start = chunk_end.saturating_add(interval_seconds);
     }
 
     candles.sort_by_key(|candle| candle.time_ms);
