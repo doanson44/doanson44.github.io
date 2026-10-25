@@ -186,6 +186,9 @@ pub struct Portfolio {
     pub positions: Vec<Position>,
     pub transactions: Vec<Transaction>,
     pub realized_pnl: f64,
+    /// Set when the cross-margin simulator has liquidated the paper account.
+    #[serde(default)]
+    pub liquidated_at_ms: Option<i64>,
 }
 
 impl Portfolio {
@@ -196,6 +199,7 @@ impl Portfolio {
             positions: Vec::new(),
             transactions: Vec::new(),
             realized_pnl: 0.0,
+            liquidated_at_ms: None,
         }
     }
 
