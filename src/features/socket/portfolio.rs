@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use crate::domain::trading::{estimate_liquidation_price, ExecutionMode, PortfolioSummary, PositionSide};
+use crate::domain::trading::{ExecutionMode, PortfolioSummary, PositionSide};
 use crate::features::socket::state::{SocketState, TradingSettingsInput};
 use crate::i18n::*;
 
@@ -260,32 +260,32 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                     <th class="px-2 py-2 font-medium" scope="col">{move || t_string!(i18n, socket_position_side)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_quantity)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_market_value)}</th>
-                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || if i18n.get_locale() == Locale::vi { "Giá thanh lý ước tính" } else { "Estimated liquidation" }}</th>
+                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || if state.execution_mode.get() == ExecutionMode::Real {
+                                        if i18n.get_locale() == Locale::vi { "Giá thanh lý" } else { "Liquidation price" }
+                                    } else if i18n.get_locale() == Locale::vi {
+                                        "Rủi ro Cross Margin"
+                                    } else {
+                                        "Cross-margin risk"
+                                    }}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_pnl)}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {move || summary.get().holdings.into_iter().map(|holding| {
-                                    let liquidation_price = if state.execution_mode.get() == ExecutionMode::Real {
+                                    let liquidation_price_label = if state.execution_mode.get() == ExecutionMode::Real {
                                         state.real_positions.get().iter()
                                             .find(|position| position.symbol == holding.symbol)
-                                            .and_then(|position| estimate_liquidation_price(
-                                                position.open_average_price,
-                                                position.leverage,
-                                                position.side,
-                                            ))
+                                            .map(|position| position.liquidation_price)
+                                            .filter(|price| price.is_finite() && *price > 0.0)
+                                            .map(format_price)
+                                            .unwrap_or_else(|| "—".to_string())
+                                    } else if state.history_replay_loading.get() {
+                                        if i18n.get_locale() == Locale::vi { "Đang kiểm tra…".to_string() } else { "Checking…".to_string() }
+                                    } else if state.history_replay.get().is_some() {
+                                        if i18n.get_locale() == Locale::vi { "Không phát hiện".to_string() } else { "Not detected".to_string() }
                                     } else {
-                                        state.trading_snapshot.get().portfolio.positions.iter()
-                                            .find(|position| position.symbol == holding.symbol)
-                                            .and_then(|position| estimate_liquidation_price(
-                                                position.entry_price,
-                                                position.leverage,
-                                                position.side,
-                                            ))
+                                        "—".to_string()
                                     };
-                                    let liquidation_price_label = liquidation_price
-                                        .map(|price| format!("≈ {}", format!("{price:.8}").trim_end_matches('0').trim_end_matches('.')))
-                                        .unwrap_or_else(|| "—".to_string());
                                     let pnl_class = if holding.pnl > 0.0 {
                                         "text-[var(--success)]"
                                     } else if holding.pnl < 0.0 {
@@ -313,7 +313,13 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                             <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]">
                                                 {format_currency(holding.market_value)}
                                             </td>
-                                            <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]" title=move || if i18n.get_locale() == Locale::vi { "Ước tính theo giá vào lệnh và đòn bẩy; chưa tính mức ký quỹ duy trì, phí và điều chỉnh rủi ro của sàn" } else { "Estimated from entry price and leverage; excludes maintenance margin, fees, and exchange risk adjustments" }>
+                                            <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]" title=move || if state.execution_mode.get() == ExecutionMode::Real {
+                                                if i18n.get_locale() == Locale::vi { "Giá thanh lý do MEXC trả về." } else { "Liquidation price reported by MEXC." }
+                                            } else if i18n.get_locale() == Locale::vi {
+                                                "Trạng thái được xác định bằng replay Cross Margin cấp tài khoản, không phải giá thanh lý riêng cho từng lệnh."
+                                            } else {
+                                                "Status comes from account-wide cross-margin replay, not a per-position liquidation price."
+                                            }>
                                                 {liquidation_price_label}
                                             </td>
                                             <td class=format!("px-2 py-2 text-right font-mono font-medium {pnl_class}")>
