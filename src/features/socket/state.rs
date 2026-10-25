@@ -579,9 +579,27 @@ impl SocketState {
                     Ok(history) => {
                         let replay = TradingHistoryService::replay(&snapshot, &history);
                         let mut next_snapshot = snapshot.clone();
-                        next_snapshot.portfolio.historical_funding_fee = replay.funding_fee;
+                        for position in &mut next_snapshot.portfolio.positions {
+                            let previous_fee = position.historical_funding_fee;
+                            let position_funding = replay
+                                .funding_by_symbol
+                                .get(&position.symbol)
+                                .cloned()
+                                .unwrap_or_default();
+                            // Apply only the delta from the last replay to avoid double-charging
+                            // funding after refreshes or repeated history fetches.
+                            next_snapshot.portfolio.cash -= position_funding.fee - previous_fee;
+                            position.historical_funding_fee = position_funding.fee;
+                            position.historical_funding_settlements = position_funding.settlements;
+                        }
+                        next_snapshot.portfolio.historical_funding_fee =
+                            next_snapshot.portfolio.positions.iter()
+                                .map(|position| position.historical_funding_fee)
+                                .sum();
                         next_snapshot.portfolio.historical_funding_settlements =
-                            replay.funding_settlements;
+                            next_snapshot.portfolio.positions.iter()
+                                .map(|position| position.historical_funding_settlements)
+                                .sum();
 
                         if replay.liquidated {
                             next_snapshot.portfolio.cash = 0.0;
@@ -590,12 +608,6 @@ impl SocketState {
                                 -next_snapshot.settings.initial_capital;
                             next_snapshot.portfolio.liquidated_at_ms =
                                 replay.liquidation_time_ms;
-                            if let Err(message) =
-                                TradingService::save(&LocalTradingStorage, &next_snapshot)
-                            {
-                                state.history_replay_error.set(Some(message));
-                                return;
-                            }
                             state.trading_notice.set(Some(
                                 "Cross-margin liquidation detected in historical replay. Paper account equity set to zero.".to_string(),
                             ));
