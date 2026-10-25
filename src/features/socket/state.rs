@@ -568,6 +568,7 @@ impl SocketState {
         }
 
         self.history_replay_loading.set(true);
+        self.history_replay.set(None);
         self.history_replay_error.set(None);
 
         let state = *self;
