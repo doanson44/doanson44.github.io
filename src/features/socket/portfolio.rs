@@ -166,8 +166,11 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                             let portfolio = state.trading_snapshot.get().portfolio;
                             format!(
                                 "{} · {} {}",
-                                format_signed_currency(portfolio.historical_funding_fee),
-                                portfolio.historical_funding_settlements,
+                                format_signed_currency(
+                                    portfolio.historical_funding_fee + portfolio.realized_funding_fee
+                                ),
+                                portfolio.historical_funding_settlements
+                                    + portfolio.realized_funding_settlements,
                                 if i18n.get_locale() == Locale::vi { "kỳ" } else { "settlements" }
                             )
                         }}
