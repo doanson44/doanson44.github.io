@@ -552,6 +552,9 @@ impl SocketState {
         self.trading_notice
             .set(Some(format!("{action} {symbol} at market price.")));
         self.trading_snapshot.set(next_snapshot);
+        if !is_held {
+            self.load_paper_trade_history();
+        }
     }
 
     /// Reconstructs paper-trading funding and cross-margin liquidation from MEXC history.
