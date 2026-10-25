@@ -211,9 +211,9 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                     </p>
                     <p class="m-0 mt-1">
                         {move || if i18n.get_locale() == Locale::vi {
-                            "Mô phỏng dùng nến fair price 5 phút và maintenance margin giả định 0,5%; kết quả có thể khác cơ chế thanh lý thực tế của MEXC."
+                            "Mô phỏng dùng nến fair price với khung thời gian thích ứng và maintenance margin giả định 0,5%; kết quả có thể khác cơ chế thanh lý thực tế của MEXC."
                         } else {
-                            "Replay uses 5-minute fair-price candles and an assumed 0.5% maintenance margin; results may differ from MEXC's actual liquidation engine."
+                            "Replay uses adaptive fair-price candle intervals and an assumed 0.5% maintenance margin; results may differ from MEXC's actual liquidation engine."
                         }}
                     </p>
                 </Show>
