@@ -582,11 +582,12 @@ impl SocketState {
         self.history_replay_error.set(None);
 
         let state = *self;
+        let snapshot_for_callback = snapshot.clone();
         MexcTradingHistoryApi.load_history(
             &snapshot,
             Rc::new(move |result| {
                 state.history_replay_loading.set(false);
-                if state.trading_snapshot.get_untracked() != snapshot {
+                if state.trading_snapshot.get_untracked() != snapshot_for_callback {
                     // A user action changed the portfolio while network history was loading.
                     // Discard the stale result and replay the latest snapshot instead.
                     state.load_paper_trade_history();
@@ -594,8 +595,8 @@ impl SocketState {
                 }
                 match result {
                     Ok(history) => {
-                        let replay = TradingHistoryService::replay(&snapshot, &history);
-                        let mut next_snapshot = snapshot.clone();
+                        let replay = TradingHistoryService::replay(&snapshot_for_callback, &history);
+                        let mut next_snapshot = snapshot_for_callback.clone();
                         let mut funding_cash_delta = 0.0;
                         for position in &mut next_snapshot.portfolio.positions {
                             let previous_fee = position.historical_funding_fee;
