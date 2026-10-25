@@ -156,12 +156,12 @@ pub fn replay_cross_margin(
         let group = &events[group_start..index];
 
         // Apply all funding settlements first, before checking price risk at the same timestamp.
-        for (_, is_funding, symbol, rate, fair_price, _) in group.iter().filter(|event| event.1) {
+        for (_, _, symbol, rate, fair_price, _) in group.iter().filter(|event| event.1) {
             let Some(position) = snapshot
                 .portfolio
                 .positions
                 .iter()
-                .find(|position| position.symbol == *symbol)
+                .find(|position| position.symbol.as_str() == symbol.as_str())
             else {
                 continue;
             };
@@ -176,7 +176,7 @@ pub fn replay_cross_margin(
                 result.funding_settlements += 1;
                 let position_summary = result
                     .funding_by_symbol
-                    .entry(symbol.clone())
+                    .entry(symbol.to_string())
                     .or_default();
                 position_summary.fee += fee;
                 position_summary.settlements += 1;
@@ -184,8 +184,8 @@ pub fn replay_cross_margin(
         }
 
         let candle_events = group.iter().filter(|event| !event.1).collect::<Vec<_>>();
-        for (_, _, symbol, _, _, close) in &candle_events {
-            latest_prices.insert((*symbol).clone(), *close);
+        for event in &candle_events {
+            latest_prices.insert(event.2.to_string(), event.5);
         }
 
         // Evaluate the shared account against all positions' adverse extremes
@@ -195,7 +195,7 @@ pub fn replay_cross_margin(
         for position in &snapshot.portfolio.positions {
             let candle = candle_events
                 .iter()
-                .find(|event| event.2 == position.symbol);
+                .find(|event| event.2.as_str() == position.symbol.as_str());
             let mark = match candle {
                 Some(event) => match position.side {
                     PositionSide::Long => event.4,
