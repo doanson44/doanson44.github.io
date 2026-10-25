@@ -575,6 +575,12 @@ impl SocketState {
             &snapshot,
             Rc::new(move |result| {
                 state.history_replay_loading.set(false);
+                if state.trading_snapshot.get_untracked() != snapshot {
+                    // A user action changed the portfolio while network history was loading.
+                    // Discard the stale result and replay the latest snapshot instead.
+                    state.load_paper_trade_history();
+                    return;
+                }
                 match result {
                     Ok(history) => {
                         let replay = TradingHistoryService::replay(&snapshot, &history);
