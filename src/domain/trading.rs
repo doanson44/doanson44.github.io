@@ -163,11 +163,6 @@ pub struct Position {
     /// Funding settlements already replayed for this position.
     #[serde(default)]
     pub historical_funding_settlements: usize,
-    /// Funding fees already realized by closed positions.
-    #[serde(default)]
-    pub realized_funding_fee: f64,
-    #[serde(default)]
-    pub realized_funding_settlements: usize,
 }
 
 /// The side of a paper-trading transaction.
@@ -211,6 +206,11 @@ pub struct Portfolio {
     /// Number of funding settlements replayed from exchange history.
     #[serde(default)]
     pub historical_funding_settlements: usize,
+    /// Funding fees already realized by closed positions.
+    #[serde(default)]
+    pub realized_funding_fee: f64,
+    #[serde(default)]
+    pub realized_funding_settlements: usize,
 }
 
 impl Portfolio {
