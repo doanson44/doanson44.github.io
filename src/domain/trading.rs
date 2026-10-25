@@ -154,6 +154,9 @@ pub struct Position {
     pub leverage: f64,
     #[serde(default)]
     pub side: PositionSide,
+    /// UTC Unix timestamp in milliseconds when this position was opened.
+    #[serde(default)]
+    pub opened_at_ms: i64,
 }
 
 /// The side of a paper-trading transaction.
@@ -238,6 +241,7 @@ impl Portfolio {
             margin,
             leverage,
             side,
+            opened_at_ms: timestamp_ms,
         });
         self.transactions.push(Transaction {
             symbol: symbol.to_string(),
