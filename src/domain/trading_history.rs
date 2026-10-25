@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::domain::trading::{Position, PositionSide, TradingSnapshot};
+use crate::domain::trading::{PositionSide, TradingSnapshot};
 
 /// Historical fair-price candle used to reconstruct cross-margin risk.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -297,6 +297,38 @@ mod tests {
 
         let replay = replay_cross_margin(&snapshot(PositionSide::Long, 10), &candles, &funding, 0.005);
         assert_eq!(replay.funding_settlements, 0);
+    }
+
+    #[test]
+    fn replaying_the_same_funding_history_does_not_double_charge_after_persistence() {
+        let mut snapshot = snapshot(PositionSide::Long, 10);
+        let candles = HashMap::from([(
+            "BTC_USDT".to_string(),
+            vec![HistoricalCandle {
+                time_ms: 20,
+                high: 101.0,
+                low: 99.0,
+                close: 100.0,
+            }],
+        )]);
+        let funding = HashMap::from([(
+            "BTC_USDT".to_string(),
+            vec![FundingSettlement {
+                settle_time_ms: 20,
+                funding_rate: 0.001,
+            }],
+        )]);
+
+        let first = replay_cross_margin(&snapshot, &candles, &funding, 0.005);
+        snapshot.portfolio.cash -= first.funding_fee;
+        snapshot.portfolio.historical_funding_fee = first.funding_fee;
+        snapshot.portfolio.historical_funding_settlements = first.funding_settlements;
+        snapshot.portfolio.positions[0].historical_funding_fee = first.funding_fee;
+        snapshot.portfolio.positions[0].historical_funding_settlements = first.funding_settlements;
+
+        let second = replay_cross_margin(&snapshot, &candles, &funding, 0.005);
+        assert!((second.funding_fee - first.funding_fee).abs() < 1e-9);
+        assert_eq!(second.funding_settlements, first.funding_settlements);
     }
 
     #[test]
