@@ -26,7 +26,6 @@ impl TradingService {
                     && snapshot.settings.trade_allocation_percent.is_finite()
                     && (0.1..=100.0).contains(&snapshot.settings.trade_allocation_percent)
                     && snapshot.portfolio.cash.is_finite()
-                    && snapshot.portfolio.cash >= 0.0
             })
             .unwrap_or_default();
 
