@@ -559,7 +559,9 @@ impl SocketState {
 
     /// Reconstructs paper-trading funding and cross-margin liquidation from MEXC history.
     pub fn load_paper_trade_history(&self) {
-        if self.execution_mode.get_untracked() == ExecutionMode::Real {
+        if self.execution_mode.get_untracked() == ExecutionMode::Real
+            || self.history_replay_loading.get_untracked()
+        {
             return;
         }
 
