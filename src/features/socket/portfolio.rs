@@ -147,6 +147,7 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                 </div>
             </div>
 
+            <Show when=move || state.execution_mode.get() == ExecutionMode::Paper>
             <Show when=move || state.trading_snapshot.get().portfolio.liquidated_at_ms.is_some()>
                 <div class="mt-3 rounded-md border border-[var(--danger)]/50 bg-[var(--danger)]/10 px-3 py-2 text-sm font-semibold text-[var(--danger)]" role="alert">
                     {move || if i18n.get_locale() == Locale::vi {
@@ -221,6 +222,8 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                     </p>
                 </Show>
             </div>
+
+            </Show>
 
             <div class="mt-3 border-t border-[var(--border-color)] pt-3">
                 <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
