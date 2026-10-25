@@ -536,6 +536,30 @@ mod tests {
     }
 
     #[test]
+    fn closing_position_preserves_funding_in_realized_pnl_and_transaction() {
+        let settings = settings();
+        let mut portfolio = Portfolio::new(settings.initial_capital);
+        portfolio.buy(&settings, "BTC_USDT", 100.0, 1).unwrap();
+
+        portfolio.positions[0].historical_funding_fee = 5.0;
+        portfolio.positions[0].historical_funding_settlements = 2;
+        portfolio.historical_funding_fee = 5.0;
+        portfolio.historical_funding_settlements = 2;
+        portfolio.cash -= 5.0;
+
+        portfolio.sell(&settings, "BTC_USDT", 100.0, 2).unwrap();
+
+        let close = portfolio.transactions.last().unwrap();
+        assert_eq!(close.funding_fee, 5.0);
+        assert_eq!(close.funding_settlements, 2);
+        assert!((portfolio.realized_pnl - (-5.1999)).abs() < 1e-6);
+        assert_eq!(portfolio.historical_funding_fee, 0.0);
+        assert_eq!(portfolio.historical_funding_settlements, 0);
+        assert_eq!(portfolio.realized_funding_fee, 5.0);
+        assert_eq!(portfolio.realized_funding_settlements, 2);
+    }
+
+    #[test]
     fn estimates_isolated_liquidation_price_from_entry_and_leverage() {
         assert_eq!(
             estimate_liquidation_price(100.0, 10.0, PositionSide::Long),
