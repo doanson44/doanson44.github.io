@@ -579,6 +579,7 @@ impl SocketState {
                     Ok(history) => {
                         let replay = TradingHistoryService::replay(&snapshot, &history);
                         let mut next_snapshot = snapshot.clone();
+                        let mut funding_cash_delta = 0.0;
                         for position in &mut next_snapshot.portfolio.positions {
                             let previous_fee = position.historical_funding_fee;
                             let position_funding = replay
@@ -588,10 +589,11 @@ impl SocketState {
                                 .unwrap_or_default();
                             // Apply only the delta from the last replay to avoid double-charging
                             // funding after refreshes or repeated history fetches.
-                            next_snapshot.portfolio.cash -= position_funding.fee - previous_fee;
+                            funding_cash_delta += position_funding.fee - previous_fee;
                             position.historical_funding_fee = position_funding.fee;
                             position.historical_funding_settlements = position_funding.settlements;
                         }
+                        next_snapshot.portfolio.cash -= funding_cash_delta;
                         next_snapshot.portfolio.historical_funding_fee =
                             next_snapshot.portfolio.positions.iter()
                                 .map(|position| position.historical_funding_fee)
