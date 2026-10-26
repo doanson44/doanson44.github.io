@@ -359,9 +359,9 @@ where
                 next_positions[index].funding_records = records;
                 fetch_position_funding_records(
                     service,
-                    next_api_url,
-                    next_api_key,
-                    next_api_secret,
+                    next_api_url.clone(),
+                    next_api_key.clone(),
+                    next_api_secret.clone(),
                     request_time_ms,
                     next_positions,
                     index + 1,
@@ -396,6 +396,9 @@ where
         position_id,
         page
     );
+    let next_api_url = api_url.clone();
+    let next_api_key = api_key.clone();
+    let next_api_secret = api_secret.clone();
     service.authenticated_request(
         &target_url,
         &api_key,
@@ -411,9 +414,9 @@ where
                     if page < pages {
                         fetch_funding_records_page(
                             service,
-                            api_url.clone(),
-                            api_key.clone(),
-                            api_secret.clone(),
+                            next_api_url.clone(),
+                            next_api_key.clone(),
+                            next_api_secret.clone(),
                             request_time_ms,
                             position_id,
                             symbol.clone(),
