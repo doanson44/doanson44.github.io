@@ -86,7 +86,10 @@ pub fn estimate_cross_margin_liquidation_price(
     let mut other_maintenance_margin = 0.0;
 
     for position in &snapshot.portfolio.positions {
-        if !position.margin.is_finite() || !position.quantity.is_finite() || position.quantity <= 0.0 {
+        if !position.margin.is_finite()
+            || !position.quantity.is_finite()
+            || position.quantity <= 0.0
+        {
             return None;
         }
 
@@ -682,6 +685,28 @@ mod tests {
         )
         .unwrap();
         assert!(estimate > 90.0 && estimate < 91.0);
+    }
+
+    #[test]
+    fn cross_margin_short_liquidation_uses_shared_account_equity() {
+        let mut settings = settings();
+        settings.leverage = 10.0;
+        settings.trade_allocation_percent = 100.0;
+        settings.position_side = PositionSide::Short;
+        let mut portfolio = Portfolio::new(settings.initial_capital);
+        portfolio.buy(&settings, "BTC_USDT", 100.0, 1).unwrap();
+        let snapshot = TradingSnapshot {
+            settings,
+            portfolio,
+        };
+
+        let estimate = estimate_cross_margin_liquidation_price(
+            &snapshot,
+            &HashMap::new(),
+            "BTC_USDT",
+        )
+        .unwrap();
+        assert!(estimate > 109.0 && estimate < 110.0);
     }
 
     #[test]
