@@ -245,126 +245,52 @@ fn Stopwatch(state: TimeState) -> impl IntoView {
 #[component]
 fn Ruler(state: TimeState) -> impl IntoView {
     let _ = state;
-    let pixels_per_cm = RwSignal::new(37.8_f64);
-    let ruler_width = move || pixels_per_cm.get() * 30.0;
-    let card_width = move || pixels_per_cm.get() * 8.56;
-
     view! {
         <section class="w-full">
             <div class="mb-4">
                 <h2 class="text-xl font-semibold">"Screen Ruler"</h2>
-                <p class="mb-0 text-sm text-[var(--text-secondary)]">"Calibrate the scale against a physical reference before measuring."</p>
+                <p class="mb-0 text-sm text-[var(--text-secondary)]">"Fixed CSS inch and centimeter units. Physical accuracy depends on browser and display scaling."</p>
             </div>
-
-            <div class="mb-4 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3">
-                <h3 class="mb-1 text-sm font-semibold">"1. Calibrate your screen"</h3>
-                <p class="mb-3 text-sm text-[var(--text-secondary)]">
-                    "Place a bank card along this reference (standard width: 85.60 mm), then adjust the slider until both widths match."
-                </p>
-                <div class="overflow-x-auto pb-1">
-                    <svg
-                        width=move || format!("{:.2}px", card_width())
-                        height="32"
-                        viewBox=move || format!("0 0 {:.2} 32", card_width())
-                        role="img"
-                        aria-label="85.60 millimeter calibration reference"
-                    >
-                        <rect x="0" y="1" width=move || format!("{:.2}", card_width()) height="29" rx="2" fill="none" stroke="currentColor" stroke-width="1.5" />
-                        <line x1="0" y1="16" x2=move || format!("{:.2}", card_width()) y2="16" stroke="currentColor" stroke-width="0.75" stroke-dasharray="3 3" />
-                    </svg>
-                </div>
-                <label class="mb-1 mt-3 block text-sm font-medium" for="ruler-calibration">
-                    {move || format!("Scale: {:.1} CSS px/cm", pixels_per_cm.get())}
-                </label>
-                <input
-                    id="ruler-calibration"
-                    type="range"
-                    min="20"
-                    max="100"
-                    step="0.1"
-                    class="w-full accent-[var(--accent)]"
-                    prop:value=move || pixels_per_cm.get().to_string()
-                    on:input=move |ev| {
-                        if let Ok(value) = event_target_value(&ev).parse::<f64>() {
-                            pixels_per_cm.set(value);
-                        }
-                    }
-                />
-                <div class="flex justify-between text-xs text-[var(--text-secondary)]">
-                    <span>"Smaller"</span>
-                    <span>"Larger"</span>
-                </div>
-            </div>
-
             <div class="mb-2 flex items-center justify-between gap-2">
-                <h3 class="text-sm font-semibold">"2. Physical scale"</h3>
-                <span class="text-xs text-[var(--text-secondary)]">"30 cm / 10 in"</span>
+                <h3 class="text-sm font-semibold">"Inches"</h3>
+                <span class="text-xs text-[var(--text-secondary)]">"1 inch = 2.54 cm"</span>
             </div>
-            <div class="max-w-full overflow-x-auto rounded-md border border-[var(--border-color)]" role="img" aria-label="Calibrated ruler with inches above centimeters">
-                <svg
-                    width=move || format!("{:.2}px", ruler_width())
-                    height="88"
-                    viewBox=move || format!("0 0 {:.2} 88", ruler_width())
-                    class="block max-w-none text-[var(--text-primary)]"
-                >
-                    <line x1="0" y1="1" x2=move || format!("{:.2}", ruler_width()) y2="1" stroke="currentColor" stroke-width="1" />
-                    {(0..=80).map(|tick| {
-                        let x = tick as f64 * 2.54 / 8.0;
-                        let height = if tick % 8 == 0 { 29 } else if tick % 4 == 0 { 21 } else { 13 };
-                        view! {
-                            <line
-                                x1=move || format!("{:.2}", x * pixels_per_cm.get())
-                                y1="1"
-                                x2=move || format!("{:.2}", x * pixels_per_cm.get())
-                                y2=height.to_string()
-                                stroke="currentColor"
-                                stroke-width=if tick % 8 == 0 { "1.2" } else { "0.7" }
-                            />
-                        }
+            <div class="mb-4 overflow-x-auto rounded-md border border-[var(--border-color)]" role="img" aria-label="Ruler in inches using fixed CSS inch units">
+                <div class="screen-ruler-fixed screen-ruler-inches">
+                    {(0..=10).map(|value| view! {
+                        <div class="screen-ruler-unit screen-ruler-inch-unit">
+                            <div class="screen-ruler-inch-tick"></div>
+                            <span>{value}</span>
+                        </div>
                     }).collect_view()}
-                    {(0..=10).map(|inch| {
-                        let x = inch as f64 * 2.54;
-                        view! {
-                            <text
-                                x=move || format!("{:.2}", x * pixels_per_cm.get() + 2.0)
-                                y="42"
-                                fill="currentColor"
-                                font-size="11"
-                                font-family="monospace"
-                            >{inch}</text>
-                        }
+                </div>
+            </div>
+            <div class="mb-2 flex items-center justify-between gap-2">
+                <h3 class="text-sm font-semibold">"Centimeters"</h3>
+                <span class="text-xs text-[var(--text-secondary)]">"1 cm = 10 mm"</span>
+            </div>
+            <div class="overflow-x-auto rounded-md border border-[var(--border-color)]" role="img" aria-label="Ruler in centimeters with millimeter ticks using fixed CSS centimeter units">
+                <div class="screen-ruler-fixed screen-ruler-centimeters">
+                    {(0..=30).map(|value| view! {
+                        <div class="screen-ruler-unit screen-ruler-cm-unit">
+                            <div class="screen-ruler-cm-ticks">
+                                {(0..=10).map(|millimeter| view! {
+                                    <span class=if millimeter == 0 || millimeter == 10 {
+                                        "screen-ruler-mm-tick screen-ruler-mm-major"
+                                    } else if millimeter == 5 {
+                                        "screen-ruler-mm-tick screen-ruler-mm-medium"
+                                    } else {
+                                        "screen-ruler-mm-tick"
+                                    }></span>
+                                }).collect_view()}
+                            </div>
+                            <span>{value}</span>
+                        </div>
                     }).collect_view()}
-                    <line x1="0" y1="48" x2=move || format!("{:.2}", ruler_width()) y2="48" stroke="currentColor" stroke-width="1" />
-                    {(0..=300).map(|millimeter| {
-                        let x = millimeter as f64 / 10.0;
-                        let height = if millimeter % 10 == 0 { 24 } else if millimeter % 5 == 0 { 17 } else { 9 };
-                        view! {
-                            <line
-                                x1=move || format!("{:.2}", x * pixels_per_cm.get())
-                                y1="48"
-                                x2=move || format!("{:.2}", x * pixels_per_cm.get())
-                                y2=(48 + height).to_string()
-                                stroke="currentColor"
-                                stroke-width=if millimeter % 10 == 0 { "1.2" } else { "0.7" }
-                            />
-                        }
-                    }).collect_view()}
-                    {(0..=30).map(|centimeter| {
-                        let x = centimeter as f64;
-                        view! {
-                            <text
-                                x=move || format!("{:.2}", x * pixels_per_cm.get() + 2.0)
-                                y="84"
-                                fill="currentColor"
-                                font-size="11"
-                                font-family="monospace"
-                            >{centimeter}</text>
-                        }
-                    }).collect_view()}
-                </svg>
+                </div>
             </div>
             <p class="mt-3 text-xs text-[var(--text-secondary)]">
-                "Measurements are only physically accurate after calibration. Browser zoom, OS display scaling, and changing monitors may require recalibration."
+                "CSS defines 1in as 96 CSS pixels. This sets consistent CSS dimensions, but browsers cannot guarantee physical inches on every monitor because operating-system scaling and display pixel density vary."
             </p>
         </section>
     }
