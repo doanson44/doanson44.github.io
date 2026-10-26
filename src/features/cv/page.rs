@@ -5,6 +5,7 @@ use super::data::{
     competencies, education, experiences, highlights, profile, reveal_email, reveal_phone,
     skill_categories,
 };
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 use crate::infrastructure::browser::{print_page, scroll_to_element};
 
@@ -145,7 +146,7 @@ pub fn CvPage() -> impl IntoView {
                                 aria-label=move || t_string!(i18n, cv_download_title)
                                 on:click=move |_| print_page()
                             >
-                                <span aria-hidden="true">"↓"</span>
+                                <Icon name=IconName::ArrowDown />
                                 {move || t_string!(i18n, cv_download_pdf)}
                             </button>
                         </div>
