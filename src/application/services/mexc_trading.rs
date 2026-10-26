@@ -355,14 +355,15 @@ where
         &symbol,
         Rc::new(move |result| match result {
             Ok(records) => {
-                positions[index].funding_records = records;
+                let mut next_positions = positions.clone();
+                next_positions[index].funding_records = records;
                 fetch_position_funding_records(
                     service,
                     next_api_url,
                     next_api_key,
                     next_api_secret,
                     request_time_ms,
-                    positions,
+                    next_positions,
                     index + 1,
                     on_result.clone(),
                 );
@@ -404,7 +405,8 @@ where
         Rc::new(move |result| match result {
             Ok(raw) => match parse_funding_records_response(raw, &symbol) {
                 Ok((reported_pages, page_records)) => {
-                    records.extend(page_records);
+                    let mut all_records = records.clone();
+                    all_records.extend(page_records);
                     let pages = reported_pages.max(total_pages).max(page);
                     if page < pages {
                         fetch_funding_records_page(
@@ -417,13 +419,13 @@ where
                             symbol.clone(),
                             page + 1,
                             pages,
-                            records,
+                            all_records,
                             on_result.clone(),
                         );
                     } else {
-                        records.sort_by_key(|record| record.settle_time_ms);
-                        records.dedup_by_key(|record| record.id);
-                        on_result(Ok(records));
+                        all_records.sort_by_key(|record| record.settle_time_ms);
+                        all_records.dedup_by_key(|record| record.id);
+                        on_result(Ok(all_records));
                     }
                 }
                 Err(error) => on_result(Err(error)),
