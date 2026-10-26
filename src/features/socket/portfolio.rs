@@ -325,7 +325,7 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                             {funding_details}
                                         }.into_any()
                                     } else {
-                                        view! { <span>—</span> }.into_any()
+                                        view! { <span>-</span> }.into_any()
                                     };
                                     let pnl_class = if holding.pnl > 0.0 {
                                         "text-[var(--success)]"
