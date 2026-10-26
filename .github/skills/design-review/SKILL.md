@@ -77,6 +77,7 @@ Use `ui-ux-studio` skill → `references/accessibility.md`:
 - [ ] No duplicated inline SVG paths or parallel icon abstractions were introduced
 - [ ] Icon-only controls have accessible names and visible keyboard focus
 - [ ] Icon enum IDs and SVG symbol IDs match; text metadata methods still return strings and icon accessors return `IconName`
+- [ ] The SVG sprite is explicitly copied by Trunk and `dist/icons.svg` exists; check the browser Network panel for sprite 404s if all icons appear blank
 - [ ] No hardcoded UI colors — use Tailwind theme utilities or project CSS variables
 - [ ] No inline styles in Rust `view!` macro (use CSS classes)
 - [ ] All new components have `///` doc comments
