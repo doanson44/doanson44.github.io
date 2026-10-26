@@ -1,5 +1,7 @@
 const ALLOWED_ORIGINS = new Set([
   "https://doanson44.github.io",
+  "http://sonthai.com",
+  "https://sonthai.com",
 ]);
 
 const ALLOWED_HOSTS = new Set([
