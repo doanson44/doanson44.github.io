@@ -63,11 +63,11 @@ fn dpad(
     view! {
         <div class="mx-auto grid w-max grid-cols-3 gap-1">
             <div></div>
-            <button type="button" class=btn on:click=move |_| on_up()><Icon name=IconName::ArrowUp class="h-4 w-4" /></button>
+            <button type="button" class=btn aria-label="Move up" on:click=move |_| on_up()><Icon name=IconName::ArrowUp class="h-4 w-4" /></button>
             <div></div>
-            <button type="button" class=btn on:click=move |_| on_left()><Icon name=IconName::ArrowLeft class="h-4 w-4" /></button>
-            <button type="button" class=btn on:click=move |_| on_down()><Icon name=IconName::ArrowDown class="h-4 w-4" /></button>
-            <button type="button" class=btn on:click=move |_| on_right()><Icon name=IconName::ArrowRight class="h-4 w-4" /></button>
+            <button type="button" class=btn aria-label="Move left" on:click=move |_| on_left()><Icon name=IconName::ArrowLeft class="h-4 w-4" /></button>
+            <button type="button" class=btn aria-label="Move down" on:click=move |_| on_down()><Icon name=IconName::ArrowDown class="h-4 w-4" /></button>
+            <button type="button" class=btn aria-label="Move right" on:click=move |_| on_right()><Icon name=IconName::ArrowRight class="h-4 w-4" /></button>
         </div>
     }
     .into_any()
@@ -3146,7 +3146,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     }
                     title="Flap the bird"
                 >
-                    <Icon name=IconName::ExternalLink class="mr-1" />
+                    <Icon name=IconName::ArrowUp class="mr-1" />
                     "Flap"
                 </button>
                 <button
