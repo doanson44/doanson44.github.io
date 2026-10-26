@@ -288,7 +288,7 @@ fn hangman_game_view(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView 
                     href="#/games"
                     class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                 >
-                    "← All games"
+                    <Icon name=IconName::ArrowLeft class="mr-2 inline-block h-4 w-4" />"All games"
                 </a>
                 <div class="min-w-0 flex-1">
                     <h2 class="text-xl font-bold text-[var(--text-primary)]">"Hangman"</h2>
@@ -323,7 +323,7 @@ fn standard_game_view(game: GameKind, score: RwSignal<u32>, status: RwSignal<Str
                     href="#/games"
                     class="rounded-md border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                 >
-                    "← All games"
+                    <Icon name=IconName::ArrowLeft class="mr-2 inline-block h-4 w-4" />"All games"
                 </a>
                 <div class="min-w-0 flex-1">
                     <h2 class="text-xl font-bold text-[var(--text-primary)]">{game.title()}</h2>
@@ -391,7 +391,7 @@ fn board_2048(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         board.set(b);
         score.update(|s| *s += pts);
         if b.contains(&2048) {
-            status.set("🎉 You reached 2048!".into());
+            status.set("You reached 2048!".into());
             game_over.set(true);
         } else if !has_move_2048(&b) {
             status.set("Game over — no moves left".into());
@@ -525,9 +525,9 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
         if let Some(w) = ttt_winner_sized(&b, n, target) {
             if i18n.get_locale() == Locale::en {
-                status.set(format!("{w} wins! 🎉"));
+                status.set(format!("{w} wins!"));
             } else {
-                status.set(format!("{w} thắng! 🎉"));
+                status.set(format!("{w} thắng!"));
             }
             game_over.set(true);
             if w == 'X' {
@@ -683,10 +683,10 @@ fn board_ttt(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                             {move || if i18n.get_locale() == Locale::en { "Win condition" } else { "Điều kiện thắng" }}
                         </p>
                         <ul class="mt-2 space-y-1">
-                            <li>"3×3 → 3 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
-                            <li>"4×4 → 4 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
-                            <li>"5×5 → 5 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
-                            <li>"6×6 → 5 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
+                            <li>"3x3 to 3 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
+                            <li>"4x4 to 4 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
+                            <li>"5x5 to 5 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
+                            <li>"6x6 to 5 " {move || if i18n.get_locale() == Locale::en { "in a row" } else { "quân liên tiếp" }}</li>
                         </ul>
                     </div>
                     <p>
@@ -787,7 +787,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             r[i] = true;
             revealed.set(r);
             game_over.set(true);
-            status.set("💥 Mine! Game over.".into());
+            status.set("Mine! Game over.".into());
             return;
         }
 
@@ -803,7 +803,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
         if safe_count + mine_count == w * h {
             game_over.set(true);
-            status.set("🎉 You cleared the field!".into());
+            status.set("You cleared the field!".into());
         } else {
             status.set(format!("{} safe cells revealed", safe_count));
         }
@@ -867,7 +867,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
         if hit_mine {
             game_over.set(true);
-            status.set("💥 Mine! Game over.".into());
+            status.set("Mine! Game over.".into());
             return;
         }
 
@@ -876,7 +876,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
 
         if safe_count + mine_count == w * h {
             game_over.set(true);
-            status.set("🎉 You cleared the field!".into());
+            status.set("You cleared the field!".into());
         } else {
             status.set(format!("{} safe cells revealed", safe_count));
         }
@@ -1015,15 +1015,19 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                 let r = revealed.get();
                                 let f = flagged.get();
                                 if f[i] && !r[i] {
-                                    "🚩".to_string()
+                                    view! { <Icon name=IconName::Flag class="h-4 w-4 text-[var(--warning)]" /> }.into_any()
                                 } else if r[i] && m[i] {
-                                    "💣".to_string()
+                                    view! { <Icon name=IconName::Bomb class="h-4 w-4 text-[var(--danger)]" /> }.into_any()
                                 } else if r[i] {
                                     let (w, h, _) = size.get().dimensions();
                                     let n = minesweeper_adjacent_mines_sized(&m, w, h, i);
-                                    if n == 0 { String::new() } else { n.to_string() }
+                                    if n == 0 {
+                                        ().into_any()
+                                    } else {
+                                        view! { <span>{n}</span> }.into_any()
+                                    }
                                 } else {
-                                    String::new()
+                                    ().into_any()
                                 }
                             }}
                         </button>
@@ -1054,7 +1058,7 @@ fn board_mines(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 title="New Game"
                 aria-label="New Game"
             >
-                {move || if game_over.get() { "😎" } else { "🙂" }}
+                {move || if game_over.get() { view! { <Icon name=IconName::Check class="h-5 w-5" /> }.into_any() } else { view! { <Icon name=IconName::Smile class="h-5 w-5" /> }.into_any() }}
             </button>
         </div>
     }
@@ -1333,9 +1337,9 @@ fn board_connect_four(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView
         board.set([0u8; 42]);
         game_over.set(false);
         player_turn.set(true);
-        status.set("Your turn (🔴)".into());
+        status.set("Your turn (Red)".into());
     };
-    status.set("Your turn (🔴)".into());
+    status.set("Your turn (Red)".into());
 
     let drop_col = move |col: usize| {
         if game_over.get() || !player_turn.get() {
@@ -1348,7 +1352,7 @@ fn board_connect_four(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView
         board.set(b);
         if connect_four_winner(&b) == Some(1) {
             score.update(|s| *s += 10);
-            status.set("🔴 You win!".into());
+            status.set("Red wins!".into());
             game_over.set(true);
             return;
         }
@@ -1367,13 +1371,13 @@ fn board_connect_four(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView
                 connect_four_drop(&mut b2, ai_col, 2);
                 board.set(b2);
                 if connect_four_winner(&b2) == Some(2) {
-                    status.set("🟡 AI wins!".into());
+                    status.set("Yellow AI wins!".into());
                     game_over.set(true);
                 } else if b2.iter().all(|&v| v != 0) {
                     status.set("Draw!".into());
                     game_over.set(true);
                 } else {
-                    status.set("Your turn (🔴)".into());
+                    status.set("Your turn (Red)".into());
                     player_turn.set(true);
                 }
             }
@@ -1384,7 +1388,7 @@ fn board_connect_four(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView
         <div class="mx-auto max-w-md space-y-2">
             <div class="grid grid-cols-7 gap-1">
                 {(0..7).map(|col| view! {
-                    <button type="button" class="rounded-md border border-[var(--border-color)] py-1 text-xs hover:bg-[var(--surface-hover)]" on:click=move|_|drop_col(col)>"▼"</button>
+                    <button type="button" class="rounded-md border border-[var(--border-color)] py-1 text-xs hover:bg-[var(--surface-hover)]" on:click=move|_|drop_col(col)><Icon name=IconName::ArrowDown class="mx-auto h-4 w-4" /></button>
                 }).collect_view()}
             </div>
             <div class="connect-four-board grid grid-cols-7 gap-1 rounded-lg border p-2">
@@ -1905,7 +1909,7 @@ fn board_wordle(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         if result == [2; 5] {
             won.set(true);
             score.update(|s| *s += (6 - row as u32) * 10);
-            status.set(format!("🎉 Correct in {} tries!", row + 1));
+            status.set(format!("Correct in {} tries!", row + 1));
         } else if row == 5 {
             status.set(format!("Game over — word was '{answer}'"));
         } else {
@@ -2259,7 +2263,7 @@ fn board_puzzle(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             moves.update(|m| *m += 1);
             if puzzle_is_solved(&new_b) {
                 score.update(|s| *s += 100u32.saturating_sub(moves.get()));
-                status.set("🎉 Solved!".into());
+                status.set("Solved!".into());
             } else {
                 status.set(format!("Moves: {}", moves.get()));
             }
@@ -2308,7 +2312,7 @@ fn board_lights(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         taps.update(|t| *t += 1);
         if b.iter().all(|&v| !v) {
             score.update(|s| *s += 100u32.saturating_sub(taps.get()));
-            status.set("🎉 All lights off!".into());
+            status.set("All lights off!".into());
         } else {
             let on = b.iter().filter(|&&v| v).count();
             status.set(format!("{on} lights on"));
@@ -2859,7 +2863,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
             </div>
 
             <p class="text-center text-xs text-[var(--text-tertiary)]">
-                "One player · Hold ↑ ↓ / W S · Space to start or pause"
+                "One player. Hold Up/Down or W/S. Space to start or pause."
             </p>
 
             <div
@@ -3463,7 +3467,7 @@ fn board_tetris(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         <div class="mx-auto max-w-sm space-y-2">
             <div class="flex gap-2">
                 <button type="button" class="flex-1 rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|toggle()>
-                    {move || if game_over.get() { "New Game (Space)" } else if running.get() { "⏸ Pause (Space)" } else { "▶ Start (Space)" }}
+                    {move || if game_over.get() { "New Game (Space)" } else if running.get() { "Pause (Space)" } else { "Start (Space)" }}
                 </button>
             </div>
             <div class="tetris-board mx-auto grid gap-px overflow-hidden rounded border border-[var(--border-color)] bg-[var(--border-color)]">
@@ -3489,7 +3493,7 @@ fn board_tetris(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 move || move_piece(0, 1),
                 move || move_piece(1, 0),
             )}
-            <p class="text-center text-xs text-[var(--text-tertiary)]">"Space start/pause · ↑ rotate · arrows / WASD"</p>
+            <p class="text-center text-xs text-[var(--text-tertiary)]">"Space starts or pauses; Up rotates; use arrow keys or WASD."</p>
         </div>
     }.into_any()
 }
