@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 
 /// Shared platform footer component.
@@ -20,7 +21,7 @@ pub fn Footer() -> impl IntoView {
                 <a href="https://webassembly.org/" target="_blank" rel="noopener noreferrer" class="no-underline hover:underline">"WebAssembly"</a>
             </span>
             <span class="text-xs text-[var(--text-secondary)]">
-                <span aria-hidden="true">"🔒"</span>
+                <Icon name=IconName::ShieldCheck class="mr-1 inline-block h-3.5 w-3.5 align-[-2px]" />
                 {move || format!(" {}", t_string!(i18n, footer_client))}
             </span>
         </footer>
