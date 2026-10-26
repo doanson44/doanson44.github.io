@@ -123,7 +123,7 @@ impl GameKind {
     }
     fn slug(self) -> &'static str {
         match self {
-            Self::TwentyFortyEight => "2048",
+            Self::TwentyFortyEight => IconName::Grid,
             Self::TicTacToe => "tic-tac-toe",
             Self::Minesweeper => "minesweeper",
             Self::Snake => "snake",
@@ -186,24 +186,24 @@ impl GameKind {
             Self::Tetris => "Clear lines with falling blocks.",
         }
     }
-    fn icon(self) -> &'static str {
+    fn icon(self) -> IconName {
         match self {
             Self::TwentyFortyEight => "2048",
-            Self::TicTacToe => "XO",
-            Self::Minesweeper => "💣",
-            Self::Snake => "🐍",
-            Self::Sudoku => "9",
-            Self::ConnectFour => "4",
-            Self::Memory => "🃏",
-            Self::Typing => "⌨",
-            Self::Wordle => "W",
-            Self::Hangman => "H",
-            Self::FifteenPuzzle => "15",
-            Self::LightsOut => "💡",
-            Self::Breakout => "🧱",
-            Self::Pong => "🏓",
-            Self::Flappy => "🐦",
-            Self::Tetris => "T",
+            Self::TicTacToe => IconName::Grid,
+            Self::Minesweeper => IconName::Bomb,
+            Self::Snake => IconName::Snake,
+            Self::Sudoku => IconName::Grid,
+            Self::ConnectFour => IconName::Blocks,
+            Self::Memory => IconName::Cards,
+            Self::Typing => IconName::Keyboard,
+            Self::Wordle => IconName::Word,
+            Self::Hangman => IconName::Hangman,
+            Self::FifteenPuzzle => IconName::Puzzle,
+            Self::LightsOut => IconName::Lightbulb,
+            Self::Breakout => IconName::BrickWall,
+            Self::Pong => IconName::Paddle,
+            Self::Flappy => IconName::Bird,
+            Self::Tetris => IconName::Blocks,
         }
     }
 }
@@ -2603,7 +2603,7 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                         on:pointercancel=move |_| left_pressed.set(false)
                         on:contextmenu=move |e| e.prevent_default()
                     >
-                        "←"
+                        <Icon name=IconName::ArrowLeft class="h-5 w-5" />
                     </button>
                     <button
                         type="button"
@@ -2621,12 +2621,12 @@ fn board_breakout(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                         on:pointercancel=move |_| right_pressed.set(false)
                         on:contextmenu=move |e| e.prevent_default()
                     >
-                        "→"
+                        <Icon name=IconName::ArrowRight class="h-5 w-5" />
                     </button>
                 </div>
 
                 <p class="text-center text-xs text-[var(--text-tertiary)]">
-                    "Hold ← → / A D to move the paddle · Space to start/pause"
+                    "Hold left/right or A/D to move the paddle; Space to start or pause"
                 </p>
             </div>
         </div>
@@ -2890,7 +2890,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     on:touchstart=move |_| up_pressed.set(true)
                     on:touchend=move |_| up_pressed.set(false)
                 >
-                    "↑"
+                    <Icon name=IconName::ArrowUp class="h-4 w-4" />
                 </button>
                 <button
                     type="button"
@@ -2902,7 +2902,7 @@ fn board_pong(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     on:touchstart=move |_| down_pressed.set(true)
                     on:touchend=move |_| down_pressed.set(false)
                 >
-                    "↓"
+                    <Icon name=IconName::ArrowDown class="h-4 w-4" />
                 </button>
             </div>
         </div>
@@ -3120,7 +3120,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                 </button>
             </div>
             <p class="mb-0 text-center text-body-secondary small">
-                "Space / ↑ / W / tap to flap · avoid pipes and the ground"
+                "Space / Up / W / tap to flap; avoid pipes and the ground"
             </p>
         </div>
     }
