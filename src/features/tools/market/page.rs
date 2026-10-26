@@ -631,7 +631,7 @@ fn pin_button(
             aria-label=move || if is_pinned.get() { t_string!(i18n, market_unpin) } else { t_string!(i18n, market_pin) }
             on:click=move |_| state.toggle_pin(&symbol)
         >
-            {move || if is_pinned.get() { "★" } else { "☆" }}
+            {move || if is_pinned.get() { view! { <Icon name=IconName::Star class="h-5 w-5" /> }.into_any() } else { view! { <Icon name=IconName::StarOff class="h-5 w-5" /> }.into_any() }}
         </button>
     }
 }
@@ -656,7 +656,7 @@ fn mobile_sort_button(
             aria-label=move || format!("{} {}", t_string!(i18n, market_sort), market_sort_label(i18n, key))
         >
             {move || if sort.get() == selected {
-                format!("{} {}", market_sort_label(i18n, key), if descending.get() { "↓" } else { "↑" })
+                format!("{} {}", market_sort_label(i18n, key), if descending.get() { "DESC" } else { "ASC" })
             } else {
                 market_sort_label(i18n, key)
             }}
@@ -709,7 +709,7 @@ fn sortable_header(
             >
                 <span>{move || market_sort_label(i18n, key)}</span>
                 {move || if sort.get() == selected {
-                    view! { <span aria-hidden="true">{if descending.get() { "↓" } else { "↑" }}</span> }.into_any()
+                    if descending.get() { view! { <Icon name=IconName::ArrowDown class="h-3.5 w-3.5" /> }.into_any() } else { view! { <Icon name=IconName::ArrowUp class="h-3.5 w-3.5" /> }.into_any() }
                 } else {
                     view! { <Icon name=IconName::ArrowUpDown class="text-[var(--text-secondary)] opacity-50" /> }.into_any()
                 }}
