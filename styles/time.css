@@ -73,6 +73,7 @@
 }
 
 .screen-ruler-unit {
+    box-sizing: border-box;
     position: relative;
     display: flex;
     flex: 0 0 auto;
