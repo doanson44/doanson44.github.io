@@ -1432,10 +1432,39 @@ impl MemorySize {
 }
 
 fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
-    let emojis = [
-        "🍎", "🍊", "🍋", "🍇", "🍓", "🍒", "🍑", "🥝", "🥑", "🍉", "🍌", "🍍", "🥭", "🍐", "🍑",
-        "🥥", "🥕", "🌽", "🍄", "🥨", "🍪", "🍩", "🍰", "🍫", "⚽", "🏀", "🎸", "🎹", "🚗", "🚲",
-        "🚀", "⭐",
+    let memory_icons = [
+        IconName::Home,
+        IconName::Tools,
+        IconName::Market,
+        IconName::Games,
+        IconName::FileText,
+        IconName::Network,
+        IconName::Search,
+        IconName::Bold,
+        IconName::Italic,
+        IconName::Strikethrough,
+        IconName::Heading,
+        IconName::Link,
+        IconName::Image,
+        IconName::Code,
+        IconName::Braces,
+        IconName::Quote,
+        IconName::List,
+        IconName::ListOrdered,
+        IconName::Table,
+        IconName::HorizontalRule,
+        IconName::Eye,
+        IconName::RotateCcw,
+        IconName::Trash,
+        IconName::Copy,
+        IconName::Download,
+        IconName::Upload,
+        IconName::Refresh,
+        IconName::ExternalLink,
+        IconName::ChevronDown,
+        IconName::Menu,
+        IconName::ArrowUp,
+        IconName::ArrowDown,
     ];
 
     let size = RwSignal::new(MemorySize::Small);
@@ -1491,7 +1520,7 @@ fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     matched.set(m.clone());
                     score.update(|s| *s += 2);
                     if m.iter().all(|&v| v) {
-                        status.set("🎉 All pairs found!".into());
+                        status.set("All pairs found!".into());
                     } else {
                         status.set(format!(
                             "Match! {} pairs left",
@@ -1567,13 +1596,20 @@ fn board_memory(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                                     }
                                 }
                                 on:click=move |_| click(i)
+                                aria-label=move || {
+                                    if revealed.get()[i] || matched.get()[i] {
+                                        format!("Memory card {}", cards.get()[i] + 1)
+                                    } else {
+                                        "Hidden memory card".to_string()
+                                    }
+                                }
                             >
                                 {move || {
                                     let c = cards.get();
                                     if revealed.get()[i] || matched.get()[i] {
-                                        emojis[c[i]].to_string()
+                                        view! { <Icon name=memory_icons[c[i]] class="h-5 w-5 sm:h-7 sm:w-7" /> }.into_any()
                                     } else {
-                                        "?".to_string()
+                                        view! { <Icon name=IconName::Puzzle class="h-5 w-5 sm:h-7 sm:w-7" /> }.into_any()
                                     }
                                 }}
                             </button>
