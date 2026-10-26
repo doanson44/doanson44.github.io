@@ -244,7 +244,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                                             on:input=move |event| state.update_environment("url", event_target_value(&event)) />
                                         <button type="button" class=button_class() on:click=move |_| {
                                             if let Some(environment) = selected_environment(&state) { open_environment_url(&environment.url, state.message); }
-                                        }>"Open ↗"</button>
+                                        }><Icon name=IconName::ExternalLink class="mr-1 inline-block h-3.5 w-3.5" />"Open"</button>
                                     </div>
                                 </div>
                                 <div class="md:col-span-2">
