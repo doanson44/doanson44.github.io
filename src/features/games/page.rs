@@ -63,11 +63,11 @@ fn dpad(
     view! {
         <div class="mx-auto grid w-max grid-cols-3 gap-1">
             <div></div>
-            <button type="button" class=btn on:click=move |_| on_up()>"↑"</button>
+            <button type="button" class=btn on:click=move |_| on_up()><Icon name=IconName::ArrowUp class="h-4 w-4" /></button>
             <div></div>
-            <button type="button" class=btn on:click=move |_| on_left()>"←"</button>
-            <button type="button" class=btn on:click=move |_| on_down()>"↓"</button>
-            <button type="button" class=btn on:click=move |_| on_right()>"→"</button>
+            <button type="button" class=btn on:click=move |_| on_left()><Icon name=IconName::ArrowLeft class="h-4 w-4" /></button>
+            <button type="button" class=btn on:click=move |_| on_down()><Icon name=IconName::ArrowDown class="h-4 w-4" /></button>
+            <button type="button" class=btn on:click=move |_| on_right()><Icon name=IconName::ArrowRight class="h-4 w-4" /></button>
         </div>
     }
     .into_any()
@@ -3115,7 +3115,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     on:click=move |_| reset()
                     title="Reset Flappy"
                 >
-                    <span class="mr-1" aria-hidden="true">"↻"</span>
+                    <Icon name=IconName::Refresh class="mr-1" />
                     "Reset"
                 </button>
             </div>
