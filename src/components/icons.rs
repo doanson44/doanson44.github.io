@@ -57,6 +57,11 @@ pub enum IconName {
     Info,
     ShieldCheck,
     Clock,
+    Sun,
+    Moon,
+    Sparkles,
+    ArrowUpDown,
+    Play,
 }
 
 impl IconName {
@@ -117,6 +122,11 @@ impl IconName {
             Self::Info => "info",
             Self::ShieldCheck => "shield-check",
             Self::Clock => "clock",
+            Self::Sun => "sun",
+            Self::Moon => "moon",
+            Self::Sparkles => "sparkles",
+            Self::ArrowUpDown => "arrow-up-down",
+            Self::Play => "play",
         }
     }
 }
