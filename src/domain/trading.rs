@@ -57,6 +57,20 @@ pub fn estimate_liquidation_price(
     estimated_price.is_finite().then_some(estimated_price)
 }
 
+/// A funding settlement returned by MEXC for a real position.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct RealFundingRecord {
+    pub id: i64,
+    pub symbol: String,
+    pub position_id: i64,
+    pub side: PositionSide,
+    pub position_value: f64,
+    /// Net cash flow: positive means received; negative means paid.
+    pub funding_amount: f64,
+    pub funding_rate: f64,
+    pub settle_time_ms: i64,
+}
+
 /// A live Futures position returned by MEXC.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct RealPosition {
@@ -71,6 +85,8 @@ pub struct RealPosition {
     pub leverage: f64,
     pub realized_pnl: f64,
     pub unrealized_pnl: f64,
+    #[serde(default)]
+    pub funding_records: Vec<RealFundingRecord>,
 }
 
 /// Current Real Trading portfolio values derived from the MEXC account.
