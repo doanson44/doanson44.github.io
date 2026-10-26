@@ -275,7 +275,7 @@ pub fn JsonPage() -> impl IntoView {
                                     view! {
                                         <div class="flex h-full items-center justify-center text-sm text-[var(--text-secondary)]">
                                             <div class="text-center">
-                                                <div class="mb-2 text-3xl" aria-hidden="true">"{}"</div>
+                                                <div class="mb-2 flex justify-center"><Icon name=IconName::Braces class="h-8 w-8" /></div>
                                                 <span>
                                                     {move || if i18n.get_locale() == Locale::vi {
                                                         "Định dạng, thu gọn, tạo sample hoặc generate JSON để xem kết quả."
