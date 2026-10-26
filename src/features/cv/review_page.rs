@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use leptos::prelude::*;
 
 use super::review::{review_cards, ReviewCard};
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 use crate::infrastructure::browser::{scroll_to_top, storage_get, storage_set};
 use leptos_i18n::I18nContext;
@@ -90,7 +91,7 @@ fn list_view(
                     href="#/cv"
                     class="inline-flex rounded-md text-sm font-medium text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                 >
-                    "← " {t_string!(i18n, cv_review_back)}
+                    <Icon name=IconName::ArrowLeft class="mr-2 inline-block h-4 w-4" />{t_string!(i18n, cv_review_back)}
                 </a>
                 <p class="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
                     {t_string!(i18n, cv_review_label)}
@@ -193,7 +194,7 @@ fn detail_view(
                 href="#/cv/review"
                 class="inline-flex rounded-md text-sm font-medium text-[var(--accent)] underline decoration-transparent underline-offset-4 transition hover:decoration-current focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
             >
-                "← " {t_string!(i18n, cv_review_back_to_list)}
+                <Icon name=IconName::ArrowLeft class="mr-2 inline-block h-4 w-4" />{t_string!(i18n, cv_review_back_to_list)}
             </a>
 
             <article class="mt-6 overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface)] shadow-sm">

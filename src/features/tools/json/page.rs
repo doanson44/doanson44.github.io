@@ -2,6 +2,7 @@ use leptos::prelude::*;
 
 use crate::components::tool_layout::{ToolDivider, ToolPanel, ToolPanelSide, ToolSplit};
 use crate::features::tools::json::state::JsonState;
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 use crate::infrastructure::browser::copy_to_clipboard;
 
@@ -55,15 +56,15 @@ pub fn JsonPage() -> impl IntoView {
                         </span>
                     </div>
                     <button type="button" class=button title=move || t_string!(i18n, json_sample_title) on:click=move |_| state.sample()>
-                        <span aria-hidden="true">"▾"</span>
+                        <Icon name=IconName::ChevronDown />
                         <span class="ml-1 hidden lg:inline">{move || t_string!(i18n, json_sample)}</span>
                     </button>
                     <button type="button" class=button title="Format JSON" on:click=move |_| state.format()>
-                        <span aria-hidden="true">"≡"</span>
+                        <Icon name=IconName::List />
                         <span class="ml-1 hidden lg:inline">{move || if i18n.get_locale() == Locale::vi { "Định dạng" } else { "Format" }}</span>
                     </button>
                     <button type="button" class=button title="Minify JSON" on:click=move |_| state.minify()>
-                        <span aria-hidden="true">"↕"</span>
+                        <Icon name=IconName::ArrowUpDown />
                         <span class="ml-1 hidden lg:inline">{move || if i18n.get_locale() == Locale::vi { "Thu gọn" } else { "Minify" }}</span>
                     </button>
                     <button
@@ -73,15 +74,15 @@ pub fn JsonPage() -> impl IntoView {
                         aria-expanded=move || state.generator_open.get().to_string()
                         on:click=move |_| state.generator_open.update(|open| *open = !*open)
                     >
-                        <span aria-hidden="true">"✦"</span>
+                        <Icon name=IconName::Sparkles />
                         <span class="ml-1 hidden md:inline">{move || if i18n.get_locale() == Locale::vi { "Tạo dữ liệu" } else { "Generate" }}</span>
                     </button>
                     <button type="button" class=button title="Reset to sample JSON" on:click=move |_| state.reset()>
-                        <span aria-hidden="true">"↶"</span>
+                        <Icon name=IconName::RotateCcw />
                         <span class="ml-1 hidden lg:inline">{move || t_string!(i18n, common_reset)}</span>
                     </button>
                     <button type="button" class=button title="Clear JSON" on:click=move |_| state.clear()>
-                        <span aria-hidden="true">"×"</span>
+                        <Icon name=IconName::Close />
                         <span class="ml-1 hidden lg:inline">{move || t_string!(i18n, common_clear)}</span>
                     </button>
                 </div>
@@ -105,7 +106,7 @@ pub fn JsonPage() -> impl IntoView {
                             </div>
                             <div class="flex gap-1">
                                 <button type="button" class=button on:click=move |_| state.generate()>
-                                    <span aria-hidden="true">"▶"</span>
+                                    <Icon name=IconName::Play />
                                     <span class="ml-1">"Generate JSON"</span>
                                 </button>
                                 <button type="button" class=button on:click=move |_| state.generator_open.set(false)>
@@ -215,7 +216,7 @@ pub fn JsonPage() -> impl IntoView {
                                                     title=move || if i18n.get_locale() == Locale::vi { "Xóa fixed value" } else { "Remove fixed value" }
                                                     on:click=move |_| state.remove_override(index)
                                                 >
-                                                    "×"
+                                                    <Icon name=IconName::Close class="h-4 w-4" />
                                                 </button>
                                             </div>
                                         }
@@ -229,7 +230,7 @@ pub fn JsonPage() -> impl IntoView {
 
             {move || state.error.get().map(|error| view! {
                 <div class="flex items-start gap-2 border-b border-red-400/40 bg-red-400/10 px-3 py-2 text-sm text-red-300" role="alert">
-                    <span aria-hidden="true">"⚠"</span>
+                    <Icon name=IconName::AlertTriangle />
                     <span>{error}</span>
                 </div>
             })}
@@ -250,7 +251,7 @@ pub fn JsonPage() -> impl IntoView {
                     <div class="flex h-full flex-col overflow-hidden">
                         <div class="flex items-center border-b border-[var(--border-color)] px-3 py-2">
                             <span class="font-medium text-[var(--text-primary)]">
-                                <span class="mr-2" aria-hidden="true">"◉"</span>
+                                <Icon name=IconName::Eye class="mr-2" />
                                 {move || t_string!(i18n, common_preview)}
                             </span>
                             <button
@@ -261,7 +262,7 @@ pub fn JsonPage() -> impl IntoView {
                                 title="Copy generated JSON"
                                 aria-label="Copy generated JSON"
                             >
-                                <span aria-hidden="true">"⧉"</span>
+                                <Icon name=IconName::Copy />
                                 <span class="ml-1 hidden md:inline" aria-live="polite">
                                     {move || if state.copied.get() { t_string!(i18n, common_copied) } else { t_string!(i18n, common_copy) }}
                                 </span>
@@ -274,7 +275,7 @@ pub fn JsonPage() -> impl IntoView {
                                     view! {
                                         <div class="flex h-full items-center justify-center text-sm text-[var(--text-secondary)]">
                                             <div class="text-center">
-                                                <div class="mb-2 text-3xl" aria-hidden="true">"{}"</div>
+                                                <div class="mb-2 flex justify-center"><Icon name=IconName::Braces class="h-8 w-8" /></div>
                                                 <span>
                                                     {move || if i18n.get_locale() == Locale::vi {
                                                         "Định dạng, thu gọn, tạo sample hoặc generate JSON để xem kết quả."

@@ -1,3 +1,4 @@
+use crate::components::icons::{Icon, IconName};
 use leptos::prelude::*;
 
 use crate::features::socket::state::{ChangeFilter, QuoteFilter, SocketState, SortColumn};
@@ -106,7 +107,10 @@ pub fn SocketPage() -> impl IntoView {
 
 #[component]
 fn SortButton(label: &'static str, column: SortColumn, state: SocketState, set_sort: impl Fn(SortColumn) + Clone + 'static) -> impl IntoView {
-    view! { <button class="p-0 text-sm font-medium text-[var(--text-primary)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" type="button" on:click=move |_| set_sort(column)>{label} " " {move || sort_indicator(state.sort_column.get(), state.sort_descending.get(), column)}</button> }
+    view! { <button class="p-0 text-sm font-medium text-[var(--text-primary)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" type="button" on:click=move |_| set_sort(column)>{label} " " {move || match sort_indicator(state.sort_column.get(), state.sort_descending.get(), column) {
+            Some(name) => view! { <Icon name=name class="inline-block h-3 w-3" /> }.into_any(),
+            None => ().into_any(),
+        }}</button> }
 }
 
 fn status_badge(status: crate::infrastructure::mexc_futures::MexcFuturesConnectionStatus) -> impl IntoView {
@@ -118,8 +122,8 @@ fn status_badge(status: crate::infrastructure::mexc_futures::MexcFuturesConnecti
     }
 }
 
-fn sort_indicator(current: SortColumn, descending: bool, column: SortColumn) -> &'static str {
-    if current != column { "" } else if descending { "▼" } else { "▲" }
+fn sort_indicator(current: SortColumn, descending: bool, column: SortColumn) -> Option<IconName> {
+    if current != column { None } else if descending { Some(IconName::ArrowDown) } else { Some(IconName::ArrowUp) }
 }
 
 fn format_number(value: Option<f64>) -> String { value.map(|number| if number.abs() >= 1.0 { format!("{number:.4}") } else { format!("{number:.8}") }).unwrap_or_else(|| "—".into()) }

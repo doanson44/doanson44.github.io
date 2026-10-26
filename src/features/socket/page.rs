@@ -2,6 +2,7 @@ use std::{collections::HashMap, rc::Rc};
 
 use leptos::prelude::*;
 
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 
 use crate::application::ports::{
@@ -375,11 +376,11 @@ fn SortHeader(
     let is_active = move || state.sort_mode.get() == mode;
     let indicator = move || {
         if !is_active() {
-            " ↕"
+            view! { <Icon name=IconName::ArrowUpDown class="inline-block h-3 w-3" /> }.into_any()
         } else {
             match state.sort_direction.get() {
-                SocketSortDirection::Ascending => " ↑",
-                SocketSortDirection::Descending => " ↓",
+                SocketSortDirection::Ascending => view! { <Icon name=IconName::ArrowUp class="inline-block h-3 w-3" /> }.into_any(),
+                SocketSortDirection::Descending => view! { <Icon name=IconName::ArrowDown class="inline-block h-3 w-3" /> }.into_any(),
             }
         }
     };
@@ -422,8 +423,8 @@ fn socket_mobile_sort_button(
         >
             {move || if state.sort_mode.get() == selected {
                 format!("{} {}", socket_sort_label(i18n, key), match state.sort_direction.get() {
-                    SocketSortDirection::Ascending => "↑",
-                    SocketSortDirection::Descending => "↓",
+                    SocketSortDirection::Ascending => "ASC",
+                    SocketSortDirection::Descending => "DESC",
                 })
             } else {
                 socket_sort_label(i18n, key)
@@ -503,7 +504,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                         title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_aria_title) }
                         aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria_label) } else { format!("Pin {}", symbol_aria_label) }
                         on:click=move |_| state.toggle_pin(&symbol_click)>
-                        {move || if is_pinned.get() { "★" } else { "☆" }}
+                        {move || if is_pinned.get() { view! { <Icon name=IconName::Star class="h-5 w-5" /> }.into_any() } else { view! { <Icon name=IconName::StarOff class="h-5 w-5" /> }.into_any() }}
                     </button>
                     <button type="button" class="min-h-9 rounded-md border border-[var(--success)]/60 px-2 text-xs font-bold text-[var(--success)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--success)]/40"
                         title=move || format!("Trade {}", trade_label_title)
@@ -596,7 +597,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                         title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_aria_title) }
                         aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria_label) } else { format!("Pin {}", symbol_aria_label) }
                         on:click=move |_| state.toggle_pin(&symbol_click)>
-                        {move || if is_pinned.get() { "★" } else { "☆" }}
+                        {move || if is_pinned.get() { view! { <Icon name=IconName::Star class="h-5 w-5" /> }.into_any() } else { view! { <Icon name=IconName::StarOff class="h-5 w-5" /> }.into_any() }}
                     </button>
                     <button type="button" class="min-h-11 rounded-md border border-[var(--success)]/60 px-3 text-xs font-bold text-[var(--success)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--success)]/40"
                         title=move || format!("Trade {}", trade_label_title)
@@ -667,7 +668,7 @@ fn SocketAnalysisModal(
                         <h2 class="m-0 text-lg font-semibold">{format!("{} · {}", result.asset.symbol, result.asset.timeframe)}</h2>
                         <p class="m-0 mt-1 text-xs text-[var(--text-secondary)]">{result.engine.name.clone()}</p>
                     </div>
-                    <button type="button" class="min-h-10 min-w-10 rounded-md border border-[var(--border-color)] px-2 text-lg text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=move || t_string!(i18n, common_close) aria-label=move || t_string!(i18n, common_close) on:click=move |_| state.close_analysis()>"×"</button>
+                    <button type="button" class="min-h-10 min-w-10 rounded-md border border-[var(--border-color)] px-2 text-lg text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=move || t_string!(i18n, common_close) aria-label=move || t_string!(i18n, common_close) on:click=move |_| state.close_analysis()><Icon name=IconName::Close class="h-4 w-4" /></button>
                 </header>
                 <div class="min-h-0 overflow-y-auto p-4">
                     <div class="grid gap-3 md:grid-cols-2">
@@ -690,7 +691,7 @@ fn SocketAnalysisModal(
                         </section>
                         <section class="rounded-md border border-[var(--border-color)] p-3">
                             <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_structure_section)}</h3>
-                            <p class="m-0">{if result.market_structure.structure_sequence.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.market_structure.structure_sequence.join(" → ") }}</p>
+                            <p class="m-0">{if result.market_structure.structure_sequence.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.market_structure.structure_sequence.join(" -> ") }}</p>
                             <p class="m-0 mt-1 text-sm text-[var(--text-secondary)]">{format!("ATR: {} · Volume: {:.2}", result.volatility.atr.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()), result.volume.current)}</p>
                         </section>
                     </div>
@@ -969,7 +970,7 @@ fn empty_state(mode: SocketViewMode) -> impl IntoView {
         SocketViewMode::All => t_string!(i18n, socket_waiting),
         SocketViewMode::PinnedOnly => t_string!(i18n, socket_no_pinned),
     };
-    view! { <div class="flex h-full flex-col items-center justify-center py-5 text-[var(--text-secondary)]"><span class="mb-2 text-2xl" aria-hidden="true">"◌"</span><span>{text}</span></div> }
+    view! { <div class="flex h-full flex-col items-center justify-center py-5 text-[var(--text-secondary)]"><Icon name=IconName::Refresh class="mb-2 text-2xl" /><span>{text}</span></div> }
 }
 
 fn view_button_class(active: bool) -> &'static str {
@@ -1017,8 +1018,8 @@ fn format_percent(value: Option<f64>) -> String {
 
 fn ranking_direction_label(direction: i8) -> &'static str {
     match direction {
-        1 => "LONG ↑",
-        -1 => "SHORT ↓",
+        1 => "LONG",
+        -1 => "SHORT",
         _ => "—",
     }
 }

@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 
 /// Home page — platform landing page.
@@ -22,11 +23,11 @@ pub fn HomePage() -> impl IntoView {
                 </div>
 
                 <div class="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                    <HomeCard href="#/tools" icon="⚒" title_key="tools" description_key="tools" />
-                    <HomeCard href="#/tools/market" icon="◈" title_key="market" description_key="market" />
-                    <HomeCard href="#/games" icon="♟" title_key="games" description_key="games" />
-                    <HomeCard href="#/cv" icon="●" title_key="cv" description_key="cv" />
-                    <HomeCard href="#/socket" icon="↔" title_key="socket" description_key="socket" />
+                    <HomeCard href="#/tools" icon=IconName::Tools title_key="tools" description_key="tools" />
+                    <HomeCard href="#/tools/market" icon=IconName::Market title_key="market" description_key="market" />
+                    <HomeCard href="#/games" icon=IconName::Games title_key="games" description_key="games" />
+                    <HomeCard href="#/cv" icon=IconName::FileText title_key="cv" description_key="cv" />
+                    <HomeCard href="#/socket" icon=IconName::Network title_key="socket" description_key="socket" />
                 </div>
             </div>
         </main>
@@ -36,7 +37,7 @@ pub fn HomePage() -> impl IntoView {
 #[component]
 fn HomeCard(
     #[prop(into)] href: String,
-    icon: &'static str,
+    icon: IconName,
     title_key: &'static str,
     description_key: &'static str,
 ) -> impl IntoView {
@@ -45,7 +46,7 @@ fn HomeCard(
             href=href
             class="group rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-6 text-center no-underline shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         >
-            <div class="mb-4 text-4xl text-[var(--accent)]" aria-hidden="true">{icon}</div>
+            <div class="mb-4 flex justify-center text-[var(--accent)]"><Icon name=icon class="h-10 w-10" /></div>
             <h2 class="mb-2 text-lg font-semibold text-[var(--text-primary)]">{move || match title_key {
                 "tools" => t_string!(use_i18n(), nav_tools),
                 "market" => t_string!(use_i18n(), nav_market),

@@ -11,6 +11,17 @@ Run through this checklist before finalizing any UI change.
 - [ ] Mermaid SVG diagrams have `role="img"` and alt text
 - [ ] No information conveyed by color alone
 
+## Shared Icon System (CRITICAL)
+
+- [ ] UI icons use `Icon` / `IconName` from `src/components/icons.rs` and `public/icons.svg`
+- [ ] No emoji, Unicode pictographs, arrows, dingbats, or decorative special characters are used as UI icons
+- [ ] No icon fonts, external icon CSS dependencies, duplicated inline SVG paths, or one-off icon systems were added
+- [ ] Every `IconName` ID maps to exactly one SVG symbol; new icons update both the enum mapping and sprite
+- [ ] `index.html` explicitly copies `public/icons.svg` into Trunk output; `dist/icons.svg` exists and does not return 404
+- [ ] String metadata (`slug()`, `title()`, etc.) remains string data; icon accessors return `IconName`, with no type mixing
+- [ ] Icon-only controls have accessible names and visible focus; decorative SVGs do not duplicate labels
+- [ ] After icon refactors, changed files were reviewed for leftover UI glyphs and the available Rust/WASM checks are reported accurately
+
 ## Dark Mode Quality
 
 - [ ] No pure black (`#000`) backgrounds anywhere

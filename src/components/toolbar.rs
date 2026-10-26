@@ -1,11 +1,13 @@
 use leptos::prelude::*;
 
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 use web_sys::HtmlTextAreaElement;
 
 /// Toolbar button descriptor.
 struct ToolbarButton {
-    icon: &'static str,
+    icon: Option<IconName>,
+    label: Option<&'static str>,
     title: &'static str,
     prefix: &'static str,
     suffix: &'static str,
@@ -15,7 +17,8 @@ struct ToolbarButton {
 
 const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
     ToolbarButton {
-        icon: "B",
+        icon: Some(IconName::Bold),
+        label: None,
         title: "Bold",
         prefix: "**",
         suffix: "**",
@@ -23,7 +26,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: false,
     },
     ToolbarButton {
-        icon: "I",
+        icon: Some(IconName::Italic),
+        label: None,
         title: "Italic",
         prefix: "*",
         suffix: "*",
@@ -31,7 +35,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: false,
     },
     ToolbarButton {
-        icon: "S",
+        icon: Some(IconName::Strikethrough),
+        label: None,
         title: "Strikethrough",
         prefix: "~~",
         suffix: "~~",
@@ -39,7 +44,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: false,
     },
     ToolbarButton {
-        icon: "H1",
+        icon: None,
+        label: Some("H1"),
         title: "Heading 1",
         prefix: "# ",
         suffix: "",
@@ -47,7 +53,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: true,
     },
     ToolbarButton {
-        icon: "H2",
+        icon: None,
+        label: Some("H2"),
         title: "Heading 2",
         prefix: "## ",
         suffix: "",
@@ -55,7 +62,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: true,
     },
     ToolbarButton {
-        icon: "H3",
+        icon: None,
+        label: Some("H3"),
         title: "Heading 3",
         prefix: "### ",
         suffix: "",
@@ -63,7 +71,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: true,
     },
     ToolbarButton {
-        icon: "↗",
+        icon: Some(IconName::Link),
+        label: None,
         title: "Link",
         prefix: "[",
         suffix: "](url)",
@@ -71,7 +80,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: false,
     },
     ToolbarButton {
-        icon: "▧",
+        icon: Some(IconName::Image),
+        label: None,
         title: "Image",
         prefix: "![",
         suffix: "](url)",
@@ -79,7 +89,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: false,
     },
     ToolbarButton {
-        icon: "<>",
+        icon: Some(IconName::Code),
+        label: None,
         title: "Inline Code",
         prefix: "`",
         suffix: "`",
@@ -87,7 +98,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: false,
     },
     ToolbarButton {
-        icon: "{}",
+        icon: Some(IconName::Braces),
+        label: None,
         title: "Code Block",
         prefix: "```\n",
         suffix: "\n```",
@@ -95,7 +107,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: true,
     },
     ToolbarButton {
-        icon: "❝",
+        icon: Some(IconName::Quote),
+        label: None,
         title: "Blockquote",
         prefix: "> ",
         suffix: "",
@@ -103,7 +116,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: true,
     },
     ToolbarButton {
-        icon: "•",
+        icon: Some(IconName::List),
+        label: None,
         title: "Unordered List",
         prefix: "- ",
         suffix: "",
@@ -111,7 +125,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: true,
     },
     ToolbarButton {
-        icon: "1.",
+        icon: Some(IconName::ListOrdered),
+        label: None,
         title: "Ordered List",
         prefix: "1. ",
         suffix: "",
@@ -119,7 +134,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: true,
     },
     ToolbarButton {
-        icon: "▦",
+        icon: Some(IconName::Table),
+        label: None,
         title: "Table",
         prefix: "| Header 1 | Header 2 | Header 3 |\n|----------|----------|----------|\n| Cell 1   | Cell 2   | Cell 3   |",
         suffix: "",
@@ -127,7 +143,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: true,
     },
     ToolbarButton {
-        icon: "—",
+        icon: Some(IconName::HorizontalRule),
+        label: None,
         title: "Horizontal Rule",
         prefix: "\n---\n",
         suffix: "",
@@ -135,7 +152,8 @@ const TOOLBAR_BUTTONS: &[ToolbarButton] = &[
         block: true,
     },
     ToolbarButton {
-        icon: "◇",
+        icon: Some(IconName::Link),
+        label: None,
         title: "Mermaid Diagram",
         prefix: "```mermaid\nflowchart LR\n    A[Start] --> B[End]",
         suffix: "\n```",
@@ -200,11 +218,16 @@ pub fn Toolbar(
             let default_text = btn.default_text;
             let block = btn.block;
             let icon = btn.icon;
+            let label = btn.label;
             let title = btn.title;
             let needs_separator = idx == 2 || idx == 5 || idx == 8 || idx == 10 || idx == 12;
             let button_view = view! {
                 <button type="button" class="inline-flex min-h-8 min-w-8 items-center justify-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title=title on:click=move |_| insert_markdown(textarea_id, source, prefix, suffix, default_text, block)>
-                    {icon}
+                    {if let Some(icon) = icon {
+                        view! { <Icon name=icon class="h-4 w-4" /> }.into_any()
+                    } else {
+                        view! { <span>{label.unwrap_or_default()}</span> }.into_any()
+                    }}
                 </button>
             };
             if needs_separator {
@@ -220,12 +243,12 @@ pub fn Toolbar(
             {buttons}
             <div class="ml-auto flex gap-1">
                 {if let Some(toggle) = toggle_preview {
-                    view! { <button type="button" class="inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title=move || t_string!(i18n, markdown_preview) on:click=move |_| toggle.run(())><span aria-hidden="true">"◉"</span><span class="ml-1 hidden lg:inline">{move || t_string!(i18n, markdown_preview)}</span></button> }.into_any()
+                    view! { <button type="button" class="inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title=move || t_string!(i18n, markdown_preview) on:click=move |_| toggle.run(())><Icon name=IconName::Eye class="h-4 w-4" /><span class="ml-1 hidden lg:inline">{move || t_string!(i18n, markdown_preview)}</span></button> }.into_any()
                 } else {
                     ().into_any()
                 }}
-                <button type="button" class="inline-flex min-h-8 items-center rounded border border-red-400/50 px-2 text-xs font-semibold text-red-400 transition hover:bg-red-400/10 focus:outline-none focus:ring-2 focus:ring-red-400" title=move || t_string!(i18n, markdown_clear) on:click=move |_| { source.set(String::new()); if let Some(textarea) = crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(textarea_id) { textarea.set_value(""); let _ = textarea.focus(); } }><span aria-hidden="true">"×"</span><span class="ml-1 hidden lg:inline">{move || t_string!(i18n, markdown_clear)}</span></button>
-                <button type="button" class="inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title=move || t_string!(i18n, markdown_reset) on:click=move |_| { let doc = crate::domain::document::MarkdownDocument::sample(); source.set(doc.content.clone()); if let Some(textarea) = crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(textarea_id) { textarea.set_value(&doc.content); } }><span aria-hidden="true">"↶"</span><span class="ml-1 hidden lg:inline">{move || t_string!(i18n, markdown_reset)}</span></button>
+                <button type="button" class="inline-flex min-h-8 items-center rounded border border-red-400/50 px-2 text-xs font-semibold text-red-400 transition hover:bg-red-400/10 focus:outline-none focus:ring-2 focus:ring-red-400" title=move || t_string!(i18n, markdown_clear) on:click=move |_| { source.set(String::new()); if let Some(textarea) = crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(textarea_id) { textarea.set_value(""); let _ = textarea.focus(); } }><Icon name=IconName::Trash class="h-4 w-4" /><span class="ml-1 hidden lg:inline">{move || t_string!(i18n, markdown_clear)}</span></button>
+                <button type="button" class="inline-flex min-h-8 items-center rounded border border-[var(--border-color)] px-2 text-xs font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" title=move || t_string!(i18n, markdown_reset) on:click=move |_| { let doc = crate::domain::document::MarkdownDocument::sample(); source.set(doc.content.clone()); if let Some(textarea) = crate::infrastructure::browser::get_element_by_id::<HtmlTextAreaElement>(textarea_id) { textarea.set_value(&doc.content); } }><Icon name=IconName::RotateCcw class="h-4 w-4" /><span class="ml-1 hidden lg:inline">{move || t_string!(i18n, markdown_reset)}</span></button>
             </div>
         </div>
     }

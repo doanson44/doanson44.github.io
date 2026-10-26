@@ -65,7 +65,19 @@ Use `ui-ux-studio` skill → `references/accessibility.md`:
 - [ ] Special characters (emoji, CJK) — render correctly
 - [ ] Rapid typing — no lag or flicker
 
+
 ### Phase 7: Code Quality (3 min)
+- [ ] No hardcoded UI colors — use Tailwind theme utilities or project CSS variables
+- [ ] No inline styles in Rust `view!` macro (use CSS classes)
+- [ ] All new components have `///` doc comments
+- [ ] Components registered in `mod.rs`
+- [ ] No Leptos warnings in console
+- [ ] No Bootstrap classes, variables, JavaScript, or icon-font dependencies
+- [ ] UI icons use the shared `Icon` / `IconName` system; no emoji, Unicode pictographs, arrows, dingbats, or decorative special characters are used as UI icons
+- [ ] No duplicated inline SVG paths or parallel icon abstractions were introduced
+- [ ] Icon-only controls have accessible names and visible keyboard focus
+- [ ] Icon enum IDs and SVG symbol IDs match; text metadata methods still return strings and icon accessors return `IconName`
+- [ ] The SVG sprite is explicitly copied by Trunk and `dist/icons.svg` exists; check the browser Network panel for sprite 404s if all icons appear blank
 - [ ] No hardcoded UI colors — use Tailwind theme utilities or project CSS variables
 - [ ] No inline styles in Rust `view!` macro (use CSS classes)
 - [ ] All new components have `///` doc comments

@@ -1,3 +1,4 @@
+use crate::components::icons::{Icon, IconName};
 use leptos::prelude::*;
 
 /// Generic editor component with a textarea and line numbers.
@@ -43,7 +44,7 @@ pub fn Editor(
     view! {
         <div class="flex h-full flex-col overflow-hidden w-full">
             <div class="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2">
-                <span class="font-medium text-[var(--text-primary)]"><span class="mr-2" aria-hidden="true">"✎"</span>{title}</span>
+                <span class="font-medium text-[var(--text-primary)]"><Icon name=IconName::Pencil class="mr-2 inline-block h-4 w-4 align-[-2px]" />{title}</span>
                 <span class="text-xs text-[var(--text-secondary)]">{move || format!("{} lines · {} chars", line_count(), char_count())}</span>
             </div>
             <div class="flex flex-1 overflow-hidden min-h-0">

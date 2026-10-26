@@ -7,6 +7,7 @@ use crate::application::ports::TimeProvider;
 use crate::application::services::time::TimeService;
 use crate::domain::time::{CountdownState, StopwatchState, TimestampDirection, TimestampUnit};
 use crate::features::tools::time::state::{ClockEntry, TimeState, TimeTab};
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 use crate::infrastructure::time::{local_timezone, BrowserTimeProvider};
 
@@ -131,7 +132,7 @@ fn WorldClock(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView 
                                     <span class="text-xs text-[var(--text-secondary)]">{timezone.clone()}</span>
                                 </div>
                                 <button type="button" class="rounded-md border border-[var(--border-color)] px-2 py-1 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title="Remove clock" aria-label=format!("Remove {city}") on:click=move |_| state.clocks.update(|clocks| if clocks.len() > 1 { clocks.remove(index); })>
-                                    "×"
+                                    <Icon name=IconName::Close class="h-4 w-4" />
                                 </button>
                             </div>
                             <div class="mt-3 font-mono text-2xl" aria-live="polite">{move || provider.format_datetime(state.tick.get(), &timezone).unwrap_or_else(|_| "Unavailable".into())}</div>
@@ -312,7 +313,7 @@ fn Timestamp(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView {
                 <div>
                     <label class="mb-1 block text-sm font-medium" for="timestamp-direction">"Conversion"</label>
                     <select id="timestamp-direction" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" prop:value=move || if state.timestamp_direction.get() == TimestampDirection::TimestampToDateTime { "to-date" } else { "to-timestamp" } on:change=move |ev| state.timestamp_direction.set(if event_target_value(&ev) == "to-date" { TimestampDirection::TimestampToDateTime } else { TimestampDirection::DateTimeToTimestamp })>
-                        <option value="to-date">"Unix Timestamp → Date/Time"</option><option value="to-timestamp">"Date/Time → Unix Timestamp"</option>
+                        <option value="to-date">"Unix Timestamp to Date/Time"</option><option value="to-timestamp">"Date/Time to Unix Timestamp"</option>
                     </select>
                 </div>
                 <div>

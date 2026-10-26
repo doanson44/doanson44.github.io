@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
 use super::data::{Education, Experience, SkillCategory};
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 
 /// Renders a labelled CV section with semantic heading structure.
@@ -60,7 +61,7 @@ pub fn ExperienceCard(experience: Experience) -> impl IntoView {
                         <ul class="mt-2 grid gap-1 text-sm text-[var(--text-secondary)] sm:grid-cols-2">
                             {experience.projects.into_iter().map(|project| view! {
                                 <li class="flex gap-2">
-                                    <span class="text-[var(--accent)]" aria-hidden="true">"•"</span>
+                                    <Icon name=IconName::List class="text-[var(--accent)]" />
                                     <span>{project}</span>
                                 </li>
                             }).collect_view()}

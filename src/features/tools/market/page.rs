@@ -1,3 +1,4 @@
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 use leptos::prelude::*;
 use leptos_i18n::t_string;
@@ -101,7 +102,7 @@ pub fn MarketPage() -> impl IntoView {
             <header class="flex shrink-0 flex-col gap-2 border-b border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="m-0 text-base font-semibold text-[var(--text-primary)]">
-                        <span class="mr-2 text-[var(--accent)]" aria-hidden="true">"◈"</span>
+                        <Icon name=IconName::Market class="mr-2 text-[var(--accent)]" />
                         {move || t_string!(i18n, nav_market)}
                     </h1>
                     <span class="text-xs text-[var(--text-secondary)]" aria-live="polite">
@@ -145,7 +146,7 @@ pub fn MarketPage() -> impl IntoView {
                                     aria-label=move || t_string!(i18n, common_clear)
                                     on:click=move |_| search.set(String::new())
                                 >
-                                    "×"
+                                    <Icon name=IconName::Close class="h-4 w-4" />
                                 </button>
                             }.into_any()
                         }}
@@ -177,12 +178,12 @@ pub fn MarketPage() -> impl IntoView {
 
             {move || state.error.get().map(|error| view! {
                 <div class="flex shrink-0 items-start gap-2 border-b border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">
-                    <span aria-hidden="true">"!"</span><span>{error}</span>
+                    <Icon name=IconName::Info /><span>{error}</span>
                 </div>
             })}
             {move || state.analysis_error.get().map(|error| view! {
                 <div class="flex shrink-0 items-start gap-2 border-b border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">
-                    <span aria-hidden="true">"!"</span><span>{error}</span>
+                    <Icon name=IconName::Info /><span>{error}</span>
                 </div>
             })}
 
@@ -261,7 +262,7 @@ pub fn MarketPage() -> impl IntoView {
                                     aria-label=move || t_string!(i18n, common_close)
                                     on:click=move |_| state.close_analysis()
                                 >
-                                    "×"
+                                    <Icon name=IconName::Close class="h-4 w-4" />
                                 </button>
                             </header>
                             <div class="min-h-0 flex-1 overflow-auto p-4">
@@ -361,7 +362,7 @@ fn market_analysis_view(
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_structure_section)}</h3>
-                <p class="m-0">{result.market_structure.structure_sequence.join(" → ")}</p>
+                <p class="m-0">{result.market_structure.structure_sequence.join(" -> ")}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_levels_section)}</h3>
@@ -630,7 +631,7 @@ fn pin_button(
             aria-label=move || if is_pinned.get() { t_string!(i18n, market_unpin) } else { t_string!(i18n, market_pin) }
             on:click=move |_| state.toggle_pin(&symbol)
         >
-            {move || if is_pinned.get() { "★" } else { "☆" }}
+            {move || if is_pinned.get() { view! { <Icon name=IconName::Star class="h-5 w-5" /> }.into_any() } else { view! { <Icon name=IconName::StarOff class="h-5 w-5" /> }.into_any() }}
         </button>
     }
 }
@@ -655,7 +656,7 @@ fn mobile_sort_button(
             aria-label=move || format!("{} {}", t_string!(i18n, market_sort), market_sort_label(i18n, key))
         >
             {move || if sort.get() == selected {
-                format!("{} {}", market_sort_label(i18n, key), if descending.get() { "↓" } else { "↑" })
+                format!("{} {}", market_sort_label(i18n, key), if descending.get() { "DESC" } else { "ASC" })
             } else {
                 market_sort_label(i18n, key)
             }}
@@ -708,9 +709,9 @@ fn sortable_header(
             >
                 <span>{move || market_sort_label(i18n, key)}</span>
                 {move || if sort.get() == selected {
-                    view! { <span aria-hidden="true">{if descending.get() { "↓" } else { "↑" }}</span> }.into_any()
+                    if descending.get() { view! { <Icon name=IconName::ArrowDown class="h-3.5 w-3.5" /> }.into_any() } else { view! { <Icon name=IconName::ArrowUp class="h-3.5 w-3.5" /> }.into_any() }
                 } else {
-                    view! { <span class="text-[var(--text-secondary)] opacity-50" aria-hidden="true">"↕"</span> }.into_any()
+                    view! { <Icon name=IconName::ArrowUpDown class="text-[var(--text-secondary)] opacity-50" /> }.into_any()
                 }}
             </button>
         </th>

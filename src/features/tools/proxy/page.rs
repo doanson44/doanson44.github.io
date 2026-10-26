@@ -1,3 +1,4 @@
+use crate::components::icons::{Icon, IconName};
 use leptos::prelude::*;
 
 use crate::components::tool_layout::{ToolDivider, ToolPanel, ToolPanelSide, ToolSplit};
@@ -30,7 +31,7 @@ pub fn ProxyPage() -> impl IntoView {
         <div class="flex flex-grow flex-col overflow-hidden">
             <header class="flex shrink-0 flex-col gap-1 border-b border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
                 <h1 class="m-0 text-base font-semibold text-[var(--text-primary)]">
-                    <span class="mr-2 text-[var(--accent)]" aria-hidden="true">"↗"</span>
+                    <Icon name=IconName::ExternalLink class="mr-2 text-[var(--accent)]" />
                     "HTTP Proxy Playground"
                 </h1>
                 <p class="m-0 text-sm text-[var(--text-secondary)]">
@@ -40,7 +41,7 @@ pub fn ProxyPage() -> impl IntoView {
 
             {move || state.error.get().map(|error| view! {
                 <div class="flex shrink-0 items-start gap-2 border-b border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">
-                    <span aria-hidden="true">"!"</span>
+                    <Icon name=IconName::Info />
                     <span>{error}</span>
                 </div>
             })}
