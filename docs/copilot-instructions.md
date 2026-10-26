@@ -66,6 +66,16 @@ cargo clippy --target wasm32-unknown-unknown -- -D warnings
 trunk build --release
 ```
 
+## Shared SVG Icon Rules (Mandatory for Every Agent)
+
+- Use the shared project icon system: `src/components/icons.rs` (`Icon`, `IconName`) and `public/icons.svg`. Import `Icon` and `IconName` from `crate::components::icons`.
+- Do not use emoji, Unicode pictographs, arrows, dingbats, or decorative special characters as UI icons. Use a semantic `IconName` instead. This rule is about UI/iconography; normal language, code samples, and user-authored content may contain Unicode.
+- Do not add icon fonts, external icon CSS packages, duplicated inline SVG path markup in feature pages, or one-off icon systems.
+- Before changing an icon, inspect the function signature and expected type. Keep textual metadata as text: methods returning `&'static str` (such as `slug()` and `title()`) must return string literals; methods returning `IconName` (such as `icon()`) must return `IconName::Variant`. Never blindly replace a text value with an icon enum or vice versa.
+- When adding an icon, update both the `IconName` enum / ID mapping and the matching `<symbol>` in `public/icons.svg`. Keep IDs unique, symbols monochrome and based on `currentColor`, and preserve the component's accessibility behavior.
+- Icon-only buttons and links must have an accessible name (visible text, `aria-label`, or appropriate `title`) and visible keyboard focus. Decorative icons must not duplicate the accessible name.
+- After icon refactors, inspect changed files for leftover UI glyphs and type mismatches; run the repository validation commands that are available. Report each check as passed, failed, or not run—never imply compilation was verified without running it.
+
 ## Anti-Patterns
 - Domain importing browser/framework APIs
 - Components bypassing Application services
