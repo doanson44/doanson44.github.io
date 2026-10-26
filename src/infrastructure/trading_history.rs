@@ -9,10 +9,10 @@ use web_sys::{Headers, Request, RequestInit, RequestMode, Response};
 use crate::application::ports::TradingHistoryProvider;
 use crate::domain::trading::TradingSnapshot;
 use crate::domain::trading_history::{
+use crate::constants::PROXY_ENDPOINT;
     FundingSettlement, HistoricalCandle, TradingMarketHistory,
 };
 
-const PROXY_ENDPOINT: &str = "https://doanson44-forward-proxy.work-sontd.workers.dev/api/proxy";
 const MEXC_FUTURES_API: &str = "https://contract.mexc.com/api/v1/contract";
 const CANDLES_PER_REQUEST: i64 = 1_500;
 const MAX_FUNDING_PAGES: u32 = 100;
