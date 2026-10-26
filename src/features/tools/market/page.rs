@@ -178,12 +178,12 @@ pub fn MarketPage() -> impl IntoView {
 
             {move || state.error.get().map(|error| view! {
                 <div class="flex shrink-0 items-start gap-2 border-b border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">
-                    <span aria-hidden="true">"!"</span><span>{error}</span>
+                    <Icon name=IconName::Info /><span>{error}</span>
                 </div>
             })}
             {move || state.analysis_error.get().map(|error| view! {
                 <div class="flex shrink-0 items-start gap-2 border-b border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-sm text-[var(--danger)]" role="alert">
-                    <span aria-hidden="true">"!"</span><span>{error}</span>
+                    <Icon name=IconName::Info /><span>{error}</span>
                 </div>
             })}
 
