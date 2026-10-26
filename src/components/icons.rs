@@ -151,6 +151,11 @@ pub fn Icon(
     #[prop(optional, into)] class: String,
 ) -> impl IntoView {
     let href = format!("/icons.svg#{}", name.as_str());
+    let class = if class.is_empty() {
+        "inline-block h-4 w-4 shrink-0".to_string()
+    } else {
+        class
+    };
 
     view! {
         <svg
