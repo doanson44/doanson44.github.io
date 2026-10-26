@@ -1,4 +1,5 @@
 #![allow(clippy::possible_missing_else)]
+use crate::components::icons::{Icon, IconName};
 use crate::application::services::games::{BreakoutService, PongService};
 use crate::domain::games::{
     connect_four_ai_column, connect_four_drop, connect_four_winner, hangman_word, has_move_2048,
@@ -3105,7 +3106,7 @@ fn board_flappy(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
                     }
                     title="Flap the bird"
                 >
-                    <span class="mr-1" aria-hidden="true">"↗"</span>
+                    <Icon name=IconName::ExternalLink class="mr-1" />
                     "Flap"
                 </button>
                 <button
