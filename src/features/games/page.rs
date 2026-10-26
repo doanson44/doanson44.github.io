@@ -123,7 +123,7 @@ impl GameKind {
     }
     fn slug(self) -> &'static str {
         match self {
-            Self::TwentyFortyEight => IconName::Grid,
+            Self::TwentyFortyEight => "2048",
             Self::TicTacToe => "tic-tac-toe",
             Self::Minesweeper => "minesweeper",
             Self::Snake => "snake",
@@ -148,7 +148,7 @@ impl GameKind {
 
     fn title(self) -> &'static str {
         match self {
-            Self::TwentyFortyEight => IconName::Grid,
+            Self::TwentyFortyEight => "2048",
             Self::TicTacToe => "Tic-Tac-Toe",
             Self::Minesweeper => "Minesweeper",
             Self::Snake => "Snake",
@@ -188,7 +188,7 @@ impl GameKind {
     }
     fn icon(self) -> IconName {
         match self {
-            Self::TwentyFortyEight => "2048",
+            Self::TwentyFortyEight => IconName::Grid,
             Self::TicTacToe => IconName::Grid,
             Self::Minesweeper => IconName::Bomb,
             Self::Snake => IconName::Snake,
