@@ -146,7 +146,7 @@ pub fn MarketPage() -> impl IntoView {
                                     aria-label=move || t_string!(i18n, common_clear)
                                     on:click=move |_| search.set(String::new())
                                 >
-                                    "×"
+                                    <Icon name=IconName::Close class="h-4 w-4" />
                                 </button>
                             }.into_any()
                         }}
@@ -262,7 +262,7 @@ pub fn MarketPage() -> impl IntoView {
                                     aria-label=move || t_string!(i18n, common_close)
                                     on:click=move |_| state.close_analysis()
                                 >
-                                    "×"
+                                    <Icon name=IconName::Close class="h-4 w-4" />
                                 </button>
                             </header>
                             <div class="min-h-0 flex-1 overflow-auto p-4">
