@@ -148,7 +148,7 @@ impl GameKind {
 
     fn title(self) -> &'static str {
         match self {
-            Self::TwentyFortyEight => "2048",
+            Self::TwentyFortyEight => IconName::Grid,
             Self::TicTacToe => "Tic-Tac-Toe",
             Self::Minesweeper => "Minesweeper",
             Self::Snake => "Snake",
@@ -250,8 +250,8 @@ fn GameGrid() -> impl IntoView {
                             href=href
                             class="group flex min-h-40 flex-col rounded-xl border border-[var(--border-color)] bg-[var(--surface)] p-5 text-left transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
                         >
-                            <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-color)] text-xs font-bold text-[var(--accent)]">
-                                {game.icon()}
+                            <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border-color)] text-[var(--accent)]">
+                                <Icon name=game.icon() class="h-6 w-6" />
                             </span>
                             <span class="mt-4 text-base font-semibold text-[var(--text-primary)]">
                                 {move || localized_game_title(game)}
@@ -259,7 +259,7 @@ fn GameGrid() -> impl IntoView {
                             <span class="mt-1 text-sm text-[var(--text-secondary)]">
                                 {move || localized_game_description(game)}
                             </span>
-                            <span class="mt-auto pt-4 text-xs font-medium text-[var(--accent)]">"Play →"</span>
+                            <span class="mt-auto pt-4 text-xs font-medium text-[var(--accent)]">"Play"</span>
                         </a>
                     }
                 })
@@ -1197,7 +1197,7 @@ fn board_snake(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
     view! {
         <div class="mx-auto max-w-sm space-y-3">
             <button type="button" class="w-full rounded-md border border-[var(--border-color)] py-2 text-sm" on:click=move|_|toggle()>
-                {move || if game_over.get() { "New Game (Space)" } else if running.get() { "⏸ Pause (Space)" } else { "▶ Start (Space)" }}
+                {move || if game_over.get() { "New Game (Space)" } else if running.get() { "Pause (Space)" } else { "Start (Space)" }}
             </button>
             <div class="game-grid-10 grid gap-0.5">
                 {(0..rows).flat_map(|y| (0..cols).map(move |x| view! {
