@@ -362,7 +362,7 @@ fn market_analysis_view(
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_structure_section)}</h3>
-                <p class="m-0">{result.market_structure.structure_sequence.join(" → ")}</p>
+                <p class="m-0">{result.market_structure.structure_sequence.join(" -> ")}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_levels_section)}</h3>
