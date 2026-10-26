@@ -313,7 +313,7 @@ fn Timestamp(state: TimeState, provider: BrowserTimeProvider) -> impl IntoView {
                 <div>
                     <label class="mb-1 block text-sm font-medium" for="timestamp-direction">"Conversion"</label>
                     <select id="timestamp-direction" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/25" prop:value=move || if state.timestamp_direction.get() == TimestampDirection::TimestampToDateTime { "to-date" } else { "to-timestamp" } on:change=move |ev| state.timestamp_direction.set(if event_target_value(&ev) == "to-date" { TimestampDirection::TimestampToDateTime } else { TimestampDirection::DateTimeToTimestamp })>
-                        <option value="to-date">"Unix Timestamp → Date/Time"</option><option value="to-timestamp">"Date/Time → Unix Timestamp"</option>
+                        <option value="to-date">"Unix Timestamp to Date/Time"</option><option value="to-timestamp">"Date/Time to Unix Timestamp"</option>
                     </select>
                 </div>
                 <div>
