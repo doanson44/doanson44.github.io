@@ -1263,7 +1263,7 @@ fn board_sudoku(score: RwSignal<u32>, status: RwSignal<String>) -> AnyView {
         board.set(b);
         if check_complete(&b) {
             score.update(|s| *s += 50);
-            status.set("🎉 Puzzle solved!".into());
+            status.set("Puzzle solved!".into());
         } else {
             let errors = cf.iter().filter(|&&v| v).count();
             if errors > 0 {
