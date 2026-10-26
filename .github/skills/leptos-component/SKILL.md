@@ -71,6 +71,15 @@ pub mod <name>;
 | Conditional view | `{move || if condition { view! {...} } else { view! {...} }}` |
 | Conditional class | `class=("class-name", move || condition)` |
 
+## Shared SVG Icons (Mandatory)
+
+- Use `crate::components::icons::{Icon, IconName}` for UI icons; never type an emoji, Unicode pictograph, arrow, dingbat, or decorative special character as a substitute for an icon.
+- Keep user-facing text and metadata as strings. Check each function's declared return type before editing: `&'static str` metadata returns string literals, while icon accessors return `IconName::Variant`. Do not mix these types during mechanical replacements.
+- Add new icons to both the `IconName` enum/ID mapping and `public/icons.svg`; keep IDs unique and use monochrome `currentColor` symbols.
+- Do not add icon fonts, external icon CSS dependencies, duplicated inline SVG paths in feature pages, or parallel icon abstractions.
+- Give icon-only controls an accessible name and visible focus. Treat the icon as decorative when the control already has a name.
+- After icon changes, inspect the diff for leftover UI glyphs and run the available Rust/WASM validation checks; state clearly which checks were not run.
+
 ## Tailwind CSS Conventions
 
 - Use Tailwind utilities directly in `view!` for layout, spacing, typography, controls, cards, borders, and responsive behavior.
