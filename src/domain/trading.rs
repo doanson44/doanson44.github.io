@@ -57,6 +57,82 @@ pub fn estimate_liquidation_price(
     estimated_price.is_finite().then_some(estimated_price)
 }
 
+/// Assumed maintenance-margin rate for paper Cross Margin estimates.
+pub const PAPER_MAINTENANCE_MARGIN_RATE: f64 = 0.005;
+
+/// Estimates a position's liquidation price using the shared paper account equity.
+/// Other open positions are valued at their latest supplied prices, or entry prices
+/// when no market price is available. This is an approximation, not an exchange quote.
+pub fn estimate_cross_margin_liquidation_price(
+    snapshot: &TradingSnapshot,
+    prices: &HashMap<String, f64>,
+    symbol: &str,
+) -> Option<f64> {
+    let target = snapshot
+        .portfolio
+        .positions
+        .iter()
+        .find(|position| position.symbol == symbol)?;
+
+    if !target.quantity.is_finite()
+        || target.quantity <= 0.0
+        || !target.entry_price.is_finite()
+        || target.entry_price <= 0.0
+    {
+        return None;
+    }
+
+    let mut equity_without_target_pnl = snapshot.portfolio.cash;
+    let mut other_maintenance_margin = 0.0;
+
+    for position in &snapshot.portfolio.positions {
+        if !position.margin.is_finite() || !position.quantity.is_finite() || position.quantity <= 0.0 {
+            return None;
+        }
+
+        equity_without_target_pnl += position.margin;
+        if position.symbol == target.symbol {
+            continue;
+        }
+
+        let mark_price = prices
+            .get(&position.symbol)
+            .copied()
+            .filter(|price| price.is_finite() && *price > 0.0)
+            .unwrap_or(position.entry_price);
+        if !mark_price.is_finite() || mark_price <= 0.0 {
+            return None;
+        }
+
+        let pnl = match position.side {
+            PositionSide::Long => position.quantity * (mark_price - position.entry_price),
+            PositionSide::Short => position.quantity * (position.entry_price - mark_price),
+        };
+        equity_without_target_pnl += pnl;
+        other_maintenance_margin +=
+            position.quantity * mark_price * PAPER_MAINTENANCE_MARGIN_RATE;
+    }
+
+    let quantity = target.quantity;
+    let entry_value = quantity * target.entry_price;
+    let numerator = match target.side {
+        PositionSide::Long => {
+            other_maintenance_margin - equity_without_target_pnl + entry_value
+        }
+        PositionSide::Short => {
+            equity_without_target_pnl + entry_value - other_maintenance_margin
+        }
+    };
+    let denominator = quantity
+        * match target.side {
+            PositionSide::Long => 1.0 - PAPER_MAINTENANCE_MARGIN_RATE,
+            PositionSide::Short => 1.0 + PAPER_MAINTENANCE_MARGIN_RATE,
+        };
+    let estimated_price = numerator / denominator;
+
+    (estimated_price.is_finite() && estimated_price > 0.0).then_some(estimated_price)
+}
+
 /// A funding settlement returned by MEXC for a real position.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct RealFundingRecord {
@@ -585,6 +661,48 @@ mod tests {
             estimate_liquidation_price(100.0, 10.0, PositionSide::Short),
             Some(110.00000000000001)
         );
+    }
+
+    #[test]
+    fn cross_margin_liquidation_uses_shared_account_equity() {
+        let mut settings = settings();
+        settings.leverage = 10.0;
+        settings.trade_allocation_percent = 100.0;
+        let mut portfolio = Portfolio::new(settings.initial_capital);
+        portfolio.buy(&settings, "BTC_USDT", 100.0, 1).unwrap();
+        let snapshot = TradingSnapshot {
+            settings,
+            portfolio,
+        };
+
+        let estimate = estimate_cross_margin_liquidation_price(
+            &snapshot,
+            &HashMap::new(),
+            "BTC_USDT",
+        )
+        .unwrap();
+        assert!(estimate > 90.0 && estimate < 91.0);
+    }
+
+    #[test]
+    fn cross_margin_liquidation_reflects_unallocated_account_capital() {
+        let mut settings = settings();
+        settings.leverage = 10.0;
+        settings.trade_allocation_percent = 50.0;
+        let mut portfolio = Portfolio::new(settings.initial_capital);
+        portfolio.buy(&settings, "BTC_USDT", 100.0, 1).unwrap();
+        let snapshot = TradingSnapshot {
+            settings,
+            portfolio,
+        };
+
+        let estimate = estimate_cross_margin_liquidation_price(
+            &snapshot,
+            &HashMap::new(),
+            "BTC_USDT",
+        )
+        .unwrap();
+        assert!(estimate < 90.0);
     }
 
     #[test]
