@@ -1,3 +1,4 @@
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 use leptos::prelude::*;
 use leptos_i18n::t_string;
@@ -101,7 +102,7 @@ pub fn MarketPage() -> impl IntoView {
             <header class="flex shrink-0 flex-col gap-2 border-b border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="m-0 text-base font-semibold text-[var(--text-primary)]">
-                        <span class="mr-2 text-[var(--accent)]" aria-hidden="true">"◈"</span>
+                        <Icon name=IconName::Market class="mr-2 text-[var(--accent)]" />
                         {move || t_string!(i18n, nav_market)}
                     </h1>
                     <span class="text-xs text-[var(--text-secondary)]" aria-live="polite">
@@ -710,7 +711,7 @@ fn sortable_header(
                 {move || if sort.get() == selected {
                     view! { <span aria-hidden="true">{if descending.get() { "↓" } else { "↑" }}</span> }.into_any()
                 } else {
-                    view! { <span class="text-[var(--text-secondary)] opacity-50" aria-hidden="true">"↕"</span> }.into_any()
+                    view! { <Icon name=IconName::ArrowUpDown class="text-[var(--text-secondary)] opacity-50" /> }.into_any()
                 }}
             </button>
         </th>
