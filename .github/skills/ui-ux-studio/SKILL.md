@@ -76,6 +76,7 @@ Tailwind utilities should reference these tokens when a semantic project color i
 - Use `Icon` and `IconName` from `src/components/icons.rs` with the symbols in `public/icons.svg`.
 - Never use emoji, Unicode pictographs, arrows, dingbats, or decorative special characters as UI icons. Do not introduce icon fonts or external icon CSS libraries.
 - Prefer a semantic existing icon. If one is missing, add the enum/ID mapping and matching SVG symbol together; symbols must use `currentColor` and IDs must be unique.
+- Verify `index.html` explicitly copies `public/icons.svg` into Trunk output and `dist/icons.svg` exists. If all icons are blank, check asset packaging and the browser Network panel for 404s before editing individual symbols.
 - Icon-only controls need an accessible name and visible focus. Avoid duplicating accessible text in decorative icons.
 - Review changed UI code for leftover glyph icons and verify both themes and responsive behavior after replacement.
 
