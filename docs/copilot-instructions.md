@@ -72,7 +72,8 @@ trunk build --release
 - Do not use emoji, Unicode pictographs, arrows, dingbats, or decorative special characters as UI icons. Use a semantic `IconName` instead. This rule is about UI/iconography; normal language, code samples, and user-authored content may contain Unicode.
 - Do not add icon fonts, external icon CSS packages, duplicated inline SVG path markup in feature pages, or one-off icon systems.
 - Before changing an icon, inspect the function signature and expected type. Keep textual metadata as text: methods returning `&'static str` (such as `slug()` and `title()`) must return string literals; methods returning `IconName` (such as `icon()`) must return `IconName::Variant`. Never blindly replace a text value with an icon enum or vice versa.
-- When adding an icon, update both the `IconName` enum / ID mapping and the matching `<symbol>` in `public/icons.svg`. Keep IDs unique, symbols monochrome and based on `currentColor`, and preserve the component's accessibility behavior.
+- When adding an icon, update both the `IconName` enum / ID mapping and the matching `<symbol>` in `public/icons.svg`.
+- Explicitly include runtime static assets in Trunk output with `data-trunk rel="copy-file"` in `index.html` when needed; do not assume `public/` files are emitted automatically. Verify `dist/icons.svg` exists and check browser network errors for 404s. Keep IDs unique, symbols monochrome and based on `currentColor`, and preserve the component's accessibility behavior.
 - Icon-only buttons and links must have an accessible name (visible text, `aria-label`, or appropriate `title`) and visible keyboard focus. Decorative icons must not duplicate the accessible name.
 - After icon refactors, inspect changed files for leftover UI glyphs and type mismatches; run the repository validation commands that are available. Report each check as passed, failed, or not run—never imply compilation was verified without running it.
 
