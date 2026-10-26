@@ -8,8 +8,8 @@ use web_sys::{Headers, Request, RequestInit, RequestMode, Response};
 
 use crate::application::ports::TradingHistoryProvider;
 use crate::domain::trading::TradingSnapshot;
-use crate::domain::trading_history::{
 use crate::constants::PROXY_ENDPOINT;
+use crate::domain::trading_history::{
     FundingSettlement, HistoricalCandle, TradingMarketHistory,
 };
 
