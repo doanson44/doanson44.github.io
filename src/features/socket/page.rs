@@ -376,11 +376,11 @@ fn SortHeader(
     let is_active = move || state.sort_mode.get() == mode;
     let indicator = move || {
         if !is_active() {
-            " ↕"
+            view! { <Icon name=IconName::ArrowUpDown class="inline-block h-3 w-3" /> }.into_any()
         } else {
             match state.sort_direction.get() {
-                SocketSortDirection::Ascending => " ↑",
-                SocketSortDirection::Descending => " ↓",
+                SocketSortDirection::Ascending => view! { <Icon name=IconName::ArrowUp class="inline-block h-3 w-3" /> }.into_any(),
+                SocketSortDirection::Descending => view! { <Icon name=IconName::ArrowDown class="inline-block h-3 w-3" /> }.into_any(),
             }
         }
     };
@@ -423,8 +423,8 @@ fn socket_mobile_sort_button(
         >
             {move || if state.sort_mode.get() == selected {
                 format!("{} {}", socket_sort_label(i18n, key), match state.sort_direction.get() {
-                    SocketSortDirection::Ascending => "↑",
-                    SocketSortDirection::Descending => "↓",
+                    SocketSortDirection::Ascending => "ASC",
+                    SocketSortDirection::Descending => "DESC",
                 })
             } else {
                 socket_sort_label(i18n, key)
