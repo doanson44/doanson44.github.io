@@ -36,6 +36,7 @@ view! {
 3. Do not introduce icon fonts, external icon CSS dependencies, duplicate inline SVG paths in feature pages, or a parallel icon abstraction.
 4. Before editing an icon mapping, read the function signature and preserve the return type. Text metadata such as `slug()` and `title()` returning `&'static str` must remain string literals. Icon accessors returning `IconName` must return variants such as `IconName::Grid`. Never substitute one type for the other.
 5. When adding an icon, add its semantic variant and stable kebab-case ID to `IconName` / `as_str()`, then add exactly one matching `<symbol>` to `public/icons.svg`. Keep IDs unique and symbols monochrome using `currentColor`.
+6. Ensure Trunk emits the sprite: keep `<link data-trunk rel="copy-file" href="public/icons.svg" />` in `index.html`. Do not assume the `public/` directory is copied automatically. After building, verify `dist/icons.svg` exists and the browser can load `/icons.svg#<id>` without 404.
 6. Preserve accessibility: icon-only controls need an accessible name and visible keyboard focus; decorative icons must not duplicate the control's accessible name.
 7. When replacing glyphs, inspect the entire changed diff for remaining UI glyphs, mismatched types, and accidental changes to text content.
 
