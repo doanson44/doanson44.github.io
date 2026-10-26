@@ -2,6 +2,7 @@ use std::{collections::HashMap, rc::Rc};
 
 use leptos::prelude::*;
 
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 
 use crate::application::ports::{
@@ -667,7 +668,7 @@ fn SocketAnalysisModal(
                         <h2 class="m-0 text-lg font-semibold">{format!("{} · {}", result.asset.symbol, result.asset.timeframe)}</h2>
                         <p class="m-0 mt-1 text-xs text-[var(--text-secondary)]">{result.engine.name.clone()}</p>
                     </div>
-                    <button type="button" class="min-h-10 min-w-10 rounded-md border border-[var(--border-color)] px-2 text-lg text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=move || t_string!(i18n, common_close) aria-label=move || t_string!(i18n, common_close) on:click=move |_| state.close_analysis()>"×"</button>
+                    <button type="button" class="min-h-10 min-w-10 rounded-md border border-[var(--border-color)] px-2 text-lg text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]" title=move || t_string!(i18n, common_close) aria-label=move || t_string!(i18n, common_close) on:click=move |_| state.close_analysis()><Icon name=IconName::Close class="h-4 w-4" /></button>
                 </header>
                 <div class="min-h-0 overflow-y-auto p-4">
                     <div class="grid gap-3 md:grid-cols-2">
@@ -969,7 +970,7 @@ fn empty_state(mode: SocketViewMode) -> impl IntoView {
         SocketViewMode::All => t_string!(i18n, socket_waiting),
         SocketViewMode::PinnedOnly => t_string!(i18n, socket_no_pinned),
     };
-    view! { <div class="flex h-full flex-col items-center justify-center py-5 text-[var(--text-secondary)]"><span class="mb-2 text-2xl" aria-hidden="true">"◌"</span><span>{text}</span></div> }
+    view! { <div class="flex h-full flex-col items-center justify-center py-5 text-[var(--text-secondary)]"><Icon name=IconName::Refresh class="mb-2 text-2xl" /><span>{text}</span></div> }
 }
 
 fn view_button_class(active: bool) -> &'static str {
