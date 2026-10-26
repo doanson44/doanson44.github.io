@@ -1,6 +1,8 @@
 use leptos::prelude::*;
 
-use crate::domain::trading::{estimate_liquidation_price, ExecutionMode, PortfolioSummary, PositionSide};
+use crate::domain::trading::{
+    estimate_liquidation_price, ExecutionMode, PortfolioSummary, PositionSide,
+};
 use crate::features::socket::state::{SocketState, TradingSettingsInput};
 use crate::i18n::*;
 
@@ -250,7 +252,7 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                     }
                 >
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[600px] text-sm">
+                        <table class="w-full min-w-[760px] text-sm">
                             <caption class="sr-only">
                                 {move || t_string!(i18n, socket_holdings)}
                             </caption>

@@ -450,27 +450,32 @@ fn parse_funding_records_response(
         }));
     }
 
-    let records = response.data.result_list.into_iter().map(|record| {
-        let side = if record.position_type == 2 {
-            PositionSide::Short
-        } else {
-            PositionSide::Long
-        };
-        let cash_flow_direction = match side {
-            PositionSide::Long => -record.rate.signum(),
-            PositionSide::Short => record.rate.signum(),
-        };
-        RealFundingRecord {
-            id: record.id,
-            symbol: record.symbol,
-            position_id: record.position_id,
-            side,
-            position_value: record.position_value,
-            funding_amount: record.funding.abs() * cash_flow_direction,
-            funding_rate: record.rate,
-            settle_time_ms: record.settle_time_ms,
-        }
-    }).collect();
+    let records = response
+        .data
+        .result_list
+        .into_iter()
+        .map(|record| {
+            let side = if record.position_type == 2 {
+                PositionSide::Short
+            } else {
+                PositionSide::Long
+            };
+            let cash_flow_direction = match side {
+                PositionSide::Long => -record.rate.signum(),
+                PositionSide::Short => record.rate.signum(),
+            };
+            RealFundingRecord {
+                id: record.id,
+                symbol: record.symbol,
+                position_id: record.position_id,
+                side,
+                position_value: record.position_value,
+                funding_amount: record.funding.abs() * cash_flow_direction,
+                funding_rate: record.rate,
+                settle_time_ms: record.settle_time_ms,
+            }
+        })
+        .collect();
     Ok((response.data.total_page, records))
 }
 
