@@ -26,6 +26,7 @@ Check the declared return type before changing icon-related code. Text metadata 
 
 1. Add a semantic variant to `IconName` and map it to a stable kebab-case ID in `as_str()`.
 2. Add exactly one matching `<symbol id="...">...</symbol>` to `public/icons.svg`.
+3. Ensure the sprite is copied into Trunk output by keeping `<link data-trunk rel="copy-file" href="public/icons.svg" />` in `index.html`. Do not assume files under `public/` are emitted automatically. Verify `dist/icons.svg` exists after building and `/icons.svg#<id>` does not return 404.
 3. Keep symbols monochrome and based on `currentColor` so they adapt to the active theme.
 4. Use the shared `Icon` component from feature and component code. Do not duplicate SVG markup in pages.
 5. Give icon-only buttons and links an accessible name using visible text, `aria-label`, or an appropriate `title`. The icon itself is decorative and hidden from assistive technology.
