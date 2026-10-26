@@ -504,7 +504,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                         title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_aria_title) }
                         aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria_label) } else { format!("Pin {}", symbol_aria_label) }
                         on:click=move |_| state.toggle_pin(&symbol_click)>
-                        {move || if is_pinned.get() { "★" } else { "☆" }}
+                        {move || if is_pinned.get() { view! { <Icon name=IconName::Star class="h-5 w-5" /> }.into_any() } else { view! { <Icon name=IconName::StarOff class="h-5 w-5" /> }.into_any() }}
                     </button>
                     <button type="button" class="min-h-9 rounded-md border border-[var(--success)]/60 px-2 text-xs font-bold text-[var(--success)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--success)]/40"
                         title=move || format!("Trade {}", trade_label_title)
@@ -597,7 +597,7 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
                         title=move || if is_pinned.get() { format!("Unpin {}", symbol_title) } else { format!("Pin {}", symbol_aria_title) }
                         aria-label=move || if is_pinned.get() { format!("Unpin {}", symbol_aria_label) } else { format!("Pin {}", symbol_aria_label) }
                         on:click=move |_| state.toggle_pin(&symbol_click)>
-                        {move || if is_pinned.get() { "★" } else { "☆" }}
+                        {move || if is_pinned.get() { view! { <Icon name=IconName::Star class="h-5 w-5" /> }.into_any() } else { view! { <Icon name=IconName::StarOff class="h-5 w-5" /> }.into_any() }}
                     </button>
                     <button type="button" class="min-h-11 rounded-md border border-[var(--success)]/60 px-3 text-xs font-bold text-[var(--success)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--success)]/40"
                         title=move || format!("Trade {}", trade_label_title)
@@ -691,7 +691,7 @@ fn SocketAnalysisModal(
                         </section>
                         <section class="rounded-md border border-[var(--border-color)] p-3">
                             <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_structure_section)}</h3>
-                            <p class="m-0">{if result.market_structure.structure_sequence.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.market_structure.structure_sequence.join(" → ") }}</p>
+                            <p class="m-0">{if result.market_structure.structure_sequence.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.market_structure.structure_sequence.join(" -> ") }}</p>
                             <p class="m-0 mt-1 text-sm text-[var(--text-secondary)]">{format!("ATR: {} · Volume: {:.2}", result.volatility.atr.map(|v| format!("{v:.4}")).unwrap_or_else(|| "N/A".to_string()), result.volume.current)}</p>
                         </section>
                     </div>
@@ -1018,8 +1018,8 @@ fn format_percent(value: Option<f64>) -> String {
 
 fn ranking_direction_label(direction: i8) -> &'static str {
     match direction {
-        1 => "LONG ↑",
-        -1 => "SHORT ↓",
+        1 => "LONG",
+        -1 => "SHORT",
         _ => "—",
     }
 }
