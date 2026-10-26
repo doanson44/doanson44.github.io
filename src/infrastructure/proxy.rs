@@ -5,8 +5,8 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::{Headers, Request, RequestInit, RequestMode, Response};
 
 use crate::application::ports::ProxyClient;
+use crate::constants::PROXY_ENDPOINT;
 
-const PROXY_ENDPOINT: &str = "https://doanson44-forward-proxy.work-sontd.workers.dev/api/proxy";
 
 /// Browser adapter for the external CORS/forward proxy.
 ///
