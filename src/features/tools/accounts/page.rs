@@ -1,3 +1,4 @@
+use crate::components::icons::{Icon, IconName};
 use gloo_timers::callback::{Interval, Timeout};
 use leptos::prelude::*;
 use wasm_bindgen::{JsCast, JsValue};
@@ -66,7 +67,7 @@ pub fn AccountManagerPage() -> impl IntoView {
             {move || state.message.get().map(|message| view! {
                 <div class="flex items-start justify-between gap-3 rounded-md border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-secondary)]" role="status">
                     <span>{message}</span>
-                    <button type="button" class="font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.message.set(None) aria-label="Dismiss message">"×"</button>
+                    <button type="button" class="font-semibold text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.message.set(None) aria-label="Dismiss message"><Icon name=IconName::Close class="h-4 w-4" /></button>
                 </div>
             })}
 
@@ -76,7 +77,7 @@ pub fn AccountManagerPage() -> impl IntoView {
                 } else {
                     "pointer-events-none fixed bottom-5 right-5 z-[100] flex max-w-[calc(100vw-2.5rem)] items-center gap-2 rounded-lg border border-[var(--success)]/40 bg-[var(--surface)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] shadow-xl opacity-0 translate-y-2 transition-all duration-300"
                 } role="status" aria-live="polite">
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--success)]/15 text-[var(--success)]" aria-hidden="true">"✓"</span>
+                    <Icon name=IconName::Check class="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--success)]/15 text-[var(--success)]" />
                     <span>{message}</span>
                 </div>
             })}
@@ -110,8 +111,8 @@ pub fn AccountManagerPage() -> impl IntoView {
                                 view! {
                                     <div class=move || if state.selected_project.get().as_deref() == Some(id_for_class.as_str()) { "flex items-start gap-1 rounded-md bg-[var(--accent)]/10 p-1 ring-1 ring-[var(--accent)]/40" } else { "flex items-start gap-1 rounded-md p-1 hover:bg-[var(--surface-hover)]" }>
                                         <div class="flex shrink-0 flex-col items-stretch gap-1">
-                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30" aria-label=move || format!("Move project {} up", project_by_id(&state, &id_for_move_up_label).map(|item| item.name).unwrap_or_default()) title="Move project up" disabled=move || state.projects.get().iter().position(|item| item.id == id_for_move_up_disabled).is_none_or(|index| index == 0) on:click=move |_| state.move_project(id_for_move_up.clone(), -1)>"↑"</button>
-                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30" aria-label=move || format!("Move project {} down", project_by_id(&state, &id_for_move_down_label).map(|item| item.name).unwrap_or_default()) title="Move project down" disabled=move || state.projects.get().iter().position(|item| item.id == id_for_move_down_disabled).is_none_or(|index| index + 1 >= state.projects.get().len()) on:click=move |_| state.move_project(id_for_move_down.clone(), 1)>"↓"</button>
+                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30" aria-label=move || format!("Move project {} up", project_by_id(&state, &id_for_move_up_label).map(|item| item.name).unwrap_or_default()) title="Move project up" disabled=move || state.projects.get().iter().position(|item| item.id == id_for_move_up_disabled).is_none_or(|index| index == 0) on:click=move |_| state.move_project(id_for_move_up.clone(), -1)><Icon name=IconName::ArrowUp class="h-4 w-4" /></button>
+                                        <button type="button" class="rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30" aria-label=move || format!("Move project {} down", project_by_id(&state, &id_for_move_down_label).map(|item| item.name).unwrap_or_default()) title="Move project down" disabled=move || state.projects.get().iter().position(|item| item.id == id_for_move_down_disabled).is_none_or(|index| index + 1 >= state.projects.get().len()) on:click=move |_| state.move_project(id_for_move_down.clone(), 1)><Icon name=IconName::ArrowDown class="h-4 w-4" /></button>
                                         </div>
                                         <button type="button" class="min-w-0 flex-1 rounded px-2 py-1 text-left text-sm text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]" on:click=move |_| state.select_project(id_for_select.clone())>
                                             <span class="block truncate font-semibold">{move || project_by_id(&state, &id_for_name).map(|item| item.name).unwrap_or_default()}</span>
