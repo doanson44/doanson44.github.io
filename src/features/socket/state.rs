@@ -658,10 +658,15 @@ impl SocketState {
     pub fn portfolio_summary(&self) -> PortfolioSummary {
         if self.execution_mode.get_untracked() == ExecutionMode::Real {
             let account = self.real_account.get_untracked().unwrap_or_default();
-            let holdings = self
-                .real_positions
-                .get_untracked()
-                .into_iter()
+            let real_positions = self.real_positions.get_untracked();
+            let total_funding = real_positions
+                .iter()
+                .flat_map(|position| position.funding_records.iter())
+                .map(|record| record.funding_amount)
+                .sum::<f64>();
+            let holdings = real_positions
+                .iter()
+                .cloned()
                 .map(|position| {
                     let current_price = self
                         .tickers
@@ -681,10 +686,16 @@ impl SocketState {
                     } else {
                         0.0
                     };
-                    let pnl = match position.side {
+                    let price_pnl = match position.side {
                         PositionSide::Long => entry_notional * price_change,
                         PositionSide::Short => -entry_notional * price_change,
                     };
+                    let funding_pnl = position
+                        .funding_records
+                        .iter()
+                        .map(|record| record.funding_amount)
+                        .sum::<f64>();
+                    let pnl = price_pnl + funding_pnl;
                     let market_value = entry_notional
                         * if position.open_average_price > 0.0 {
                             current_price / position.open_average_price
@@ -700,18 +711,17 @@ impl SocketState {
                     }
                 })
                 .collect::<Vec<_>>();
-            let realized_pnl = self
-                .real_positions
-                .get_untracked()
+            let realized_pnl = real_positions
                 .iter()
                 .map(|position| position.realized_pnl)
                 .sum::<f64>();
+            let unrealized_pnl = account.unrealized + total_funding;
             return PortfolioSummary {
                 cash: account.available_balance,
                 equity: account.equity,
-                total_pnl: account.unrealized + realized_pnl,
+                total_pnl: unrealized_pnl + realized_pnl,
                 realized_pnl,
-                unrealized_pnl: account.unrealized,
+                unrealized_pnl,
                 holdings,
             };
         }
@@ -759,7 +769,7 @@ impl SocketState {
             Rc::new(move |account_result| match account_result {
                 Ok(account) => {
                     account_signal.set(Some(account));
-                    MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+                    MexcFuturesTradingService::new(ProxyApi).fetch_positions_with_funding(
                         &api_url_for_positions,
                         &api_key_for_positions,
                         &api_secret_for_positions,
@@ -792,7 +802,7 @@ impl SocketState {
 
         let positions_signal = self.real_positions;
         let error_signal = self.trading_error;
-        MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+        MexcFuturesTradingService::new(ProxyApi).fetch_positions_with_funding(
             &api_url,
             &api_key,
             &api_secret,
@@ -960,7 +970,7 @@ impl SocketState {
                                         if let Ok(account) = account_result {
                                             account_signal.set(Some(account));
                                         }
-                                        MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+                                        MexcFuturesTradingService::new(ProxyApi).fetch_positions_with_funding(
                                             &positions_api_url,
                                             &positions_api_key,
                                             &positions_api_secret,
@@ -1080,7 +1090,7 @@ impl SocketState {
                                         "Real trading settings saved. MEXC Futures USDT equity: {:.2} USDT.",
                                         account.equity
                                     )));
-                                    MexcFuturesTradingService::new(ProxyApi).fetch_positions(
+                                    MexcFuturesTradingService::new(ProxyApi).fetch_positions_with_funding(
                                         &saved_api_url,
                                         &saved_api_key,
                                         &saved_api_secret,

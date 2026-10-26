@@ -1,6 +1,8 @@
 use leptos::prelude::*;
 
-use crate::domain::trading::{ExecutionMode, PortfolioSummary, PositionSide};
+use crate::domain::trading::{
+    estimate_cross_margin_liquidation_price, ExecutionMode, PortfolioSummary, PositionSide,
+};
 use crate::features::socket::state::{SocketState, TradingSettingsInput};
 use crate::i18n::*;
 
@@ -250,7 +252,7 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                     }
                 >
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[600px] text-sm">
+                        <table class="w-full min-w-[760px] text-sm">
                             <caption class="sr-only">
                                 {move || t_string!(i18n, socket_holdings)}
                             </caption>
@@ -260,31 +262,75 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                     <th class="px-2 py-2 font-medium" scope="col">{move || t_string!(i18n, socket_position_side)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_quantity)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_market_value)}</th>
-                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || if state.execution_mode.get() == ExecutionMode::Real {
-                                        if i18n.get_locale() == Locale::vi { "Giá thanh lý" } else { "Liquidation price" }
-                                    } else if i18n.get_locale() == Locale::vi {
-                                        "Rủi ro Cross Margin"
-                                    } else {
-                                        "Cross-margin risk"
-                                    }}</th>
+                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_liquidation_price)}</th>
+                                    <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_funding_total)}</th>
                                     <th class="px-2 py-2 text-right font-medium" scope="col">{move || t_string!(i18n, socket_pnl)}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {move || summary.get().holdings.into_iter().map(|holding| {
+                                    let symbol = holding.symbol.clone();
+                                    let real_position = state.real_positions.get().into_iter()
+                                        .find(|position| position.symbol == symbol);
                                     let liquidation_price_label = if state.execution_mode.get() == ExecutionMode::Real {
-                                        state.real_positions.get().iter()
-                                            .find(|position| position.symbol == holding.symbol)
+                                        real_position.as_ref()
                                             .map(|position| position.liquidation_price)
                                             .filter(|price| price.is_finite() && *price > 0.0)
                                             .map(format_price)
                                             .unwrap_or_else(|| "—".to_string())
-                                    } else if state.history_replay_loading.get() {
-                                        if i18n.get_locale() == Locale::vi { "Đang kiểm tra…".to_string() } else { "Checking…".to_string() }
-                                    } else if state.history_replay.get().is_some() {
-                                        if i18n.get_locale() == Locale::vi { "Không phát hiện".to_string() } else { "Not detected".to_string() }
                                     } else {
-                                        "—".to_string()
+                                        let snapshot = state.trading_snapshot.get();
+                                        let prices = state.tickers.get().iter()
+                                            .filter_map(|(symbol, ticker)| {
+                                                ticker.ticker.last_price.map(|price| (symbol.clone(), price))
+                                            })
+                                            .collect::<std::collections::HashMap<_, _>>();
+                                        estimate_cross_margin_liquidation_price(
+                                            &snapshot,
+                                            &prices,
+                                            &symbol,
+                                        )
+                                        .map(format_price)
+                                        .unwrap_or_else(|| "—".to_string())
+                                    };
+                                    let funding_records = real_position.as_ref()
+                                        .map(|position| position.funding_records.clone())
+                                        .unwrap_or_default();
+                                    let funding_total = funding_records.iter()
+                                        .map(|record| record.funding_amount)
+                                        .sum::<f64>();
+                                    let funding_cell = if state.execution_mode.get() == ExecutionMode::Real {
+                                        let funding_details = if funding_records.is_empty() {
+                                            view! { <span class="text-xs text-[var(--text-secondary)]">{t_string!(i18n, socket_no_funding_history)}</span> }.into_any()
+                                        } else {
+                                            view! {
+                                                <details class="mt-1 text-left">
+                                                    <summary class="cursor-pointer text-xs text-[var(--text-secondary)]">
+                                                        {format!("{} {}", funding_records.len(), t_string!(i18n, socket_funding_settlements))}
+                                                    </summary>
+                                                    <div class="mt-2 space-y-1">
+                                                        {funding_records.iter().map(|record| {
+                                                            let settled_at = format_settlement_time(record.settle_time_ms);
+                                                            let rate = format!("{:.4}%", record.funding_rate * 100.0);
+                                                            let amount = format_signed_currency(record.funding_amount);
+                                                            view! {
+                                                                <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 border-t border-[var(--border-color)] pt-1 text-xs">
+                                                                    <span class="text-[var(--text-secondary)]">{settled_at}</span>
+                                                                    <span class="text-right font-mono">{amount}</span>
+                                                                    <span class="col-span-2 text-[var(--text-secondary)]">{format!("Rate: {rate}")}</span>
+                                                                </div>
+                                                            }
+                                                        }).collect_view()}
+                                                    </div>
+                                                </details>
+                                            }.into_any()
+                                        };
+                                        view! {
+                                            <div class="font-mono">{format_signed_currency(funding_total)}</div>
+                                            {funding_details}
+                                        }.into_any()
+                                    } else {
+                                        view! { <span>-</span> }.into_any()
                                     };
                                     let pnl_class = if holding.pnl > 0.0 {
                                         "text-[var(--success)]"
@@ -316,11 +362,14 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                             <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]" title=move || if state.execution_mode.get() == ExecutionMode::Real {
                                                 if i18n.get_locale() == Locale::vi { "Giá thanh lý do MEXC trả về." } else { "Liquidation price reported by MEXC." }
                                             } else if i18n.get_locale() == Locale::vi {
-                                                "Trạng thái được xác định bằng replay Cross Margin cấp tài khoản, không phải giá thanh lý riêng cho từng lệnh."
+                                                "Ước tính theo equity Cross Margin của toàn tài khoản và maintenance margin giả định 0,5%; không phản ánh đầy đủ tier, phí hoặc điều chỉnh của sàn."
                                             } else {
-                                                "Status comes from account-wide cross-margin replay, not a per-position liquidation price."
+                                                "Estimated from shared Cross Margin account equity and an assumed 0.5% maintenance margin; exchange tiers, fees, and adjustments are not fully modeled."
                                             }>
                                                 {liquidation_price_label}
+                                            </td>
+                                            <td class="px-2 py-2 text-right align-top font-mono text-[var(--text-primary)]" title=move || if i18n.get_locale() == Locale::vi { "Funding thực tế từ MEXC; số dương là đã nhận, số âm là đã trả." } else { "Actual MEXC funding; positive means received and negative means paid." }>
+                                                {funding_cell}
                                             </td>
                                             <td class=format!("px-2 py-2 text-right font-mono font-medium {pnl_class}")>
                                                 {format_signed_currency(holding.pnl)}
@@ -591,4 +640,11 @@ fn format_quantity(value: f64) -> String {
     } else {
         format!("{value:.8}")
     }
+}
+
+fn format_settlement_time(timestamp_ms: i64) -> String {
+    js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(timestamp_ms as f64))
+        .to_iso_string()
+        .as_string()
+        .unwrap_or_else(|| timestamp_ms.to_string())
 }

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::application::ports::ProxyClient;
-use crate::domain::trading::{PositionSide, RealPosition};
+use crate::domain::trading::{PositionSide, RealFundingRecord, RealPosition};
 
 #[derive(Debug, Clone, Copy)]
 pub struct MexcFuturesTradingService<C> {
@@ -38,6 +38,66 @@ where
             request_time_ms,
             None,
             Rc::new(move |result| on_result(result.and_then(parse_positions_response))),
+        );
+    }
+
+    /// Fetches open positions and the actual funding settlements recorded for each one.
+    pub fn fetch_positions_with_funding(
+        &self,
+        api_url: &str,
+        api_key: &str,
+        api_secret: &str,
+        request_time_ms: i64,
+        on_result: Rc<dyn Fn(Result<Vec<RealPosition>, String>)>,
+    ) {
+        let service = *self;
+        let api_url_owned = api_url.to_string();
+        let api_key_owned = api_key.to_string();
+        let api_secret_owned = api_secret.to_string();
+        self.fetch_positions(
+            api_url,
+            api_key,
+            api_secret,
+            request_time_ms,
+            Rc::new(move |result| match result {
+                Ok(positions) => fetch_position_funding_records(
+                    service,
+                    api_url_owned.clone(),
+                    api_key_owned.clone(),
+                    api_secret_owned.clone(),
+                    request_time_ms,
+                    positions,
+                    0,
+                    on_result.clone(),
+                ),
+                Err(error) => on_result(Err(error)),
+            }),
+        );
+    }
+
+    /// Fetches all funding-record pages for one MEXC position.
+    pub fn fetch_funding_records(
+        &self,
+        api_url: &str,
+        api_key: &str,
+        api_secret: &str,
+        request_time_ms: i64,
+        position_id: i64,
+        symbol: &str,
+        on_result: Rc<dyn Fn(Result<Vec<RealFundingRecord>, String>)>,
+    ) {
+        fetch_funding_records_page(
+            *self,
+            api_url.to_string(),
+            api_key.to_string(),
+            api_secret.to_string(),
+            request_time_ms,
+            position_id,
+            symbol.to_string(),
+            1,
+            0,
+            Vec::new(),
+            on_result,
         );
     }
 
@@ -188,6 +248,38 @@ struct MexcPosition {
 }
 
 #[derive(Debug, Deserialize)]
+struct FundingRecordsResponse {
+    success: bool,
+    code: i64,
+    message: Option<String>,
+    data: FundingRecordsPage,
+}
+
+#[derive(Debug, Deserialize)]
+struct FundingRecordsPage {
+    #[serde(rename = "totalPage", default)]
+    total_page: u32,
+    #[serde(rename = "resultList", default)]
+    result_list: Vec<MexcFundingRecord>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MexcFundingRecord {
+    id: i64,
+    symbol: String,
+    #[serde(rename = "positionId")]
+    position_id: i64,
+    #[serde(rename = "positionType")]
+    position_type: i32,
+    #[serde(rename = "positionValue")]
+    position_value: f64,
+    funding: f64,
+    rate: f64,
+    #[serde(rename = "settleTime")]
+    settle_time_ms: i64,
+}
+
+#[derive(Debug, Deserialize)]
 struct OrderResponse {
     success: bool,
     code: i64,
@@ -226,8 +318,168 @@ fn parse_positions_response(raw: String) -> Result<Vec<RealPosition>, String> {
             leverage: position.leverage,
             realized_pnl: position.realised,
             unrealized_pnl: position.unrealized,
+            funding_records: Vec::new(),
         })
         .collect())
+}
+
+fn fetch_position_funding_records<C>(
+    service: MexcFuturesTradingService<C>,
+    api_url: String,
+    api_key: String,
+    api_secret: String,
+    request_time_ms: i64,
+    positions: Vec<RealPosition>,
+    index: usize,
+    on_result: Rc<dyn Fn(Result<Vec<RealPosition>, String>)>,
+)
+where
+    C: ProxyClient + Copy + 'static,
+{
+    if index >= positions.len() {
+        on_result(Ok(positions));
+        return;
+    }
+
+    let position_id = positions[index].position_id;
+    let symbol = positions[index].symbol.clone();
+    let next_api_url = api_url.clone();
+    let next_api_key = api_key.clone();
+    let next_api_secret = api_secret.clone();
+    service.fetch_funding_records(
+        &api_url,
+        &api_key,
+        &api_secret,
+        request_time_ms,
+        position_id,
+        &symbol,
+        Rc::new(move |result| match result {
+            Ok(records) => {
+                let mut next_positions = positions.clone();
+                next_positions[index].funding_records = records;
+                fetch_position_funding_records(
+                    service,
+                    next_api_url.clone(),
+                    next_api_key.clone(),
+                    next_api_secret.clone(),
+                    request_time_ms,
+                    next_positions,
+                    index + 1,
+                    on_result.clone(),
+                );
+            }
+            Err(error) => on_result(Err(error)),
+        }),
+    );
+}
+
+fn fetch_funding_records_page<C>(
+    service: MexcFuturesTradingService<C>,
+    api_url: String,
+    api_key: String,
+    api_secret: String,
+    request_time_ms: i64,
+    position_id: i64,
+    symbol: String,
+    page: u32,
+    total_pages: u32,
+    records: Vec<RealFundingRecord>,
+    on_result: Rc<dyn Fn(Result<Vec<RealFundingRecord>, String>)>,
+)
+where
+    C: ProxyClient + Copy + 'static,
+{
+    let target_url = format!(
+        "{}/api/v1/private/position/funding_records?symbol={}&position_id={}&page_num={}&page_size=100",
+        api_url.trim().trim_end_matches('/'),
+        symbol,
+        position_id,
+        page
+    );
+    let next_api_url = api_url.clone();
+    let next_api_key = api_key.clone();
+    let next_api_secret = api_secret.clone();
+    service.authenticated_request(
+        &target_url,
+        &api_key,
+        &api_secret,
+        request_time_ms,
+        None,
+        Rc::new(move |result| match result {
+            Ok(raw) => match parse_funding_records_response(raw, &symbol) {
+                Ok((reported_pages, page_records)) => {
+                    let mut all_records = records.clone();
+                    all_records.extend(page_records);
+                    let pages = reported_pages.max(total_pages).max(page);
+                    if page < pages {
+                        fetch_funding_records_page(
+                            service,
+                            next_api_url.clone(),
+                            next_api_key.clone(),
+                            next_api_secret.clone(),
+                            request_time_ms,
+                            position_id,
+                            symbol.clone(),
+                            page + 1,
+                            pages,
+                            all_records,
+                            on_result.clone(),
+                        );
+                    } else {
+                        all_records.sort_by_key(|record| record.settle_time_ms);
+                        all_records.dedup_by_key(|record| record.id);
+                        on_result(Ok(all_records));
+                    }
+                }
+                Err(error) => on_result(Err(error)),
+            },
+            Err(error) => on_result(Err(error)),
+        }),
+    );
+}
+
+fn parse_funding_records_response(
+    raw: String,
+    symbol: &str,
+) -> Result<(u32, Vec<RealFundingRecord>), String> {
+    let response: FundingRecordsResponse = serde_json::from_str(&raw)
+        .map_err(|error| format!("Invalid MEXC funding records response for {symbol}: {error}"))?;
+    if !response.success || response.code != 0 {
+        return Err(response.message.unwrap_or_else(|| {
+            format!(
+                "MEXC funding records request for {symbol} failed with code {}.",
+                response.code
+            )
+        }));
+    }
+
+    let records = response
+        .data
+        .result_list
+        .into_iter()
+        .map(|record| {
+            let side = if record.position_type == 2 {
+                PositionSide::Short
+            } else {
+                PositionSide::Long
+            };
+            let cash_flow_direction = match side {
+                PositionSide::Long => -record.rate.signum(),
+                PositionSide::Short => record.rate.signum(),
+            };
+            RealFundingRecord {
+                id: record.id,
+                symbol: record.symbol,
+                position_id: record.position_id,
+                side,
+                position_value: record.position_value,
+                funding_amount: record.funding.abs() * cash_flow_direction,
+                funding_rate: record.rate,
+                settle_time_ms: record.settle_time_ms,
+            }
+        })
+        .collect();
+    Ok((response.data.total_page, records))
 }
 
 fn default_api_allowed() -> bool {
@@ -272,6 +524,51 @@ fn parse_order_response(raw: String) -> Result<i64, String> {
     response
         .data
         .ok_or_else(|| "MEXC did not return an order ID.".into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_funding_records_normalizes_cash_flow_by_position_side_and_rate() {
+        let raw = r#"{
+            "success": true,
+            "code": 0,
+            "data": {
+                "totalPage": 1,
+                "resultList": [
+                    {
+                        "id": 7,
+                        "symbol": "BTC_USDT",
+                        "positionId": 42,
+                        "positionType": 1,
+                        "positionValue": 2000.0,
+                        "funding": 0.2,
+                        "rate": -0.0001,
+                        "settleTime": 1760000000000
+                    },
+                    {
+                        "id": 8,
+                        "symbol": "BTC_USDT",
+                        "positionId": 42,
+                        "positionType": 2,
+                        "positionValue": 2000.0,
+                        "funding": 0.2,
+                        "rate": -0.0001,
+                        "settleTime": 1760000001000
+                    }
+                ]
+            }
+        }"#;
+        let (pages, records) = parse_funding_records_response(raw.to_string(), "BTC_USDT").unwrap();
+
+        assert_eq!(pages, 1);
+        assert_eq!(records.len(), 2);
+        assert!((records[0].funding_amount - 0.2).abs() < 1e-9);
+        assert!((records[1].funding_amount + 0.2).abs() < 1e-9);
+        assert_eq!(records[0].settle_time_ms, 1_760_000_000_000);
+    }
 }
 
 fn hmac_sha256_hex(key: &[u8], message: &[u8]) -> String {
