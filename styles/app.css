@@ -623,7 +623,6 @@ body {
 
 .game-shell > div {
     min-width: 0;
-    max-width: 100%;
 }
 
 .game-shell button,
