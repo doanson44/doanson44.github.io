@@ -65,6 +65,11 @@ Use `ui-ux-studio` skill → `references/accessibility.md`:
 - [ ] Special characters (emoji, CJK) — render correctly
 - [ ] Rapid typing — no lag or flicker
 
+- [ ] UI icons use the shared `Icon` / `IconName` system; no emoji, Unicode pictographs, arrows, dingbats, or decorative special characters are used as UI icons
+- [ ] No icon fonts, external icon CSS dependencies, duplicated inline SVG paths, or parallel icon abstractions were introduced
+- [ ] Icon-only controls have accessible names and visible keyboard focus
+- [ ] Icon enum values and SVG symbol IDs match; text metadata methods still return strings and icon accessors return `IconName`
+
 ### Phase 7: Code Quality (3 min)
 - [ ] No hardcoded UI colors — use Tailwind theme utilities or project CSS variables
 - [ ] No inline styles in Rust `view!` macro (use CSS classes)
