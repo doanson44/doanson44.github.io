@@ -86,7 +86,12 @@ export default {
       );
     }
 
-    if (!ALLOWED_HOSTS.has(target.hostname)) {
+    const isAllowedHost =
+      ALLOWED_HOSTS.has(target.hostname) ||
+      target.hostname === "mexc.com" ||
+      target.hostname.endsWith(".mexc.com");
+
+    if (!isAllowedHost) {
       return json(
         {
           error: "Target host is not allowed",
