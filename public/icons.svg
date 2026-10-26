@@ -62,4 +62,5 @@
   <symbol id="star-off" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z"/><path d="m4 4 16 16"/></symbol>
   <symbol id="flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4c5-4 9 4 14 0v11c-5 4-9-4-14 0"/></symbol>
   <symbol id="smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></symbol>
+  <symbol id="pencil" viewBox="0 0 24 24"><path d="m16 4 4 4M3 21l4-.8L20 7a2.8 2.8 0 0 0-4-4L3 16l0 5Z"/></symbol>
 </svg>
