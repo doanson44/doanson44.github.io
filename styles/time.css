@@ -65,8 +65,61 @@
     left: -2rem;
 }
 
-@media (max-width: 575.98px) {
-    .screen-ruler {
-        min-height: 120px;
-    }
+.screen-ruler-fixed {
+    display: flex;
+    width: max-content;
+    min-width: 0;
+    align-items: stretch;
+}
+
+.screen-ruler-unit {
+    position: relative;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    border-left: 1px solid var(--ms-border-default);
+    color: var(--ms-text-primary);
+    font: 0.75rem/1 var(--ms-font-mono);
+}
+
+.screen-ruler-unit > span {
+    padding: 0.35rem 0 0.45rem 0.2rem;
+}
+
+.screen-ruler-inch-unit {
+    width: 1in;
+}
+
+.screen-ruler-cm-unit {
+    width: 1cm;
+}
+
+.screen-ruler-inch-tick {
+    width: 100%;
+    height: 1.8rem;
+    border-bottom: 2px solid var(--ms-border-default);
+}
+
+.screen-ruler-cm-ticks {
+    display: flex;
+    width: 100%;
+    height: 1.8rem;
+    align-items: flex-start;
+    border-bottom: 2px solid var(--ms-border-default);
+}
+
+.screen-ruler-mm-tick {
+    flex: 1 1 0;
+    height: 0.45rem;
+    border-left: 1px solid var(--ms-border-default);
+}
+
+.screen-ruler-mm-medium {
+    height: 0.85rem;
+}
+
+.screen-ruler-mm-major {
+    height: 1.35rem;
+    border-left-width: 2px;
 }
