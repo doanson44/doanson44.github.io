@@ -9,6 +9,7 @@ All coding agents must follow `.agents/AGENTS.md` and the repository's `.github/
 - Do not introduce icon fonts, external icon CSS dependencies, duplicated inline SVG paths in feature pages, or parallel icon abstractions.
 - Preserve Rust types during icon refactors: functions returning `&'static str` (such as `slug()` / `title()`) return string literals; functions returning `IconName` return enum variants. Inspect signatures before editing.
 - New icons must update both the `IconName` / stable ID mapping and exactly one matching symbol in `public/icons.svg`. Use unique IDs and `currentColor`.
+- Static assets referenced at runtime must be explicitly included in the Trunk build (for example, add a `data-trunk rel="copy-file"` directive in `index.html` for `public/icons.svg`); do not assume files in `public/` are automatically emitted. Verify the asset exists in `dist/` and check for 404s when debugging missing UI assets.
 - Icon-only controls require accessible names and visible keyboard focus.
 
 ## Engineering Guardrails
