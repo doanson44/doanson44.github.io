@@ -3,8 +3,7 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 
 const ALLOWED_HOSTS = new Set([
-  "api.mexc.com",
-  "contract.mexc.com",
+  "mexc.com",
 ]);
 
 export default {
@@ -86,10 +85,9 @@ export default {
       );
     }
 
-    const isAllowedHost =
-      ALLOWED_HOSTS.has(target.hostname) ||
-      target.hostname === "mexc.com" ||
-      target.hostname.endsWith(".mexc.com");
+    const isAllowedHost = [...ALLOWED_HOSTS].some(
+      (host) => target.hostname === host || target.hostname.endsWith(`.${host}`),
+    );
 
     if (!isAllowedHost) {
       return json(
