@@ -2,6 +2,7 @@ use leptos::prelude::*;
 
 use crate::i18n::*;
 
+use crate::components::icons::{Icon, IconName};
 use crate::domain::developer::ToolId;
 use crate::domain::finance::FinanceTool;
 
@@ -13,9 +14,9 @@ pub fn ToolsPage() -> impl IntoView {
         <main class="flex flex-1 flex-col overflow-auto">
             <div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                 <div class="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <h1 class="text-2xl font-bold text-[var(--text-primary)]">{move || format!("⚒ {}", t_string!(i18n, tools_title))}</h1>
+                    <h1 class="text-2xl font-bold text-[var(--text-primary)]"><Icon name=IconName::Tools class="mr-2 inline-block h-5 w-5 align-[-3px]" />{move || t_string!(i18n, tools_title)}</h1>
                     <div class="relative w-full md:max-w-sm">
-                        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[var(--text-secondary)]" aria-hidden="true">"⌕"</span>
+                        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-[var(--text-secondary)]"><Icon name=IconName::Search class="h-4 w-4" /></span>
                         <input type="search" class="w-full rounded-md border border-[var(--border-color)] bg-[var(--surface)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]" placeholder=move || t_string!(i18n, tools_search_placeholder) aria-label=move || t_string!(i18n, tools_search_label) prop:value=search on:input=move |ev| search.set(event_target_value(&ev)) />
                     </div>
                 </div>
@@ -23,7 +24,7 @@ pub fn ToolsPage() -> impl IntoView {
                     when=move || search.get().trim().is_empty()
                     fallback=move || view! { <SearchResults query=search.get() developer_tools=ToolId::all().collect() finance_tools=finance_tools() /> }
                 >
-                    <ToolSection title=Signal::derive(move || t_string!(i18n, tools_general)) icon="▦">
+                    <ToolSection title=Signal::derive(move || t_string!(i18n, tools_general)) icon=IconName::Grid>
                         <ToolCard href="#/tools/markdown" title="Markdown Studio" description=Signal::derive(move || t_string!(i18n, tools_markdown_desc).to_string()) />
                         <ToolCard href="#/tools/json" title="JSON Formatter" description=Signal::derive(move || t_string!(i18n, tools_json_desc).to_string()) />
                         <ToolCard href="#/tools/jwt" title="JWT Decoder" description=Signal::derive(move || t_string!(i18n, tools_jwt_desc).to_string()) />
@@ -33,12 +34,12 @@ pub fn ToolsPage() -> impl IntoView {
                         <ToolCard href="#/tools/proxy" title="HTTP Proxy Playground" description=Signal::derive(move || t_string!(i18n, tools_proxy_desc).to_string()) />
                         <ToolCard href="#/tools/accounts" title="Project & Account Manager" description=Signal::derive(move || "Manage projects, environment URLs, credentials, and TOTP codes locally.".to_string()) />
                     </ToolSection>
-                    <ToolSection title=Signal::derive(move || t_string!(i18n, tools_developer)) icon="</>">
+                    <ToolSection title=Signal::derive(move || t_string!(i18n, tools_developer)) icon=IconName::Code>
                         {ToolId::all()
                             .map(|tool| view! { <ToolCard href=format!("#/tools/{}", tool.route()) title=tool.title() description=Signal::derive(move || localized_tool_description(tool)) /> })
                             .collect_view()}
                     </ToolSection>
-                    <ToolSection title=Signal::derive(move || t_string!(i18n, tools_finance)) icon="$">
+                    <ToolSection title=Signal::derive(move || t_string!(i18n, tools_finance)) icon=IconName::Market>
                         {finance_tools()
                             .into_iter()
                             .map(|tool| view! { <ToolCard href=format!("#/tools/finance/{}", tool.route()) title=tool.title() description=Signal::derive(move || localized_finance_description(tool)) /> })
@@ -145,7 +146,7 @@ fn SearchResults(
 #[component]
 fn ToolSection(
     #[prop(into)] title: Signal<String>,
-    icon: &'static str,
+    icon: IconName,
     children: Children,
 ) -> impl IntoView {
     let section_id = format!(
@@ -156,7 +157,7 @@ fn ToolSection(
     view! {
         <section class="mb-10" aria-labelledby=section_id>
             <div class="mb-3 flex items-center gap-2">
-                <span class="text-[var(--accent)]" aria-hidden="true">{icon}</span>
+                <Icon name=icon class="h-5 w-5 text-[var(--accent)]" />
                 <h2 class="text-lg font-semibold text-[var(--text-primary)]" id=section_id2>{move || title.get()}</h2>
             </div>
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{children()}</div>
@@ -172,7 +173,7 @@ fn ToolCard(
 ) -> impl IntoView {
     view! {
         <a href=href class="group rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-4 no-underline transition hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]">
-            <h3 class="mb-1 text-sm font-semibold text-[var(--text-primary)]"><span class="mr-2 text-[var(--accent)]" aria-hidden="true">"◆"</span>{title}</h3>
+            <h3 class="mb-1 text-sm font-semibold text-[var(--text-primary)]"><Icon name=IconName::Tools class="mr-2 inline-block h-4 w-4 align-[-3px] text-[var(--accent)]" />{title}</h3>
             <p class="m-0 text-sm leading-6 text-[var(--text-secondary)]">{move || description.get()}</p>
         </a>
     }
