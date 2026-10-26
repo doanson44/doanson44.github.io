@@ -3,6 +3,7 @@ use leptos::prelude::*;
 use crate::application::services::finance::FinanceService;
 use crate::domain::finance::FinanceTool;
 use crate::features::tools::finance::state::FinanceState;
+use crate::components::icons::{Icon, IconName};
 use crate::i18n::*;
 
 /// Finance calculator page.
@@ -68,7 +69,7 @@ pub fn FinancePage(tool: FinanceTool) -> impl IntoView {
             <div class="mx-auto max-w-6xl">
                 <div class="mb-4">
                     <a href="#/tools" class="mb-2 inline-flex items-center rounded-md border border-[var(--border-color)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]">
-                        {move || format!("← {}", t_string!(i18n, tools_title))}
+                        <Icon name=IconName::ArrowLeft class="mr-2 h-4 w-4" />{move || t_string!(i18n, tools_title)}
                     </a>
                     <h2 class="mb-1 text-2xl font-semibold">{tool.title()}</h2>
                     <p class="mb-0 text-sm text-[var(--text-secondary)]">{tool.category()}</p>
