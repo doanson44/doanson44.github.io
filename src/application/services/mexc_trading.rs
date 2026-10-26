@@ -329,7 +329,7 @@ fn fetch_position_funding_records<C>(
     api_key: String,
     api_secret: String,
     request_time_ms: i64,
-    mut positions: Vec<RealPosition>,
+    positions: Vec<RealPosition>,
     index: usize,
     on_result: Rc<dyn Fn(Result<Vec<RealPosition>, String>)>,
 )
@@ -383,7 +383,7 @@ fn fetch_funding_records_page<C>(
     symbol: String,
     page: u32,
     total_pages: u32,
-    mut records: Vec<RealFundingRecord>,
+    records: Vec<RealFundingRecord>,
     on_result: Rc<dyn Fn(Result<Vec<RealFundingRecord>, String>)>,
 )
 where
