@@ -216,7 +216,7 @@ pub fn JsonPage() -> impl IntoView {
                                                     title=move || if i18n.get_locale() == Locale::vi { "Xóa fixed value" } else { "Remove fixed value" }
                                                     on:click=move |_| state.remove_override(index)
                                                 >
-                                                    "×"
+                                                    <Icon name=IconName::Close class="h-4 w-4" />
                                                 </button>
                                             </div>
                                         }
