@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
 use crate::domain::trading::{
-    estimate_liquidation_price, ExecutionMode, PortfolioSummary, PositionSide,
+    estimate_cross_margin_liquidation_price, ExecutionMode, PortfolioSummary, PositionSide,
 };
 use crate::features::socket::state::{SocketState, TradingSettingsInput};
 use crate::i18n::*;
@@ -269,8 +269,9 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                             </thead>
                             <tbody>
                                 {move || summary.get().holdings.into_iter().map(|holding| {
+                                    let symbol = holding.symbol.clone();
                                     let real_position = state.real_positions.get().into_iter()
-                                        .find(|position| position.symbol == holding.symbol);
+                                        .find(|position| position.symbol == symbol);
                                     let liquidation_price_label = if state.execution_mode.get() == ExecutionMode::Real {
                                         real_position.as_ref()
                                             .map(|position| position.liquidation_price)
@@ -278,15 +279,19 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                             .map(format_price)
                                             .unwrap_or_else(|| "—".to_string())
                                     } else {
-                                        state.trading_snapshot.get().portfolio.positions.iter()
-                                            .find(|position| position.symbol == holding.symbol)
-                                            .and_then(|position| estimate_liquidation_price(
-                                                position.entry_price,
-                                                position.leverage,
-                                                position.side,
-                                            ))
-                                            .map(format_price)
-                                            .unwrap_or_else(|| "—".to_string())
+                                        let snapshot = state.trading_snapshot.get();
+                                        let prices = state.tickers.get().iter()
+                                            .filter_map(|(symbol, ticker)| {
+                                                ticker.ticker.last_price.map(|price| (symbol.clone(), price))
+                                            })
+                                            .collect::<std::collections::HashMap<_, _>>();
+                                        estimate_cross_margin_liquidation_price(
+                                            &snapshot,
+                                            &prices,
+                                            &symbol,
+                                        )
+                                        .map(format_price)
+                                        .unwrap_or_else(|| "—".to_string())
                                     };
                                     let funding_records = real_position.as_ref()
                                         .map(|position| position.funding_records.clone())
@@ -357,9 +362,9 @@ pub fn PortfolioPanel(state: SocketState, summary: Memo<PortfolioSummary>) -> im
                                             <td class="px-2 py-2 text-right font-mono text-[var(--text-primary)]" title=move || if state.execution_mode.get() == ExecutionMode::Real {
                                                 if i18n.get_locale() == Locale::vi { "Giá thanh lý do MEXC trả về." } else { "Liquidation price reported by MEXC." }
                                             } else if i18n.get_locale() == Locale::vi {
-                                                "Giá ước tính từ giá vào lệnh và đòn bẩy; không bao gồm maintenance margin, phí hoặc điều chỉnh riêng của sàn."
+                                                "Ước tính theo equity Cross Margin của toàn tài khoản và maintenance margin giả định 0,5%; không phản ánh đầy đủ tier, phí hoặc điều chỉnh của sàn."
                                             } else {
-                                                "Estimated from entry price and leverage; excludes maintenance margin, fees, and exchange-specific adjustments."
+                                                "Estimated from shared Cross Margin account equity and an assumed 0.5% maintenance margin; exchange tiers, fees, and adjustments are not fully modeled."
                                             }>
                                                 {liquidation_price_label}
                                             </td>
