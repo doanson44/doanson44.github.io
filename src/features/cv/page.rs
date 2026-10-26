@@ -234,7 +234,7 @@ pub fn CvPage() -> impl IntoView {
                                     cover_letter_copy_error.set(false);
                                 }
                             >
-                                "×"
+                                <Icon name=IconName::Close class="h-4 w-4" />
                             </button>
                         </header>
 
