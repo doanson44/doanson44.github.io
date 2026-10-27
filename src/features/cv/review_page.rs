@@ -229,6 +229,60 @@ fn list_view(
                 </section>
             </div>
 
+
+            <section class="rounded-2xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-6">
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">{if vi { "Bộ câu hỏi mock interview theo từng vòng" } else { "Round-by-round mock interview question bank" }}</h3>
+                <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{if vi { "Tập trả lời thành tiếng trong giới hạn thời gian. Với mỗi câu, chuẩn bị câu trả lời 30 giây, bản phân tích 2 phút và ít nhất ba câu hỏi đào sâu." } else { "Answer aloud under time pressure. For every prompt, prepare a 30-second answer, a two-minute deep dive, and at least three follow-up questions." }}</p>
+                <div class="mt-4 grid gap-4 lg:grid-cols-3">
+                    <div class="rounded-xl border border-[var(--border-color)] p-4">
+                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R1 · Leadership & impact</p>
+                        <ol class="mt-3 list-decimal space-y-3 pl-5 text-sm leading-6 text-[var(--text-secondary)]">
+                            <li>{if vi { "Hãy giới thiệu bản thân và vì sao kinh nghiệm của bạn phù hợp với vai trò Staff Engineer này." } else { "Introduce yourself and explain why your experience fits this Staff Engineer role." }}</li>
+                            <li>{if vi { "Quyết định kỹ thuật nào của bạn tạo tác động lớn nhất? Đo tác động ra sao?" } else { "Which technical decision had your greatest impact, and how did you measure it?" }}</li>
+                            <li>{if vi { "Khi Product muốn giao nhanh nhưng hệ thống có rủi ro, bạn xử lý thế nào?" } else { "How do you respond when Product wants a fast release but the system has material risks?" }}</li>
+                            <li>{if vi { "Tại sao JTL, tại sao AI Service Desk, và 90 ngày đầu bạn sẽ làm gì?" } else { "Why JTL and AI Service Desk, and what would you do in your first 90 days?" }}</li>
+                            <li>{if vi { "Kể về một lần bạn thay đổi quyết định sau khi nhận phản biện." } else { "Tell us about a time you changed your mind after technical pushback." }}</li>
+                        </ol>
+                        <p class="mt-4 text-sm leading-6 text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">{if vi { "Bằng chứng cần có:" } else { "Evidence to prepare:" }}</strong> {if vi { "phạm vi ownership, số liệu trước/sau, stakeholder liên quan, điều bạn trực tiếp làm và bài học." } else { "ownership scope, before/after metrics, stakeholders, your personal contribution, and lessons learned." }}</p>
+                    </div>
+                    <div class="rounded-xl border border-[var(--border-color)] p-4">
+                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R2 · Principal Engineer</p>
+                        <ol class="mt-3 list-decimal space-y-3 pl-5 text-sm leading-6 text-[var(--text-secondary)]">
+                            <li>{if vi { "Thiết kế API xử lý ticket với SLA, idempotency, pagination, auth và audit." } else { "Design a ticket-processing API with SLAs, idempotency, pagination, auth, and audit." }}</li>
+                            <li>{if vi { "Một endpoint chậm 4 giây và phát sinh hàng trăm SQL query: bạn điều tra theo thứ tự nào?" } else { "An endpoint takes four seconds and issues hundreds of SQL queries. How do you investigate?" }}</li>
+                            <li>{if vi { "Giải thích outbox, consumer idempotency, retry/DLQ và cách replay an toàn." } else { "Explain the outbox, consumer idempotency, retries/DLQ, and safe replay." }}</li>
+                            <li>{if vi { "Khi nào chọn modular monolith thay vì microservices? Dấu hiệu nào khiến bạn tách service?" } else { "When would you choose a modular monolith over microservices, and what would justify a split?" }}</li>
+                            <li>{if vi { "Thiết kế multi-tenant authorization để ngăn truy cập chéo tenant ở API, cache, search và logs." } else { "Design multi-tenant authorization across APIs, caches, search, and logs." }}</li>
+                            <li>{if vi { "Một dependency downstream timeout: deadline, retry, circuit breaker và fallback phối hợp thế nào?" } else { "A downstream dependency times out. How do deadlines, retries, circuit breakers, and fallbacks interact?" }}</li>
+                        </ol>
+                        <p class="mt-4 text-sm leading-6 text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">{if vi { "Bằng chứng cần có:" } else { "Evidence to prepare:" }}</strong> {if vi { "vẽ sequence diagram, nêu failure modes, dữ liệu/metric cần xem và trade-off của ít nhất hai phương án." } else { "draw a sequence diagram, name failure modes, identify diagnostic metrics, and compare at least two options." }}</p>
+                    </div>
+                    <div class="rounded-xl border border-[var(--border-color)] p-4">
+                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R2 EM + R3 Head of AI</p>
+                        <ol class="mt-3 list-decimal space-y-3 pl-5 text-sm leading-6 text-[var(--text-secondary)]">
+                            <li>{if vi { "Bạn nâng chất lượng code review và mentoring một kỹ sư yếu ở một chủ đề như thế nào?" } else { "How do you improve code reviews and mentor an engineer who is struggling in a specific area?" }}</li>
+                            <li>{if vi { "Hai senior bất đồng kiến trúc; bạn đưa nhóm đến quyết định bằng cách nào?" } else { "Two senior engineers disagree on architecture. How do you drive a decision?" }}</li>
+                            <li>{if vi { "Đo AI answer quality thế nào ngoài việc hỏi người dùng có thích câu trả lời không?" } else { "How do you measure AI answer quality beyond asking users whether they liked it?" }}</li>
+                            <li>{if vi { "RAG trả lời sai nhưng rất tự tin; làm sao giới hạn tác hại và điều tra nguyên nhân?" } else { "RAG returns a confident but incorrect answer. How do you limit harm and diagnose it?" }}</li>
+                            <li>{if vi { "AI đề xuất refund hoặc thay đổi dữ liệu khách hàng: quyền thực thi và approval nằm ở đâu?" } else { "AI proposes a refund or customer-data change. Where do execution authority and approval live?" }}</li>
+                            <li>{if vi { "LLM provider tăng gấp đôi latency/price hoặc ngừng hoạt động: bạn bảo vệ SLO ra sao?" } else { "The LLM provider doubles latency/pricing or goes down. How do you protect the SLO?" }}</li>
+                        </ol>
+                        <p class="mt-4 text-sm leading-6 text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">{if vi { "Bằng chứng cần có:" } else { "Evidence to prepare:" }}</strong> {if vi { "đánh giá theo risk, human review, rollout có kiểm soát, metric, escalation và phối hợp liên nhóm." } else { "risk-based evaluation, human review, controlled rollout, metrics, escalation, and cross-team collaboration." }}</p>
+                    </div>
+                </div>
+                <div class="mt-5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-4">
+                    <h4 class="font-semibold text-[var(--text-primary)]">{if vi { "Chuẩn bị 6 câu chuyện thật theo STAR" } else { "Prepare six real STAR stories" }}</h4>
+                    <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <p class="text-sm leading-6 text-[var(--text-secondary)]">{if vi { "1. Sự cố production: tác động, triage, mitigation, root cause và phòng ngừa tái diễn." } else { "1. Production incident: impact, triage, mitigation, root cause, and prevention." }}</p>
+                        <p class="text-sm leading-6 text-[var(--text-secondary)]">{if vi { "2. Tối ưu hiệu năng: baseline, profiling, bottleneck, thay đổi và số liệu sau tối ưu." } else { "2. Performance improvement: baseline, profiling, bottleneck, change, and measured outcome." }}</p>
+                        <p class="text-sm leading-6 text-[var(--text-secondary)]">{if vi { "3. Quyết định kiến trúc: lựa chọn, phương án bị loại, trade-off và kết quả." } else { "3. Architecture decision: chosen option, rejected alternatives, trade-offs, and outcome." }}</p>
+                        <p class="text-sm leading-6 text-[var(--text-secondary)]">{if vi { "4. Bất đồng: lắng nghe, tiêu chí quyết định, đồng thuận và kết quả." } else { "4. Conflict: listening, decision criteria, alignment, and outcome." }}</p>
+                        <p class="text-sm leading-6 text-[var(--text-secondary)]">{if vi { "5. Mentoring/technical leadership: cách nâng năng lực người khác hoặc chuẩn kỹ thuật." } else { "5. Mentoring/technical leadership: how you improved another engineer or engineering standards." }}</p>
+                        <p class="text-sm leading-6 text-[var(--text-secondary)]">{if vi { "6. Thất bại hoặc quyết định sai: dấu hiệu bỏ lỡ, cách chịu trách nhiệm và thay đổi sau đó." } else { "6. Failure or a wrong decision: missed signals, accountability, and what changed afterward." }}</p>
+                    </div>
+                </div>
+            </section>
+
             <section class="rounded-2xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-6">
                 <h3 class="text-lg font-bold text-[var(--text-primary)]">{if vi { "Kế hoạch ôn tập 14 ngày" } else { "14-day preparation plan" }}</h3>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
