@@ -127,7 +127,7 @@ fn list_view(
                     {if vi { "LỘ TRÌNH PHỎNG VẤN — JTL SOFTWARE" } else { "INTERVIEW TRACK — JTL SOFTWARE" }}
                 </p>
                 <h2 class="mt-2 text-2xl font-bold tracking-tight text-[var(--text-primary)] sm:text-3xl">
-                    {if vi { "Staff Software Engineer · AI Service Desk" } else { "Staff Software Engineer · AI Service Desk" }}
+                    {if vi { "Staff Software Engineer - AI Service Desk" } else { "Staff Software Engineer - AI Service Desk" }}
                 </h2>
                 <p class="mt-3 max-w-3xl text-sm leading-7 text-[var(--text-secondary)]">
                     {if vi {
@@ -138,18 +138,18 @@ fn list_view(
                 </p>
                 <div class="mt-5 grid gap-3 md:grid-cols-3">
                     <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-4">
-                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R1 · 30 min</p>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R1 - 30 min</p>
                         <h3 class="mt-2 font-semibold text-[var(--text-primary)]">{if vi { "Managing Director + CTO" } else { "Managing Director + CTO" }}</h3>
                         <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{if vi { "Tác động kinh doanh, quyết định kiến trúc, ownership, giao tiếp với stakeholder và lý do phù hợp với vai trò." } else { "Business impact, architecture decisions, ownership, stakeholder communication, and role motivation." }}</p>
                     </div>
                     <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-4">
-                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R2 · 120 min</p>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R2 - 120 min</p>
                         <h3 class="mt-2 font-semibold text-[var(--text-primary)]">{if vi { "Principal Engineer + EM" } else { "Principal Engineer + EM" }}</h3>
                         <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{if vi { "60 phút kỹ thuật: C#/.NET, SQL, hệ thống phân tán, thiết kế hệ thống. 60 phút sau: leadership, mentoring, xung đột, delivery và team fit." } else { "First 60 minutes: C#/.NET, SQL, distributed systems, system design. Final 60 minutes: leadership, mentoring, conflict, delivery, and team fit." }}</p>
                     </div>
                     <div class="rounded-xl border border-[var(--border-color)] bg-[var(--surface-hover)] p-4">
-                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R3 · 30 min</p>
-                        <h3 class="mt-2 font-semibold text-[var(--text-primary)]">{if vi { "Head of AI · Germany" } else { "Head of AI · Germany" }}</h3>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R3 - 30 min</p>
+                        <h3 class="mt-2 font-semibold text-[var(--text-primary)]">{if vi { "Head of AI - Germany" } else { "Head of AI - Germany" }}</h3>
                         <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{if vi { "Tích hợp AI vào workflow, đánh giá chất lượng, quyền dữ liệu, human-in-the-loop, chi phí, độ trễ và cơ chế fallback." } else { "AI workflow integration, evaluation, data permissions, human-in-the-loop, cost, latency, and fallback design." }}</p>
                     </div>
                 </div>
@@ -162,7 +162,7 @@ fn list_view(
                 <section class="rounded-2xl border border-[var(--border-color)] bg-[var(--surface)] p-5 sm:p-6">
                     <h3 class="text-lg font-bold text-[var(--text-primary)]">{if vi { "Nhóm kiến thức bắt buộc" } else { "Core technical domains" }}</h3>
                     <ul class="mt-4 space-y-3 text-sm leading-6 text-[var(--text-secondary)]">
-                        <li><strong class="text-[var(--text-primary)]">C#/.NET:</strong> {if vi { "async/await, Task vs ValueTask, cancellation, thread-safety, GC/allocations, DI lifetime, middleware, hosted services, exception handling." } else { "async/await, Task vs ValueTask, cancellation, thread safety, GC/allocations, DI lifetimes, middleware, hosted services, exception handling." }}</li>
+                        <li><strong class="text-[var(--text-primary)]">{"C#/.NET:"}</strong> {if vi { "async/await, Task vs ValueTask, cancellation, thread-safety, GC/allocations, DI lifetime, middleware, hosted services, exception handling." } else { "async/await, Task vs ValueTask, cancellation, thread safety, GC/allocations, DI lifetimes, middleware, hosted services, exception handling." }}</li>
                         <li><strong class="text-[var(--text-primary)]">API + data:</strong> {if vi { "REST semantics, validation, pagination, authn/authz, rate limiting, API versioning, EF Core tracking, N+1, query plans, indexing, transactions and isolation." } else { "REST semantics, validation, pagination, authentication/authorization, rate limiting, versioning, EF Core tracking, N+1, query plans, indexing, transactions, isolation." }}</li>
                         <li><strong class="text-[var(--text-primary)]">Distributed systems:</strong> {if vi { "timeouts, retries with jitter, circuit breakers, bulkheads, idempotency, at-least-once delivery, ordering, outbox/inbox, saga, eventual consistency." } else { "timeouts, retries with jitter, circuit breakers, bulkheads, idempotency, at-least-once delivery, ordering, outbox/inbox, sagas, eventual consistency." }}</li>
                         <li><strong class="text-[var(--text-primary)]">Architecture + operations:</strong> {if vi { "modular monolith vs microservices, boundaries, capacity estimates, SLO/SLI, tracing, metrics/logs, incident response, rollout/rollback, DR and cost." } else { "modular monolith vs microservices, boundaries, capacity estimates, SLOs/SLIs, tracing, metrics/logs, incident response, rollout/rollback, disaster recovery, cost." }}</li>
@@ -271,7 +271,7 @@ fn list_view(
                 <p class="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{if vi { "Tập trả lời thành tiếng trong giới hạn thời gian. Với mỗi câu, chuẩn bị câu trả lời 30 giây, bản phân tích 2 phút và ít nhất ba câu hỏi đào sâu." } else { "Answer aloud under time pressure. For every prompt, prepare a 30-second answer, a two-minute deep dive, and at least three follow-up questions." }}</p>
                 <div class="mt-4 grid gap-4 lg:grid-cols-3">
                     <div class="rounded-xl border border-[var(--border-color)] p-4">
-                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R1 · Leadership & impact</p>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R1 - Leadership & impact</p>
                         <ol class="mt-3 list-decimal space-y-3 pl-5 text-sm leading-6 text-[var(--text-secondary)]">
                             <li>{if vi { "Hãy giới thiệu bản thân và vì sao kinh nghiệm của bạn phù hợp với vai trò Staff Engineer này." } else { "Introduce yourself and explain why your experience fits this Staff Engineer role." }}</li>
                             <li>{if vi { "Quyết định kỹ thuật nào của bạn tạo tác động lớn nhất? Đo tác động ra sao?" } else { "Which technical decision had your greatest impact, and how did you measure it?" }}</li>
@@ -282,7 +282,7 @@ fn list_view(
                         <p class="mt-4 text-sm leading-6 text-[var(--text-secondary)]"><strong class="text-[var(--text-primary)]">{if vi { "Bằng chứng cần có:" } else { "Evidence to prepare:" }}</strong> {if vi { "phạm vi ownership, số liệu trước/sau, stakeholder liên quan, điều bạn trực tiếp làm và bài học." } else { "ownership scope, before/after metrics, stakeholders, your personal contribution, and lessons learned." }}</p>
                     </div>
                     <div class="rounded-xl border border-[var(--border-color)] p-4">
-                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R2 · Principal Engineer</p>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">R2 - Principal Engineer</p>
                         <ol class="mt-3 list-decimal space-y-3 pl-5 text-sm leading-6 text-[var(--text-secondary)]">
                             <li>{if vi { "Thiết kế API xử lý ticket với SLA, idempotency, pagination, auth và audit." } else { "Design a ticket-processing API with SLAs, idempotency, pagination, auth, and audit." }}</li>
                             <li>{if vi { "Một endpoint chậm 4 giây và phát sinh hàng trăm SQL query: bạn điều tra theo thứ tự nào?" } else { "An endpoint takes four seconds and issues hundreds of SQL queries. How do you investigate?" }}</li>
