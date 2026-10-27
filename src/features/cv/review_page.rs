@@ -154,7 +154,7 @@ fn list_view(
                     </div>
                 </div>
                 <p class="mt-4 text-xs leading-5 text-[var(--text-tertiary)]">
-                    {if vi { "Phần R3 là dự đoán có căn cứ từ JD và chức danh người phỏng vấn, không phải câu hỏi đã được công ty xác nhận." } else { "The R3 focus is an informed inference from the JD and interviewer title, not a confirmed company question list." }}
+                    {if vi { "Phần R3 là dự đoán có căn cứ từ JD và vai trò người phỏng vấn, không phải danh sách câu hỏi đã được xác nhận." } else { "The R3 focus is an informed inference from the job description and interviewer role, not a confirmed question list." }}
                 </p>
             </div>
 
