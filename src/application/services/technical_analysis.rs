@@ -238,6 +238,7 @@ impl TechnicalAnalysisService {
                 enabled: true,
                 candlestick_patterns: true,
                 chart_patterns: vec![
+                    "ascending_structure".to_string(),
                     "double_top".to_string(),
                     "double_bottom".to_string(),
                     "head_and_shoulders".to_string(),
@@ -245,9 +246,6 @@ impl TechnicalAnalysisService {
                     "ascending_triangle".to_string(),
                     "descending_triangle".to_string(),
                     "symmetrical_triangle".to_string(),
-                    "flag".to_string(),
-                    "pennant".to_string(),
-                    "cup_and_handle".to_string(),
                 ],
             },
             divergence_detection: DivergenceDetectionConfig {
