@@ -351,7 +351,7 @@ fn market_analysis_view(
             <section>
                 <h3 class="mb-2 text-sm font-semibold">Price action</h3>
                 <p class="m-0">{format!("Candle {} · 1D {} · 5D {} · 20D {} · 60D {}", result.price_action.candle.candle_type, result.price_action.recent_performance.one_day.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()), result.price_action.recent_performance.five_day.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()), result.price_action.recent_performance.twenty_day.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()), result.price_action.recent_performance.sixty_day.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()))}</p>
-                <p class="m-0 mt-1">{format!("Gap: {} {} · Consecutive: {} ×{}", result.price_action.gap.direction.as_deref().unwrap_or("none"), result.price_action.gap.size_percent.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()), analysis_term(i18n, &result.price_action.consecutive_moves.direction), result.price_action.consecutive_moves.count)}</p>
+                <p class="m-0 mt-1">{format!("Gap: {} {} · Consecutive: {} ×{}", result.price_action.gap.direction.as_deref().map(|value| analysis_term(i18n, value)).unwrap_or_else(|| analysis_term(i18n, "none")), result.price_action.gap.size_percent.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()), analysis_term(i18n, &result.price_action.consecutive_moves.direction), result.price_action.consecutive_moves.count)}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_trend_section)}</h3>
