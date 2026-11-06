@@ -26,10 +26,6 @@ Implemented:
 
 Not published because the corresponding services do not exist:
 
-- OAuth/OIDC authorization-server metadata.
-- OAuth protected-resource metadata.
-- `/auth.md`.
-- MCP Server Card or MCP endpoint.
 - An RFC 9727 API Catalog. The repository's Cloudflare forward proxy is a generic MEXC relay that permits multiple HTTP methods, including write methods. It is not a narrow, documented, safe-to-advertise public API contract and has no health endpoint or published OpenAPI contract. Do not advertise it until it is reviewed and split into a read-only public API with explicit operations, rate limits, and a health endpoint.
 - OAuth/OIDC discovery, OAuth Protected Resource Metadata, and `/auth.md`: no authorization server, protected API, or agent-registration flow exists.
 - MCP Server Card: WebMCP is a browser-side integration, not a remotely hosted MCP server or transport endpoint.
