@@ -174,7 +174,7 @@ pub fn parse_price_history_response(raw: &str, symbol: &str) -> Result<MarketPri
     })
 }
 
-/// Parses MEXC Futures kline data into normalized market history.
+/// Parses MEXC Spot array-form K-line data into normalized market history.
 pub fn parse_mexc_klines_response(raw: &str, symbol: &str) -> Result<MarketPriceHistory, String> {
     let rows: Vec<Vec<serde_json::Value>> = serde_json::from_str(raw)
         .map_err(|error| format!("Invalid MEXC kline response: {error}"))?;
