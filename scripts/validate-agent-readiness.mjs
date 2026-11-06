@@ -110,7 +110,7 @@ for (const entry of catalog.entries) {
   const hasUrl = typeof entry.url === "string";
   const hasData = Object.hasOwn(entry, "data");
   if (
-    !/^urn:air:doanson44\\.github\\.io:skill:[a-z0-9-]+$/.test(entry.identifier) ||
+    !/^urn:air:doanson44\.github\.io:skill:[a-z0-9-]+$/.test(entry.identifier) ||
     catalogIdentifiers.has(entry.identifier) ||
     typeof entry.displayName !== "string" ||
     entry.type !== "text/markdown" ||
