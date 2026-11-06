@@ -566,7 +566,7 @@ fn head_discovery_response(url: &Url) -> ApiResult<Response> {
     let mut response = Response::empty()?.with_status(204);
     set_discovery_links(&mut response, &origin)?;
     let content_type = if url.path() == "/.well-known/api-catalog" {
-        "application/linkset+json; charset=utf-8"
+        "application/linkset+json; charset=utf-8; profile=\"https://www.rfc-editor.org/info/rfc9727\""
     } else {
         "application/json; charset=utf-8"
     };
@@ -830,13 +830,49 @@ fn api_catalog_response(url: &Url) -> ApiResult<Response> {
                 }],
                 "service-doc": [{ "href": doc_url }],
                 "status": [{ "href": format!("{origin}/health") }]
+            },
+            {
+                "anchor": format!("{origin}/v1/crypto/BTC_USDT/quote"),
+                "service-desc": [{
+                    "href": format!("{origin}/openapi.json"),
+                    "type": "application/vnd.oai.openapi+json;version=3.1"
+                }],
+                "service-doc": [{ "href": doc_url, "type": "text/markdown" }],
+                "status": [{ "href": format!("{origin}/health"), "type": "application/json" }]
+            },
+            {
+                "anchor": format!("{origin}/v1/crypto/funding"),
+                "service-desc": [{
+                    "href": format!("{origin}/openapi.json"),
+                    "type": "application/vnd.oai.openapi+json;version=3.1"
+                }],
+                "service-doc": [{ "href": doc_url, "type": "text/markdown" }],
+                "status": [{ "href": format!("{origin}/health"), "type": "application/json" }]
+            },
+            {
+                "anchor": format!("{origin}/v1/crypto/BTC_USDT/extremes"),
+                "service-desc": [{
+                    "href": format!("{origin}/openapi.json"),
+                    "type": "application/vnd.oai.openapi+json;version=3.1"
+                }],
+                "service-doc": [{ "href": doc_url, "type": "text/markdown" }],
+                "status": [{ "href": format!("{origin}/health"), "type": "application/json" }]
+            },
+            {
+                "anchor": format!("{origin}/v1/analysis"),
+                "service-desc": [{
+                    "href": format!("{origin}/openapi.json"),
+                    "type": "application/vnd.oai.openapi+json;version=3.1"
+                }],
+                "service-doc": [{ "href": doc_url, "type": "text/markdown" }],
+                "status": [{ "href": format!("{origin}/health"), "type": "application/json" }]
             }
         ]
     });
     let mut response = Response::from_json(&linkset)?;
     response
         .headers_mut()
-        .set("Content-Type", "application/linkset+json; charset=utf-8")?;
+        .set("Content-Type", "application/linkset+json; charset=utf-8; profile=\"https://www.rfc-editor.org/info/rfc9727\"")?;
     response
         .headers_mut()
         .set("Cache-Control", "public, max-age=300")?;
