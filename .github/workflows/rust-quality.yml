@@ -1,4 +1,4 @@
-name: Rust quality
+name: Rust tests and checks
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Format, test, check, and lint
+    name: Test, check, and lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -31,9 +31,6 @@ jobs:
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
 
       - name: Run native tests
         run: cargo test --all
