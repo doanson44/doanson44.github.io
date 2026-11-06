@@ -1,5 +1,10 @@
 const API_VERSION = "1.0.0";
 const UPSTREAM_BASE = "https://api.mexc.com";
+const CAFEF_MARKET_URLS = [
+  "https://cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx",
+  "https://m.cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx",
+];
+const CAFEF_HISTORY_BASE = "https://cafefnew.mediacdn.vn/Images/Uploaded/DuLieuDownload/Liveboard/";
 const ALLOWED_ORIGINS = new Set([
   "https://doanson44.github.io",
   "http://localhost:8080",
@@ -82,6 +87,18 @@ export default {
 
       if (url.pathname === "/v1/crypto/futures/funding-rate") {
         return await handleFundingRate(url, origin);
+      }
+
+      if (url.pathname === "/v1/stocks/vietnam/snapshot") {
+        return await handleVietnamStockSnapshot(origin);
+      }
+
+      if (url.pathname === "/v1/stocks/vietnam/klines") {
+        return await handleVietnamStockKlines(url, origin);
+      }
+
+      if (url.pathname === "/v1/stocks/vietnam/analysis") {
+        return await handleVietnamStockAnalysis(url, origin);
       }
 
       return jsonError("not_found", "Endpoint not found.", 404, origin);
@@ -227,6 +244,298 @@ async function handleFundingRate(url, origin) {
       nextSettlementAt: toIsoTimestamp(data.nextSettleTime),
     },
   }, 200, origin, 15);
+}
+
+
+async function handleVietnamStockSnapshot(origin) {
+  const upstream = await fetchCafeFMarketSnapshot();
+  if (upstream.error) {
+    return jsonError(upstream.code, upstream.error, upstream.status, origin);
+  }
+
+  const stocks = upstream.payload.Data
+    .filter((item) => item && typeof item.Symbol === "string" && /^[A-Z0-9]{1,12}$/.test(item.Symbol))
+    .map((item) => ({
+      symbol: item.Symbol.toUpperCase(),
+      name: typeof item.Name === "string" ? item.Name : item.Symbol.toUpperCase(),
+      price: finiteOrNull(item.Price),
+      change: finiteOrNull(item.Change),
+      changePercent: finiteOrNull(item.ChangePercent),
+      totalVolume: finiteOrNull(item.TotalVolume),
+      totalValue: finiteOrNull(item.TotalValue),
+      marketCap: finiteOrNull(item.MarketCap),
+    }))
+    .filter((item) => item.price !== null);
+
+  if (!stocks.length) {
+    return jsonError("upstream_data_missing", "CafeF did not return valid Vietnam stock snapshot data.", 502, origin);
+  }
+
+  return jsonResponse({
+    schemaVersion: "1.0",
+    meta: {
+      source: "CafeF",
+      sourceEndpoint: "ajaxbandothitruong.ashx",
+      market: "Vietnam",
+      currency: "VND",
+      timezone: "Asia/Ho_Chi_Minh",
+      retrievedAt: new Date().toISOString(),
+      sourceTimestamp: null,
+      freshness: "retrieval_time_only",
+      itemCount: stocks.length,
+    },
+    data: stocks,
+  }, 200, origin, 15);
+}
+
+async function handleVietnamStockKlines(url, origin) {
+  const query = parseVietnamStockQuery(url);
+  if (query.error) {
+    return jsonError("invalid_query", query.error, 400, origin);
+  }
+
+  const upstream = await fetchVietnamStockHistory(query.symbol);
+  if (upstream.error) {
+    return jsonError(upstream.code, upstream.error, upstream.status, origin);
+  }
+
+  const candles = upstream.candles.slice(-query.limit);
+  const payload = buildVietnamStockPayload(query, candles, upstream.duplicateCandlesRemoved);
+  return jsonResponse(payload, 200, origin, 300);
+}
+
+async function handleVietnamStockAnalysis(url, origin) {
+  const query = parseVietnamStockQuery(url);
+  if (query.error) {
+    return jsonError("invalid_query", query.error, 400, origin);
+  }
+
+  const upstream = await fetchVietnamStockHistory(query.symbol);
+  if (upstream.error) {
+    return jsonError(upstream.code, upstream.error, upstream.status, origin);
+  }
+
+  const candles = upstream.candles.slice(-query.limit);
+  const market = buildVietnamStockPayload(query, candles, upstream.duplicateCandlesRemoved);
+  const today = vietnamDateKey(new Date());
+  const closedCandles = candles.filter((candle) => vietnamDateKey(new Date(candle.timestamp * 1000)) !== today);
+
+  return jsonResponse({
+    ...market,
+    analysis: {
+      engine: "market-data-api-indicators",
+      engineVersion: API_VERSION,
+      methodology: "Standard technical indicator calculations over CafeF daily OHLCV history.",
+      indicators: calculateIndicators(closedCandles),
+      candleCountUsed: closedCandles.length,
+      latestCandleIncluded: closedCandles.length === candles.length,
+      latestCandleStatus: "provider_finality_unverified",
+      marketStructure: {
+        status: "not_calculated",
+        reason: "BOS, CHoCH, swing structure, support/resistance, and pattern detection are not part of this API version.",
+      },
+    },
+  }, 200, origin, 300);
+}
+
+function parseVietnamStockQuery(url) {
+  const symbol = url.searchParams.get("symbol");
+  if (typeof symbol !== "string" || !/^[A-Za-z0-9]{1,12}$/.test(symbol.trim())) {
+    return { error: "A valid Vietnam stock symbol is required, e.g. FPT or VNM." };
+  }
+
+  const limitValue = url.searchParams.get("limit");
+  const limit = limitValue === null ? 500 : Number(limitValue);
+  if (!Number.isInteger(limit) || limit < 2 || limit > 2000) {
+    return { error: "limit must be an integer between 2 and 2000." };
+  }
+
+  return { symbol: symbol.trim().toUpperCase(), timeframe: "1d", limit };
+}
+
+async function fetchCafeFMarketSnapshot() {
+  for (const target of CAFEF_MARKET_URLS) {
+    let response;
+    try {
+      response = await fetch(target, {
+        method: "GET",
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          Referer: "https://cafef.vn/",
+        },
+      });
+    } catch (error) {
+      continue;
+    }
+
+    if (!response.ok) continue;
+    let payload;
+    try {
+      payload = await response.json();
+    } catch (error) {
+      continue;
+    }
+
+    if (payload && payload.Success === true && Array.isArray(payload.Data)) {
+      return { payload };
+    }
+  }
+
+  return {
+    error: "CafeF Vietnam stock snapshot is unavailable from the configured upstream endpoints.",
+    code: "upstream_unavailable",
+    status: 502,
+  };
+}
+
+async function fetchVietnamStockHistory(symbol) {
+  const target = CAFEF_HISTORY_BASE + encodeURIComponent(symbol) + "_PriceHistory.json";
+  let response;
+  try {
+    response = await fetch(target, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Referer: "https://cafef.vn/",
+      },
+    });
+  } catch (error) {
+    return {
+      error: "Unable to reach CafeF historical stock data.",
+      code: "upstream_unavailable",
+      status: 502,
+    };
+  }
+
+  if (!response.ok) {
+    return {
+      error: "CafeF historical stock data returned HTTP " + response.status + ".",
+      code: "upstream_http_error",
+      status: 502,
+    };
+  }
+
+  let records;
+  try {
+    records = await response.json();
+  } catch (error) {
+    return {
+      error: "CafeF historical stock data returned invalid JSON.",
+      code: "upstream_invalid_json",
+      status: 502,
+    };
+  }
+
+  if (!Array.isArray(records)) {
+    return {
+      error: "CafeF historical stock data has an unexpected response shape.",
+      code: "upstream_invalid_data",
+      status: 502,
+    };
+  }
+
+  const candles = [];
+  for (const record of records) {
+    if (!record || typeof record.Symbol !== "string" || record.Symbol.toUpperCase() !== symbol) continue;
+    const timestamp = parseVietnamTimestamp(record.TradeDate);
+    const candle = {
+      timestamp,
+      open: finiteOrNull(record.OpenPrice),
+      high: finiteOrNull(record.HighPrice),
+      low: finiteOrNull(record.LowPrice),
+      close: finiteOrNull(record.ClosePrice),
+      volume: finiteOrNull(record.Volume),
+      amount: finiteOrNull(record.TotalValue),
+      referencePrice: finiteOrNull(record.BasicPrice),
+      ceiling: finiteOrNull(record.Ceiling),
+      floor: finiteOrNull(record.Floor),
+    };
+
+    if (timestamp === null ||
+        [candle.open, candle.high, candle.low, candle.close, candle.volume].some((value) => value === null) ||
+        candle.open <= 0 || candle.high <= 0 || candle.low <= 0 || candle.close <= 0 ||
+        candle.volume < 0 || candle.high < Math.max(candle.open, candle.close, candle.low) ||
+        candle.low > Math.min(candle.open, candle.close, candle.high)) {
+      continue;
+    }
+    candles.push(candle);
+  }
+
+  candles.sort((left, right) => left.timestamp - right.timestamp);
+  const unique = [];
+  let duplicateCandlesRemoved = 0;
+  for (const candle of candles) {
+    if (unique.length && unique[unique.length - 1].timestamp === candle.timestamp) {
+      unique[unique.length - 1] = candle;
+      duplicateCandlesRemoved += 1;
+    } else {
+      unique.push(candle);
+    }
+  }
+
+  if (!unique.length) {
+    return {
+      error: "CafeF price history does not contain valid candles for symbol " + symbol + ".",
+      code: "upstream_data_missing",
+      status: 502,
+    };
+  }
+
+  return { candles: unique, duplicateCandlesRemoved };
+}
+
+function parseVietnamTimestamp(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const normalized = value.trim().replace(" ", "T");
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized);
+  const date = new Date(hasTimezone ? normalized : normalized + "+07:00");
+  return Number.isNaN(date.getTime()) ? null : Math.floor(date.getTime() / 1000);
+}
+
+function vietnamDateKey(date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return values.year + "-" + values.month + "-" + values.day;
+}
+
+function buildVietnamStockPayload(query, candles, duplicateCandlesRemoved) {
+  const last = candles[candles.length - 1];
+  return {
+    schemaVersion: "1.0",
+    meta: {
+      source: "CafeF",
+      sourceEndpoint: "Liveboard/{symbol}_PriceHistory.json",
+      symbol: query.symbol,
+      assetType: "stock",
+      market: "Vietnam",
+      currency: "VND",
+      timeframe: "1d",
+      timezone: "Asia/Ho_Chi_Minh",
+      retrievedAt: new Date().toISOString(),
+      sourceTimestamp: new Date(last.timestamp * 1000).toISOString(),
+      candleCount: candles.length,
+      requestedLimit: query.limit,
+      latestCandle: {
+        openTime: last.timestamp,
+        closeTime: null,
+        isClosed: null,
+        closeStatus: "provider_finality_unverified",
+      },
+    },
+    candles,
+    dataQuality: {
+      valid: duplicateCandlesRemoved === 0,
+      duplicateCandlesRemoved,
+      missingIntervals: [],
+      missingIntervalCheck: "not_applicable_for_exchange_calendar",
+      issues: duplicateCandlesRemoved ? ["duplicate_candles_removed"] : [],
+    },
+  };
 }
 
 function parseKlineQuery(url) {
@@ -784,6 +1093,9 @@ const OPENAPI_DOCUMENT = JSON.stringify({
           close: { type: "number" },
           volume: { type: "number" },
           amount: { type: ["number", "null"] },
+          referencePrice: { type: ["number", "null"] },
+          ceiling: { type: ["number", "null"] },
+          floor: { type: ["number", "null"] },
         },
       },
       MarketDataResponse: {
@@ -887,6 +1199,32 @@ const OPENAPI_DOCUMENT = JSON.stringify({
         summary: "Get a Futures ticker snapshot",
         parameters: [{ name: "symbol", in: "query", required: true, schema: { type: "string", example: "BTC_USDT" } }],
         responses: { "200": { description: "Ticker snapshot with source timestamp" } },
+      },
+    },
+    "/v1/stocks/vietnam/snapshot": {
+      get: {
+        summary: "Get CafeF Vietnam stock market snapshot",
+        responses: { "200": { description: "Normalized Vietnam stock snapshot with CafeF source metadata" } },
+      },
+    },
+    "/v1/stocks/vietnam/klines": {
+      get: {
+        summary: "Get CafeF daily stock OHLCV history",
+        parameters: [
+          { name: "symbol", in: "query", required: true, schema: { type: "string", example: "FPT" } },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 2, maximum: 2000, default: 500 } },
+        ],
+        responses: { "200": { description: "Daily OHLCV candles, exchange-local timestamps, and data-quality metadata" } },
+      },
+    },
+    "/v1/stocks/vietnam/analysis": {
+      get: {
+        summary: "Get CafeF daily stock OHLCV and technical indicators",
+        parameters: [
+          { name: "symbol", in: "query", required: true, schema: { type: "string", example: "FPT" } },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 2, maximum: 2000, default: 500 } },
+        ],
+        responses: { "200": { description: "Daily OHLCV, indicator values, availability flags, and data-quality metadata" } },
       },
     },
     "/v1/crypto/futures/funding-rate": {
