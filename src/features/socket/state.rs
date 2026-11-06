@@ -1210,7 +1210,9 @@ impl SocketState {
             ));
             return;
         }
-        let Some((interval, interval_seconds)) = mexc_futures_interval(&timeframe) else {
+        let Some((interval, interval_seconds)) =
+            TechnicalAnalysisService::mexc_futures_interval(&timeframe)
+        else {
             self.analysis_error.set(Some(format!(
                 "Unsupported MEXC Futures timeframe: {timeframe}"
             )));
@@ -1325,21 +1327,6 @@ fn is_valid_mexc_futures_symbol(symbol: &str) -> bool {
             .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'_')
 }
 
-fn mexc_futures_interval(timeframe: &str) -> Option<(&'static str, u64)> {
-    match timeframe {
-        "1M" => Some(("Min1", 60)),
-        "5M" => Some(("Min5", 5 * 60)),
-        "15M" => Some(("Min15", 15 * 60)),
-        "30M" => Some(("Min30", 30 * 60)),
-        "1H" => Some(("Min60", 60 * 60)),
-        "4H" => Some(("Hour4", 4 * 60 * 60)),
-        "8H" => Some(("Hour8", 8 * 60 * 60)),
-        "1D" => Some(("Day1", 24 * 60 * 60)),
-        "1W" => Some(("Week1", 7 * 24 * 60 * 60)),
-        "1MO" => Some(("Month1", 30 * 24 * 60 * 60)),
-        _ => None,
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -1356,10 +1343,19 @@ mod tests {
 
     #[test]
     fn maps_supported_mexc_futures_timeframes() {
-        assert_eq!(mexc_futures_interval("4H"), Some(("Hour4", 14_400)));
-        assert_eq!(mexc_futures_interval("1D"), Some(("Day1", 86_400)));
-        assert_eq!(mexc_futures_interval("1MO"), Some(("Month1", 2_592_000)));
-        assert_eq!(mexc_futures_interval("2H"), None);
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("4H"),
+            Some(("Hour4", 14_400))
+        );
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("1D"),
+            Some(("Day1", 86_400))
+        );
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("1MO"),
+            Some(("Month1", 2_592_000))
+        );
+        assert_eq!(TechnicalAnalysisService::mexc_futures_interval("2H"), None);
     }
 }
 
