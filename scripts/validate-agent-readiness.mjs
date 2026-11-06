@@ -73,7 +73,7 @@ for (const skill of index.skills) {
     throw new Error(`Skill URL is outside the Agent Skills namespace: ${skill.name}`);
   }
 
-  const skillPath = resolve(dist, skill.url.replace(/^\\/+/, ""));
+  const skillPath = resolve(dist, skill.url.replace(/^\/+/, ""));
   const skillBody = await readFile(skillPath);
   const digest = createHash("sha256").update(skillBody).digest("hex");
   if (`sha256:${digest}` !== skill.digest) {
