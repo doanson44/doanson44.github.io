@@ -1035,6 +1035,25 @@ pub fn validate_input(
     input: &AnalysisInput,
     requirements: &DataRequirements,
 ) -> Result<(Vec<Candle>, DataQualityReport), String> {
+    validate_input_with_config(
+        input,
+        requirements,
+        &DataQualityConfig {
+            validate_ohlcv: true,
+            detect_missing_candles: true,
+            detect_duplicate_candles: true,
+            detect_invalid_prices: true,
+            detect_zero_volume: true,
+        },
+    )
+}
+
+/// Validates market data using the configured data-quality checks.
+pub fn validate_input_with_config(
+    input: &AnalysisInput,
+    requirements: &DataRequirements,
+    quality_config: &DataQualityConfig,
+) -> Result<(Vec<Candle>, DataQualityReport), String> {
     if input.schema_version.trim().is_empty() {
         return Err("Input schema_version cannot be empty".to_string());
     }
@@ -1071,28 +1090,34 @@ pub fn validate_input(
 
     let mut valid_candles = Vec::with_capacity(candles.len());
     for (index, candle) in candles.iter().enumerate() {
-        if candle.timestamp.trim().is_empty() {
+        if quality_config.validate_ohlcv && candle.timestamp.trim().is_empty() {
             issues.push(issue(
                 "MISSING_TIMESTAMP",
                 format!("Candle {index} has no timestamp"),
             ));
         }
-        if ![
-            candle.open,
-            candle.high,
-            candle.low,
-            candle.close,
-            candle.volume,
-        ]
-        .iter()
-        .all(|value| value.is_finite())
+        if quality_config.validate_ohlcv
+            && ![
+                candle.open,
+                candle.high,
+                candle.low,
+                candle.close,
+                candle.volume,
+            ]
+            .iter()
+            .all(|value| value.is_finite())
         {
             issues.push(issue(
                 "INVALID_NUMBER",
                 format!("Candle {index} contains a non-finite value"),
             ));
         }
-        if candle.open <= 0.0 || candle.high <= 0.0 || candle.low <= 0.0 || candle.close <= 0.0 {
+        if quality_config.detect_invalid_prices
+            && (candle.open <= 0.0
+                || candle.high <= 0.0
+                || candle.low <= 0.0
+                || candle.close <= 0.0)
+        {
             issues.push(issue(
                 "INVALID_PRICE",
                 format!("Candle {index} contains a non-positive price"),
@@ -1104,7 +1129,7 @@ pub fn validate_input(
             || candle.high < candle.close
             || candle.low > candle.open
             || candle.low > candle.close;
-        if invalid_ohlc {
+        if quality_config.validate_ohlcv && invalid_ohlc {
             issues.push(issue(
                 "INVALID_OHLC",
                 format!("Candle {index} violates OHLC bounds; candle skipped"),
@@ -1112,12 +1137,12 @@ pub fn validate_input(
             continue;
         }
 
-        if candle.volume < 0.0 {
+        if quality_config.validate_ohlcv && candle.volume < 0.0 {
             issues.push(issue(
                 "INVALID_VOLUME",
                 format!("Candle {index} has negative volume"),
             ));
-        } else if candle.volume == 0.0 {
+        } else if quality_config.detect_zero_volume && candle.volume == 0.0 {
             issues.push(issue(
                 "ZERO_VOLUME",
                 format!("Candle {index} has zero volume"),
@@ -1128,12 +1153,37 @@ pub fn validate_input(
     }
     candles = valid_candles;
 
-    for pair in candles.windows(2) {
-        if pair[0].timestamp == pair[1].timestamp {
-            issues.push(issue(
-                "DUPLICATE_CANDLE",
-                format!("Duplicate candle timestamp: {}", pair[0].timestamp),
-            ));
+    if quality_config.detect_duplicate_candles {
+        for pair in candles.windows(2) {
+            if pair[0].timestamp == pair[1].timestamp {
+                issues.push(issue(
+                    "DUPLICATE_CANDLE",
+                    format!("Duplicate candle timestamp: {}", pair[0].timestamp),
+                ));
+            }
+        }
+    }
+
+    if quality_config.detect_missing_candles && input.asset.asset_type == AssetType::Crypto {
+        if let Some(expected_seconds) = timeframe_seconds(&input.market_data.timeframe) {
+            for pair in candles.windows(2) {
+                if let (Some(previous), Some(current)) = (
+                    timestamp_seconds(&pair[0].timestamp),
+                    timestamp_seconds(&pair[1].timestamp),
+                ) {
+                    let delta = current.saturating_sub(previous);
+                    if delta > (expected_seconds as i64 * 3 / 2) {
+                        let missing = (delta as u64 / expected_seconds).saturating_sub(1);
+                        issues.push(issue(
+                            "MISSING_CANDLES",
+                            format!(
+                                "Detected approximately {missing} missing candle(s) between {} and {}",
+                                pair[0].timestamp, pair[1].timestamp
+                            ),
+                        ));
+                    }
+                }
+            }
         }
     }
 
@@ -1165,6 +1215,52 @@ pub fn validate_input(
             coverage,
         },
     ))
+}
+
+fn timestamp_seconds(timestamp: &str) -> Option<i64> {
+    if let Ok(value) = timestamp.trim().parse::<i64>() {
+        return Some(if value.unsigned_abs() > 100_000_000_000 {
+            value / 1000
+        } else {
+            value
+        });
+    }
+
+    let mut date_time = timestamp.trim().splitn(2, 'T');
+    let date = date_time.next()?;
+    let mut date_parts = date.split('-');
+    let year = date_parts.next()?.parse::<i64>().ok()?;
+    let month = date_parts.next()?.parse::<i64>().ok()?;
+    let day = date_parts.next()?.parse::<i64>().ok()?;
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return None;
+    }
+
+    let time_seconds = date_time
+        .next()
+        .and_then(|time| time.get(0..8))
+        .and_then(|time| {
+            let mut parts = time.split(':');
+            let hours = parts.next()?.parse::<i64>().ok()?;
+            let minutes = parts.next()?.parse::<i64>().ok()?;
+            let seconds = parts.next()?.parse::<i64>().ok()?;
+            Some(hours * 3600 + minutes * 60 + seconds)
+        })
+        .unwrap_or(0);
+
+    let adjusted_year = year - i64::from(month <= 2);
+    let era = if adjusted_year >= 0 {
+        adjusted_year
+    } else {
+        adjusted_year - 399
+    } / 400;
+    let year_of_era = adjusted_year - era * 400;
+    let adjusted_month = month + if month > 2 { -3 } else { 9 };
+    let day_of_year = (153 * adjusted_month + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    let days_since_epoch = era * 146_097 + day_of_era - 719_468;
+
+    Some(days_since_epoch * 86_400 + time_seconds)
 }
 
 /// Calculates a simple moving average series.
@@ -1455,7 +1551,8 @@ pub fn analyze(
     config: &AnalysisConfig,
     analysis_timestamp: String,
 ) -> Result<AnalysisResult, String> {
-    let (candles, data_quality) = validate_input(input, &config.data_requirements)?;
+    let (candles, data_quality) =
+        validate_input_with_config(input, &config.data_requirements, &config.data_quality)?;
     if !data_quality.sufficient_for_analysis {
         return Err(
             "Market data does not satisfy the configured analysis requirements".to_string(),
@@ -3341,6 +3438,115 @@ mod tests {
         assert_eq!(performance.five_day, None);
         assert_eq!(performance.twenty_day, percentage_change(&closes, 3));
         assert_eq!(performance.sixty_day, percentage_change(&closes, 9));
+    }
+
+    #[test]
+    fn crypto_data_quality_detects_missing_candles() {
+        let input = AnalysisInput {
+            schema_version: "1.0".to_string(),
+            asset: Asset {
+                symbol: "BTC_USDT".to_string(),
+                asset_type: AssetType::Crypto,
+                exchange: "MEXC Futures".to_string(),
+                currency: "USDT".to_string(),
+            },
+            market_data: MarketData {
+                timeframe: "4H".to_string(),
+                timezone: "UTC".to_string(),
+                candles: vec![
+                    Candle {
+                        timestamp: "1000".to_string(),
+                        open: 10.0,
+                        high: 11.0,
+                        low: 9.0,
+                        close: 10.0,
+                        volume: 1.0,
+                        metadata: CandleMetadata::default(),
+                    },
+                    Candle {
+                        timestamp: "29800".to_string(),
+                        open: 10.0,
+                        high: 11.0,
+                        low: 9.0,
+                        close: 10.0,
+                        volume: 1.0,
+                        metadata: CandleMetadata::default(),
+                    },
+                ],
+            },
+        };
+        let config = DataQualityConfig {
+            validate_ohlcv: true,
+            detect_missing_candles: true,
+            detect_duplicate_candles: true,
+            detect_invalid_prices: true,
+            detect_zero_volume: true,
+        };
+        let requirements = DataRequirements {
+            minimum_candles: 1,
+            recommended_candles: 2,
+            maximum_candles: 10,
+        };
+
+        let (_, report) =
+            validate_input_with_config(&input, &requirements, &config).expect("valid input");
+
+        assert!(report.issues.iter().any(|item| item.code == "MISSING_CANDLES"));
+        assert!(report.sufficient_for_analysis);
+    }
+
+    #[test]
+    fn stock_daily_data_does_not_treat_weekends_as_missing_candles() {
+        let mut input = AnalysisInput {
+            schema_version: "1.0".to_string(),
+            asset: Asset {
+                symbol: "VNM".to_string(),
+                asset_type: AssetType::Stock,
+                exchange: "VN".to_string(),
+                currency: "VND".to_string(),
+            },
+            market_data: MarketData {
+                timeframe: "1D".to_string(),
+                timezone: "Asia/Ho_Chi_Minh".to_string(),
+                candles: vec![
+                    Candle {
+                        timestamp: "2026-09-04T00:00:00".to_string(),
+                        open: 10.0,
+                        high: 11.0,
+                        low: 9.0,
+                        close: 10.0,
+                        volume: 1.0,
+                        metadata: CandleMetadata::default(),
+                    },
+                    Candle {
+                        timestamp: "2026-09-07T00:00:00".to_string(),
+                        open: 10.0,
+                        high: 11.0,
+                        low: 9.0,
+                        close: 10.0,
+                        volume: 1.0,
+                        metadata: CandleMetadata::default(),
+                    },
+                ],
+            },
+        };
+        let config = DataQualityConfig {
+            validate_ohlcv: true,
+            detect_missing_candles: true,
+            detect_duplicate_candles: true,
+            detect_invalid_prices: true,
+            detect_zero_volume: true,
+        };
+        let requirements = DataRequirements {
+            minimum_candles: 1,
+            recommended_candles: 2,
+            maximum_candles: 10,
+        };
+
+        let (_, report) =
+            validate_input_with_config(&input, &requirements, &config).expect("valid input");
+
+        assert!(!report.issues.iter().any(|item| item.code == "MISSING_CANDLES"));
     }
 
     #[test]
