@@ -10,7 +10,9 @@ Open `/#/socket` to view the public market-data playground.
 ## Data sources
 
 - Public MEXC Futures WebSocket market ticker stream: `wss://contract.mexc.com/edge`.
+- Historical Futures candles and monthly contract-price extremes use the MEXC Futures REST endpoint on the current API host: `https://api.mexc.com/api/v1/contract/kline/{symbol}`.
 - Funding-rate snapshots are fetched through the site's configured Cloudflare Worker proxy and cached in browser local storage.
+- The WebSocket endpoint and REST API host are distinct; do not infer the WebSocket URL from the REST API host.
 
 ## Boundaries
 
