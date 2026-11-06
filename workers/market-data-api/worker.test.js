@@ -33,6 +33,8 @@ test("OpenAPI document is served with the request origin", async () => {
   const payload = await response.json();
   assert.equal(payload.openapi, "3.1.0");
   assert.equal(payload.servers[0].url, "https://api.example");
+  assert.ok(payload.components.schemas.Candle);
+  assert.ok(payload.components.schemas.AnalysisResponse);
   assert.ok(payload.paths["/v1/crypto/futures/analysis"]);
 });
 
