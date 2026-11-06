@@ -526,12 +526,21 @@ pub struct GapAnalysis {
 }
 
 /// Consecutive candle movement analysis.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ConsecutiveMoveAnalysis {
     /// Direction of the trailing candle sequence.
     pub direction: String,
     /// Number of consecutive candles in that direction.
     pub count: usize,
+}
+
+impl Default for ConsecutiveMoveAnalysis {
+    fn default() -> Self {
+        Self {
+            direction: "none".to_string(),
+            count: 0,
+        }
+    }
 }
 
 /// Recent returns.
