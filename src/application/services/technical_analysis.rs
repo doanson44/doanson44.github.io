@@ -50,7 +50,7 @@ impl TechnicalAnalysisService {
         })
     }
 
-    /// Builds a crypto Futures analysis input from an MEXC kline response.
+    /// Builds a crypto Spot analysis input from an MEXC Spot K-line response.
     pub fn mexc_klines_input(
         raw: &str,
         symbol: &str,
@@ -92,9 +92,76 @@ impl TechnicalAnalysisService {
         })
     }
 
-    /// Returns the default daily crypto-analysis configuration used by Socket.
+    /// Builds a crypto Futures analysis input from an MEXC contract K-line response.
+    pub fn mexc_futures_klines_input(
+        raw: &str,
+        symbol: &str,
+        timeframe: &str,
+    ) -> Result<AnalysisInput, String> {
+        let history =
+            crate::domain::market::parse_mexc_futures_klines_response(raw, symbol)?;
+        let candles = history
+            .candles
+            .into_iter()
+            .map(|candle| Candle {
+                timestamp: candle.timestamp,
+                open: candle.open,
+                high: candle.high,
+                low: candle.low,
+                close: candle.close,
+                volume: candle.volume,
+                metadata: CandleMetadata {
+                    reference_price: None,
+                    ceiling: None,
+                    floor: None,
+                    total_value: candle.total_value,
+                },
+            })
+            .collect();
+
+        Ok(AnalysisInput {
+            schema_version: "1.0".to_string(),
+            asset: Asset {
+                symbol: symbol.trim().to_ascii_uppercase(),
+                asset_type: AssetType::Crypto,
+                exchange: "MEXC Futures".to_string(),
+                currency: "USDT".to_string(),
+            },
+            market_data: MarketData {
+                timeframe: timeframe.trim().to_ascii_uppercase(),
+                timezone: "UTC".to_string(),
+                candles,
+            },
+        })
+    }
+
+    /// Maps a user-facing timeframe to the MEXC Futures interval and candle duration.
+    pub fn mexc_futures_interval(timeframe: &str) -> Option<(&'static str, u64)> {
+        let interval = match timeframe.trim().to_ascii_uppercase().as_str() {
+            "1M" => "Min1",
+            "5M" => "Min5",
+            "15M" => "Min15",
+            "30M" => "Min30",
+            "1H" => "Min60",
+            "4H" => "Hour4",
+            "8H" => "Hour8",
+            "1D" => "Day1",
+            "1W" => "Week1",
+            "1MO" => "Month1",
+            _ => return None,
+        };
+        let seconds = crate::domain::technical_analysis::timeframe_seconds(timeframe)?;
+        Some((interval, seconds))
+    }
+
+    /// Returns the default crypto-analysis configuration used by Socket.
     pub fn default_crypto_config() -> AnalysisConfig {
         Self::default_stock_daily_config()
+    }
+
+    /// Adapts the default crypto configuration to the available candle count.
+    pub fn crypto_config_for_candles(candle_count: usize) -> AnalysisConfig {
+        Self::stock_daily_config_for_candles(candle_count)
     }
 
     /// Returns the default daily stock-analysis configuration used by the Market page.
@@ -171,6 +238,7 @@ impl TechnicalAnalysisService {
                 enabled: true,
                 candlestick_patterns: true,
                 chart_patterns: vec![
+                    "ascending_structure".to_string(),
                     "double_top".to_string(),
                     "double_bottom".to_string(),
                     "head_and_shoulders".to_string(),
@@ -178,9 +246,6 @@ impl TechnicalAnalysisService {
                     "ascending_triangle".to_string(),
                     "descending_triangle".to_string(),
                     "symmetrical_triangle".to_string(),
-                    "flag".to_string(),
-                    "pennant".to_string(),
-                    "cup_and_handle".to_string(),
                 ],
             },
             divergence_detection: DivergenceDetectionConfig {
@@ -240,9 +305,11 @@ impl TechnicalAnalysisService {
         for period in &mut config.indicators.moving_averages.sma {
             *period = (*period).min(available).max(1);
         }
+        config.indicators.moving_averages.sma.dedup();
         for period in &mut config.indicators.moving_averages.ema {
             *period = (*period).min(available).max(1);
         }
+        config.indicators.moving_averages.ema.dedup();
 
         config.indicators.momentum.rsi.period =
             config.indicators.momentum.rsi.period.min(available).max(1);
@@ -513,18 +580,42 @@ mod tests {
     }
 
     #[test]
-    fn parses_mexc_klines_input() {
-        let input = TechnicalAnalysisService::mexc_klines_input(
-            r#"[[1782979200000,"60150.52","61421.05","60129.56","61372.97","2447.30963309",1782993600000,"149274811.89"]]"#,
-            "BTCUSDT",
+    fn parses_mexc_futures_klines_input() {
+        let input = TechnicalAnalysisService::mexc_futures_klines_input(
+            r#"{"success":true,"code":0,"data":{"time":[1782979200],"open":["60150.52"],"close":["61372.97"],"high":["61421.05"],"low":["60129.56"],"vol":["2447.30963309"],"amount":["149274811.89"]}}"#,
+            "BTC_USDT",
             "4H",
         )
-        .expect("MEXC input should parse");
+        .expect("MEXC Futures input should parse");
 
-        assert_eq!(input.asset.symbol, "BTCUSDT");
+        assert_eq!(input.asset.symbol, "BTC_USDT");
         assert_eq!(input.market_data.timeframe, "4H");
         assert_eq!(input.asset.asset_type, AssetType::Crypto);
+        assert_eq!(input.asset.exchange, "MEXC Futures");
         assert_eq!(input.market_data.candles[0].close, 61372.97);
+    }
+
+    #[test]
+    fn maps_supported_mexc_futures_intervals() {
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("4H"),
+            Some(("Hour4", 14_400))
+        );
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("1D"),
+            Some(("Day1", 86_400))
+        );
+        assert_eq!(TechnicalAnalysisService::mexc_futures_interval("2H"), None);
+    }
+
+    #[test]
+    fn crypto_config_adapts_to_available_history() {
+        let config = TechnicalAnalysisService::crypto_config_for_candles(80);
+
+        assert_eq!(config.data_requirements.minimum_candles, 80);
+        assert_eq!(config.data_requirements.recommended_candles, 80);
+        assert_eq!(config.indicators.moving_averages.sma, vec![20, 50, 80]);
+        assert_eq!(config.indicators.moving_averages.ema, vec![9, 20, 50, 80]);
     }
 
     #[test]

@@ -95,7 +95,7 @@ impl FuturesMarketService {
     }
 }
 
-/// Application service for loading MEXC Spot monthly price history for Futures symbols.
+/// Application service for loading MEXC Futures monthly price history.
 #[derive(Debug, Clone, Copy)]
 pub struct FuturesHistoryService<C> {
     client: C,
@@ -109,7 +109,7 @@ where
         Self { client }
     }
 
-    /// Loads monthly Spot candles and calculates historical/52-week extremes.
+    /// Loads monthly contract candles and calculates historical/52-week extremes.
     pub fn load_history(
         &self,
         symbol: &str,
@@ -118,15 +118,16 @@ where
             dyn Fn(Result<crate::domain::futures::FuturesPriceExtremes, String>),
         >,
     ) {
-        let symbol = symbol.trim().to_ascii_uppercase().replace('_', "");
-        let url =
-            format!("https://api.mexc.com/api/v3/klines?symbol={symbol}&interval=1M&limit=500");
+        let symbol = symbol.trim().to_ascii_uppercase();
+        let url = format!(
+            "https://api.mexc.com/api/v1/contract/kline/{symbol}?interval=Month1&start=0"
+        );
         let callback_symbol = symbol.clone();
         self.client.fetch(
             &url,
             std::rc::Rc::new(move |result| {
                 let parsed = result.and_then(|raw| {
-                    let candles = crate::domain::futures::parse_mexc_spot_monthly_klines(
+                    let candles = crate::domain::futures::parse_mexc_futures_monthly_klines(
                         &raw,
                         &callback_symbol,
                     )?;
@@ -157,6 +158,61 @@ impl MarkdownService {
 mod tests {
     use super::*;
     use crate::domain::markdown::RenderSegment;
+
+    #[derive(Clone)]
+    struct RecordingProxy {
+        requested_url: std::rc::Rc<std::cell::RefCell<Option<String>>>,
+        response: String,
+    }
+
+    impl ProxyClient for RecordingProxy {
+        fn fetch(
+            &self,
+            target_url: &str,
+            on_result: std::rc::Rc<dyn Fn(Result<String, String>)>,
+        ) {
+            *self.requested_url.borrow_mut() = Some(target_url.to_string());
+            on_result(Ok(self.response.clone()));
+        }
+    }
+
+    #[test]
+    fn futures_history_uses_contract_monthly_candles_and_preserves_multiplier_symbols() {
+        let requested_url = std::rc::Rc::new(std::cell::RefCell::new(None));
+        let proxy = RecordingProxy {
+            requested_url: requested_url.clone(),
+            response: r#"{"success":true,"code":0,"data":{"time":[1757894400,1780272000],"open":[100.0,120.0],"close":[110.0,130.0],"high":[115.0,140.0],"low":[95.0,118.0],"vol":[1.0,2.0],"amount":[100.0,200.0]}}"#.to_string(),
+        };
+        let result = std::rc::Rc::new(std::cell::RefCell::new(None));
+        let result_for_callback = result.clone();
+
+        FuturesHistoryService::new(proxy).load_history(
+            "1000PEPE_USDT",
+            1_760_000_000,
+            std::rc::Rc::new(move |value| {
+                *result_for_callback.borrow_mut() = Some(value);
+            }),
+        );
+
+        let url = requested_url
+            .borrow()
+            .clone()
+            .expect("Futures history URL should be requested");
+        assert_eq!(
+            url,
+            "https://api.mexc.com/api/v1/contract/kline/1000PEPE_USDT?interval=Month1&start=0"
+        );
+
+        let extremes = result
+            .borrow_mut()
+            .take()
+            .expect("Futures history callback should run")
+            .expect("Futures history response should parse");
+        assert_eq!(extremes.historical_low, Some(95.0));
+        assert_eq!(extremes.historical_high, Some(140.0));
+        assert_eq!(extremes.week_52_low, Some(118.0));
+        assert_eq!(extremes.week_52_high, Some(140.0));
+    }
 
     #[test]
     fn test_service_renders_markdown() {

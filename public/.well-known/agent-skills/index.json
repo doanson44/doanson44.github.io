@@ -20,7 +20,7 @@
       "type": "skill-md",
       "description": "Explain the read-only market-data Socket playground on doanson44.github.io, including its public MEXC market-data sources and limitations. Use when users ask about the Socket page or its market data.",
       "url": "/.well-known/agent-skills/market-data-playground/SKILL.md",
-      "digest": "sha256:315a1345a5b0a7cbbc76752cae7a04235ea6987dd4da8b1626c9a540aaea75ad"
+      "digest": "sha256:51407fc98326709bbcd1f0df6289a477a9ff0076c599db9eae44dcdc6e45d825"
     }
   ]
 }

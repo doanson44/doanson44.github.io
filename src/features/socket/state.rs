@@ -1201,14 +1201,23 @@ impl SocketState {
     }
 
     fn run_analysis(&self, symbol: &str, timeframe: &str, copy_result: bool) {
-        let symbol = symbol.trim().to_ascii_uppercase().replace('_', "");
+        let symbol = symbol.trim().to_ascii_uppercase();
         let timeframe = timeframe.trim().to_ascii_uppercase();
-        if symbol.is_empty() || timeframe.is_empty() {
+        if !is_valid_mexc_futures_symbol(&symbol) {
             self.analysis_error.set(Some(
-                "A valid symbol and timeframe are required for analysis.".to_string(),
+                "A valid MEXC Futures contract symbol is required (for example, BTC_USDT)."
+                    .to_string(),
             ));
             return;
         }
+        let Some((interval, interval_seconds)) =
+            TechnicalAnalysisService::mexc_futures_interval(&timeframe)
+        else {
+            self.analysis_error.set(Some(format!(
+                "Unsupported MEXC Futures timeframe: {timeframe}"
+            )));
+            return;
+        };
 
         self.analysis_loading.set(true);
         self.analysis_error.set(None);
@@ -1223,24 +1232,11 @@ impl SocketState {
         let analysis_modal_open = self.analysis_modal_open;
         let analysis_error = self.analysis_error;
         let analysis_copied = self.analysis_copied;
-        // MEXC uses the base asset symbol without the numeric multiplier prefix
-        // for Kline requests (for example, 1000000BABYDOGE_USDT -> BABYDOGEUSDT).
-        let api_symbol = symbol
-            .trim_start_matches(|character: char| character.is_ascii_digit())
-            .to_string();
-        if api_symbol.is_empty() {
-            self.analysis_error.set(Some(
-                "The symbol does not contain a valid asset name.".to_string(),
-            ));
-            return;
-        }
+
+        let end_seconds = (js_sys::Date::now().max(0.0) / 1000.0) as u64;
+        let start_seconds = end_seconds.saturating_sub(interval_seconds * 500);
         let url = format!(
-            "https://api.mexc.com/api/v3/klines?symbol={api_symbol}&interval={}&limit=500",
-            match timeframe.as_str() {
-                "4H" => "4h",
-                "1D" => "1d",
-                _ => "1d",
-            }
+            "https://api.mexc.com/api/v1/contract/kline/{symbol}?interval={interval}&start={start_seconds}&end={end_seconds}"
         );
 
         ProxyService::new(ProxyApi).fetch_raw(
@@ -1248,9 +1244,14 @@ impl SocketState {
             Rc::new(move |result| {
                 analysis_loading.set(false);
                 match result.and_then(|raw| {
-                    let input =
-                        TechnicalAnalysisService::mexc_klines_input(&raw, &api_symbol, &timeframe)?;
-                    let config = TechnicalAnalysisService::default_crypto_config();
+                    let input = TechnicalAnalysisService::mexc_futures_klines_input(
+                        &raw,
+                        &symbol,
+                        &timeframe,
+                    )?;
+                    let config = TechnicalAnalysisService::crypto_config_for_candles(
+                        input.market_data.candles.len(),
+                    );
                     TechnicalAnalysisService::analyze(&input, &config, browser::now_iso8601())
                 }) {
                     Ok(result) => {
@@ -1306,6 +1307,55 @@ impl SocketState {
                 Err(message) => error.set(Some(message)),
             }
         });
+    }
+}
+
+fn is_valid_mexc_futures_symbol(symbol: &str) -> bool {
+    let mut parts = symbol.split('_');
+    let Some(base) = parts.next() else {
+        return false;
+    };
+    let Some(quote) = parts.next() else {
+        return false;
+    };
+
+    !base.is_empty()
+        && !quote.is_empty()
+        && parts.next().is_none()
+        && symbol
+            .bytes()
+            .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'_')
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accepts_mexc_contract_symbols_without_rewriting_them() {
+        assert!(is_valid_mexc_futures_symbol("BTC_USDT"));
+        assert!(is_valid_mexc_futures_symbol("1000PEPE_USDT"));
+        assert!(!is_valid_mexc_futures_symbol("BTCUSDT"));
+        assert!(!is_valid_mexc_futures_symbol("BTC_USDT/path"));
+        assert!(!is_valid_mexc_futures_symbol("BTC_USDT_EXTRA"));
+    }
+
+    #[test]
+    fn maps_supported_mexc_futures_timeframes() {
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("4H"),
+            Some(("Hour4", 14_400))
+        );
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("1D"),
+            Some(("Day1", 86_400))
+        );
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("1MO"),
+            Some(("Month1", 2_592_000))
+        );
+        assert_eq!(TechnicalAnalysisService::mexc_futures_interval("2H"), None);
     }
 }
 

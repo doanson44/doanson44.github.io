@@ -506,21 +506,56 @@ pub struct PriceActionAnalysis {
     pub candle: CandleAnalysis,
     /// Recent percentage performance.
     pub recent_performance: RecentPerformance,
+    /// Gap between adjacent candle ranges.
+    #[serde(default)]
+    pub gap: GapAnalysis,
+    /// Trailing sequence of candles moving in the same direction.
+    #[serde(default)]
+    pub consecutive_moves: ConsecutiveMoveAnalysis,
+}
+
+/// Price gap analysis.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct GapAnalysis {
+    /// Whether a gap was detected between the latest two candles.
+    pub detected: bool,
+    /// Gap direction.
+    pub direction: Option<String>,
+    /// Gap size as a percentage of the previous close.
+    pub size_percent: Option<f64>,
+}
+
+/// Consecutive candle movement analysis.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ConsecutiveMoveAnalysis {
+    /// Direction of the trailing candle sequence.
+    pub direction: String,
+    /// Number of consecutive candles in that direction.
+    pub count: usize,
+}
+
+impl Default for ConsecutiveMoveAnalysis {
+    fn default() -> Self {
+        Self {
+            direction: "none".to_string(),
+            count: 0,
+        }
+    }
 }
 
 /// Recent returns.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RecentPerformance {
-    /// One-period return.
+    /// One-calendar-day return, derived from the selected candle timeframe.
     #[serde(rename = "1D")]
     pub one_day: Option<f64>,
-    /// Five-period return.
+    /// Five-calendar-day return.
     #[serde(rename = "5D")]
     pub five_day: Option<f64>,
-    /// Twenty-period return.
+    /// Twenty-calendar-day return.
     #[serde(rename = "20D")]
     pub twenty_day: Option<f64>,
-    /// Sixty-period return.
+    /// Sixty-calendar-day return.
     #[serde(rename = "60D")]
     pub sixty_day: Option<f64>,
 }
@@ -530,6 +565,8 @@ pub struct RecentPerformance {
 pub struct TrendAnalysis {
     /// Directional state.
     pub state: String,
+    /// ADX value used to classify trend strength.
+    pub adx: Option<f64>,
     /// Strength classification.
     pub strength: String,
     /// Requested moving-average values.
@@ -744,8 +781,11 @@ pub struct ZoneBounds {
 pub struct BreakoutAnalysis {
     /// Breakout status.
     pub status: String,
-    /// Relevant resistance level.
+    /// Relevant resistance level for bullish scenarios.
     pub resistance_level: Option<f64>,
+    /// Relevant support level for bearish scenarios.
+    #[serde(default)]
+    pub support_level: Option<f64>,
     /// Breakout direction.
     pub direction: Option<String>,
     /// Distance to the relevant level in percent.
@@ -1004,6 +1044,25 @@ pub fn validate_input(
     input: &AnalysisInput,
     requirements: &DataRequirements,
 ) -> Result<(Vec<Candle>, DataQualityReport), String> {
+    validate_input_with_config(
+        input,
+        requirements,
+        &DataQualityConfig {
+            validate_ohlcv: true,
+            detect_missing_candles: true,
+            detect_duplicate_candles: true,
+            detect_invalid_prices: true,
+            detect_zero_volume: true,
+        },
+    )
+}
+
+/// Validates market data using the configured data-quality checks.
+pub fn validate_input_with_config(
+    input: &AnalysisInput,
+    requirements: &DataRequirements,
+    quality_config: &DataQualityConfig,
+) -> Result<(Vec<Candle>, DataQualityReport), String> {
     if input.schema_version.trim().is_empty() {
         return Err("Input schema_version cannot be empty".to_string());
     }
@@ -1040,28 +1099,34 @@ pub fn validate_input(
 
     let mut valid_candles = Vec::with_capacity(candles.len());
     for (index, candle) in candles.iter().enumerate() {
-        if candle.timestamp.trim().is_empty() {
+        if quality_config.validate_ohlcv && candle.timestamp.trim().is_empty() {
             issues.push(issue(
                 "MISSING_TIMESTAMP",
                 format!("Candle {index} has no timestamp"),
             ));
         }
-        if ![
-            candle.open,
-            candle.high,
-            candle.low,
-            candle.close,
-            candle.volume,
-        ]
-        .iter()
-        .all(|value| value.is_finite())
+        if quality_config.validate_ohlcv
+            && ![
+                candle.open,
+                candle.high,
+                candle.low,
+                candle.close,
+                candle.volume,
+            ]
+            .iter()
+            .all(|value| value.is_finite())
         {
             issues.push(issue(
                 "INVALID_NUMBER",
                 format!("Candle {index} contains a non-finite value"),
             ));
         }
-        if candle.open <= 0.0 || candle.high <= 0.0 || candle.low <= 0.0 || candle.close <= 0.0 {
+        if quality_config.detect_invalid_prices
+            && (candle.open <= 0.0
+                || candle.high <= 0.0
+                || candle.low <= 0.0
+                || candle.close <= 0.0)
+        {
             issues.push(issue(
                 "INVALID_PRICE",
                 format!("Candle {index} contains a non-positive price"),
@@ -1073,7 +1138,7 @@ pub fn validate_input(
             || candle.high < candle.close
             || candle.low > candle.open
             || candle.low > candle.close;
-        if invalid_ohlc {
+        if quality_config.validate_ohlcv && invalid_ohlc {
             issues.push(issue(
                 "INVALID_OHLC",
                 format!("Candle {index} violates OHLC bounds; candle skipped"),
@@ -1081,12 +1146,12 @@ pub fn validate_input(
             continue;
         }
 
-        if candle.volume < 0.0 {
+        if quality_config.validate_ohlcv && candle.volume < 0.0 {
             issues.push(issue(
                 "INVALID_VOLUME",
                 format!("Candle {index} has negative volume"),
             ));
-        } else if candle.volume == 0.0 {
+        } else if quality_config.detect_zero_volume && candle.volume == 0.0 {
             issues.push(issue(
                 "ZERO_VOLUME",
                 format!("Candle {index} has zero volume"),
@@ -1097,12 +1162,37 @@ pub fn validate_input(
     }
     candles = valid_candles;
 
-    for pair in candles.windows(2) {
-        if pair[0].timestamp == pair[1].timestamp {
-            issues.push(issue(
-                "DUPLICATE_CANDLE",
-                format!("Duplicate candle timestamp: {}", pair[0].timestamp),
-            ));
+    if quality_config.detect_duplicate_candles {
+        for pair in candles.windows(2) {
+            if pair[0].timestamp == pair[1].timestamp {
+                issues.push(issue(
+                    "DUPLICATE_CANDLE",
+                    format!("Duplicate candle timestamp: {}", pair[0].timestamp),
+                ));
+            }
+        }
+    }
+
+    if quality_config.detect_missing_candles && input.asset.asset_type == AssetType::Crypto {
+        if let Some(expected_seconds) = timeframe_seconds(&input.market_data.timeframe) {
+            for pair in candles.windows(2) {
+                if let (Some(previous), Some(current)) = (
+                    timestamp_seconds(&pair[0].timestamp),
+                    timestamp_seconds(&pair[1].timestamp),
+                ) {
+                    let delta = current.saturating_sub(previous);
+                    if delta > (expected_seconds as i64 * 3 / 2) {
+                        let missing = (delta as u64 / expected_seconds).saturating_sub(1);
+                        issues.push(issue(
+                            "MISSING_CANDLES",
+                            format!(
+                                "Detected approximately {missing} missing candle(s) between {} and {}",
+                                pair[0].timestamp, pair[1].timestamp
+                            ),
+                        ));
+                    }
+                }
+            }
         }
     }
 
@@ -1136,6 +1226,52 @@ pub fn validate_input(
     ))
 }
 
+fn timestamp_seconds(timestamp: &str) -> Option<i64> {
+    if let Ok(value) = timestamp.trim().parse::<i64>() {
+        return Some(if value.unsigned_abs() > 100_000_000_000 {
+            value / 1000
+        } else {
+            value
+        });
+    }
+
+    let mut date_time = timestamp.trim().splitn(2, 'T');
+    let date = date_time.next()?;
+    let mut date_parts = date.split('-');
+    let year = date_parts.next()?.parse::<i64>().ok()?;
+    let month = date_parts.next()?.parse::<i64>().ok()?;
+    let day = date_parts.next()?.parse::<i64>().ok()?;
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return None;
+    }
+
+    let time_seconds = date_time
+        .next()
+        .and_then(|time| time.get(0..8))
+        .and_then(|time| {
+            let mut parts = time.split(':');
+            let hours = parts.next()?.parse::<i64>().ok()?;
+            let minutes = parts.next()?.parse::<i64>().ok()?;
+            let seconds = parts.next()?.parse::<i64>().ok()?;
+            Some(hours * 3600 + minutes * 60 + seconds)
+        })
+        .unwrap_or(0);
+
+    let adjusted_year = year - if month <= 2 { 1 } else { 0 };
+    let era = if adjusted_year >= 0 {
+        adjusted_year
+    } else {
+        adjusted_year - 399
+    } / 400;
+    let year_of_era = adjusted_year - era * 400;
+    let adjusted_month = month + if month > 2 { -3 } else { 9 };
+    let day_of_year = (153 * adjusted_month + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    let days_since_epoch = era * 146_097 + day_of_era - 719_468;
+
+    Some(days_since_epoch * 86_400 + time_seconds)
+}
+
 /// Calculates a simple moving average series.
 pub fn sma(values: &[f64], period: usize) -> Result<Vec<Option<f64>>, String> {
     validate_period(values, period)?;
@@ -1167,6 +1303,82 @@ pub fn ema(values: &[f64], period: usize) -> Result<Vec<Option<f64>>, String> {
     for index in period..values.len() {
         previous = (values[index] - previous) * multiplier + previous;
         output[index] = Some(previous);
+    }
+
+    Ok(output)
+}
+
+/// Calculates the Average Directional Index using Wilder smoothing.
+pub fn adx(candles: &[Candle], period: usize) -> Result<Vec<Option<f64>>, String> {
+    if period == 0 {
+        return Err("ADX period must be greater than zero".to_string());
+    }
+
+    let mut output = vec![None; candles.len()];
+    let first_adx_index = period.saturating_mul(2).saturating_sub(1);
+    if candles.len() <= first_adx_index {
+        return Ok(output);
+    }
+
+    let ranges = true_ranges(candles)?;
+    let mut positive_dm = vec![0.0; candles.len()];
+    let mut negative_dm = vec![0.0; candles.len()];
+
+    for index in 1..candles.len() {
+        let upward_move = candles[index].high - candles[index - 1].high;
+        let downward_move = candles[index - 1].low - candles[index].low;
+        if upward_move > downward_move && upward_move > 0.0 {
+            positive_dm[index] = upward_move;
+        } else if downward_move > upward_move && downward_move > 0.0 {
+            negative_dm[index] = downward_move;
+        }
+    }
+
+    let mut smoothed_range = ranges[1..=period].iter().sum::<f64>();
+    let mut smoothed_positive = positive_dm[1..=period].iter().sum::<f64>();
+    let mut smoothed_negative = negative_dm[1..=period].iter().sum::<f64>();
+    let mut dx_values = vec![None; candles.len()];
+
+    for index in period..candles.len() {
+        if index > period {
+            smoothed_range =
+                smoothed_range - smoothed_range / period as f64 + ranges[index];
+            smoothed_positive = smoothed_positive - smoothed_positive / period as f64
+                + positive_dm[index];
+            smoothed_negative = smoothed_negative - smoothed_negative / period as f64
+                + negative_dm[index];
+        }
+
+        if smoothed_range <= 0.0 {
+            continue;
+        }
+
+        let positive_di = smoothed_positive / smoothed_range * 100.0;
+        let negative_di = smoothed_negative / smoothed_range * 100.0;
+        let denominator = positive_di + negative_di;
+        if denominator > 0.0 {
+            dx_values[index] = Some(
+                (positive_di - negative_di).abs() / denominator * 100.0,
+            );
+        }
+    }
+
+    let initial_dx = dx_values[period..=first_adx_index]
+        .iter()
+        .copied()
+        .collect::<Option<Vec<_>>>();
+    let Some(initial_dx) = initial_dx else {
+        return Ok(output);
+    };
+
+    let mut current = initial_dx.iter().sum::<f64>() / period as f64;
+    output[first_adx_index] = Some(current);
+
+    for index in (first_adx_index + 1)..candles.len() {
+        if let Some(dx) = dx_values[index] {
+            current = (current * (period as f64 - 1.0) + dx) / period as f64;
+            output[index] = Some(current);
+        }
     }
 
     Ok(output)
@@ -1305,13 +1517,51 @@ pub fn percentage_change(values: &[f64], offset: usize) -> Option<f64> {
     }
 }
 
+/// Returns the duration represented by one candle for a supported timeframe.
+pub fn timeframe_seconds(timeframe: &str) -> Option<u64> {
+    match timeframe.trim().to_ascii_uppercase().as_str() {
+        "1M" => Some(60),
+        "5M" => Some(5 * 60),
+        "15M" => Some(15 * 60),
+        "30M" => Some(30 * 60),
+        "1H" => Some(60 * 60),
+        "4H" => Some(4 * 60 * 60),
+        "8H" => Some(8 * 60 * 60),
+        "1D" => Some(24 * 60 * 60),
+        "1W" => Some(7 * 24 * 60 * 60),
+        "1MO" => Some(30 * 24 * 60 * 60),
+        _ => None,
+    }
+}
+
+fn recent_performance(values: &[f64], timeframe: &str) -> RecentPerformance {
+    let timeframe_seconds = timeframe_seconds(timeframe);
+    let for_days = |days: u64| {
+        let seconds = timeframe_seconds?;
+        let target_seconds = days * 24 * 60 * 60;
+        if seconds > target_seconds {
+            return None;
+        }
+        let offset = target_seconds.div_ceil(seconds) as usize;
+        percentage_change(values, offset)
+    };
+
+    RecentPerformance {
+        one_day: for_days(1),
+        five_day: for_days(5),
+        twenty_day: for_days(20),
+        sixty_day: for_days(60),
+    }
+}
+
 /// Runs the supported analysis pipeline.
 pub fn analyze(
     input: &AnalysisInput,
     config: &AnalysisConfig,
     analysis_timestamp: String,
 ) -> Result<AnalysisResult, String> {
-    let (candles, data_quality) = validate_input(input, &config.data_requirements)?;
+    let (candles, data_quality) =
+        validate_input_with_config(input, &config.data_requirements, &config.data_quality)?;
     if !data_quality.sufficient_for_analysis {
         return Err(
             "Market data does not satisfy the configured analysis requirements".to_string(),
@@ -1346,11 +1596,18 @@ pub fn analyze(
     let candle = candle_analysis(latest);
     let price_action = PriceActionAnalysis {
         candle,
-        recent_performance: RecentPerformance {
-            one_day: percentage_change(&closes, 1),
-            five_day: percentage_change(&closes, 5),
-            twenty_day: percentage_change(&closes, 20),
-            sixty_day: percentage_change(&closes, 60),
+        recent_performance: recent_performance(&closes, &input.market_data.timeframe),
+        gap: if config.price_action.enabled && config.price_action.gap_detection {
+            gap_analysis(&candles)
+        } else {
+            GapAnalysis::default()
+        },
+        consecutive_moves: if config.price_action.enabled
+            && config.price_action.consecutive_move_detection
+        {
+            consecutive_move_analysis(&candles)
+        } else {
+            ConsecutiveMoveAnalysis::default()
         },
     };
 
@@ -1380,16 +1637,24 @@ pub fn analyze(
         })
         .collect::<Result<Vec<_>, String>>()?;
 
-    let ema20 = find_period(&ema_values, 20);
-    let ema50 = find_period(&ema_values, 50);
-    let ema200 = find_period(&ema_values, 200);
-    let bullish_alignment = ema20.is_some_and(|value| latest.close > value)
-        && ema20.zip(ema50).is_some_and(|(a, b)| a > b)
-        && ema50.zip(ema200).is_some_and(|(a, b)| a > b);
-    let bearish_alignment = ema20.is_some_and(|value| latest.close < value)
-        && ema20.zip(ema50).is_some_and(|(a, b)| a < b)
-        && ema50.zip(ema200).is_some_and(|(a, b)| a < b);
+    let configured_ema_periods = &config.indicators.moving_averages.ema;
+    let alignment_periods = &configured_ema_periods
+        [configured_ema_periods.len().saturating_sub(3)..];
+    let ema_short_period = alignment_periods.first().copied();
+    let ema_medium_period = alignment_periods.get(1).copied();
+    let ema_long_period = alignment_periods.get(2).copied();
+    let ema_short = ema_short_period.and_then(|period| find_period(&ema_values, period));
+    let ema_medium = ema_medium_period.and_then(|period| find_period(&ema_values, period));
+    let ema_long = ema_long_period.and_then(|period| find_period(&ema_values, period));
+    let bullish_alignment = ema_short.is_some_and(|value| latest.close > value)
+        && ema_short.zip(ema_medium).is_some_and(|(short, medium)| short > medium)
+        && ema_medium.zip(ema_long).is_some_and(|(medium, long)| medium > long);
+    let bearish_alignment = ema_short.is_some_and(|value| latest.close < value)
+        && ema_short.zip(ema_medium).is_some_and(|(short, medium)| short < medium)
+        && ema_medium.zip(ema_long).is_some_and(|(medium, long)| medium < long);
 
+    let adx_values = adx(&candles, config.indicators.trend_strength.adx.period)?;
+    let adx_current = adx_values.last().copied().flatten();
     let trend = TrendAnalysis {
         state: if bullish_alignment {
             "bullish".to_string()
@@ -1398,7 +1663,20 @@ pub fn analyze(
         } else {
             "neutral".to_string()
         },
-        strength: "moderate".to_string(),
+        adx: adx_current,
+        strength: adx_current.map_or_else(
+            || "unavailable".to_string(),
+            |value| {
+                if value >= 25.0 {
+                    "strong"
+                } else if value >= 20.0 {
+                    "moderate"
+                } else {
+                    "weak"
+                }
+                .to_string()
+            },
+        ),
         moving_averages: MovingAverageSnapshot {
             sma: sma_values,
             ema: ema_values,
@@ -1406,7 +1684,12 @@ pub fn analyze(
         alignment: Alignment {
             bullish: bullish_alignment,
             bearish: bearish_alignment,
-            description: alignment_description(latest.close, ema20, ema50, ema200),
+            description: alignment_description(
+                latest.close,
+                ema_short_period.zip(ema_short),
+                ema_medium_period.zip(ema_medium),
+                ema_long_period.zip(ema_long),
+            ),
         },
     };
 
@@ -1432,13 +1715,14 @@ pub fn analyze(
 
     let fast = ema(&closes, config.indicators.momentum.macd.fast)?;
     let slow = ema(&closes, config.indicators.momentum.macd.slow)?;
-    let macd_line: Vec<f64> = fast
+    let macd_indicator_values: Vec<Option<f64>> = fast
         .iter()
         .zip(slow.iter())
-        .map(|(a, b)| match (a, b) {
-            (Some(a), Some(b)) => a - b,
-            _ => 0.0,
-        })
+        .map(|(a, b)| a.zip(*b).map(|(fast, slow)| fast - slow))
+        .collect();
+    let macd_line: Vec<f64> = macd_indicator_values
+        .iter()
+        .map(|value| value.unwrap_or(0.0))
         .collect();
     let signal_line = ema(&macd_line, config.indicators.momentum.macd.signal)?;
     let macd_current = macd_line.last().copied();
@@ -1471,7 +1755,12 @@ pub fn analyze(
         "none".to_string()
     };
 
-    let stochastic_k = stochastic_k(&candles, config.indicators.momentum.stochastic.k_period)?;
+    let stochastic_k_raw =
+        stochastic_k(&candles, config.indicators.momentum.stochastic.k_period)?;
+    let stochastic_k = stochastic_d(
+        &stochastic_k_raw,
+        config.indicators.momentum.stochastic.smooth,
+    )?;
     let stochastic_d = stochastic_d(
         &stochastic_k,
         config.indicators.momentum.stochastic.d_period,
@@ -1484,10 +1773,10 @@ pub fn analyze(
             macd: macd_current,
             signal: signal_current,
             histogram,
-            state: if macd_current.zip(signal_current).is_some_and(|(a, b)| a > b) {
-                "bullish".to_string()
-            } else {
-                "bearish".to_string()
+            state: match macd_current.zip(signal_current) {
+                Some((macd, signal)) if macd > signal => "bullish".to_string(),
+                Some(_) => "bearish".to_string(),
+                None => "unavailable".to_string(),
             },
             histogram_direction: match (histogram, previous_histogram) {
                 (Some(current), Some(previous)) if current > previous => "increasing".to_string(),
@@ -1499,10 +1788,10 @@ pub fn analyze(
         stochastic: StochasticAnalysis {
             k,
             d,
-            state: if k.zip(d).is_some_and(|(a, b)| a > b) {
-                "positive".to_string()
-            } else {
-                "negative".to_string()
+            state: match k.zip(d) {
+                Some((k, d)) if k > d => "positive".to_string(),
+                Some(_) => "negative".to_string(),
+                None => "unavailable".to_string(),
             },
         },
     };
@@ -1533,7 +1822,7 @@ pub fn analyze(
     let volatility = VolatilityAnalysis {
         atr: atr_current,
         atr_percent,
-        state: "normal".to_string(),
+        state: volatility_state(&atr_values, &closes),
         bollinger_bands: BollingerAnalysis {
             upper: upper_current,
             middle: middle_current,
@@ -1583,10 +1872,14 @@ pub fn analyze(
     let obv_trend = obv_values.as_ref().map_or_else(
         || "unavailable".to_string(),
         |values| {
-            if values.len() >= 2 && values[values.len() - 1] >= values[values.len() - 2] {
+            if values.len() < 2 {
+                "unavailable".to_string()
+            } else if values[values.len() - 1] > values[values.len() - 2] {
                 "rising".to_string()
-            } else {
+            } else if values[values.len() - 1] < values[values.len() - 2] {
                 "falling".to_string()
+            } else {
+                "flat".to_string()
             }
         },
     );
@@ -1615,18 +1908,46 @@ pub fn analyze(
     );
     let support_resistance = support_resistance_analysis(&candles, &config.market_structure);
     let breakout = breakout_analysis(
-        latest,
+        &candles,
         &support_resistance,
         &volume,
         &config.breakout_detection,
     );
     let patterns = if config.pattern_detection.enabled {
-        pattern_analysis(&market_structure)
+        pattern_analysis(
+            &candles,
+            &market_structure,
+            &config.pattern_detection,
+            config.price_action.enabled && config.price_action.candlestick_analysis,
+            config.market_structure.swing_detection.lookback,
+            config.market_structure.support_resistance.cluster_tolerance_percent / 100.0,
+        )
     } else {
         Vec::new()
     };
+    let obv_indicator_values = obv_values.as_ref().map(|values| {
+        values.iter().copied().map(Some).collect::<Vec<Option<f64>>>()
+    });
+    let mut divergence_indicators = Vec::new();
+    for indicator in &config.divergence_detection.indicators {
+        match indicator.to_ascii_lowercase().as_str() {
+            "rsi" => divergence_indicators.push(("rsi", rsi_values.clone())),
+            "macd" => divergence_indicators.push(("macd", macd_indicator_values.clone())),
+            "obv" => {
+                if let Some(values) = &obv_indicator_values {
+                    divergence_indicators.push(("obv", values.clone()));
+                }
+            }
+            _ => {}
+        }
+    }
     let divergences = if config.divergence_detection.enabled {
-        divergence_analysis(&candles, &rsi_values, &market_structure)
+        divergence_analysis(
+            &candles,
+            &divergence_indicators,
+            config.market_structure.swing_detection.lookback,
+            config.divergence_detection.minimum_swing_distance,
+        )
     } else {
         Vec::new()
     };
@@ -1675,6 +1996,7 @@ pub fn analyze(
     let engine_summary = engine_summary(EngineSummaryInput {
         trend: &trend,
         momentum: &momentum,
+        volatility: &volatility,
         structure: &market_structure,
         volume: &volume,
         regime: &regime,
@@ -1746,6 +2068,61 @@ fn rsi_value(gain: f64, loss: f64) -> f64 {
     }
 }
 
+fn gap_analysis(candles: &[Candle]) -> GapAnalysis {
+    let Some((previous, latest)) = candles
+        .len()
+        .checked_sub(2)
+        .and_then(|index| candles.get(index).zip(candles.last()))
+    else {
+        return GapAnalysis::default();
+    };
+
+    let gap = if previous.high < latest.low {
+        Some(("up", (latest.low - previous.high) / previous.high * 100.0))
+    } else if previous.low > latest.high {
+        Some(("down", (latest.high - previous.low) / previous.low * 100.0))
+    } else {
+        None
+    };
+
+    match gap {
+        Some((direction, size_percent)) => GapAnalysis {
+            detected: true,
+            direction: Some(direction.to_string()),
+            size_percent: Some(size_percent),
+        },
+        None => GapAnalysis::default(),
+    }
+}
+
+fn consecutive_move_analysis(candles: &[Candle]) -> ConsecutiveMoveAnalysis {
+    let Some(latest) = candles.last() else {
+        return ConsecutiveMoveAnalysis::default();
+    };
+    let direction = if latest.close > latest.open {
+        "bullish"
+    } else if latest.close < latest.open {
+        "bearish"
+    } else {
+        return ConsecutiveMoveAnalysis::default();
+    };
+
+    let count = candles
+        .iter()
+        .rev()
+        .take_while(|candle| match direction {
+            "bullish" => candle.close > candle.open,
+            "bearish" => candle.close < candle.open,
+            _ => false,
+        })
+        .count();
+
+    ConsecutiveMoveAnalysis {
+        direction: direction.to_string(),
+        count,
+    }
+}
+
 fn candle_analysis(candle: &Candle) -> CandleAnalysis {
     let range = candle.high - candle.low;
     let body = (candle.close - candle.open).abs();
@@ -1780,18 +2157,22 @@ fn find_period(values: &[PeriodValue], period: usize) -> Option<f64> {
 
 fn alignment_description(
     price: f64,
-    ema20: Option<f64>,
-    ema50: Option<f64>,
-    ema200: Option<f64>,
+    short: Option<(usize, f64)>,
+    medium: Option<(usize, f64)>,
+    long: Option<(usize, f64)>,
 ) -> String {
-    match (ema20, ema50, ema200) {
-        (Some(a), Some(b), Some(c)) if price > a && a > b && b > c => {
-            "Price > EMA20 > EMA50 > EMA200".to_string()
+    match (short, medium, long) {
+        (Some((short_period, short)), Some((medium_period, medium)), Some((long_period, long)))
+            if price > short && short > medium && medium > long =>
+        {
+            format!("Price > EMA{short_period} > EMA{medium_period} > EMA{long_period}")
         }
-        (Some(a), Some(b), Some(c)) if price < a && a < b && b < c => {
-            "Price < EMA20 < EMA50 < EMA200".to_string()
+        (Some((short_period, short)), Some((medium_period, medium)), Some((long_period, long)))
+            if price < short && short < medium && medium < long =>
+        {
+            format!("Price < EMA{short_period} < EMA{medium_period} < EMA{long_period}")
         }
-        _ => "No complete EMA20/EMA50/EMA200 alignment".to_string(),
+        _ => "No complete three-period EMA alignment".to_string(),
     }
 }
 
@@ -1913,17 +2294,38 @@ fn market_structure_analysis(
     let bearish_break = latest
         .zip(last_low)
         .is_some_and(|(price, swing)| price < swing.price);
-    let bos = if breakout_config.enabled && bullish_break {
+    let bullish_structure = state == "higher_high_higher_low";
+    let bearish_structure = state == "lower_high_lower_low";
+    let bos = if breakout_config.enabled && bullish_structure && bullish_break {
         StructureBreak {
             detected: true,
             direction: Some("up".to_string()),
             level: last_high.map(|swing| swing.price),
         }
-    } else if breakout_config.enabled && bearish_break {
+    } else if breakout_config.enabled && bearish_structure && bearish_break {
         StructureBreak {
             detected: true,
             direction: Some("down".to_string()),
             level: last_low.map(|swing| swing.price),
+        }
+    } else {
+        StructureBreak {
+            detected: false,
+            direction: None,
+            level: None,
+        }
+    };
+    let choch = if breakout_config.enabled && bullish_structure && bearish_break {
+        StructureBreak {
+            detected: true,
+            direction: Some("down".to_string()),
+            level: last_low.map(|swing| swing.price),
+        }
+    } else if breakout_config.enabled && bearish_structure && bullish_break {
+        StructureBreak {
+            detected: true,
+            direction: Some("up".to_string()),
+            level: last_high.map(|swing| swing.price),
         }
     } else {
         StructureBreak {
@@ -1947,11 +2349,7 @@ fn market_structure_analysis(
         },
         structure_sequence: sequence,
         break_of_structure: bos,
-        change_of_character: StructureBreak {
-            detected: false,
-            direction: None,
-            level: None,
-        },
+        change_of_character: choch,
     }
 }
 
@@ -2023,75 +2421,526 @@ fn support_resistance_analysis(
 }
 
 fn breakout_analysis(
-    latest: &Candle,
+    candles: &[Candle],
     levels: &SupportResistanceAnalysis,
     volume: &VolumeAnalysis,
     config: &BreakoutConfig,
 ) -> BreakoutAnalysis {
-    let resistance = levels
+    let Some(latest) = candles.last() else {
+        return empty_breakout();
+    };
+    if !config.enabled || candles.len() < 2 {
+        return empty_breakout();
+    }
+
+    let resistance_above = levels
         .resistances
         .iter()
-        .find(|level| level.zone.low > latest.close)
-        .map(|level| level.zone.low);
-    let Some(resistance_level) = resistance else {
-        return BreakoutAnalysis {
-            status: "none".to_string(),
-            resistance_level: None,
-            direction: None,
-            distance_percent: None,
-            volume_confirmation: false,
-            retest: RetestAnalysis { detected: false },
-        };
-    };
+        .filter(|level| level.zone.low > latest.close)
+        .min_by(|left, right| left.zone.low.total_cmp(&right.zone.low));
+    let support_below = levels
+        .supports
+        .iter()
+        .filter(|level| level.zone.high < latest.close)
+        .max_by(|left, right| left.zone.high.total_cmp(&right.zone.high));
 
-    let distance_percent = if resistance_level == 0.0 {
-        None
-    } else {
-        Some((resistance_level - latest.close) / resistance_level * 100.0)
+    let recent_breakout = find_recent_breakout(
+        candles,
+        levels,
+        config.lookback_period,
+    );
+    let (status, direction, active_level, retest_detected) =
+        if let Some((level, direction, breakout_index)) = recent_breakout {
+            let retest = config.retest_detection.enabled
+                && detect_breakout_retest(candles, level, direction, breakout_index);
+            ("broken", Some(direction), Some(level), retest)
+        } else if let Some(level) = resistance_above {
+            let distance = (level.zone.low - latest.close) / level.zone.low * 100.0;
+            if distance <= 2.0 {
+                ("approaching", Some("up"), Some(level.zone.low), false)
+            } else {
+                ("none", None, None, false)
+            }
+        } else if let Some(level) = support_below {
+            let distance = (latest.close - level.zone.high) / level.zone.high * 100.0;
+            if distance <= 2.0 {
+                ("approaching", Some("down"), Some(level.zone.high), false)
+            } else {
+                ("none", None, None, false)
+            }
+        } else {
+            ("none", None, None, false)
+        };
+
+    let resistance_level = match direction {
+        Some("up") => active_level,
+        _ => resistance_above.map(|level| level.zone.low),
     };
-    let ratio = volume.ratio_vs_primary.unwrap_or(0.0);
-    let confirmed = config.volume_confirmation.enabled
-        && ratio >= config.volume_confirmation.minimum_volume_ratio;
-    let status = if latest.close > resistance_level {
-        "broken"
-    } else if distance_percent.is_some_and(|distance| distance <= 2.0) {
-        "approaching"
-    } else {
-        "none"
+    let support_level = match direction {
+        Some("down") => active_level,
+        _ => support_below.map(|level| level.zone.high),
     };
+    let distance_percent = active_level.and_then(|level| {
+        if level <= 0.0 {
+            None
+        } else {
+            Some(match direction {
+                Some("down") => (latest.close - level) / level * 100.0,
+                _ => (level - latest.close) / level * 100.0,
+            })
+        }
+    });
+    let volume_confirmation = config.volume_confirmation.enabled
+        && volume
+            .ratio_vs_primary
+            .is_some_and(|ratio| ratio >= config.volume_confirmation.minimum_volume_ratio);
 
     BreakoutAnalysis {
         status: status.to_string(),
-        resistance_level: Some(resistance_level),
-        direction: Some("up".to_string()),
+        resistance_level,
+        support_level,
+        direction: direction.map(str::to_string),
         distance_percent,
-        volume_confirmation: confirmed,
+        volume_confirmation,
+        retest: RetestAnalysis {
+            detected: retest_detected,
+        },
+    }
+}
+
+fn empty_breakout() -> BreakoutAnalysis {
+    BreakoutAnalysis {
+        status: "none".to_string(),
+        resistance_level: None,
+        support_level: None,
+        direction: None,
+        distance_percent: None,
+        volume_confirmation: false,
         retest: RetestAnalysis { detected: false },
     }
 }
 
-fn pattern_analysis(structure: &MarketStructureAnalysis) -> Vec<Pattern> {
-    if structure.state == "higher_high_higher_low" && structure.structure_sequence.len() >= 3 {
-        vec![Pattern {
-            name: "ascending_structure".to_string(),
-            pattern_type: "chart_pattern".to_string(),
-            status: "forming".to_string(),
-            confidence: 0.72,
-        }]
+fn find_recent_breakout(
+    candles: &[Candle],
+    levels: &SupportResistanceAnalysis,
+    lookback: usize,
+) -> Option<(f64, &'static str, usize)> {
+    if candles.len() < 2 {
+        return None;
+    }
+    let start = candles.len().saturating_sub(lookback.max(2));
+    for index in (start.max(1)..candles.len()).rev() {
+        let previous = &candles[index - 1];
+        let current = &candles[index];
+        let broken_resistance = levels
+            .resistances
+            .iter()
+            .filter(|zone| previous.close <= zone.zone.high && current.close > zone.zone.high)
+            .max_by(|left, right| left.zone.high.total_cmp(&right.zone.high));
+        if let Some(zone) = broken_resistance.filter(|zone| {
+            candles
+                .last()
+                .is_some_and(|latest| latest.close > zone.zone.high)
+        }) {
+            return Some((zone.zone.high, "up", index));
+        }
+
+        let broken_support = levels
+            .supports
+            .iter()
+            .filter(|zone| previous.close >= zone.zone.low && current.close < zone.zone.low)
+            .min_by(|left, right| left.zone.low.total_cmp(&right.zone.low));
+        if let Some(zone) = broken_support.filter(|zone| {
+            candles
+                .last()
+                .is_some_and(|latest| latest.close < zone.zone.low)
+        }) {
+            return Some((zone.zone.low, "down", index));
+        }
+    }
+    None
+}
+
+fn detect_breakout_retest(
+    candles: &[Candle],
+    level: f64,
+    direction: &str,
+    breakout_index: usize,
+) -> bool {
+    if breakout_index >= candles.len().saturating_sub(1) {
+        return false;
+    }
+    let Some(latest) = candles.last() else {
+        return false;
+    };
+
+    match direction {
+        "up" => latest.low <= level * 1.005 && latest.close > level,
+        "down" => latest.high >= level * 0.995 && latest.close < level,
+        _ => false,
+    }
+}
+
+fn pattern_analysis(
+    candles: &[Candle],
+    structure: &MarketStructureAnalysis,
+    config: &PatternDetectionConfig,
+    candlestick_enabled: bool,
+    swing_lookback: usize,
+    tolerance: f64,
+) -> Vec<Pattern> {
+    let mut patterns = if config.candlestick_patterns && candlestick_enabled {
+        candlestick_patterns(candles)
     } else {
         Vec::new()
+    };
+    let swings = detect_swings(candles, swing_lookback);
+
+    for name in &config.chart_patterns {
+        let detected = match name.as_str() {
+            "ascending_structure"
+                if structure.state == "higher_high_higher_low"
+                    && structure.structure_sequence.len() >= 3 =>
+            {
+                Some(Pattern {
+                    name: name.clone(),
+                    pattern_type: "chart_pattern".to_string(),
+                    status: "forming".to_string(),
+                    confidence: 0.72,
+                })
+            }
+            "double_top" => double_top_pattern(&swings, candles, tolerance),
+            "double_bottom" => double_bottom_pattern(&swings, candles, tolerance),
+            "head_and_shoulders" => head_and_shoulders_pattern(&swings, candles),
+            "inverse_head_and_shoulders" => inverse_head_and_shoulders_pattern(&swings, candles),
+            "ascending_triangle" => triangle_pattern(&swings, "ascending", tolerance),
+            "descending_triangle" => triangle_pattern(&swings, "descending", tolerance),
+            "symmetrical_triangle" => triangle_pattern(&swings, "symmetrical", tolerance),
+            _ => None,
+        };
+        if let Some(pattern) = detected {
+            patterns.push(pattern);
+        }
     }
+
+    patterns
+}
+
+fn candlestick_patterns(candles: &[Candle]) -> Vec<Pattern> {
+    let Some(current) = candles.last() else {
+        return Vec::new();
+    };
+    let range = current.high - current.low;
+    if !range.is_finite() || range <= 0.0 {
+        return Vec::new();
+    }
+
+    let body = (current.close - current.open).abs();
+    let upper_wick = current.high - current.open.max(current.close);
+    let lower_wick = current.open.min(current.close) - current.low;
+    let mut patterns = Vec::new();
+
+    let mut add = |name: &str, confidence: f64| {
+        patterns.push(Pattern {
+            name: name.to_string(),
+            pattern_type: "candlestick".to_string(),
+            status: "confirmed".to_string(),
+            confidence,
+        });
+    };
+
+    if body / range <= 0.1 {
+        add("doji", 0.65);
+    }
+    if body > 0.0 && lower_wick >= body * 2.0 && upper_wick <= body && body / range <= 0.4 {
+        add("hammer", 0.7);
+    }
+    if body > 0.0 && upper_wick >= body * 2.0 && lower_wick <= body && body / range <= 0.4 {
+        add("shooting_star", 0.7);
+    }
+    if body / range >= 0.8 && upper_wick / range <= 0.1 && lower_wick / range <= 0.1 {
+        if current.close > current.open {
+            add("bullish_marubozu", 0.75);
+        } else if current.close < current.open {
+            add("bearish_marubozu", 0.75);
+        }
+    }
+
+    if let Some(previous) = candles.get(candles.len().saturating_sub(2)) {
+        let previous_bearish = previous.close < previous.open;
+        let previous_bullish = previous.close > previous.open;
+        let current_bullish = current.close > current.open;
+        let current_bearish = current.close < current.open;
+        if previous_bearish
+            && current_bullish
+            && current.open <= previous.close
+            && current.close >= previous.open
+        {
+            add("bullish_engulfing", 0.8);
+        }
+        if previous_bullish
+            && current_bearish
+            && current.open >= previous.close
+            && current.close <= previous.open
+        {
+            add("bearish_engulfing", 0.8);
+        }
+    }
+
+    patterns
+}
+
+fn double_top_pattern(swings: &[Swing], candles: &[Candle], tolerance: f64) -> Option<Pattern> {
+    let highs = swings
+        .iter()
+        .filter(|swing| swing.kind == SwingKind::High)
+        .collect::<Vec<_>>();
+    let (first, second) = (highs.get(highs.len().checked_sub(2)?)?, highs.last()?);
+    if !levels_are_similar(first.price, second.price, tolerance) {
+        return None;
+    }
+    let neckline = swings
+        .iter()
+        .filter(|swing| {
+            swing.kind == SwingKind::Low
+                && swing.index > first.index
+                && swing.index < second.index
+        })
+        .map(|swing| swing.price)
+        .min_by(f64::total_cmp)?;
+    let latest_close = candles.last()?.close;
+    Some(Pattern {
+        name: "double_top".to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: if latest_close < neckline { "confirmed" } else { "forming" }.to_string(),
+        confidence: 0.75,
+    })
+}
+
+fn double_bottom_pattern(swings: &[Swing], candles: &[Candle], tolerance: f64) -> Option<Pattern> {
+    let lows = swings
+        .iter()
+        .filter(|swing| swing.kind == SwingKind::Low)
+        .collect::<Vec<_>>();
+    let (first, second) = (lows.get(lows.len().checked_sub(2)?)?, lows.last()?);
+    if !levels_are_similar(first.price, second.price, tolerance) {
+        return None;
+    }
+    let neckline = swings
+        .iter()
+        .filter(|swing| {
+            swing.kind == SwingKind::High
+                && swing.index > first.index
+                && swing.index < second.index
+        })
+        .map(|swing| swing.price)
+        .max_by(f64::total_cmp)?;
+    let latest_close = candles.last()?.close;
+    Some(Pattern {
+        name: "double_bottom".to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: if latest_close > neckline { "confirmed" } else { "forming" }.to_string(),
+        confidence: 0.75,
+    })
+}
+
+fn head_and_shoulders_pattern(swings: &[Swing], candles: &[Candle]) -> Option<Pattern> {
+    let recent = swings.get(swings.len().checked_sub(5)?..)?;
+    if recent[0].kind != SwingKind::High
+        || recent[1].kind != SwingKind::Low
+        || recent[2].kind != SwingKind::High
+        || recent[3].kind != SwingKind::Low
+        || recent[4].kind != SwingKind::High
+    {
+        return None;
+    }
+    let shoulders = (recent[0].price + recent[4].price) / 2.0;
+    if !levels_are_similar(recent[0].price, recent[4].price, 0.03)
+        || recent[2].price <= recent[0].price.max(recent[4].price)
+    {
+        return None;
+    }
+    let neckline = (recent[1].price + recent[3].price) / 2.0;
+    Some(Pattern {
+        name: "head_and_shoulders".to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: if candles.last()?.close < neckline { "confirmed" } else { "forming" }
+            .to_string(),
+        confidence: (0.75 + (1.0 - (recent[0].price - recent[4].price).abs() / shoulders) * 0.1)
+            .clamp(0.5, 0.9),
+    })
+}
+
+fn inverse_head_and_shoulders_pattern(swings: &[Swing], candles: &[Candle]) -> Option<Pattern> {
+    let recent = swings.get(swings.len().checked_sub(5)?..)?;
+    if recent[0].kind != SwingKind::Low
+        || recent[1].kind != SwingKind::High
+        || recent[2].kind != SwingKind::Low
+        || recent[3].kind != SwingKind::High
+        || recent[4].kind != SwingKind::Low
+    {
+        return None;
+    }
+    let shoulders = (recent[0].price + recent[4].price) / 2.0;
+    if !levels_are_similar(recent[0].price, recent[4].price, 0.03)
+        || recent[2].price >= recent[0].price.min(recent[4].price)
+    {
+        return None;
+    }
+    let neckline = (recent[1].price + recent[3].price) / 2.0;
+    Some(Pattern {
+        name: "inverse_head_and_shoulders".to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: if candles.last()?.close > neckline { "confirmed" } else { "forming" }
+            .to_string(),
+        confidence: (0.75 + (1.0 - (recent[0].price - recent[4].price).abs() / shoulders) * 0.1)
+            .clamp(0.5, 0.9),
+    })
+}
+
+fn triangle_pattern(swings: &[Swing], kind: &str, tolerance: f64) -> Option<Pattern> {
+    let highs = swings
+        .iter()
+        .filter(|swing| swing.kind == SwingKind::High)
+        .collect::<Vec<_>>();
+    let lows = swings
+        .iter()
+        .filter(|swing| swing.kind == SwingKind::Low)
+        .collect::<Vec<_>>();
+    let high_points = highs.get(highs.len().checked_sub(3)?..)?;
+    let low_points = lows.get(lows.len().checked_sub(3)?..)?;
+    let highs_flat = levels_are_similar(
+        high_points.first()?.price,
+        high_points.last()?.price,
+        tolerance,
+    );
+    let lows_flat = levels_are_similar(
+        low_points.first()?.price,
+        low_points.last()?.price,
+        tolerance,
+    );
+    let highs_falling = high_points[0].price > high_points[1].price
+        && high_points[1].price > high_points[2].price;
+    let lows_rising =
+        low_points[0].price < low_points[1].price && low_points[1].price < low_points[2].price;
+
+    let detected = match kind {
+        "ascending" => highs_flat && lows_rising,
+        "descending" => lows_flat && highs_falling,
+        "symmetrical" => highs_falling && lows_rising,
+        _ => false,
+    };
+    detected.then(|| Pattern {
+        name: match kind {
+            "ascending" => "ascending_triangle",
+            "descending" => "descending_triangle",
+            _ => "symmetrical_triangle",
+        }
+        .to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: "forming".to_string(),
+        confidence: 0.7,
+    })
+}
+
+fn levels_are_similar(left: f64, right: f64, tolerance: f64) -> bool {
+    let reference = (left.abs() + right.abs()) / 2.0;
+    reference > 0.0 && (left - right).abs() / reference <= tolerance
 }
 
 fn divergence_analysis(
     candles: &[Candle],
-    rsi_values: &[Option<f64>],
-    structure: &MarketStructureAnalysis,
+    indicators: &[(&str, Vec<Option<f64>>)],
+    swing_lookback: usize,
+    minimum_swing_distance: usize,
 ) -> Vec<Divergence> {
-    let _ = candles;
-    let _ = rsi_values;
-    let _ = structure;
-    Vec::new()
+    let swings = detect_swings(candles, swing_lookback);
+    let mut divergences = Vec::new();
+
+    for (indicator, values) in indicators {
+        for kind in [SwingKind::Low, SwingKind::High] {
+            let points = swings
+                .iter()
+                .filter(|swing| swing.kind == kind)
+                .filter_map(|swing| {
+                    values
+                        .get(swing.index)
+                        .and_then(|value| *value)
+                        .map(|value| (swing.index, swing.price, value))
+                })
+                .collect::<Vec<_>>();
+            let Some((previous_index, previous_price, previous_value)) =
+                points.get(points.len().saturating_sub(2)).copied()
+            else {
+                continue;
+            };
+            let Some((current_index, current_price, current_value)) = points.last().copied()
+            else {
+                continue;
+            };
+            if current_index.saturating_sub(previous_index) < minimum_swing_distance {
+                continue;
+            }
+
+            let direction = match kind {
+                SwingKind::Low
+                    if current_price < previous_price && current_value > previous_value =>
+                {
+                    Some("bullish")
+                }
+                SwingKind::High
+                    if current_price > previous_price && current_value < previous_value =>
+                {
+                    Some("bearish")
+                }
+                _ => None,
+            };
+
+            if let Some(direction) = direction {
+                divergences.push(Divergence {
+                    indicator: (*indicator).to_string(),
+                    direction: direction.to_string(),
+                    confidence: 0.7,
+                });
+            }
+        }
+    }
+
+    divergences
+}
+
+fn volatility_state(atr_values: &[Option<f64>], closes: &[f64]) -> String {
+    let percentages = atr_values
+        .iter()
+        .zip(closes.iter())
+        .filter_map(|(atr_value, close)| {
+            atr_value
+                .filter(|value| value.is_finite() && *value >= 0.0)
+                .filter(|_| close.is_finite() && *close > 0.0)
+                .map(|value| value / close * 100.0)
+        })
+        .collect::<Vec<_>>();
+    if percentages.len() < 2 {
+        return "unavailable".to_string();
+    }
+
+    let current = *percentages.last().unwrap_or(&0.0);
+    let baseline_values = &percentages[..percentages.len() - 1];
+    let baseline_start = baseline_values.len().saturating_sub(20);
+    let baseline = baseline_values[baseline_start..].iter().sum::<f64>()
+        / (baseline_values.len() - baseline_start) as f64;
+    if baseline <= 0.0 {
+        return "unavailable".to_string();
+    }
+
+    let relative = current / baseline;
+    if relative < 0.75 {
+        "low".to_string()
+    } else if relative > 1.25 {
+        "high".to_string()
+    } else {
+        "normal".to_string()
+    }
 }
 
 fn regime_analysis(
@@ -2197,7 +3046,9 @@ fn scenario_analysis(
     momentum: &MomentumAnalysis,
 ) -> ScenarioAnalysis {
     let resistance = breakout.resistance_level;
-    let support = levels.supports.first().map(|level| level.zone.low);
+    let support = breakout
+        .support_level
+        .or_else(|| levels.supports.first().map(|level| level.zone.low));
     let confirmation = vec![
         "Volume expands above the configured confirmation ratio".to_string(),
         "Price holds above the breakout level".to_string(),
@@ -2207,17 +3058,17 @@ fn scenario_analysis(
         bullish: Scenario {
             status: "possible".to_string(),
             trigger: resistance.map(|level| ScenarioCondition {
-                condition: format!("Daily close above {level:.2}"),
+                condition: format!("Candle close above {level:.2}"),
             }),
             confirmation,
             invalidation: support.map(|level| ScenarioCondition {
-                condition: format!("Daily close below {level:.2}"),
+                condition: format!("Candle close below {level:.2}"),
             }),
         },
         bearish: Scenario {
             status: "possible".to_string(),
             trigger: support.map(|level| ScenarioCondition {
-                condition: format!("Daily close below {level:.2}"),
+                condition: format!("Candle close below {level:.2}"),
             }),
             confirmation: vec![
                 "Volume expansion".to_string(),
@@ -2254,6 +3105,7 @@ struct EngineSummaryInput<'a> {
     trend: &'a TrendAnalysis,
     momentum: &'a MomentumAnalysis,
     structure: &'a MarketStructureAnalysis,
+    volatility: &'a VolatilityAnalysis,
     volume: &'a VolumeAnalysis,
     regime: &'a RegimeAnalysis,
     breakout: &'a BreakoutAnalysis,
@@ -2262,19 +3114,24 @@ struct EngineSummaryInput<'a> {
 }
 
 fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
-    let volume_confirmation = input
-        .volume
-        .ratio_vs_primary
-        .is_some_and(|ratio| ratio >= 1.5);
+    let volume_confirmation = input.breakout.volume_confirmation;
     let dominant_state = if input.trend.state == "bullish" && !volume_confirmation {
         "bullish_but_unconfirmed"
     } else {
         input.regime.overall.as_str()
     };
-    let most_important_level = input
-        .breakout
-        .resistance_level
-        .or(input.levels.immediate_support);
+    let most_important_level = match input.breakout.direction.as_deref() {
+        Some("down") => input
+            .breakout
+            .support_level
+            .or(input.levels.immediate_support),
+        Some("up") => input.breakout.resistance_level,
+        _ => input
+            .breakout
+            .resistance_level
+            .or(input.breakout.support_level)
+            .or(input.levels.immediate_support),
+    };
     let main_risk = input
         .conflicts
         .first()
@@ -2287,13 +3144,21 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
         momentum: input.momentum.rsi.state.clone(),
         structure: input.structure.state.clone(),
         volume_confirmation,
-        volatility: "normal".to_string(),
+        volatility: input.volatility.state.clone(),
         most_important_level,
-        most_important_confirmation: input
-            .breakout
-            .resistance_level
-            .map(|level| format!("Break above {level:.2} with volume expansion"))
-            .unwrap_or_else(|| "Wait for a confirmed support/resistance level.".to_string()),
+        most_important_confirmation: match (
+            input.breakout.direction.as_deref(),
+            input.breakout.resistance_level,
+            input.breakout.support_level,
+        ) {
+            (Some("up"), Some(level), _) => {
+                format!("Break above {level:.2} with volume expansion")
+            }
+            (Some("down"), _, Some(level)) => {
+                format!("Break below {level:.2} with volume expansion")
+            }
+            _ => "Wait for a confirmed support/resistance level.".to_string(),
+        },
         main_risk,
     }
 }
@@ -2378,9 +3243,347 @@ mod tests {
     }
 
     #[test]
+    fn market_structure_detects_change_of_character() {
+        let input = candles(&[
+            10.0, 14.0, 11.0, 16.0, 12.0, 18.0, 13.0, 20.0, 14.0, 10.0,
+        ]);
+        let structure = market_structure_analysis(
+            &input,
+            &MarketStructureConfig {
+                enabled: true,
+                swing_detection: SwingDetectionConfig { lookback: 1 },
+                support_resistance: SupportResistanceConfig {
+                    lookback: 120,
+                    cluster_tolerance_percent: 1.0,
+                    minimum_touches: 2,
+                },
+            },
+            &BreakoutConfig {
+                enabled: true,
+                lookback_period: 20,
+                volume_confirmation: VolumeConfirmationConfig::default(),
+                retest_detection: RetestConfig::default(),
+            },
+        );
+
+        assert_eq!(structure.state, "higher_high_higher_low");
+        assert!(structure.change_of_character.detected);
+        assert_eq!(
+            structure.change_of_character.direction.as_deref(),
+            Some("down")
+        );
+    }
+
+    #[test]
+    fn breakout_detects_crossed_resistance() {
+        let candles = candles(&[8.0, 9.0, 10.0, 9.5, 10.5, 11.0]);
+        let levels = SupportResistanceAnalysis {
+            supports: Vec::new(),
+            resistances: vec![PriceZone {
+                zone: ZoneBounds {
+                    low: 9.8,
+                    high: 10.0,
+                },
+                strength: 0.8,
+                touches: 4,
+            }],
+        };
+        let volume = VolumeAnalysis {
+            current: 200.0,
+            averages: vec![PeriodValue {
+                period: 20,
+                value: Some(100.0),
+            }],
+            ratio_vs_primary: Some(2.0),
+            state: "above_average".to_string(),
+            obv: Some(200.0),
+            obv_trend: "rising".to_string(),
+        };
+        let result = breakout_analysis(
+            &candles,
+            &levels,
+            &volume,
+            &BreakoutConfig {
+                enabled: true,
+                lookback_period: 20,
+                volume_confirmation: VolumeConfirmationConfig {
+                    enabled: true,
+                    minimum_volume_ratio: 1.5,
+                },
+                retest_detection: RetestConfig { enabled: true },
+            },
+        );
+
+        assert_eq!(result.status, "broken");
+        assert_eq!(result.direction.as_deref(), Some("up"));
+        assert_eq!(result.resistance_level, Some(10.0));
+        assert!(result.volume_confirmation);
+    }
+
+    #[test]
+    fn price_action_detects_gaps_and_consecutive_moves() {
+        let candles = vec![
+            Candle {
+                timestamp: "0".into(),
+                open: 10.0,
+                high: 11.0,
+                low: 9.0,
+                close: 9.5,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+            Candle {
+                timestamp: "1".into(),
+                open: 12.0,
+                high: 13.0,
+                low: 12.0,
+                close: 12.8,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+            Candle {
+                timestamp: "2".into(),
+                open: 14.0,
+                high: 15.0,
+                low: 14.0,
+                close: 14.8,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+        ];
+
+        let gap = gap_analysis(&candles);
+        let moves = consecutive_move_analysis(&candles);
+
+        assert!(gap.detected);
+        assert_eq!(gap.direction.as_deref(), Some("up"));
+        assert_eq!(moves.direction, "bullish");
+        assert_eq!(moves.count, 2);
+    }
+
+    #[test]
+    fn candlestick_patterns_detect_bullish_engulfing() {
+        let candles = vec![
+            Candle {
+                timestamp: "0".into(),
+                open: 12.0,
+                high: 12.5,
+                low: 9.0,
+                close: 10.0,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+            Candle {
+                timestamp: "1".into(),
+                open: 9.5,
+                high: 13.0,
+                low: 9.0,
+                close: 12.5,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+        ];
+
+        let patterns = candlestick_patterns(&candles);
+
+        assert!(patterns.iter().any(|pattern| pattern.name == "bullish_engulfing"));
+    }
+
+    #[test]
+    fn divergence_analysis_detects_regular_bullish_and_bearish_rsi_divergence() {
+        let candles = vec![
+            Candle { timestamp: "0".into(), open: 9.0, high: 10.0, low: 8.0, close: 9.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "1".into(), open: 14.0, high: 15.0, low: 12.0, close: 14.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "2".into(), open: 8.0, high: 13.0, low: 7.0, close: 8.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "3".into(), open: 13.0, high: 14.0, low: 10.0, close: 13.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "4".into(), open: 15.0, high: 16.0, low: 9.0, close: 15.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "5".into(), open: 7.0, high: 13.0, low: 6.0, close: 7.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "6".into(), open: 9.0, high: 11.0, low: 7.0, close: 9.0, volume: 1.0, metadata: CandleMetadata::default() },
+        ];
+        let rsi = vec![
+            Some(50.0),
+            Some(70.0),
+            Some(30.0),
+            Some(55.0),
+            Some(60.0),
+            Some(40.0),
+            Some(50.0),
+        ];
+
+        let result = divergence_analysis(&candles, &[("rsi", rsi)], 1, 2);
+
+        assert!(result.iter().any(|item| item.direction == "bullish"));
+        assert!(result.iter().any(|item| item.direction == "bearish"));
+    }
+
+    #[test]
+    fn adx_detects_a_persistent_directional_move() {
+        let input = candles(&(1..=40).map(f64::from).collect::<Vec<_>>());
+        let values = adx(&input, 5).expect("valid ADX");
+
+        assert_eq!(values[9], Some(100.0));
+        assert_eq!(values.last().copied().flatten(), Some(100.0));
+    }
+
+    #[test]
+    fn adx_returns_unavailable_until_wilder_seed_is_complete() {
+        let input = candles(&(1..=8).map(f64::from).collect::<Vec<_>>());
+        let values = adx(&input, 5).expect("valid ADX");
+
+        assert!(values.iter().all(Option::is_none));
+    }
+
+    #[test]
+    fn stochastic_smoothing_uses_configured_window() {
+        let raw = vec![None, Some(10.0), Some(20.0), Some(30.0)];
+        let smoothed = stochastic_d(&raw, 2).expect("valid smoothing period");
+
+        assert_eq!(smoothed, vec![None, None, Some(15.0), Some(25.0)]);
+    }
+
+    #[test]
     fn rsi_rises_after_positive_move() {
         let result = rsi(&[1.0, 2.0, 3.0, 4.0], 2).expect("valid RSI");
         assert_eq!(result[2], Some(100.0));
+    }
+
+    #[test]
+    fn timeframe_seconds_supports_stock_and_crypto_intervals() {
+        assert_eq!(timeframe_seconds("1D"), Some(86_400));
+        assert_eq!(timeframe_seconds("4H"), Some(14_400));
+        assert_eq!(timeframe_seconds("1MO"), Some(2_592_000));
+        assert_eq!(timeframe_seconds("2H"), None);
+    }
+
+    #[test]
+    fn recent_performance_uses_calendar_day_windows_for_four_hour_candles() {
+        let closes = (1..=400).map(f64::from).collect::<Vec<_>>();
+        let performance = recent_performance(&closes, "4H");
+
+        assert_eq!(performance.one_day, percentage_change(&closes, 6));
+        assert_eq!(performance.five_day, percentage_change(&closes, 30));
+        assert_eq!(performance.twenty_day, percentage_change(&closes, 120));
+        assert_eq!(performance.sixty_day, percentage_change(&closes, 360));
+    }
+
+    #[test]
+    fn recent_performance_does_not_mislabel_weekly_candles_as_daily() {
+        let closes = (1..=20).map(f64::from).collect::<Vec<_>>();
+        let performance = recent_performance(&closes, "1W");
+
+        assert_eq!(performance.one_day, None);
+        assert_eq!(performance.five_day, None);
+        assert_eq!(performance.twenty_day, percentage_change(&closes, 3));
+        assert_eq!(performance.sixty_day, percentage_change(&closes, 9));
+    }
+
+    #[test]
+    fn crypto_data_quality_detects_missing_candles() {
+        let input = AnalysisInput {
+            schema_version: "1.0".to_string(),
+            asset: Asset {
+                symbol: "BTC_USDT".to_string(),
+                asset_type: AssetType::Crypto,
+                exchange: "MEXC Futures".to_string(),
+                currency: "USDT".to_string(),
+            },
+            market_data: MarketData {
+                timeframe: "4H".to_string(),
+                timezone: "UTC".to_string(),
+                candles: vec![
+                    Candle {
+                        timestamp: "1000".to_string(),
+                        open: 10.0,
+                        high: 11.0,
+                        low: 9.0,
+                        close: 10.0,
+                        volume: 1.0,
+                        metadata: CandleMetadata::default(),
+                    },
+                    Candle {
+                        timestamp: "29800".to_string(),
+                        open: 10.0,
+                        high: 11.0,
+                        low: 9.0,
+                        close: 10.0,
+                        volume: 1.0,
+                        metadata: CandleMetadata::default(),
+                    },
+                ],
+            },
+        };
+        let config = DataQualityConfig {
+            validate_ohlcv: true,
+            detect_missing_candles: true,
+            detect_duplicate_candles: true,
+            detect_invalid_prices: true,
+            detect_zero_volume: true,
+        };
+        let requirements = DataRequirements {
+            minimum_candles: 1,
+            recommended_candles: 2,
+            maximum_candles: 10,
+        };
+
+        let (_, report) =
+            validate_input_with_config(&input, &requirements, &config).expect("valid input");
+
+        assert!(report.issues.iter().any(|item| item.code == "MISSING_CANDLES"));
+        assert!(report.sufficient_for_analysis);
+    }
+
+    #[test]
+    fn stock_daily_data_does_not_treat_weekends_as_missing_candles() {
+        let input = AnalysisInput {
+            schema_version: "1.0".to_string(),
+            asset: Asset {
+                symbol: "VNM".to_string(),
+                asset_type: AssetType::Stock,
+                exchange: "VN".to_string(),
+                currency: "VND".to_string(),
+            },
+            market_data: MarketData {
+                timeframe: "1D".to_string(),
+                timezone: "Asia/Ho_Chi_Minh".to_string(),
+                candles: vec![
+                    Candle {
+                        timestamp: "2026-09-04T00:00:00".to_string(),
+                        open: 10.0,
+                        high: 11.0,
+                        low: 9.0,
+                        close: 10.0,
+                        volume: 1.0,
+                        metadata: CandleMetadata::default(),
+                    },
+                    Candle {
+                        timestamp: "2026-09-07T00:00:00".to_string(),
+                        open: 10.0,
+                        high: 11.0,
+                        low: 9.0,
+                        close: 10.0,
+                        volume: 1.0,
+                        metadata: CandleMetadata::default(),
+                    },
+                ],
+            },
+        };
+        let config = DataQualityConfig {
+            validate_ohlcv: true,
+            detect_missing_candles: true,
+            detect_duplicate_candles: true,
+            detect_invalid_prices: true,
+            detect_zero_volume: true,
+        };
+        let requirements = DataRequirements {
+            minimum_candles: 1,
+            recommended_candles: 2,
+            maximum_candles: 10,
+        };
+
+        let (_, report) =
+            validate_input_with_config(&input, &requirements, &config).expect("valid input");
+
+        assert!(!report.issues.iter().any(|item| item.code == "MISSING_CANDLES"));
     }
 
     #[test]
