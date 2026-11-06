@@ -66,7 +66,10 @@ for (const skill of index.skills) {
   }
 
   skillNames.add(skill.name);
-  if (!skill.url.startsWith("/.well-known/agent-skills/") || skill.url.includes("..")) {
+  if (
+    !skill.url.startsWith("/.well-known/agent-skills/") ||
+    skill.url.includes("..")
+  ) {
     throw new Error(`Skill URL is outside the Agent Skills namespace: ${skill.name}`);
   }
 
