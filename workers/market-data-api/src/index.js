@@ -55,7 +55,10 @@ export default {
       }
 
       if (url.pathname === "/openapi.json") {
-        return new Response(OPENAPI_DOCUMENT, {
+        return new Response(OPENAPI_DOCUMENT.replace(
+          "https://doanson44-market-data-api.<workers-subdomain>.workers.dev",
+          url.origin,
+        ), {
           status: 200,
           headers: corsHeaders(origin, {
             "Content-Type": "application/json; charset=utf-8",
@@ -104,6 +107,7 @@ async function handleKlines(url, origin) {
     return jsonError(upstream.code, upstream.error, upstream.status, origin);
   }
 
+  query.duplicateCandlesRemoved = upstream.duplicateCandlesRemoved;
   const payload = buildMarketPayload(query, upstream.candles);
   return jsonResponse(payload, 200, origin, 15);
 }
@@ -119,8 +123,12 @@ async function handleAnalysis(url, origin) {
     return jsonError(upstream.code, upstream.error, upstream.status, origin);
   }
 
+  query.duplicateCandlesRemoved = upstream.duplicateCandlesRemoved;
   const market = buildMarketPayload(query, upstream.candles);
-  const indicators = calculateIndicators(upstream.candles);
+  const closedCandles = market.candles.filter((candle) =>
+    candleCloseTimestamp(candle.timestamp, query.timeframe, query.interval.seconds) <= Math.floor(Date.now() / 1000)
+  );
+  const indicators = calculateIndicators(closedCandles);
   return jsonResponse({
     ...market,
     analysis: {
@@ -128,6 +136,8 @@ async function handleAnalysis(url, origin) {
       engineVersion: API_VERSION,
       methodology: "Standard technical indicator calculations over the returned OHLCV candles.",
       indicators,
+      candleCountUsed: closedCandles.length,
+      latestCandleIncluded: closedCandles.length === market.candles.length,
       marketStructure: {
         status: "not_calculated",
         reason: "BOS, CHoCH, swing structure, support/resistance, and pattern detection are not part of this API version.",
@@ -320,15 +330,17 @@ async function fetchKlines(query) {
 
   candles.sort((left, right) => left.timestamp - right.timestamp);
   const unique = [];
+  let duplicateCandlesRemoved = 0;
   for (const candle of candles) {
     if (unique.length && unique[unique.length - 1].timestamp === candle.timestamp) {
       unique[unique.length - 1] = candle;
+      duplicateCandlesRemoved += 1;
     } else {
       unique.push(candle);
     }
   }
 
-  return { candles: unique };
+  return { candles: unique, duplicateCandlesRemoved };
 }
 
 async function fetchUpstream(url) {
@@ -373,15 +385,17 @@ function buildMarketPayload(query, candles) {
   const last = candles[candles.length - 1];
   const gaps = [];
   for (let index = 1; index < candles.length; index += 1) {
-    const delta = candles[index].timestamp - candles[index - 1].timestamp;
-    if (delta > query.interval.seconds * 1.5) {
-      gaps.push({
-        from: candles[index - 1].timestamp,
-        to: candles[index].timestamp,
-        missingIntervals: Math.max(1, Math.round(delta / query.interval.seconds) - 1),
-      });
+    const previous = candles[index - 1].timestamp;
+    const current = candles[index].timestamp;
+    const expectedNext = candleCloseTimestamp(previous, query.timeframe, query.interval.seconds);
+    if (current > expectedNext + 60) {
+      const missingIntervals = query.timeframe === "1mo"
+        ? Math.max(1, monthDistance(previous, current) - 1)
+        : Math.max(1, Math.round((current - previous) / query.interval.seconds) - 1);
+      gaps.push({ from: previous, to: current, missingIntervals });
     }
   }
+  const closeTime = candleCloseTimestamp(last.timestamp, query.timeframe, query.interval.seconds);
 
   return {
     schemaVersion: "1.0",
@@ -401,18 +415,35 @@ function buildMarketPayload(query, candles) {
       requestedLimit: query.limit,
       latestCandle: {
         openTime: last.timestamp,
-        closeTime: last.timestamp + query.interval.seconds,
-        isClosed: now >= last.timestamp + query.interval.seconds,
+        closeTime,
+        isClosed: now >= closeTime,
       },
     },
     candles,
     dataQuality: {
-      valid: gaps.length === 0,
-      duplicateCandlesRemoved: 0,
+      valid: gaps.length === 0 && (query.duplicateCandlesRemoved || 0) === 0,
+      duplicateCandlesRemoved: query.duplicateCandlesRemoved || 0,
       missingIntervals: gaps,
-      issues: gaps.length ? ["missing_candle_intervals_detected"] : [],
+      issues: [
+        ...(gaps.length ? ["missing_candle_intervals_detected"] : []),
+        ...(query.duplicateCandlesRemoved ? ["duplicate_candles_removed"] : []),
+      ],
     },
   };
+}
+
+function candleCloseTimestamp(openTime, timeframe, intervalSeconds) {
+  if (timeframe !== "1mo") return openTime + intervalSeconds;
+  const date = new Date(openTime * 1000);
+  date.setUTCMonth(date.getUTCMonth() + 1);
+  return Math.floor(date.getTime() / 1000);
+}
+
+function monthDistance(fromTimestamp, toTimestamp) {
+  const from = new Date(fromTimestamp * 1000);
+  const to = new Date(toTimestamp * 1000);
+  return (to.getUTCFullYear() - from.getUTCFullYear()) * 12 +
+    (to.getUTCMonth() - from.getUTCMonth());
 }
 
 function calculateIndicators(candles) {
