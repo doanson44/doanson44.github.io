@@ -23,7 +23,7 @@ This Worker is an optional edge template. It is not active on the current `doans
 ## What it does not do
 
 - It does not create DNS-AID records or enable DNSSEC.
-- It does not implement OAuth, MCP, A2A, or a first-party API.
+- It does not implement OAuth, MCP, or A2A. The separate forward-proxy Worker is not advertised here as a public API contract.
 - It does not convert HTML into Markdown. Enable Cloudflare Markdown for Agents / Content Converter for the zone separately, where available.
 - It must not be deployed with a route for `github.io`; that DNS zone is controlled by GitHub.
 
