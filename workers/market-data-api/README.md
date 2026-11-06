@@ -58,7 +58,7 @@ The analysis endpoint currently calculates:
 
 The analysis endpoints do not yet calculate BOS, CHoCH, swing structure, support/resistance, candlestick patterns, divergence, or a market regime. These are explicitly marked as unavailable rather than fabricated.
 
-Vietnam stock history is daily-only. CafeF does not provide a verified candle-finality field in the data consumed here, so the API marks the latest candle close status as unknown and excludes a current Vietnam calendar-day candle from indicator calculations. Missing-candle checks are not applied to stock history because exchange holidays and non-trading days are not represented by a fixed calendar interval.
+Vietnam stock history is daily-only. CafeF prices (open/high/low/close, reference price, ceiling, floor) are expressed in thousand VND; volume is shares, while amount and market capitalization are VND. These units are declared in `meta`. CafeF does not provide a verified candle-finality field in the data consumed here, so the API marks the latest candle close status as unknown and excludes a current Vietnam calendar-day candle from indicator calculations. Missing-candle checks are not applied to stock history because exchange holidays and non-trading days are not represented by a fixed calendar interval.
 
 Indicator formulas are implemented in this Worker and are versioned independently from the Rust technical-analysis engine currently used by the browser application. Validate parity before treating the two engines as interchangeable.
 
