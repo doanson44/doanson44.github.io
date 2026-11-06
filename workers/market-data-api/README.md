@@ -93,7 +93,7 @@ npx wrangler login
 npm run deploy
 ```
 
-3. Cloudflare will report the deployed `workers.dev` URL. The exact hostname depends on the account's Workers subdomain and must not be guessed.
+3. Cloudflare will report the deployed `workers.dev` URL. If deployed to the same Cloudflare account currently hosting `doanson44-forward-proxy.work-sontd.workers.dev`, the expected URL is `https://doanson44-market-data-api.work-sontd.workers.dev`. Treat this as an expected hostname until the deployment command confirms it.
 4. Smoke-test `/health`, `/openapi.json`, and each data endpoint.
 5. The OpenAPI endpoint derives its server URL from the incoming request origin.
 6. Update the market-data Agent Skill and AI Catalog with the verified URL only after deployment succeeds.
