@@ -300,7 +300,12 @@ async function handleVietnamStockKlines(url, origin) {
   }
 
   const candles = upstream.candles.slice(-query.limit);
-  const payload = buildVietnamStockPayload(query, candles, upstream.duplicateCandlesRemoved);
+  const payload = buildVietnamStockPayload(
+    query,
+    candles,
+    upstream.duplicateCandlesRemoved,
+    upstream.invalidCandlesSkipped,
+  );
   return jsonResponse(payload, 200, origin, 300);
 }
 
@@ -316,7 +321,12 @@ async function handleVietnamStockAnalysis(url, origin) {
   }
 
   const candles = upstream.candles.slice(-query.limit);
-  const market = buildVietnamStockPayload(query, candles, upstream.duplicateCandlesRemoved);
+  const market = buildVietnamStockPayload(
+    query,
+    candles,
+    upstream.duplicateCandlesRemoved,
+    upstream.invalidCandlesSkipped,
+  );
   const today = vietnamDateKey(new Date());
   const closedCandles = candles.filter((candle) => vietnamDateKey(new Date(candle.timestamp * 1000)) !== today);
 
@@ -435,6 +445,7 @@ async function fetchVietnamStockHistory(symbol) {
   }
 
   const candles = [];
+  let invalidCandlesSkipped = 0;
   for (const record of records) {
     if (!record || typeof record.Symbol !== "string" || record.Symbol.toUpperCase() !== symbol) continue;
     const timestamp = parseVietnamTimestamp(record.TradeDate);
@@ -456,6 +467,7 @@ async function fetchVietnamStockHistory(symbol) {
         candle.open <= 0 || candle.high <= 0 || candle.low <= 0 || candle.close <= 0 ||
         candle.volume < 0 || candle.high < Math.max(candle.open, candle.close, candle.low) ||
         candle.low > Math.min(candle.open, candle.close, candle.high)) {
+      invalidCandlesSkipped += 1;
       continue;
     }
     candles.push(candle);
@@ -481,7 +493,7 @@ async function fetchVietnamStockHistory(symbol) {
     };
   }
 
-  return { candles: unique, duplicateCandlesRemoved };
+  return { candles: unique, duplicateCandlesRemoved, invalidCandlesSkipped };
 }
 
 function parseVietnamTimestamp(value) {
@@ -503,7 +515,7 @@ function vietnamDateKey(date) {
   return values.year + "-" + values.month + "-" + values.day;
 }
 
-function buildVietnamStockPayload(query, candles, duplicateCandlesRemoved) {
+function buildVietnamStockPayload(query, candles, duplicateCandlesRemoved, invalidCandlesSkipped) {
   const last = candles[candles.length - 1];
   return {
     schemaVersion: "1.0",
@@ -529,11 +541,15 @@ function buildVietnamStockPayload(query, candles, duplicateCandlesRemoved) {
     },
     candles,
     dataQuality: {
-      valid: duplicateCandlesRemoved === 0,
+      valid: duplicateCandlesRemoved === 0 && invalidCandlesSkipped === 0,
       duplicateCandlesRemoved,
+      invalidCandlesSkipped,
       missingIntervals: [],
       missingIntervalCheck: "not_applicable_for_exchange_calendar",
-      issues: duplicateCandlesRemoved ? ["duplicate_candles_removed"] : [],
+      issues: [
+        ...(duplicateCandlesRemoved ? ["duplicate_candles_removed"] : []),
+        ...(invalidCandlesSkipped ? ["invalid_candles_skipped"] : []),
+      ],
     },
   };
 }
