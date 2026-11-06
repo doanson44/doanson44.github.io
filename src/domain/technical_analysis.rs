@@ -1628,15 +1628,21 @@ pub fn analyze(
         })
         .collect::<Result<Vec<_>, String>>()?;
 
-    let ema20 = find_period(&ema_values, 20);
-    let ema50 = find_period(&ema_values, 50);
-    let ema200 = find_period(&ema_values, 200);
-    let bullish_alignment = ema20.is_some_and(|value| latest.close > value)
-        && ema20.zip(ema50).is_some_and(|(a, b)| a > b)
-        && ema50.zip(ema200).is_some_and(|(a, b)| a > b);
-    let bearish_alignment = ema20.is_some_and(|value| latest.close < value)
-        && ema20.zip(ema50).is_some_and(|(a, b)| a < b)
-        && ema50.zip(ema200).is_some_and(|(a, b)| a < b);
+    let configured_ema_periods = &config.indicators.moving_averages.ema;
+    let alignment_periods = &configured_ema_periods
+        [configured_ema_periods.len().saturating_sub(3)..];
+    let ema_short_period = alignment_periods.first().copied();
+    let ema_medium_period = alignment_periods.get(1).copied();
+    let ema_long_period = alignment_periods.get(2).copied();
+    let ema_short = ema_short_period.and_then(|period| find_period(&ema_values, period));
+    let ema_medium = ema_medium_period.and_then(|period| find_period(&ema_values, period));
+    let ema_long = ema_long_period.and_then(|period| find_period(&ema_values, period));
+    let bullish_alignment = ema_short.is_some_and(|value| latest.close > value)
+        && ema_short.zip(ema_medium).is_some_and(|(short, medium)| short > medium)
+        && ema_medium.zip(ema_long).is_some_and(|(medium, long)| medium > long);
+    let bearish_alignment = ema_short.is_some_and(|value| latest.close < value)
+        && ema_short.zip(ema_medium).is_some_and(|(short, medium)| short < medium)
+        && ema_medium.zip(ema_long).is_some_and(|(medium, long)| medium < long);
 
     let adx_values = adx(&candles, config.indicators.trend_strength.adx.period)?;
     let adx_current = adx_values.last().copied().flatten();
@@ -1669,7 +1675,12 @@ pub fn analyze(
         alignment: Alignment {
             bullish: bullish_alignment,
             bearish: bearish_alignment,
-            description: alignment_description(latest.close, ema20, ema50, ema200),
+            description: alignment_description(
+                latest.close,
+                ema_short_period.zip(ema_short),
+                ema_medium_period.zip(ema_medium),
+                ema_long_period.zip(ema_long),
+            ),
         },
     };
 
@@ -2137,18 +2148,22 @@ fn find_period(values: &[PeriodValue], period: usize) -> Option<f64> {
 
 fn alignment_description(
     price: f64,
-    ema20: Option<f64>,
-    ema50: Option<f64>,
-    ema200: Option<f64>,
+    short: Option<(usize, f64)>,
+    medium: Option<(usize, f64)>,
+    long: Option<(usize, f64)>,
 ) -> String {
-    match (ema20, ema50, ema200) {
-        (Some(a), Some(b), Some(c)) if price > a && a > b && b > c => {
-            "Price > EMA20 > EMA50 > EMA200".to_string()
+    match (short, medium, long) {
+        (Some((short_period, short)), Some((medium_period, medium)), Some((long_period, long)))
+            if price > short && short > medium && medium > long =>
+        {
+            format!("Price > EMA{short_period} > EMA{medium_period} > EMA{long_period}")
         }
-        (Some(a), Some(b), Some(c)) if price < a && a < b && b < c => {
-            "Price < EMA20 < EMA50 < EMA200".to_string()
+        (Some((short_period, short)), Some((medium_period, medium)), Some((long_period, long)))
+            if price < short && short < medium && medium < long =>
+        {
+            format!("Price < EMA{short_period} < EMA{medium_period} < EMA{long_period}")
         }
-        _ => "No complete EMA20/EMA50/EMA200 alignment".to_string(),
+        _ => "No complete three-period EMA alignment".to_string(),
     }
 }
 
