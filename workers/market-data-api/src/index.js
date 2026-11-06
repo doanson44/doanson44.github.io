@@ -184,7 +184,7 @@ async function handleTicker(url, origin) {
       indexPrice: finiteOrNull(ticker.indexPrice),
       fundingRate: finiteOrNull(ticker.fundingRate),
       volume24h: finiteOrNull(ticker.volume24),
-      openInterest: finiteOrNull(ticker.holdVol),
+      holdVolume: finiteOrNull(ticker.holdVol),
       high24h: finiteOrNull(ticker.high24Price),
       low24h: finiteOrNull(ticker.lower24Price),
       changeRate24h: finiteOrNull(ticker.riseFallRate),
@@ -223,7 +223,7 @@ async function handleFundingRate(url, origin) {
       fundingRate: finiteOrNull(data.fundingRate),
       minFundingRate: finiteOrNull(data.minFundingRate),
       maxFundingRate: finiteOrNull(data.maxFundingRate),
-      settlementIntervalHours: finiteOrNull(data.collectCycle),
+      settlementInterval: finiteOrNull(data.collectCycle),
       nextSettlementAt: toIsoTimestamp(data.nextSettleTime),
     },
   }, 200, origin, 15);
@@ -506,7 +506,7 @@ function calculateIndicators(candles) {
       stochastic: closes.length >= 19,
       atr14: closes.length >= 15,
       bollingerBands: closes.length >= 20,
-      adx14: closes.length >= 28,
+      adx14: closes.length >= 27,
       volumeSma20: volumes.length >= 20,
       obv: closes.length >= 1,
     },
@@ -661,7 +661,7 @@ function bollingerLatest(values, period, standardDeviations) {
 }
 
 function adxLatest(candles, period) {
-  if (candles.length < (period * 2)) return null;
+  if (candles.length < (period * 2 - 1)) return null;
   const plusDm = Array(candles.length).fill(0);
   const minusDm = Array(candles.length).fill(0);
   for (let index = 1; index < candles.length; index += 1) {
@@ -693,7 +693,7 @@ function adxLatest(candles, period) {
 
 function obvLatest(closes, volumes) {
   if (!closes.length) return null;
-  let obv = volumes[0];
+  let obv = 0;
   for (let index = 1; index < closes.length; index += 1) {
     if (closes[index] > closes[index - 1]) obv += volumes[index];
     else if (closes[index] < closes[index - 1]) obv -= volumes[index];
