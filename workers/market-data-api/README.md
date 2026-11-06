@@ -87,7 +87,7 @@ npm run deploy
 
 3. Cloudflare will report the deployed \`workers.dev\` URL. The exact hostname depends on the account's Workers subdomain and must not be guessed.
 4. Smoke-test \`/health\`, \`/openapi.json\`, and each data endpoint.
-5. Replace the placeholder server URL in the OpenAPI document with the actual deployed URL.
+5. The OpenAPI endpoint derives its server URL from the incoming request origin.
 6. Update the market-data Agent Skill and AI Catalog with the verified URL only after deployment succeeds.
 
 No Cloudflare credentials or deployment secrets are stored in this repository. Deployment has not been performed by this source change.
