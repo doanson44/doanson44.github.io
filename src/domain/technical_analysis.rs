@@ -1560,13 +1560,14 @@ pub fn analyze(
 
     let fast = ema(&closes, config.indicators.momentum.macd.fast)?;
     let slow = ema(&closes, config.indicators.momentum.macd.slow)?;
-    let macd_line: Vec<f64> = fast
+    let macd_indicator_values: Vec<Option<f64>> = fast
         .iter()
         .zip(slow.iter())
-        .map(|(a, b)| match (a, b) {
-            (Some(a), Some(b)) => a - b,
-            _ => 0.0,
-        })
+        .map(|(a, b)| a.zip(*b).map(|(fast, slow)| fast - slow))
+        .collect();
+    let macd_line: Vec<f64> = macd_indicator_values
+        .iter()
+        .map(|value| value.unwrap_or(0.0))
         .collect();
     let signal_line = ema(&macd_line, config.indicators.momentum.macd.signal)?;
     let macd_current = macd_line.last().copied();
@@ -1757,8 +1758,29 @@ pub fn analyze(
     } else {
         Vec::new()
     };
+    let obv_indicator_values = obv_values.as_ref().map(|values| {
+        values.iter().copied().map(Some).collect::<Vec<Option<f64>>>()
+    });
+    let mut divergence_indicators = Vec::new();
+    for indicator in &config.divergence_detection.indicators {
+        match indicator.to_ascii_lowercase().as_str() {
+            "rsi" => divergence_indicators.push(("rsi", rsi_values.clone())),
+            "macd" => divergence_indicators.push(("macd", macd_indicator_values.clone())),
+            "obv" => {
+                if let Some(values) = &obv_indicator_values {
+                    divergence_indicators.push(("obv", values.clone()));
+                }
+            }
+            _ => {}
+        }
+    }
     let divergences = if config.divergence_detection.enabled {
-        divergence_analysis(&candles, &rsi_values, &market_structure)
+        divergence_analysis(
+            &candles,
+            &divergence_indicators,
+            config.market_structure.swing_detection.lookback,
+            config.divergence_detection.minimum_swing_distance,
+        )
     } else {
         Vec::new()
     };
@@ -2348,13 +2370,63 @@ fn pattern_analysis(structure: &MarketStructureAnalysis) -> Vec<Pattern> {
 
 fn divergence_analysis(
     candles: &[Candle],
-    rsi_values: &[Option<f64>],
-    structure: &MarketStructureAnalysis,
+    indicators: &[(&str, Vec<Option<f64>>)],
+    swing_lookback: usize,
+    minimum_swing_distance: usize,
 ) -> Vec<Divergence> {
-    let _ = candles;
-    let _ = rsi_values;
-    let _ = structure;
-    Vec::new()
+    let swings = detect_swings(candles, swing_lookback);
+    let mut divergences = Vec::new();
+
+    for (indicator, values) in indicators {
+        for kind in [SwingKind::Low, SwingKind::High] {
+            let points = swings
+                .iter()
+                .filter(|swing| swing.kind == kind)
+                .filter_map(|swing| {
+                    values
+                        .get(swing.index)
+                        .and_then(|value| *value)
+                        .map(|value| (swing.index, swing.price, value))
+                })
+                .collect::<Vec<_>>();
+            let Some((previous_index, previous_price, previous_value)) =
+                points.get(points.len().saturating_sub(2)).copied()
+            else {
+                continue;
+            };
+            let Some((current_index, current_price, current_value)) = points.last().copied()
+            else {
+                continue;
+            };
+            if current_index.saturating_sub(previous_index) < minimum_swing_distance {
+                continue;
+            }
+
+            let direction = match kind {
+                SwingKind::Low
+                    if current_price < previous_price && current_value > previous_value =>
+                {
+                    Some("bullish")
+                }
+                SwingKind::High
+                    if current_price > previous_price && current_value < previous_value =>
+                {
+                    Some("bearish")
+                }
+                _ => None,
+            };
+
+            if let Some(direction) = direction {
+                divergences.push(Divergence {
+                    indicator: (*indicator).to_string(),
+                    direction: direction.to_string(),
+                    confidence: 0.7,
+                });
+            }
+        }
+    }
+
+    divergences
 }
 
 fn volatility_state(atr_values: &[Option<f64>], closes: &[f64]) -> String {
@@ -2766,6 +2838,33 @@ mod tests {
         assert_eq!(result.direction.as_deref(), Some("up"));
         assert_eq!(result.resistance_level, Some(10.0));
         assert!(result.volume_confirmation);
+    }
+
+    #[test]
+    fn divergence_analysis_detects_regular_bullish_and_bearish_rsi_divergence() {
+        let candles = vec![
+            Candle { timestamp: "0".into(), open: 9.0, high: 10.0, low: 8.0, close: 9.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "1".into(), open: 14.0, high: 15.0, low: 12.0, close: 14.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "2".into(), open: 8.0, high: 13.0, low: 7.0, close: 8.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "3".into(), open: 13.0, high: 14.0, low: 10.0, close: 13.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "4".into(), open: 15.0, high: 16.0, low: 9.0, close: 15.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "5".into(), open: 7.0, high: 13.0, low: 6.0, close: 7.0, volume: 1.0, metadata: CandleMetadata::default() },
+            Candle { timestamp: "6".into(), open: 9.0, high: 11.0, low: 7.0, close: 9.0, volume: 1.0, metadata: CandleMetadata::default() },
+        ];
+        let rsi = vec![
+            Some(50.0),
+            Some(70.0),
+            Some(30.0),
+            Some(55.0),
+            Some(60.0),
+            Some(40.0),
+            Some(50.0),
+        ];
+
+        let result = divergence_analysis(&candles, &[("rsi", rsi)], 1, 2);
+
+        assert!(result.iter().any(|item| item.direction == "bullish"));
+        assert!(result.iter().any(|item| item.direction == "bearish"));
     }
 
     #[test]
