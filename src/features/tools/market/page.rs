@@ -318,6 +318,7 @@ fn analysis_term(i18n: leptos_i18n::I18nContext<Locale>, value: &str) -> String 
         "decreasing" => t_string!(i18n, market_analysis_decreasing).to_string(),
         "unavailable" => t_string!(i18n, market_analysis_unavailable).to_string(),
         "none" => t_string!(i18n, market_analysis_none).to_string(),
+        "low" | "high" | "normal" | "forming" | "broken" | "approaching" | "rising" | "falling" | "flat" | "disabled" => value.to_string(),
         _ => value.to_string(),
     }
 }
@@ -348,8 +349,13 @@ fn market_analysis_view(
                 </dl>
             </section>
             <section>
+                <h3 class="mb-2 text-sm font-semibold">Price action</h3>
+                <p class="m-0">{format!("Candle {} · 1D {} · 5D {} · 20D {} · 60D {}", result.price_action.candle.candle_type, result.price_action.recent_performance.one_day.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()), result.price_action.recent_performance.five_day.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()), result.price_action.recent_performance.twenty_day.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()), result.price_action.recent_performance.sixty_day.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()))}</p>
+                <p class="m-0 mt-1">{format!("Gap: {} {} · Consecutive: {} ×{}", result.price_action.gap.direction.as_deref().unwrap_or("none"), result.price_action.gap.size_percent.map(|v| format!("{v:+.2}%")).unwrap_or_else(|| "N/A".to_string()), analysis_term(i18n, &result.price_action.consecutive_moves.direction), result.price_action.consecutive_moves.count)}</p>
+            </section>
+            <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_trend_section)}</h3>
-                <p class="m-0">{format!("{} · {} · {}", analysis_term(i18n, &result.trend.state), analysis_term(i18n, &result.trend.strength), result.trend.alignment.description)}</p>
+                <p class="m-0">{format!("{} · {} · ADX {} · {}", analysis_term(i18n, &result.trend.state), analysis_term(i18n, &result.trend.strength), result.trend.adx.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.trend.alignment.description)}</p>
                 <p class="m-0 mt-1 text-[var(--text-secondary)]">{format!("SMA: {} | EMA: {}", result.trend.moving_averages.sma.iter().map(|x| format!("{}={}", x.period, x.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()))).collect::<Vec<_>>().join(", "), result.trend.moving_averages.ema.iter().map(|x| format!("{}={}", x.period, x.value.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()))).collect::<Vec<_>>().join(", "))}</p>
             </section>
             <section>
@@ -358,11 +364,12 @@ fn market_analysis_view(
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_volatility_section)}</h3>
-                <p class="m-0">{format!("ATR {} · Bollinger {} / {} / {} · OBV {}", result.volatility.atr.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.volatility.bollinger_bands.lower.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.volatility.bollinger_bands.middle.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.volatility.bollinger_bands.upper.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.volume.obv.map(|v| format!("{v:.0}")).unwrap_or_else(|| "N/A".to_string()))}</p>
+                <p class="m-0">{format!("State {} · ATR {} ({}%) · Bollinger {} / {} / {} · OBV {}", analysis_term(i18n, &result.volatility.state), result.volatility.atr.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.volatility.atr_percent.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.volatility.bollinger_bands.lower.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.volatility.bollinger_bands.middle.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.volatility.bollinger_bands.upper.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.volume.obv.map(|v| format!("{v:.0}")).unwrap_or_else(|| "N/A".to_string()))}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_structure_section)}</h3>
                 <p class="m-0">{result.market_structure.structure_sequence.join(" -> ")}</p>
+                <p class="m-0 mt-1">BOS: {if result.market_structure.break_of_structure.detected { result.market_structure.break_of_structure.direction.clone().unwrap_or_else(|| "detected".to_string()) } else { "none".to_string() }} · CHoCH: {if result.market_structure.change_of_character.detected { result.market_structure.change_of_character.direction.clone().unwrap_or_else(|| "detected".to_string()) } else { "none".to_string() }}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_levels_section)}</h3>
@@ -370,7 +377,7 @@ fn market_analysis_view(
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_breakout)}</h3>
-                <p class="m-0">{format!("{} · {} · {}", analysis_term(i18n, &result.breakout.status), result.breakout.direction.as_deref().map(|v| analysis_term(i18n, v)).unwrap_or_else(|| t_string!(i18n, market_analysis_na).to_string()), if result.breakout.volume_confirmation { t_string!(i18n, market_analysis_yes) } else { t_string!(i18n, market_analysis_no) })}</p>
+                <p class="m-0">{format!("{} · {} · Volume {} · Retest {} · Resistance {} · Support {}", analysis_term(i18n, &result.breakout.status), result.breakout.direction.as_deref().map(|v| analysis_term(i18n, v)).unwrap_or_else(|| t_string!(i18n, market_analysis_na).to_string()), if result.breakout.volume_confirmation { t_string!(i18n, market_analysis_yes) } else { t_string!(i18n, market_analysis_no) }, if result.breakout.retest.detected { t_string!(i18n, market_analysis_yes) } else { t_string!(i18n, market_analysis_no) }, result.breakout.resistance_level.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()), result.breakout.support_level.map(|v| format!("{v:.2}")).unwrap_or_else(|| "N/A".to_string()))}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_regime)}</h3>
@@ -386,8 +393,8 @@ fn market_analysis_view(
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_patterns)}</h3>
-                <p class="m-0">{if result.patterns.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.patterns.iter().map(|p| p.name.clone()).collect::<Vec<_>>().join(", ") }}</p>
-                <p class="m-0 mt-1">{if result.divergences.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.divergences.iter().map(|d| format!("{} {}", d.indicator, d.direction)).collect::<Vec<_>>().join(", ") }}</p>
+                <p class="m-0">{if result.patterns.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.patterns.iter().map(|p| format!("{} [{}; {:.0}%]", p.name, p.status, p.confidence * 100.0)).collect::<Vec<_>>().join(", ") }}</p>
+                <p class="m-0 mt-1">{if result.divergences.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.divergences.iter().map(|d| format!("{} {} ({:.0}%)", d.indicator, d.direction, d.confidence * 100.0)).collect::<Vec<_>>().join(", ") }}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_scenarios)}</h3>
@@ -396,6 +403,7 @@ fn market_analysis_view(
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_data_quality)}</h3>
                 <p class="m-0">{format!("{} / {} · {}: {}", result.data_quality.candles_used, result.data_quality.candles_received, t_string!(i18n, market_analysis_sufficient), if result.data_quality.sufficient_for_analysis { "Yes" } else { "No" })}</p>
+                <p class="m-0 mt-1">{if result.data_quality.issues.is_empty() { t_string!(i18n, market_analysis_none).to_string() } else { result.data_quality.issues.iter().map(|issue| format!("{}: {}", issue.code, issue.description)).collect::<Vec<_>>().join(" · ") }}</p>
             </section>
         </div>
     }.into_any()
