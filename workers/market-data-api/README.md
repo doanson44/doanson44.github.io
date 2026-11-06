@@ -26,6 +26,9 @@ No account, position, order, withdrawal, API-key, or API-secret endpoints are im
 | GET | `/v1/crypto/futures/analysis` | OHLCV and indicators |
 | GET | `/v1/crypto/futures/ticker` | Futures ticker |
 | GET | `/v1/crypto/futures/funding-rate` | Funding-rate snapshot |
+| GET | `/v1/stocks/vietnam/snapshot` | CafeF Vietnam stock snapshot |
+| GET | `/v1/stocks/vietnam/klines` | CafeF daily OHLCV history |
+| GET | `/v1/stocks/vietnam/analysis` | CafeF daily OHLCV and indicators |
 
 ### Example requests
 
@@ -62,12 +65,12 @@ Indicator formulas are implemented in this Worker and are versioned independentl
 ## Data semantics
 
 - Candle timestamps are Unix seconds and represent candle open time.
-- All timestamps are UTC.
-- `isClosed` is derived from candle open time plus the timeframe duration and the Worker clock.
-- The latest candle may be incomplete. Consumers must inspect `meta.latestCandle.isClosed`.
-- Missing intervals are reported in `dataQuality.missingIntervals`.
+- MEXC Futures candles use UTC; CafeF daily candles use `Asia/Ho_Chi_Minh`. Always follow `meta.timezone`.
+- Futures `isClosed` is derived from candle open time plus the timeframe duration and the Worker clock.
+- CafeF does not expose verified candle finality in the current source payload; stock `isClosed` is `null` and current-day data is excluded from indicator calculations.
+- Missing Futures intervals are reported in `dataQuality.missingIntervals`. Stock missing-interval checks are not applied because the exchange calendar includes weekends and holidays.
 - Numeric fields are numbers or null; absent indicator values are not replaced with zero.
-- MEXC remains the source of truth for the upstream market data. This API does not guarantee executable prices.
+- MEXC and CafeF remain the upstream sources. This API does not guarantee executable prices.
 
 ## Local development
 
@@ -109,3 +112,5 @@ Before broad public use, configure Cloudflare rate limiting and monitor upstream
 - Futures K-line endpoint: `GET /api/v1/contract/kline/{symbol}`
 - Futures ticker endpoint: `GET /api/v1/contract/ticker`
 - Futures funding-rate endpoint: `GET /api/v1/contract/funding_rate/{symbol}`
+- CafeF market snapshot: `https://cafef.vn/du-lieu/ajax/mobile/smart/ajaxbandothitruong.ashx`
+- CafeF daily history: `https://cafefnew.mediacdn.vn/Images/Uploaded/DuLieuDownload/Liveboard/{symbol}_PriceHistory.json`
