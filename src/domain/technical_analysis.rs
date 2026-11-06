@@ -1248,7 +1248,7 @@ fn timestamp_seconds(timestamp: &str) -> Option<i64> {
         })
         .unwrap_or(0);
 
-    let adjusted_year = year - i64::from(month <= 2);
+    let adjusted_year = year - if month <= 2 { 1 } else { 0 };
     let era = if adjusted_year >= 0 {
         adjusted_year
     } else {
@@ -1735,7 +1735,12 @@ pub fn analyze(
         "none".to_string()
     };
 
-    let stochastic_k = stochastic_k(&candles, config.indicators.momentum.stochastic.k_period)?;
+    let stochastic_k_raw =
+        stochastic_k(&candles, config.indicators.momentum.stochastic.k_period)?;
+    let stochastic_k = stochastic_d(
+        &stochastic_k_raw,
+        config.indicators.momentum.stochastic.smooth,
+    )?;
     let stochastic_d = stochastic_d(
         &stochastic_k,
         config.indicators.momentum.stochastic.d_period,
@@ -3402,6 +3407,14 @@ mod tests {
         let values = adx(&input, 5).expect("valid ADX");
 
         assert!(values.iter().all(Option::is_none));
+    }
+
+    #[test]
+    fn stochastic_smoothing_uses_configured_window() {
+        let raw = vec![None, Some(10.0), Some(20.0), Some(30.0)];
+        let smoothed = stochastic_d(&raw, 2).expect("valid smoothing period");
+
+        assert_eq!(smoothed, vec![None, None, Some(15.0), Some(25.0)]);
     }
 
     #[test]
