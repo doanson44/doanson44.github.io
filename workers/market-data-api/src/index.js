@@ -1130,6 +1130,49 @@ const OPENAPI_DOCUMENT = JSON.stringify({
           },
         ],
       },
+      TickerResponse: {
+        type: "object",
+        required: ["schemaVersion", "meta", "ticker"],
+        properties: {
+          schemaVersion: { type: "string" },
+          meta: { type: "object", description: "Provider, symbol, retrieval time, and upstream timestamp." },
+          ticker: { type: "object", description: "Latest public Futures ticker fields; unavailable values are null." },
+        },
+      },
+      FundingRateResponse: {
+        type: "object",
+        required: ["schemaVersion", "meta", "funding"],
+        properties: {
+          schemaVersion: { type: "string" },
+          meta: { type: "object", description: "Provider, symbol, retrieval time, and upstream timestamp." },
+          funding: { type: "object", description: "Funding rate and settlement metadata." },
+        },
+      },
+      VietnamStockSnapshotResponse: {
+        type: "object",
+        required: ["schemaVersion", "meta", "data"],
+        properties: {
+          schemaVersion: { type: "string" },
+          meta: { type: "object", description: "CafeF source, Vietnam market, VND currency, timezone, and retrieval timestamp." },
+          data: {
+            type: "array",
+            items: {
+              type: "object",
+              required: ["symbol", "name", "price"],
+              properties: {
+                symbol: { type: "string" },
+                name: { type: "string" },
+                price: { type: "number" },
+                change: { type: ["number", "null"] },
+                changePercent: { type: ["number", "null"] },
+                totalVolume: { type: ["number", "null"] },
+                totalValue: { type: ["number", "null"] },
+                marketCap: { type: ["number", "null"] },
+              },
+            },
+          },
+        },
+      },
       ErrorResponse: {
         type: "object",
         required: ["schemaVersion", "error", "timestamp"],
@@ -1198,13 +1241,23 @@ const OPENAPI_DOCUMENT = JSON.stringify({
       get: {
         summary: "Get a Futures ticker snapshot",
         parameters: [{ name: "symbol", in: "query", required: true, schema: { type: "string", example: "BTC_USDT" } }],
-        responses: { "200": { description: "Ticker snapshot with source timestamp" } },
+        responses: {
+          "200": {
+            description: "Ticker snapshot with source timestamp",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/TickerResponse" } } },
+          },
+        },
       },
     },
     "/v1/stocks/vietnam/snapshot": {
       get: {
         summary: "Get CafeF Vietnam stock market snapshot",
-        responses: { "200": { description: "Normalized Vietnam stock snapshot with CafeF source metadata" } },
+        responses: {
+          "200": {
+            description: "Normalized Vietnam stock snapshot with CafeF source metadata",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/VietnamStockSnapshotResponse" } } },
+          },
+        },
       },
     },
     "/v1/stocks/vietnam/klines": {
@@ -1231,7 +1284,12 @@ const OPENAPI_DOCUMENT = JSON.stringify({
       get: {
         summary: "Get a Futures funding-rate snapshot",
         parameters: [{ name: "symbol", in: "query", required: true, schema: { type: "string", example: "BTC_USDT" } }],
-        responses: { "200": { description: "Funding rate and settlement metadata" } },
+        responses: {
+          "200": {
+            description: "Funding rate and settlement metadata",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/FundingRateResponse" } } },
+          },
+        },
       },
     },
   },
