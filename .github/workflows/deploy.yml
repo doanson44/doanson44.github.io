@@ -56,6 +56,9 @@ jobs:
           done
           exit 1
 
+      - name: Validate agent-readiness assets
+        run: node scripts/validate-agent-readiness.mjs dist
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
