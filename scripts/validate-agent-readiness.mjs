@@ -146,6 +146,22 @@ if (!html.includes('rel="ai-catalog"') || !html.includes('/.well-known/ai-catalo
   throw new Error("Homepage is missing the HTML AI Catalog discovery link");
 }
 
+const edgeWorker = await readFile(
+  resolve(process.cwd(), "infra/cloudflare/agent-readiness-worker/src/index.js"),
+  "utf8"
+);
+for (const token of [
+  'rel="ai-catalog"',
+  'rel="sitemap"',
+  'Content-Signal',
+  'application/ai-catalog+json',
+  'Access-Control-Allow-Origin'
+]) {
+  if (!edgeWorker.includes(token)) {
+    throw new Error(`Cloudflare Worker template is missing discovery behavior: ${token}`);
+  }
+}
+
 const webmcp = await readFile(resolve(dist, "webmcp.js"), "utf8");
 if (
   !webmcp.includes("document.modelContext") ||
