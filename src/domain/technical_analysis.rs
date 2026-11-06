@@ -3319,7 +3319,7 @@ mod tests {
                 open: 10.0,
                 high: 11.0,
                 low: 9.0,
-                close: 10.5,
+                close: 9.5,
                 volume: 1.0,
                 metadata: CandleMetadata::default(),
             },
