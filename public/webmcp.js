@@ -50,6 +50,7 @@
         sitemap: "https://doanson44.github.io/sitemap.xml",
         agentSkills:
           "https://doanson44.github.io/.well-known/agent-skills/index.json",
+        aiCatalog: "https://doanson44.github.io/.well-known/ai-catalog.json",
         llms: "https://doanson44.github.io/llms.txt"
       }
     })
