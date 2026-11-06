@@ -35,7 +35,11 @@ test("OpenAPI document is served with the request origin", async () => {
   assert.equal(payload.servers[0].url, "https://api.example");
   assert.ok(payload.components.schemas.Candle);
   assert.ok(payload.components.schemas.AnalysisResponse);
+  assert.ok(payload.components.schemas.TickerResponse);
+  assert.ok(payload.components.schemas.FundingRateResponse);
+  assert.ok(payload.components.schemas.VietnamStockSnapshotResponse);
   assert.ok(payload.paths["/v1/crypto/futures/analysis"]);
+  assert.ok(payload.paths["/v1/stocks/vietnam/analysis"]);
 });
 
 test("analysis endpoint returns normalized candles and closed-candle indicators", async () => {
