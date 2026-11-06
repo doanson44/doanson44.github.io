@@ -30,9 +30,11 @@ Content-Signal: ai-train=no, search=yes, ai-input=yes
 Disallow: /
 
 User-agent: Googlebot
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 Allow: /
 
 User-agent: Bingbot
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 Allow: /
 
 Sitemap: https://doanson44.github.io/sitemap.xml
