@@ -1305,6 +1305,43 @@ pub fn percentage_change(values: &[f64], offset: usize) -> Option<f64> {
     }
 }
 
+/// Returns the duration represented by one candle for a supported timeframe.
+pub fn timeframe_seconds(timeframe: &str) -> Option<u64> {
+    match timeframe.trim().to_ascii_uppercase().as_str() {
+        "1M" => Some(60),
+        "5M" => Some(5 * 60),
+        "15M" => Some(15 * 60),
+        "30M" => Some(30 * 60),
+        "1H" => Some(60 * 60),
+        "4H" => Some(4 * 60 * 60),
+        "8H" => Some(8 * 60 * 60),
+        "1D" => Some(24 * 60 * 60),
+        "1W" => Some(7 * 24 * 60 * 60),
+        "1MO" => Some(30 * 24 * 60 * 60),
+        _ => None,
+    }
+}
+
+fn recent_performance(values: &[f64], timeframe: &str) -> RecentPerformance {
+    let timeframe_seconds = timeframe_seconds(timeframe);
+    let for_days = |days: u64| {
+        let seconds = timeframe_seconds?;
+        let target_seconds = days * 24 * 60 * 60;
+        if seconds > target_seconds {
+            return None;
+        }
+        let offset = target_seconds.div_ceil(seconds) as usize;
+        percentage_change(values, offset)
+    };
+
+    RecentPerformance {
+        one_day: for_days(1),
+        five_day: for_days(5),
+        twenty_day: for_days(20),
+        sixty_day: for_days(60),
+    }
+}
+
 /// Runs the supported analysis pipeline.
 pub fn analyze(
     input: &AnalysisInput,
@@ -1346,12 +1383,7 @@ pub fn analyze(
     let candle = candle_analysis(latest);
     let price_action = PriceActionAnalysis {
         candle,
-        recent_performance: RecentPerformance {
-            one_day: percentage_change(&closes, 1),
-            five_day: percentage_change(&closes, 5),
-            twenty_day: percentage_change(&closes, 20),
-            sixty_day: percentage_change(&closes, 60),
-        },
+        recent_performance: recent_performance(&closes, &input.market_data.timeframe),
     };
 
     let sma_values = config
@@ -2381,6 +2413,36 @@ mod tests {
     fn rsi_rises_after_positive_move() {
         let result = rsi(&[1.0, 2.0, 3.0, 4.0], 2).expect("valid RSI");
         assert_eq!(result[2], Some(100.0));
+    }
+
+    #[test]
+    fn timeframe_seconds_supports_stock_and_crypto_intervals() {
+        assert_eq!(timeframe_seconds("1D"), Some(86_400));
+        assert_eq!(timeframe_seconds("4H"), Some(14_400));
+        assert_eq!(timeframe_seconds("1MO"), Some(2_592_000));
+        assert_eq!(timeframe_seconds("2H"), None);
+    }
+
+    #[test]
+    fn recent_performance_uses_calendar_day_windows_for_four_hour_candles() {
+        let closes = (1..=400).map(f64::from).collect::<Vec<_>>();
+        let performance = recent_performance(&closes, "4H");
+
+        assert_eq!(performance.one_day, percentage_change(&closes, 6));
+        assert_eq!(performance.five_day, percentage_change(&closes, 30));
+        assert_eq!(performance.twenty_day, percentage_change(&closes, 120));
+        assert_eq!(performance.sixty_day, percentage_change(&closes, 360));
+    }
+
+    #[test]
+    fn recent_performance_does_not_mislabel_weekly_candles_as_daily() {
+        let closes = (1..=20).map(f64::from).collect::<Vec<_>>();
+        let performance = recent_performance(&closes, "1W");
+
+        assert_eq!(performance.one_day, None);
+        assert_eq!(performance.five_day, None);
+        assert_eq!(performance.twenty_day, percentage_change(&closes, 3));
+        assert_eq!(performance.sixty_day, percentage_change(&closes, 9));
     }
 
     #[test]
