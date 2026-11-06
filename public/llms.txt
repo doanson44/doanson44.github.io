@@ -23,6 +23,7 @@ The application uses hash-based client routing. Hash routes are navigation targe
 ## Agent discovery
 
 - Agent Skills index: https://doanson44.github.io/.well-known/agent-skills/index.json
+- AI Catalog / ARD manifest: https://doanson44.github.io/.well-known/ai-catalog.json
 - Sitemap: https://doanson44.github.io/sitemap.xml
 - Robots policy: https://doanson44.github.io/robots.txt
 
