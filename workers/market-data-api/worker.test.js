@@ -121,3 +121,79 @@ test("analysis endpoint preserves multiplier contract symbols", async () => {
     mock.restoreAll();
   }
 });
+
+
+test("Vietnam stock snapshot is normalized from CafeF", async () => {
+  const upstreamPayload = {
+    Success: true,
+    Data: [{
+      Symbol: "FPT",
+      Name: "FPT Corporation",
+      Price: 125.5,
+      Change: 2.5,
+      ChangePercent: 2.03,
+      TotalVolume: 1000000,
+      TotalValue: 125500000,
+      MarketCap: 100000000000,
+    }],
+  };
+  mock.method(globalThis, "fetch", async () => new Response(JSON.stringify(upstreamPayload), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  }));
+
+  try {
+    const response = await worker.fetch(new Request("https://api.example/v1/stocks/vietnam/snapshot"));
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.equal(payload.meta.source, "CafeF");
+    assert.equal(payload.data[0].symbol, "FPT");
+    assert.equal(payload.data[0].price, 125.5);
+  } finally {
+    mock.restoreAll();
+  }
+});
+
+test("Vietnam stock analysis returns daily candles and indicators", async () => {
+  const records = [];
+  const firstDate = Date.UTC(2026, 8, 1);
+  for (let index = 0; index < 40; index += 1) {
+    const date = new Date(firstDate + index * 86400000).toISOString().slice(0, 19);
+    const price = 100 + index;
+    records.push({
+      Symbol: "FPT",
+      TradeDate: date,
+      BasicPrice: price - 0.5,
+      OpenPrice: price - 0.25,
+      HighPrice: price + 1,
+      LowPrice: price - 1,
+      ClosePrice: price,
+      Volume: 1000 + index,
+      Ceiling: price * 1.07,
+      Floor: price * 0.93,
+      TotalValue: (1000 + index) * price,
+    });
+  }
+
+  mock.method(globalThis, "fetch", async () => new Response(JSON.stringify(records), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  }));
+
+  try {
+    const response = await worker.fetch(new Request(
+      "https://api.example/v1/stocks/vietnam/analysis?symbol=FPT&limit=40",
+    ));
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.equal(payload.meta.source, "CafeF");
+    assert.equal(payload.meta.timeframe, "1d");
+    assert.equal(payload.meta.timezone, "Asia/Ho_Chi_Minh");
+    assert.equal(payload.candles.length, 40);
+    assert.equal(payload.analysis.indicators.values.sma["20"], 129.5);
+    assert.equal(payload.dataQuality.missingIntervalCheck, "not_applicable_for_exchange_calendar");
+    assert.equal(payload.meta.latestCandle.isClosed, null);
+  } finally {
+    mock.restoreAll();
+  }
+});
