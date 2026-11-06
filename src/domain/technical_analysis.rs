@@ -2289,7 +2289,11 @@ fn find_recent_breakout(
             .iter()
             .filter(|zone| previous.close <= zone.zone.high && current.close > zone.zone.high)
             .max_by(|left, right| left.zone.high.total_cmp(&right.zone.high));
-        if let Some(zone) = broken_resistance {
+        if let Some(zone) = broken_resistance.filter(|zone| {
+            candles
+                .last()
+                .is_some_and(|latest| latest.close > zone.zone.high)
+        }) {
             return Some((zone.zone.high, "up", index));
         }
 
@@ -2298,7 +2302,11 @@ fn find_recent_breakout(
             .iter()
             .filter(|zone| previous.close >= zone.zone.low && current.close < zone.zone.low)
             .min_by(|left, right| left.zone.low.total_cmp(&right.zone.low));
-        if let Some(zone) = broken_support {
+        if let Some(zone) = broken_support.filter(|zone| {
+            candles
+                .last()
+                .is_some_and(|latest| latest.close < zone.zone.low)
+        }) {
             return Some((zone.zone.low, "down", index));
         }
     }
@@ -2560,11 +2568,18 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
     } else {
         input.regime.overall.as_str()
     };
-    let most_important_level = input
-        .breakout
-        .resistance_level
-        .or(input.breakout.support_level)
-        .or(input.levels.immediate_support);
+    let most_important_level = match input.breakout.direction.as_deref() {
+        Some("down") => input
+            .breakout
+            .support_level
+            .or(input.levels.immediate_support),
+        Some("up") => input.breakout.resistance_level,
+        _ => input
+            .breakout
+            .resistance_level
+            .or(input.breakout.support_level)
+            .or(input.levels.immediate_support),
+    };
     let main_risk = input
         .conflicts
         .first()
@@ -2677,13 +2692,9 @@ mod tests {
 
     #[test]
     fn market_structure_detects_change_of_character() {
-        let mut input = candles(&[
-            10.0, 12.0, 11.0, 14.0, 12.0, 16.0, 13.0, 15.0, 12.0, 14.0, 10.0, 9.0, 8.0,
+        let input = candles(&[
+            10.0, 14.0, 11.0, 16.0, 12.0, 18.0, 13.0, 20.0, 14.0, 10.0,
         ]);
-        for candle in &mut input {
-            candle.high += 0.5;
-            candle.low -= 0.5;
-        }
         let structure = market_structure_analysis(
             &input,
             &MarketStructureConfig {
@@ -2703,7 +2714,12 @@ mod tests {
             },
         );
 
-        assert!(structure.change_of_character.detected || structure.state == "range");
+        assert_eq!(structure.state, "higher_high_higher_low");
+        assert!(structure.change_of_character.detected);
+        assert_eq!(
+            structure.change_of_character.direction.as_deref(),
+            Some("down")
+        );
     }
 
     #[test]
