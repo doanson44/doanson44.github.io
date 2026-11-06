@@ -1,0 +1,15 @@
+name = "doanson44-market-intelligence-api"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-11-06"
+workers_dev = true
+
+[build]
+command = "worker-build --release"
+
+[[ratelimits]]
+name = "MARKET_API_LIMITER"
+namespace_id = "44106006"
+simple = { limit = 60, period = 60 }
+
+[vars]
+API_VERSION = "1.0.0"
