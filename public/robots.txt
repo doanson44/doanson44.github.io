@@ -1,0 +1,38 @@
+# Public crawler policy for doanson44.github.io
+# Content Signals are publisher preferences, not technical access controls.
+
+User-agent: *
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+Allow: /
+
+User-agent: OAI-SearchBot
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+Allow: /
+
+User-agent: GPTBot
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+Disallow: /
+
+User-agent: Claude-SearchBot
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+Allow: /
+
+User-agent: ClaudeBot
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+Disallow: /
+
+User-agent: PerplexityBot
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+Allow: /
+
+User-agent: Google-Extended
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+Disallow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://doanson44.github.io/sitemap.xml
