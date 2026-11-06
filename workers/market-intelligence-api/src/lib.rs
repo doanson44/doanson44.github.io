@@ -565,9 +565,12 @@ fn head_discovery_response(url: &Url) -> ApiResult<Response> {
     let origin = url.origin().ascii_serialization();
     let mut response = Response::empty()?.with_status(204);
     set_discovery_links(&mut response, &origin)?;
-    response
-        .headers_mut()
-        .set("Content-Type", "application/linkset+json; charset=utf-8")?;
+    let content_type = if url.path() == "/.well-known/api-catalog" {
+        "application/linkset+json; charset=utf-8"
+    } else {
+        "application/json; charset=utf-8"
+    };
+    response.headers_mut().set("Content-Type", content_type)?;
     Ok(response)
 }
 
@@ -607,7 +610,7 @@ fn openapi_document(origin: &str) -> Value {
                     "responses": {
                         "200": {
                             "description": "CafeF market snapshot",
-                            "content": { "application/json": { "schema": json_object } }
+                            "content": { "application/json": { "schema": json_object.clone() } }
                         }
                     }
                 }
@@ -633,11 +636,11 @@ fn openapi_document(origin: &str) -> Value {
             "/v1/crypto/market": {
                 "get": {
                     "operationId": "getCryptoFuturesMarket",
-                    "summary": "Get MEXC Futures contract tickers",
+                    "summary": "Get a public MEXC Futures ticker snapshot",
                     "responses": {
                         "200": {
                             "description": "MEXC Futures ticker snapshot",
-                            "content": { "application/json": { "schema": json_object } }
+                            "content": { "application/json": { "schema": json_object.clone() } }
                         }
                     }
                 }
@@ -649,7 +652,7 @@ fn openapi_document(origin: &str) -> Value {
                     "responses": {
                         "200": {
                             "description": "Funding-rate records",
-                            "content": { "application/json": { "schema": json_object } }
+                            "content": { "application/json": { "schema": json_object.clone() } }
                         }
                     }
                 }
@@ -667,7 +670,7 @@ fn openapi_document(origin: &str) -> Value {
                     "responses": {
                         "200": {
                             "description": "Contract ticker",
-                            "content": { "application/json": { "schema": json_object } }
+                            "content": { "application/json": { "schema": json_object.clone() } }
                         }
                     }
                 }
@@ -685,7 +688,7 @@ fn openapi_document(origin: &str) -> Value {
                     "responses": {
                         "200": {
                             "description": "Contract funding-rate record",
-                            "content": { "application/json": { "schema": json_object } }
+                            "content": { "application/json": { "schema": json_object.clone() } }
                         }
                     }
                 }
@@ -733,7 +736,7 @@ fn openapi_document(origin: &str) -> Value {
                     "responses": {
                         "200": {
                             "description": "Historical and 52-week contract price extremes",
-                            "content": { "application/json": { "schema": json_object } }
+                            "content": { "application/json": { "schema": json_object.clone() } }
                         }
                     }
                 }
