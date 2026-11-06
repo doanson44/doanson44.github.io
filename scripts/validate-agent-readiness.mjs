@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile, access } from "node:fs/promises";
-import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 const dist = resolve(process.argv[2] ?? "dist");
 const requiredFiles = [
@@ -53,9 +52,12 @@ if (
   throw new Error("Agent Skills discovery index has an unsupported schema");
 }
 
+const skillNames = new Set();
+
 for (const skill of index.skills) {
   if (
     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(skill.name) ||
+    skillNames.has(skill.name) ||
     skill.type !== "skill-md" ||
     typeof skill.url !== "string" ||
     !/^sha256:[a-f0-9]{64}$/.test(skill.digest)
@@ -63,7 +65,12 @@ for (const skill of index.skills) {
     throw new Error(`Invalid Agent Skill index entry: ${skill.name}`);
   }
 
-  const skillPath = resolve(dist, `.${skill.url}`);
+  skillNames.add(skill.name);
+  if (!skill.url.startsWith("/.well-known/agent-skills/") || skill.url.includes("..")) {
+    throw new Error(`Skill URL is outside the Agent Skills namespace: ${skill.name}`);
+  }
+
+  const skillPath = resolve(dist, skill.url.replace(/^\\/+/, ""));
   const skillBody = await readFile(skillPath);
   const digest = createHash("sha256").update(skillBody).digest("hex");
   if (`sha256:${digest}` !== skill.digest) {
