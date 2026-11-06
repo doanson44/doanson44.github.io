@@ -1,15 +1,39 @@
 const ORIGIN = "https://doanson44.github.io";
 
-const DISCOVERY_LINKS = [
-  '<https://doanson44.github.io/.well-known/agent-skills/index.json>; rel="agent-skills"; type="application/json"',
-  '<https://doanson44.github.io/sitemap.xml>; rel="sitemap"; type="application/xml"'
-].join(", ");
-
 export default {
   async fetch(request) {
     const incomingUrl = new URL(request.url);
-    const originUrl = new URL(incomingUrl.pathname + incomingUrl.search, ORIGIN);
+    const isDiscoveryResource =
+      incomingUrl.pathname.startsWith("/.well-known/agent-skills/") ||
+      incomingUrl.pathname === "/llms.txt";
 
+    if (request.method === "OPTIONS") {
+      if (!isDiscoveryResource) {
+        return new Response(null, { status: 204 });
+      }
+
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+          "Access-Control-Allow-Headers": "Accept, Content-Type",
+          "Access-Control-Max-Age": "86400"
+        }
+      });
+    }
+
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response("Method Not Allowed", {
+        status: 405,
+        headers: { Allow: "GET, HEAD, OPTIONS" }
+      });
+    }
+
+    const originUrl = new URL(
+      incomingUrl.pathname + incomingUrl.search,
+      ORIGIN
+    );
     const upstream = await fetch(
       new Request(originUrl, {
         method: request.method,
@@ -23,28 +47,19 @@ export default {
     headers.set("Vary", appendVary(headers.get("Vary"), "Accept"));
 
     if (incomingUrl.pathname === "/") {
-      headers.append("Link", DISCOVERY_LINKS);
+      const discoveryLinks = [
+        `<${incomingUrl.origin}/.well-known/agent-skills/index.json>; rel="agent-skills"; type="application/json"`,
+        `<${incomingUrl.origin}/sitemap.xml>; rel="sitemap"; type="application/xml"`
+      ];
+      for (const link of discoveryLinks) {
+        headers.append("Link", link);
+      }
     }
 
-    if (
-      incomingUrl.pathname.startsWith("/.well-known/agent-skills/") ||
-      incomingUrl.pathname === "/llms.txt"
-    ) {
+    if (isDiscoveryResource) {
       headers.set("Access-Control-Allow-Origin", "*");
       headers.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
       headers.set("Access-Control-Allow-Headers", "Accept, Content-Type");
-    }
-
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-          "Access-Control-Allow-Headers": "Accept, Content-Type",
-          "Access-Control-Max-Age": "86400"
-        }
-      });
     }
 
     return new Response(upstream.body, {
