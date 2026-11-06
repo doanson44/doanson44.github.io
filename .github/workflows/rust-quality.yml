@@ -4,9 +4,12 @@ on:
   pull_request:
     branches:
       - master
+      - fix/crypto-futures-technical-analysis
   push:
     branches:
       - master
+      - fix/crypto-futures-technical-analysis
+      - feat/market-intelligence-api
 
 permissions:
   contents: read
@@ -40,3 +43,9 @@ jobs:
 
       - name: Run Clippy
         run: cargo clippy --target wasm32-unknown-unknown --all-targets -- -D warnings
+
+      - name: Check Market Intelligence Worker
+        run: cargo check --manifest-path workers/market-intelligence-api/Cargo.toml --target wasm32-unknown-unknown
+
+      - name: Lint Market Intelligence Worker
+        run: cargo clippy --manifest-path workers/market-intelligence-api/Cargo.toml --target wasm32-unknown-unknown -- -D warnings
