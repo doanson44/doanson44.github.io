@@ -236,6 +236,7 @@ struct MexcFuturesKlineResponse {
     code: Option<i64>,
     #[serde(default, alias = "msg")]
     message: Option<String>,
+    #[serde(default)]
     data: Option<MexcFuturesKlineData>,
 }
 
@@ -264,9 +265,16 @@ pub fn parse_mexc_futures_klines_response(
     let response: MexcFuturesKlineResponse = serde_json::from_str(raw)
         .map_err(|error| format!("Invalid MEXC Futures K-line response: {error}"))?;
     if !response.success {
-        let code = response.code.map(|value| format!(" (code {value})")).unwrap_or_default();
-        let message = response.message.unwrap_or_else(|| "unknown upstream error".to_string());
-        return Err(format!("MEXC Futures K-line request failed{code}: {message}"));
+        let code = response
+            .code
+            .map(|value| format!(" (code {value})"))
+            .unwrap_or_default();
+        let message = response
+            .message
+            .unwrap_or_else(|| "unknown upstream error".to_string());
+        return Err(format!(
+            "MEXC Futures K-line request failed{code}: {message}"
+        ));
     }
 
     let data = response
