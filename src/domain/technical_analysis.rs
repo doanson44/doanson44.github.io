@@ -530,6 +530,8 @@ pub struct RecentPerformance {
 pub struct TrendAnalysis {
     /// Directional state.
     pub state: String,
+    /// ADX value used to classify trend strength.
+    pub adx: Option<f64>,
     /// Strength classification.
     pub strength: String,
     /// Requested moving-average values.
@@ -1172,6 +1174,82 @@ pub fn ema(values: &[f64], period: usize) -> Result<Vec<Option<f64>>, String> {
     Ok(output)
 }
 
+/// Calculates the Average Directional Index using Wilder smoothing.
+pub fn adx(candles: &[Candle], period: usize) -> Result<Vec<Option<f64>>, String> {
+    if period == 0 {
+        return Err("ADX period must be greater than zero".to_string());
+    }
+
+    let mut output = vec![None; candles.len()];
+    let first_adx_index = period.saturating_mul(2).saturating_sub(1);
+    if candles.len() <= first_adx_index {
+        return Ok(output);
+    }
+
+    let ranges = true_ranges(candles)?;
+    let mut positive_dm = vec![0.0; candles.len()];
+    let mut negative_dm = vec![0.0; candles.len()];
+
+    for index in 1..candles.len() {
+        let upward_move = candles[index].high - candles[index - 1].high;
+        let downward_move = candles[index - 1].low - candles[index].low;
+        if upward_move > downward_move && upward_move > 0.0 {
+            positive_dm[index] = upward_move;
+        } else if downward_move > upward_move && downward_move > 0.0 {
+            negative_dm[index] = downward_move;
+        }
+    }
+
+    let mut smoothed_range = ranges[1..=period].iter().sum::<f64>();
+    let mut smoothed_positive = positive_dm[1..=period].iter().sum::<f64>();
+    let mut smoothed_negative = negative_dm[1..=period].iter().sum::<f64>();
+    let mut dx_values = vec![None; candles.len()];
+
+    for index in period..candles.len() {
+        if index > period {
+            smoothed_range =
+                smoothed_range - smoothed_range / period as f64 + ranges[index];
+            smoothed_positive = smoothed_positive - smoothed_positive / period as f64
+                + positive_dm[index];
+            smoothed_negative = smoothed_negative - smoothed_negative / period as f64
+                + negative_dm[index];
+        }
+
+        if smoothed_range <= 0.0 {
+            continue;
+        }
+
+        let positive_di = smoothed_positive / smoothed_range * 100.0;
+        let negative_di = smoothed_negative / smoothed_range * 100.0;
+        let denominator = positive_di + negative_di;
+        if denominator > 0.0 {
+            dx_values[index] = Some(
+                (positive_di - negative_di).abs() / denominator * 100.0,
+            );
+        }
+    }
+
+    let initial_dx = dx_values[period..=first_adx_index]
+        .iter()
+        .copied()
+        .collect::<Option<Vec<_>>>();
+    let Some(initial_dx) = initial_dx else {
+        return Ok(output);
+    };
+
+    let mut current = initial_dx.iter().sum::<f64>() / period as f64;
+    output[first_adx_index] = Some(current);
+
+    for index in (first_adx_index + 1)..candles.len() {
+        if let Some(dx) = dx_values[index] {
+            current = (current * (period as f64 - 1.0) + dx) / period as f64;
+            output[index] = Some(current);
+        }
+    }
+
+    Ok(output)
+}
+
 /// Calculates Wilder RSI.
 pub fn rsi(values: &[f64], period: usize) -> Result<Vec<Option<f64>>, String> {
     validate_period(values, period)?;
@@ -1422,6 +1500,8 @@ pub fn analyze(
         && ema20.zip(ema50).is_some_and(|(a, b)| a < b)
         && ema50.zip(ema200).is_some_and(|(a, b)| a < b);
 
+    let adx_values = adx(&candles, config.indicators.trend_strength.adx.period)?;
+    let adx_current = adx_values.last().copied().flatten();
     let trend = TrendAnalysis {
         state: if bullish_alignment {
             "bullish".to_string()
@@ -1430,7 +1510,20 @@ pub fn analyze(
         } else {
             "neutral".to_string()
         },
-        strength: "moderate".to_string(),
+        adx: adx_current,
+        strength: adx_current.map_or_else(
+            || "unavailable".to_string(),
+            |value| {
+                if value >= 25.0 {
+                    "strong"
+                } else if value >= 20.0 {
+                    "moderate"
+                } else {
+                    "weak"
+                }
+                .to_string()
+            },
+        ),
         moving_averages: MovingAverageSnapshot {
             sma: sma_values,
             ema: ema_values,
@@ -1516,10 +1609,10 @@ pub fn analyze(
             macd: macd_current,
             signal: signal_current,
             histogram,
-            state: if macd_current.zip(signal_current).is_some_and(|(a, b)| a > b) {
-                "bullish".to_string()
-            } else {
-                "bearish".to_string()
+            state: match macd_current.zip(signal_current) {
+                Some((macd, signal)) if macd > signal => "bullish".to_string(),
+                Some(_) => "bearish".to_string(),
+                None => "unavailable".to_string(),
             },
             histogram_direction: match (histogram, previous_histogram) {
                 (Some(current), Some(previous)) if current > previous => "increasing".to_string(),
@@ -1531,10 +1624,10 @@ pub fn analyze(
         stochastic: StochasticAnalysis {
             k,
             d,
-            state: if k.zip(d).is_some_and(|(a, b)| a > b) {
-                "positive".to_string()
-            } else {
-                "negative".to_string()
+            state: match k.zip(d) {
+                Some((k, d)) if k > d => "positive".to_string(),
+                Some(_) => "negative".to_string(),
+                None => "unavailable".to_string(),
             },
         },
     };
@@ -1565,7 +1658,7 @@ pub fn analyze(
     let volatility = VolatilityAnalysis {
         atr: atr_current,
         atr_percent,
-        state: "normal".to_string(),
+        state: volatility_state(&atr_values, &closes),
         bollinger_bands: BollingerAnalysis {
             upper: upper_current,
             middle: middle_current,
@@ -1615,10 +1708,14 @@ pub fn analyze(
     let obv_trend = obv_values.as_ref().map_or_else(
         || "unavailable".to_string(),
         |values| {
-            if values.len() >= 2 && values[values.len() - 1] >= values[values.len() - 2] {
+            if values.len() < 2 {
+                "unavailable".to_string()
+            } else if values[values.len() - 1] > values[values.len() - 2] {
                 "rising".to_string()
-            } else {
+            } else if values[values.len() - 1] < values[values.len() - 2] {
                 "falling".to_string()
+            } else {
+                "flat".to_string()
             }
         },
     );
@@ -1707,6 +1804,7 @@ pub fn analyze(
     let engine_summary = engine_summary(EngineSummaryInput {
         trend: &trend,
         momentum: &momentum,
+        volatility: &volatility,
         structure: &market_structure,
         volume: &volume,
         regime: &regime,
@@ -2126,6 +2224,40 @@ fn divergence_analysis(
     Vec::new()
 }
 
+fn volatility_state(atr_values: &[Option<f64>], closes: &[f64]) -> String {
+    let percentages = atr_values
+        .iter()
+        .zip(closes.iter())
+        .filter_map(|(atr_value, close)| {
+            atr_value
+                .filter(|value| value.is_finite() && *value >= 0.0)
+                .filter(|_| close.is_finite() && *close > 0.0)
+                .map(|value| value / close * 100.0)
+        })
+        .collect::<Vec<_>>();
+    if percentages.len() < 2 {
+        return "unavailable".to_string();
+    }
+
+    let current = *percentages.last().unwrap_or(&0.0);
+    let baseline_values = &percentages[..percentages.len() - 1];
+    let baseline_start = baseline_values.len().saturating_sub(20);
+    let baseline = baseline_values[baseline_start..].iter().sum::<f64>()
+        / (baseline_values.len() - baseline_start) as f64;
+    if baseline <= 0.0 {
+        return "unavailable".to_string();
+    }
+
+    let relative = current / baseline;
+    if relative < 0.75 {
+        "low".to_string()
+    } else if relative > 1.25 {
+        "high".to_string()
+    } else {
+        "normal".to_string()
+    }
+}
+
 fn regime_analysis(
     trend: &TrendAnalysis,
     momentum: &MomentumAnalysis,
@@ -2239,11 +2371,11 @@ fn scenario_analysis(
         bullish: Scenario {
             status: "possible".to_string(),
             trigger: resistance.map(|level| ScenarioCondition {
-                condition: format!("Daily close above {level:.2}"),
+                condition: format!("Candle close above {level:.2}"),
             }),
             confirmation,
             invalidation: support.map(|level| ScenarioCondition {
-                condition: format!("Daily close below {level:.2}"),
+                condition: format!("Candle close below {level:.2}"),
             }),
         },
         bearish: Scenario {
@@ -2286,6 +2418,7 @@ struct EngineSummaryInput<'a> {
     trend: &'a TrendAnalysis,
     momentum: &'a MomentumAnalysis,
     structure: &'a MarketStructureAnalysis,
+    volatility: &'a VolatilityAnalysis,
     volume: &'a VolumeAnalysis,
     regime: &'a RegimeAnalysis,
     breakout: &'a BreakoutAnalysis,
@@ -2294,10 +2427,7 @@ struct EngineSummaryInput<'a> {
 }
 
 fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
-    let volume_confirmation = input
-        .volume
-        .ratio_vs_primary
-        .is_some_and(|ratio| ratio >= 1.5);
+    let volume_confirmation = input.breakout.volume_confirmation;
     let dominant_state = if input.trend.state == "bullish" && !volume_confirmation {
         "bullish_but_unconfirmed"
     } else {
@@ -2319,7 +2449,7 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
         momentum: input.momentum.rsi.state.clone(),
         structure: input.structure.state.clone(),
         volume_confirmation,
-        volatility: "normal".to_string(),
+        volatility: input.volatility.state.clone(),
         most_important_level,
         most_important_confirmation: input
             .breakout
@@ -2407,6 +2537,23 @@ mod tests {
     fn ema_calculates_expected_seed() {
         let result = ema(&[1.0, 2.0, 3.0], 2).expect("valid EMA");
         assert_eq!(result[1], Some(1.5));
+    }
+
+    #[test]
+    fn adx_detects_a_persistent_directional_move() {
+        let input = candles(&(1..=40).map(f64::from).collect::<Vec<_>>());
+        let values = adx(&input, 5).expect("valid ADX");
+
+        assert_eq!(values[8], Some(100.0));
+        assert_eq!(values.last().copied().flatten(), Some(100.0));
+    }
+
+    #[test]
+    fn adx_returns_unavailable_until_wilder_seed_is_complete() {
+        let input = candles(&(1..=8).map(f64::from).collect::<Vec<_>>());
+        let values = adx(&input, 5).expect("valid ADX");
+
+        assert!(values.iter().all(Option::is_none));
     }
 
     #[test]
