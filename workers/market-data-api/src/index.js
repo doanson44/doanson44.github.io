@@ -771,6 +771,68 @@ const OPENAPI_DOCUMENT = JSON.stringify({
     description: "Read-only normalized MEXC Futures public market data and technical indicators. No account, order, or credential operations are exposed.",
   },
   servers: [{ url: "https://doanson44-market-data-api.<workers-subdomain>.workers.dev" }],
+  components: {
+    schemas: {
+      Candle: {
+        type: "object",
+        required: ["timestamp", "open", "high", "low", "close", "volume"],
+        properties: {
+          timestamp: { type: "integer", description: "Candle open time as Unix seconds." },
+          open: { type: "number" },
+          high: { type: "number" },
+          low: { type: "number" },
+          close: { type: "number" },
+          volume: { type: "number" },
+          amount: { type: ["number", "null"] },
+        },
+      },
+      MarketDataResponse: {
+        type: "object",
+        required: ["schemaVersion", "meta", "candles", "dataQuality"],
+        properties: {
+          schemaVersion: { type: "string", const: "1.0" },
+          meta: { type: "object", description: "Source, symbol, timeframe, UTC timestamps, requested range, candle count, and latest candle close status." },
+          candles: { type: "array", items: { $ref: "#/components/schemas/Candle" } },
+          dataQuality: { type: "object", description: "Validity, duplicate count, missing intervals, and issue codes." },
+        },
+      },
+      AnalysisResponse: {
+        allOf: [
+          { $ref: "#/components/schemas/MarketDataResponse" },
+          {
+            type: "object",
+            required: ["analysis"],
+            properties: {
+              analysis: {
+                type: "object",
+                properties: {
+                  engine: { type: "string" },
+                  engineVersion: { type: "string" },
+                  candleCountUsed: { type: "integer" },
+                  latestCandleIncluded: { type: "boolean" },
+                  indicators: { type: "object", description: "Indicator periods, latest values, and per-indicator availability flags." },
+                  marketStructure: { type: "object", description: "Explicitly unavailable in API version 1.0." },
+                },
+              },
+            },
+          },
+        ],
+      },
+      ErrorResponse: {
+        type: "object",
+        required: ["schemaVersion", "error", "timestamp"],
+        properties: {
+          schemaVersion: { type: "string" },
+          error: {
+            type: "object",
+            required: ["code", "message"],
+            properties: { code: { type: "string" }, message: { type: "string" } },
+          },
+          timestamp: { type: "string", format: "date-time" },
+        },
+      },
+    },
+  },
   paths: {
     "/health": {
       get: {
@@ -788,7 +850,20 @@ const OPENAPI_DOCUMENT = JSON.stringify({
           { name: "start", in: "query", description: "Unix timestamp in seconds", schema: { type: "integer" } },
           { name: "end", in: "query", description: "Unix timestamp in seconds", schema: { type: "integer" } },
         ],
-        responses: { "200": { description: "Normalized OHLCV candles and data-quality metadata" }, "400": { description: "Invalid query" }, "502": { description: "Upstream error" } },
+        responses: {
+          "200": {
+            description: "Normalized OHLCV candles and data-quality metadata",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/MarketDataResponse" } } },
+          },
+          "400": {
+            description: "Invalid query",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } },
+          },
+          "502": {
+            description: "Upstream error",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } },
+          },
+        },
       },
     },
     "/v1/crypto/futures/analysis": {
@@ -799,7 +874,12 @@ const OPENAPI_DOCUMENT = JSON.stringify({
           { name: "timeframe", in: "query", schema: { type: "string", enum: Object.keys(TIMEFRAMES), default: "1h" } },
           { name: "limit", in: "query", schema: { type: "integer", minimum: 2, maximum: 2000, default: 500 } },
         ],
-        responses: { "200": { description: "OHLCV, indicator values, availability flags, and data-quality metadata" } },
+        responses: {
+          "200": {
+            description: "OHLCV, indicator values, availability flags, and data-quality metadata",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/AnalysisResponse" } } },
+          },
+        },
       },
     },
     "/v1/crypto/futures/ticker": {
