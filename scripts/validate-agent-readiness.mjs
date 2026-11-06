@@ -8,7 +8,8 @@ const requiredFiles = [
   "sitemap.xml",
   "llms.txt",
   "webmcp.js",
-  ".well-known/agent-skills/index.json"
+  ".well-known/agent-skills/index.json",
+  ".well-known/ai-catalog.json"
 ];
 
 for (const file of requiredFiles) {
@@ -87,6 +88,77 @@ for (const skill of index.skills) {
     !markdown.includes("description:")
   ) {
     throw new Error(`Invalid SKILL.md frontmatter: ${skill.name}`);
+  }
+}
+
+const catalogPath = resolve(dist, ".well-known/ai-catalog.json");
+const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+if (
+  catalog.specVersion !== "1.0" ||
+  typeof catalog.host?.displayName !== "string" ||
+  !Array.isArray(catalog.entries) ||
+  catalog.entries.length !== index.skills.length
+) {
+  throw new Error("ARD AI Catalog has an invalid top-level structure");
+}
+
+const indexedSkillUrls = new Set(index.skills.map((skill) => skill.url));
+const catalogIdentifiers = new Set();
+const catalogSkillUrls = new Set();
+
+for (const entry of catalog.entries) {
+  const hasUrl = typeof entry.url === "string";
+  const hasData = Object.hasOwn(entry, "data");
+  if (
+    !/^urn:air:doanson44\.github\.io:skill:[a-z0-9-]+$/.test(entry.identifier) ||
+    catalogIdentifiers.has(entry.identifier) ||
+    typeof entry.displayName !== "string" ||
+    entry.type !== "text/markdown" ||
+    hasUrl === hasData ||
+    !Array.isArray(entry.representativeQueries) ||
+    entry.representativeQueries.length < 2 ||
+    entry.representativeQueries.length > 5 ||
+    entry.representativeQueries.some((query) => typeof query !== "string" || !query.trim())
+  ) {
+    throw new Error(`Invalid ARD catalog entry: ${entry.identifier}`);
+  }
+
+  catalogIdentifiers.add(entry.identifier);
+  if (hasUrl) {
+    const prefix = "https://doanson44.github.io";
+    if (!entry.url.startsWith(prefix)) {
+      throw new Error(`ARD entry URL is outside the canonical site: ${entry.identifier}`);
+    }
+    const skillUrl = entry.url.slice(prefix.length);
+    if (!indexedSkillUrls.has(skillUrl)) {
+      throw new Error(`ARD entry does not resolve to an indexed Agent Skill: ${entry.identifier}`);
+    }
+    catalogSkillUrls.add(skillUrl);
+  }
+}
+
+if (catalogSkillUrls.size !== index.skills.length) {
+  throw new Error("ARD catalog must publish every indexed Agent Skill exactly once");
+}
+
+const html = await readFile(resolve(process.cwd(), "index.html"), "utf8");
+if (!html.includes('rel="ai-catalog"') || !html.includes('/.well-known/ai-catalog.json')) {
+  throw new Error("Homepage is missing the HTML AI Catalog discovery link");
+}
+
+const edgeWorker = await readFile(
+  resolve(process.cwd(), "infra/cloudflare/agent-readiness-worker/src/index.js"),
+  "utf8"
+);
+for (const token of [
+  'rel="ai-catalog"',
+  'rel="sitemap"',
+  'Content-Signal',
+  'application/ai-catalog+json',
+  'Access-Control-Allow-Origin'
+]) {
+  if (!edgeWorker.includes(token)) {
+    throw new Error(`Cloudflare Worker template is missing discovery behavior: ${token}`);
   }
 }
 

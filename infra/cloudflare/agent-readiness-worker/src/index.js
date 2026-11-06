@@ -5,6 +5,7 @@ export default {
     const incomingUrl = new URL(request.url);
     const isDiscoveryResource =
       incomingUrl.pathname.startsWith("/.well-known/agent-skills/") ||
+      incomingUrl.pathname === "/.well-known/ai-catalog.json" ||
       incomingUrl.pathname === "/llms.txt";
 
     if (request.method === "OPTIONS") {
@@ -48,12 +49,16 @@ export default {
 
     if (incomingUrl.pathname === "/") {
       const discoveryLinks = [
-        `<${incomingUrl.origin}/.well-known/agent-skills/index.json>; rel="agent-skills"; type="application/json"`,
+        `<${incomingUrl.origin}/.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/ai-catalog+json"`,
         `<${incomingUrl.origin}/sitemap.xml>; rel="sitemap"; type="application/xml"`
       ];
       for (const link of discoveryLinks) {
         headers.append("Link", link);
       }
+    }
+
+    if (incomingUrl.pathname === "/.well-known/ai-catalog.json") {
+      headers.set("Content-Type", "application/ai-catalog+json; charset=utf-8");
     }
 
     if (isDiscoveryResource) {

@@ -1,0 +1,46 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "doanson44.github.io",
+    "identifier": "doanson44.github.io",
+    "documentationUrl": "https://doanson44.github.io/llms.txt"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:doanson44.github.io:skill:site-overview",
+      "displayName": "Site Overview",
+      "type": "text/markdown",
+      "url": "https://doanson44.github.io/.well-known/agent-skills/site-overview/SKILL.md",
+      "description": "Describes the website architecture, hash routes, public capabilities, and operational boundaries.",
+      "representativeQueries": [
+        "What features and routes are available on doanson44.github.io?",
+        "Explain the architecture and runtime limitations of this website.",
+        "Can an agent call a server-side API on this site?"
+      ]
+    },
+    {
+      "identifier": "urn:air:doanson44.github.io:skill:developer-tools",
+      "displayName": "Developer Tools Guide",
+      "type": "text/markdown",
+      "url": "https://doanson44.github.io/.well-known/agent-skills/developer-tools/SKILL.md",
+      "description": "Explains safe use of the browser-based Markdown, JSON, JWT, and Base64 utilities.",
+      "representativeQueries": [
+        "How do I use the JSON and Markdown tools on this website?",
+        "Does decoding a JWT verify its signature?",
+        "Is Base64 suitable for encrypting secrets?"
+      ]
+    },
+    {
+      "identifier": "urn:air:doanson44.github.io:skill:market-data-playground",
+      "displayName": "Market Data Playground",
+      "type": "text/markdown",
+      "url": "https://doanson44.github.io/.well-known/agent-skills/market-data-playground/SKILL.md",
+      "description": "Documents the read-only MEXC market-data playground, its data sources, and its limitations.",
+      "representativeQueries": [
+        "How does the Socket market-data page get its futures ticker data?",
+        "Can the market-data playground place exchange trades?",
+        "What should I check when the market-data feed disconnects?"
+      ]
+    }
+  ]
+}

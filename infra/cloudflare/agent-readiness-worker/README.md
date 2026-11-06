@@ -15,13 +15,15 @@ This Worker is an optional edge template. It is not active on the current `doans
 
 - Adds `Content-Signal: ai-train=no, search=yes, ai-input=yes`.
 - Adds `Vary: Accept`.
-- Adds HTTP `Link` discovery relations on the home page.
-- Enables CORS for Agent Skills discovery documents.
+- Adds an RFC 8288 `Link` response header for the AI Catalog (`rel="ai-catalog"`) and sitemap on the home page.
+- Sets the AI Catalog response media type to `application/ai-catalog+json`.
+- Enables CORS for Agent Skills and AI Catalog discovery documents.
+- Preserves HTML as the default representation; Markdown conversion is delegated to Cloudflare Markdown for Agents when enabled for the zone.
 
 ## What it does not do
 
 - It does not create DNS-AID records or enable DNSSEC.
-- It does not implement OAuth, MCP, A2A, or a first-party API.
+- It does not implement OAuth, MCP, or A2A. The separate forward-proxy Worker is not advertised here as a public API contract.
 - It does not convert HTML into Markdown. Enable Cloudflare Markdown for Agents / Content Converter for the zone separately, where available.
 - It must not be deployed with a route for `github.io`; that DNS zone is controlled by GitHub.
 
@@ -38,7 +40,8 @@ Test from an external network:
 ```sh
 curl -I https://YOUR_CUSTOM_DOMAIN/
 curl -I https://YOUR_CUSTOM_DOMAIN/.well-known/agent-skills/index.json
+curl -I https://YOUR_CUSTOM_DOMAIN/.well-known/ai-catalog.json
 curl -H "Accept: text/markdown" -I https://YOUR_CUSTOM_DOMAIN/
 ```
 
-The final command only confirms Markdown negotiation if Cloudflare's conversion feature is enabled and the response reports `Content-Type: text/markdown`.
+The final command only confirms Markdown negotiation if Cloudflare Markdown for Agents is enabled and eligible for the zone. A successful conversion reports `Content-Type: text/markdown; charset=utf-8`, includes `Vary: Accept`, and may include `x-markdown-tokens`.
