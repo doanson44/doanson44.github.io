@@ -369,7 +369,7 @@ fn market_analysis_view(
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_structure_section)}</h3>
                 <p class="m-0">{result.market_structure.structure_sequence.join(" -> ")}</p>
-                <p class="m-0 mt-1">BOS: {if result.market_structure.break_of_structure.detected { result.market_structure.break_of_structure.direction.clone().unwrap_or_else(|| "detected".to_string()) } else { "none".to_string() }} · CHoCH: {if result.market_structure.change_of_character.detected { result.market_structure.change_of_character.direction.clone().unwrap_or_else(|| "detected".to_string()) } else { "none".to_string() }}</p>
+                <p class="m-0 mt-1">{format!("BOS: {} · CHoCH: {}", if result.market_structure.break_of_structure.detected { result.market_structure.break_of_structure.direction.clone().unwrap_or_else(|| "detected".to_string()) } else { "none".to_string() }, if result.market_structure.change_of_character.detected { result.market_structure.change_of_character.direction.clone().unwrap_or_else(|| "detected".to_string()) } else { "none".to_string() })}</p>
             </section>
             <section>
                 <h3 class="mb-2 text-sm font-semibold">{move || t_string!(i18n, market_analysis_levels_section)}</h3>
