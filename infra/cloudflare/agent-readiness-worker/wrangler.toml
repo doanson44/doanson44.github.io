@@ -1,0 +1,9 @@
+name = "doanson44-agent-readiness"
+main = "src/index.js"
+compatibility_date = "2026-11-06"
+workers_dev = false
+
+# Configure a route only after the site has a custom domain in a Cloudflare
+# zone controlled by the repository owner. GitHub's github.io zone cannot be
+# routed through this Worker.
+# routes = [{ pattern = "www.example.com/*", zone_name = "example.com" }]

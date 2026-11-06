@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 permissions:
@@ -12,12 +15,11 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: "pages-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -55,6 +57,9 @@ jobs:
             sleep $((attempt * 10))
           done
           exit 1
+
+      - name: Validate agent-readiness assets
+        run: node scripts/validate-agent-readiness.mjs dist
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5

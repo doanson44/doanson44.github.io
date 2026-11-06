@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "site-overview",
+      "type": "skill-md",
+      "description": "Explain the public doanson44.github.io platform, its client-side architecture, routes, and operational boundaries. Use when an agent needs to understand the website before navigating or describing its capabilities.",
+      "url": "/.well-known/agent-skills/site-overview/SKILL.md",
+      "digest": "sha256:493f9d09660c138c4524ad2cd3e4918287e84ddd178502e98887af9bd5f4a291"
+    },
+    {
+      "name": "developer-tools",
+      "type": "skill-md",
+      "description": "Guide users through the public Markdown, JSON, JWT, and Base64 utilities on doanson44.github.io. Use when a user asks how to navigate or safely use one of these browser-based developer tools.",
+      "url": "/.well-known/agent-skills/developer-tools/SKILL.md",
+      "digest": "sha256:ef7a7cb6a0d09a943a3b3ef481a43be91efc82698f97a8c156f452d934347025"
+    },
+    {
+      "name": "market-data-playground",
+      "type": "skill-md",
+      "description": "Explain the read-only market-data Socket playground on doanson44.github.io, including its public MEXC market-data sources and limitations. Use when users ask about the Socket page or its market data.",
+      "url": "/.well-known/agent-skills/market-data-playground/SKILL.md",
+      "digest": "sha256:315a1345a5b0a7cbbc76752cae7a04235ea6987dd4da8b1626c9a540aaea75ad"
+    }
+  ]
+}
