@@ -58,9 +58,6 @@ jobs:
           done
           exit 1
 
-      - name: Print market-data skill digest
-        run: node -e "const fs=require('node:fs');const c=require('node:crypto');console.log('MARKET_DATA_SKILL_SHA256='+c.createHash('sha256').update(fs.readFileSync('public/.well-known/agent-skills/market-data-playground/SKILL.md')).digest('hex'))"
-
       - name: Validate agent-readiness assets
         run: node scripts/validate-agent-readiness.mjs dist
 
