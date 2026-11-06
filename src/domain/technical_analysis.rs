@@ -746,8 +746,11 @@ pub struct ZoneBounds {
 pub struct BreakoutAnalysis {
     /// Breakout status.
     pub status: String,
-    /// Relevant resistance level.
+    /// Relevant resistance level for bullish scenarios.
     pub resistance_level: Option<f64>,
+    /// Relevant support level for bearish scenarios.
+    #[serde(default)]
+    pub support_level: Option<f64>,
     /// Breakout direction.
     pub direction: Option<String>,
     /// Distance to the relevant level in percent.
@@ -1744,7 +1747,7 @@ pub fn analyze(
     );
     let support_resistance = support_resistance_analysis(&candles, &config.market_structure);
     let breakout = breakout_analysis(
-        latest,
+        &candles,
         &support_resistance,
         &volume,
         &config.breakout_detection,
@@ -2043,17 +2046,38 @@ fn market_structure_analysis(
     let bearish_break = latest
         .zip(last_low)
         .is_some_and(|(price, swing)| price < swing.price);
-    let bos = if breakout_config.enabled && bullish_break {
+    let bullish_structure = state == "higher_high_higher_low";
+    let bearish_structure = state == "lower_high_lower_low";
+    let bos = if breakout_config.enabled && bullish_structure && bullish_break {
         StructureBreak {
             detected: true,
             direction: Some("up".to_string()),
             level: last_high.map(|swing| swing.price),
         }
-    } else if breakout_config.enabled && bearish_break {
+    } else if breakout_config.enabled && bearish_structure && bearish_break {
         StructureBreak {
             detected: true,
             direction: Some("down".to_string()),
             level: last_low.map(|swing| swing.price),
+        }
+    } else {
+        StructureBreak {
+            detected: false,
+            direction: None,
+            level: None,
+        }
+    };
+    let choch = if breakout_config.enabled && bullish_structure && bearish_break {
+        StructureBreak {
+            detected: true,
+            direction: Some("down".to_string()),
+            level: last_low.map(|swing| swing.price),
+        }
+    } else if breakout_config.enabled && bearish_structure && bullish_break {
+        StructureBreak {
+            detected: true,
+            direction: Some("up".to_string()),
+            level: last_high.map(|swing| swing.price),
         }
     } else {
         StructureBreak {
@@ -2077,11 +2101,7 @@ fn market_structure_analysis(
         },
         structure_sequence: sequence,
         break_of_structure: bos,
-        change_of_character: StructureBreak {
-            detected: false,
-            direction: None,
-            level: None,
-        },
+        change_of_character: choch,
     }
 }
 
@@ -2153,50 +2173,155 @@ fn support_resistance_analysis(
 }
 
 fn breakout_analysis(
-    latest: &Candle,
+    candles: &[Candle],
     levels: &SupportResistanceAnalysis,
     volume: &VolumeAnalysis,
     config: &BreakoutConfig,
 ) -> BreakoutAnalysis {
-    let resistance = levels
+    let Some(latest) = candles.last() else {
+        return empty_breakout();
+    };
+    if !config.enabled || candles.len() < 2 {
+        return empty_breakout();
+    }
+
+    let resistance_above = levels
         .resistances
         .iter()
-        .find(|level| level.zone.low > latest.close)
-        .map(|level| level.zone.low);
-    let Some(resistance_level) = resistance else {
-        return BreakoutAnalysis {
-            status: "none".to_string(),
-            resistance_level: None,
-            direction: None,
-            distance_percent: None,
-            volume_confirmation: false,
-            retest: RetestAnalysis { detected: false },
-        };
-    };
+        .filter(|level| level.zone.low > latest.close)
+        .min_by(|left, right| left.zone.low.total_cmp(&right.zone.low));
+    let support_below = levels
+        .supports
+        .iter()
+        .filter(|level| level.zone.high < latest.close)
+        .max_by(|left, right| left.zone.high.total_cmp(&right.zone.high));
 
-    let distance_percent = if resistance_level == 0.0 {
-        None
-    } else {
-        Some((resistance_level - latest.close) / resistance_level * 100.0)
+    let recent_breakout = find_recent_breakout(
+        candles,
+        levels,
+        config.lookback_period,
+    );
+    let (status, direction, active_level, retest_detected) =
+        if let Some((level, direction, breakout_index)) = recent_breakout {
+            let retest = config.retest_detection.enabled
+                && detect_breakout_retest(candles, level, direction, breakout_index);
+            ("broken", Some(direction), Some(level), retest)
+        } else if let Some(level) = resistance_above {
+            let distance = (level.zone.low - latest.close) / level.zone.low * 100.0;
+            if distance <= 2.0 {
+                ("approaching", Some("up"), Some(level.zone.low), false)
+            } else {
+                ("none", None, None, false)
+            }
+        } else if let Some(level) = support_below {
+            let distance = (latest.close - level.zone.high) / level.zone.high * 100.0;
+            if distance <= 2.0 {
+                ("approaching", Some("down"), Some(level.zone.high), false)
+            } else {
+                ("none", None, None, false)
+            }
+        } else {
+            ("none", None, None, false)
+        };
+
+    let resistance_level = match direction {
+        Some("up") => active_level,
+        _ => resistance_above.map(|level| level.zone.low),
     };
-    let ratio = volume.ratio_vs_primary.unwrap_or(0.0);
-    let confirmed = config.volume_confirmation.enabled
-        && ratio >= config.volume_confirmation.minimum_volume_ratio;
-    let status = if latest.close > resistance_level {
-        "broken"
-    } else if distance_percent.is_some_and(|distance| distance <= 2.0) {
-        "approaching"
-    } else {
-        "none"
+    let support_level = match direction {
+        Some("down") => active_level,
+        _ => support_below.map(|level| level.zone.high),
     };
+    let distance_percent = active_level.and_then(|level| {
+        if level <= 0.0 {
+            None
+        } else {
+            Some(match direction {
+                Some("down") => (latest.close - level) / level * 100.0,
+                _ => (level - latest.close) / level * 100.0,
+            })
+        }
+    });
+    let volume_confirmation = config.volume_confirmation.enabled
+        && volume
+            .ratio_vs_primary
+            .is_some_and(|ratio| ratio >= config.volume_confirmation.minimum_volume_ratio);
 
     BreakoutAnalysis {
         status: status.to_string(),
-        resistance_level: Some(resistance_level),
-        direction: Some("up".to_string()),
+        resistance_level,
+        support_level,
+        direction: direction.map(str::to_string),
         distance_percent,
-        volume_confirmation: confirmed,
+        volume_confirmation,
+        retest: RetestAnalysis {
+            detected: retest_detected,
+        },
+    }
+}
+
+fn empty_breakout() -> BreakoutAnalysis {
+    BreakoutAnalysis {
+        status: "none".to_string(),
+        resistance_level: None,
+        support_level: None,
+        direction: None,
+        distance_percent: None,
+        volume_confirmation: false,
         retest: RetestAnalysis { detected: false },
+    }
+}
+
+fn find_recent_breakout(
+    candles: &[Candle],
+    levels: &SupportResistanceAnalysis,
+    lookback: usize,
+) -> Option<(f64, &'static str, usize)> {
+    if candles.len() < 2 {
+        return None;
+    }
+    let start = candles.len().saturating_sub(lookback.max(2));
+    for index in (start.max(1)..candles.len()).rev() {
+        let previous = &candles[index - 1];
+        let current = &candles[index];
+        let broken_resistance = levels
+            .resistances
+            .iter()
+            .filter(|zone| previous.close <= zone.zone.high && current.close > zone.zone.high)
+            .max_by(|left, right| left.zone.high.total_cmp(&right.zone.high));
+        if let Some(zone) = broken_resistance {
+            return Some((zone.zone.high, "up", index));
+        }
+
+        let broken_support = levels
+            .supports
+            .iter()
+            .filter(|zone| previous.close >= zone.zone.low && current.close < zone.zone.low)
+            .min_by(|left, right| left.zone.low.total_cmp(&right.zone.low));
+        if let Some(zone) = broken_support {
+            return Some((zone.zone.low, "down", index));
+        }
+    }
+    None
+}
+
+fn detect_breakout_retest(
+    candles: &[Candle],
+    level: f64,
+    direction: &str,
+    breakout_index: usize,
+) -> bool {
+    if breakout_index >= candles.len().saturating_sub(1) {
+        return false;
+    }
+    let Some(latest) = candles.last() else {
+        return false;
+    };
+
+    match direction {
+        "up" => latest.low <= level * 1.005 && latest.close > level,
+        "down" => latest.high >= level * 0.995 && latest.close < level,
+        _ => false,
     }
 }
 
@@ -2361,7 +2486,9 @@ fn scenario_analysis(
     momentum: &MomentumAnalysis,
 ) -> ScenarioAnalysis {
     let resistance = breakout.resistance_level;
-    let support = levels.supports.first().map(|level| level.zone.low);
+    let support = breakout
+        .support_level
+        .or_else(|| levels.supports.first().map(|level| level.zone.low));
     let confirmation = vec![
         "Volume expands above the configured confirmation ratio".to_string(),
         "Price holds above the breakout level".to_string(),
@@ -2436,6 +2563,7 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
     let most_important_level = input
         .breakout
         .resistance_level
+        .or(input.breakout.support_level)
         .or(input.levels.immediate_support);
     let main_risk = input
         .conflicts
@@ -2451,11 +2579,19 @@ fn engine_summary(input: EngineSummaryInput<'_>) -> EngineSummary {
         volume_confirmation,
         volatility: input.volatility.state.clone(),
         most_important_level,
-        most_important_confirmation: input
-            .breakout
-            .resistance_level
-            .map(|level| format!("Break above {level:.2} with volume expansion"))
-            .unwrap_or_else(|| "Wait for a confirmed support/resistance level.".to_string()),
+        most_important_confirmation: match (
+            input.breakout.direction.as_deref(),
+            input.breakout.resistance_level,
+            input.breakout.support_level,
+        ) {
+            (Some("up"), Some(level), _) => {
+                format!("Break above {level:.2} with volume expansion")
+            }
+            (Some("down"), _, Some(level)) => {
+                format!("Break below {level:.2} with volume expansion")
+            }
+            _ => "Wait for a confirmed support/resistance level.".to_string(),
+        },
         main_risk,
     }
 }
@@ -2537,6 +2673,83 @@ mod tests {
     fn ema_calculates_expected_seed() {
         let result = ema(&[1.0, 2.0, 3.0], 2).expect("valid EMA");
         assert_eq!(result[1], Some(1.5));
+    }
+
+    #[test]
+    fn market_structure_detects_change_of_character() {
+        let mut input = candles(&[
+            10.0, 12.0, 11.0, 14.0, 12.0, 16.0, 13.0, 15.0, 12.0, 14.0, 10.0, 9.0, 8.0,
+        ]);
+        for candle in &mut input {
+            candle.high += 0.5;
+            candle.low -= 0.5;
+        }
+        let structure = market_structure_analysis(
+            &input,
+            &MarketStructureConfig {
+                enabled: true,
+                swing_detection: SwingDetectionConfig { lookback: 1 },
+                support_resistance: SupportResistanceConfig {
+                    lookback: 120,
+                    cluster_tolerance_percent: 1.0,
+                    minimum_touches: 2,
+                },
+            },
+            &BreakoutConfig {
+                enabled: true,
+                lookback_period: 20,
+                volume_confirmation: VolumeConfirmationConfig::default(),
+                retest_detection: RetestConfig::default(),
+            },
+        );
+
+        assert!(structure.change_of_character.detected || structure.state == "range");
+    }
+
+    #[test]
+    fn breakout_detects_crossed_resistance() {
+        let candles = candles(&[8.0, 9.0, 10.0, 9.5, 10.5, 11.0]);
+        let levels = SupportResistanceAnalysis {
+            supports: Vec::new(),
+            resistances: vec![PriceZone {
+                zone: ZoneBounds {
+                    low: 9.8,
+                    high: 10.0,
+                },
+                strength: 0.8,
+                touches: 4,
+            }],
+        };
+        let volume = VolumeAnalysis {
+            current: 200.0,
+            averages: vec![PeriodValue {
+                period: 20,
+                value: Some(100.0),
+            }],
+            ratio_vs_primary: Some(2.0),
+            state: "above_average".to_string(),
+            obv: Some(200.0),
+            obv_trend: "rising".to_string(),
+        };
+        let result = breakout_analysis(
+            &candles,
+            &levels,
+            &volume,
+            &BreakoutConfig {
+                enabled: true,
+                lookback_period: 20,
+                volume_confirmation: VolumeConfirmationConfig {
+                    enabled: true,
+                    minimum_volume_ratio: 1.5,
+                },
+                retest_detection: RetestConfig { enabled: true },
+            },
+        );
+
+        assert_eq!(result.status, "broken");
+        assert_eq!(result.direction.as_deref(), Some("up"));
+        assert_eq!(result.resistance_level, Some(10.0));
+        assert!(result.volume_confirmation);
     }
 
     #[test]
