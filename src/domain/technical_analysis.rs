@@ -511,16 +511,16 @@ pub struct PriceActionAnalysis {
 /// Recent returns.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RecentPerformance {
-    /// One-period return.
+    /// One-calendar-day return, derived from the selected candle timeframe.
     #[serde(rename = "1D")]
     pub one_day: Option<f64>,
-    /// Five-period return.
+    /// Five-calendar-day return.
     #[serde(rename = "5D")]
     pub five_day: Option<f64>,
-    /// Twenty-period return.
+    /// Twenty-calendar-day return.
     #[serde(rename = "20D")]
     pub twenty_day: Option<f64>,
-    /// Sixty-period return.
+    /// Sixty-calendar-day return.
     #[serde(rename = "60D")]
     pub sixty_day: Option<f64>,
 }
@@ -2381,7 +2381,7 @@ fn scenario_analysis(
         bearish: Scenario {
             status: "possible".to_string(),
             trigger: support.map(|level| ScenarioCondition {
-                condition: format!("Daily close below {level:.2}"),
+                condition: format!("Candle close below {level:.2}"),
             }),
             confirmation: vec![
                 "Volume expansion".to_string(),
