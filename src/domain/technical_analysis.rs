@@ -3510,7 +3510,7 @@ mod tests {
 
     #[test]
     fn stock_daily_data_does_not_treat_weekends_as_missing_candles() {
-        let mut input = AnalysisInput {
+        let input = AnalysisInput {
             schema_version: "1.0".to_string(),
             asset: Asset {
                 symbol: "VNM".to_string(),
