@@ -1,0 +1,35 @@
+# doanson44.github.io
+
+> A client-side-first developer utility hub, personal portfolio, and browser playground.
+
+## About
+
+The site is a static GitHub Pages application built with Rust, Leptos 0.7 CSR/WASM, and Trunk. It does not expose a first-party server-side REST API.
+
+## Main areas
+
+- Home: https://doanson44.github.io/
+- Tools: https://doanson44.github.io/#/tools
+- Markdown Studio: https://doanson44.github.io/#/tools/markdown
+- JSON utility: https://doanson44.github.io/#/tools/json
+- JWT utility: https://doanson44.github.io/#/tools/jwt
+- Base64 utility: https://doanson44.github.io/#/tools/base64
+- Games: https://doanson44.github.io/#/games
+- CV: https://doanson44.github.io/#/cv
+- Socket market-data playground: https://doanson44.github.io/#/socket
+
+The application uses hash-based client routing. Hash routes are navigation targets, not separate server-side resources.
+
+## Agent discovery
+
+- Agent Skills index: https://doanson44.github.io/.well-known/agent-skills/index.json
+- Sitemap: https://doanson44.github.io/sitemap.xml
+- Robots policy: https://doanson44.github.io/robots.txt
+
+## Important limitations
+
+- Browser tools are client-side utilities, not remotely callable APIs.
+- The Socket page consumes public third-party market data and is read-only.
+- No first-party OAuth/OIDC authorization server, MCP endpoint, or protected API is published.
+- Do not request credentials, private keys, or production tokens.
+- Base64 is encoding, not encryption. JWT decoding alone does not verify a signature.
