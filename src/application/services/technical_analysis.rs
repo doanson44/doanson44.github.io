@@ -50,7 +50,7 @@ impl TechnicalAnalysisService {
         })
     }
 
-    /// Builds a crypto Futures analysis input from an MEXC kline response.
+    /// Builds a crypto Spot analysis input from an MEXC Spot K-line response.
     pub fn mexc_klines_input(
         raw: &str,
         symbol: &str,
@@ -135,7 +135,7 @@ impl TechnicalAnalysisService {
         })
     }
 
-    /// Returns the default daily crypto-analysis configuration used by Socket.
+    /// Returns the default crypto-analysis configuration used by Socket.
     pub fn default_crypto_config() -> AnalysisConfig {
         Self::default_stock_daily_config()
     }
