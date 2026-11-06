@@ -2544,7 +2544,7 @@ mod tests {
         let input = candles(&(1..=40).map(f64::from).collect::<Vec<_>>());
         let values = adx(&input, 5).expect("valid ADX");
 
-        assert_eq!(values[8], Some(100.0));
+        assert_eq!(values[9], Some(100.0));
         assert_eq!(values.last().copied().flatten(), Some(100.0));
     }
 
