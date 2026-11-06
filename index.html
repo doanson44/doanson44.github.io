@@ -8,6 +8,14 @@
     <meta name="keywords" content="developer tools, web tools, rust, wasm, leptos, playground" />
     <meta name="author" content="doanson44" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    <link rel="agent-skills" type="application/json" href="/.well-known/agent-skills/index.json" />
+
+    <link data-trunk rel="copy-file" href="public/robots.txt" />
+    <link data-trunk rel="copy-file" href="public/sitemap.xml" />
+    <link data-trunk rel="copy-file" href="public/llms.txt" />
+    <link data-trunk rel="copy-file" href="public/webmcp.js" />
+    <link data-trunk rel="copy-dir" href="public/.well-known" data-target-path=".well-known" />
 
     <link data-trunk rel="copy-file" href="favicon.svg" />
     <link data-trunk rel="copy-file" href="public/.nojekyll" />
@@ -35,6 +43,7 @@
             document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
+    <script src="/webmcp.js" defer></script>
 </head>
 <body>
     <script>
