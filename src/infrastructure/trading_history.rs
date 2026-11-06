@@ -13,7 +13,7 @@ use crate::domain::trading_history::{
     FundingSettlement, HistoricalCandle, TradingMarketHistory,
 };
 
-const MEXC_FUTURES_API: &str = "https://contract.mexc.com/api/v1/contract";
+const MEXC_FUTURES_API: &str = "https://api.mexc.com/api/v1/contract";
 const CANDLES_PER_REQUEST: i64 = 1_500;
 const MAX_FUNDING_PAGES: u32 = 100;
 
