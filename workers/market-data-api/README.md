@@ -9,6 +9,7 @@ This Worker is intentionally separate from the GitHub Pages Leptos CSR applicati
 - Public MEXC Futures OHLCV candles.
 - Public Futures ticker snapshots.
 - Public funding-rate snapshots.
+- CafeF Vietnam stock snapshots and daily historical candles.
 - Standardized technical indicator snapshots calculated from returned OHLCV candles.
 - Data-quality metadata, candle close status, source timestamp, and API version.
 - OpenAPI 3.1 document at `/openapi.json`.
@@ -33,6 +34,8 @@ GET /v1/crypto/futures/analysis?symbol=BTC_USDT&timeframe=4h&limit=500
 GET /v1/crypto/futures/klines?symbol=1000PEPE_USDT&timeframe=15m&limit=300
 GET /v1/crypto/futures/ticker?symbol=BTC_USDT
 GET /v1/crypto/futures/funding-rate?symbol=BTC_USDT
+GET /v1/stocks/vietnam/snapshot
+GET /v1/stocks/vietnam/analysis?symbol=FPT&limit=500
 ```
 
 Supported timeframes: `1m`, `5m`, `15m`, `30m`, `1h`, `4h`, `8h`, `1d`, `1w`, `1mo`.
@@ -50,7 +53,9 @@ The analysis endpoint currently calculates:
 - Volume SMA(20), OBV.
 - Per-indicator availability flags when history is too short.
 
-The endpoint does not yet calculate BOS, CHoCH, swing structure, support/resistance, candlestick patterns, divergence, or a market regime. These are explicitly marked as unavailable rather than fabricated.
+The analysis endpoints do not yet calculate BOS, CHoCH, swing structure, support/resistance, candlestick patterns, divergence, or a market regime. These are explicitly marked as unavailable rather than fabricated.
+
+Vietnam stock history is daily-only. CafeF does not provide a verified candle-finality field in the data consumed here, so the API marks the latest candle close status as unknown and excludes a current Vietnam calendar-day candle from indicator calculations. Missing-candle checks are not applied to stock history because exchange holidays and non-trading days are not represented by a fixed calendar interval.
 
 Indicator formulas are implemented in this Worker and are versioned independently from the Rust technical-analysis engine currently used by the browser application. Validate parity before treating the two engines as interchangeable.
 
