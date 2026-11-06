@@ -135,6 +135,25 @@ impl TechnicalAnalysisService {
         })
     }
 
+    /// Maps a user-facing timeframe to the MEXC Futures interval and candle duration.
+    pub fn mexc_futures_interval(timeframe: &str) -> Option<(&'static str, u64)> {
+        let interval = match timeframe.trim().to_ascii_uppercase().as_str() {
+            "1M" => "Min1",
+            "5M" => "Min5",
+            "15M" => "Min15",
+            "30M" => "Min30",
+            "1H" => "Min60",
+            "4H" => "Hour4",
+            "8H" => "Hour8",
+            "1D" => "Day1",
+            "1W" => "Week1",
+            "1MO" => "Month1",
+            _ => return None,
+        };
+        let seconds = crate::domain::technical_analysis::timeframe_seconds(timeframe)?;
+        Some((interval, seconds))
+    }
+
     /// Returns the default crypto-analysis configuration used by Socket.
     pub fn default_crypto_config() -> AnalysisConfig {
         Self::default_stock_daily_config()
@@ -574,6 +593,19 @@ mod tests {
         assert_eq!(input.asset.asset_type, AssetType::Crypto);
         assert_eq!(input.asset.exchange, "MEXC Futures");
         assert_eq!(input.market_data.candles[0].close, 61372.97);
+    }
+
+    #[test]
+    fn maps_supported_mexc_futures_intervals() {
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("4H"),
+            Some(("Hour4", 14_400))
+        );
+        assert_eq!(
+            TechnicalAnalysisService::mexc_futures_interval("1D"),
+            Some(("Day1", 86_400))
+        );
+        assert_eq!(TechnicalAnalysisService::mexc_futures_interval("2H"), None);
     }
 
     #[test]
