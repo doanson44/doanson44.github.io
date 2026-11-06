@@ -506,6 +506,32 @@ pub struct PriceActionAnalysis {
     pub candle: CandleAnalysis,
     /// Recent percentage performance.
     pub recent_performance: RecentPerformance,
+    /// Gap between adjacent candle ranges.
+    #[serde(default)]
+    pub gap: GapAnalysis,
+    /// Trailing sequence of candles moving in the same direction.
+    #[serde(default)]
+    pub consecutive_moves: ConsecutiveMoveAnalysis,
+}
+
+/// Price gap analysis.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct GapAnalysis {
+    /// Whether a gap was detected between the latest two candles.
+    pub detected: bool,
+    /// Gap direction.
+    pub direction: Option<String>,
+    /// Gap size as a percentage of the previous close.
+    pub size_percent: Option<f64>,
+}
+
+/// Consecutive candle movement analysis.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ConsecutiveMoveAnalysis {
+    /// Direction of the trailing candle sequence.
+    pub direction: String,
+    /// Number of consecutive candles in that direction.
+    pub count: usize,
 }
 
 /// Recent returns.
@@ -1465,6 +1491,18 @@ pub fn analyze(
     let price_action = PriceActionAnalysis {
         candle,
         recent_performance: recent_performance(&closes, &input.market_data.timeframe),
+        gap: if config.price_action.enabled && config.price_action.gap_detection {
+            gap_analysis(&candles)
+        } else {
+            GapAnalysis::default()
+        },
+        consecutive_moves: if config.price_action.enabled
+            && config.price_action.consecutive_move_detection
+        {
+            consecutive_move_analysis(&candles)
+        } else {
+            ConsecutiveMoveAnalysis::default()
+        },
     };
 
     let sma_values = config
@@ -1758,6 +1796,7 @@ pub fn analyze(
             &candles,
             &market_structure,
             &config.pattern_detection,
+            config.price_action.enabled && config.price_action.candlestick_analysis,
             config.market_structure.swing_detection.lookback,
             config.market_structure.support_resistance.cluster_tolerance_percent / 100.0,
         )
@@ -1904,6 +1943,61 @@ fn rsi_value(gain: f64, loss: f64) -> f64 {
         100.0
     } else {
         100.0 - 100.0 / (1.0 + gain / loss)
+    }
+}
+
+fn gap_analysis(candles: &[Candle]) -> GapAnalysis {
+    let Some((previous, latest)) = candles
+        .len()
+        .checked_sub(2)
+        .and_then(|index| candles.get(index).zip(candles.last()))
+    else {
+        return GapAnalysis::default();
+    };
+
+    let gap = if previous.high < latest.low {
+        Some(("up", (latest.low - previous.high) / previous.high * 100.0))
+    } else if previous.low > latest.high {
+        Some(("down", (latest.high - previous.low) / previous.low * 100.0))
+    } else {
+        None
+    };
+
+    match gap {
+        Some((direction, size_percent)) => GapAnalysis {
+            detected: true,
+            direction: Some(direction.to_string()),
+            size_percent: Some(size_percent),
+        },
+        None => GapAnalysis::default(),
+    }
+}
+
+fn consecutive_move_analysis(candles: &[Candle]) -> ConsecutiveMoveAnalysis {
+    let Some(latest) = candles.last() else {
+        return ConsecutiveMoveAnalysis::default();
+    };
+    let direction = if latest.close > latest.open {
+        "bullish"
+    } else if latest.close < latest.open {
+        "bearish"
+    } else {
+        return ConsecutiveMoveAnalysis::default();
+    };
+
+    let count = candles
+        .iter()
+        .rev()
+        .take_while(|candle| match direction {
+            "bullish" => candle.close > candle.open,
+            "bearish" => candle.close < candle.open,
+            _ => false,
+        })
+        .count();
+
+    ConsecutiveMoveAnalysis {
+        direction: direction.to_string(),
+        count,
     }
 }
 
@@ -2365,10 +2459,11 @@ fn pattern_analysis(
     candles: &[Candle],
     structure: &MarketStructureAnalysis,
     config: &PatternDetectionConfig,
+    candlestick_enabled: bool,
     swing_lookback: usize,
     tolerance: f64,
 ) -> Vec<Pattern> {
-    let mut patterns = if config.candlestick_patterns {
+    let mut patterns = if config.candlestick_patterns && candlestick_enabled {
         candlestick_patterns(candles)
     } else {
         Vec::new()
@@ -3097,6 +3192,47 @@ mod tests {
         assert_eq!(result.direction.as_deref(), Some("up"));
         assert_eq!(result.resistance_level, Some(10.0));
         assert!(result.volume_confirmation);
+    }
+
+    #[test]
+    fn price_action_detects_gaps_and_consecutive_moves() {
+        let candles = vec![
+            Candle {
+                timestamp: "0".into(),
+                open: 10.0,
+                high: 11.0,
+                low: 9.0,
+                close: 10.5,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+            Candle {
+                timestamp: "1".into(),
+                open: 12.0,
+                high: 13.0,
+                low: 12.0,
+                close: 12.8,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+            Candle {
+                timestamp: "2".into(),
+                open: 13.0,
+                high: 14.0,
+                low: 13.0,
+                close: 13.8,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+        ];
+
+        let gap = gap_analysis(&candles);
+        let moves = consecutive_move_analysis(&candles);
+
+        assert!(gap.detected);
+        assert_eq!(gap.direction.as_deref(), Some("up"));
+        assert_eq!(moves.direction, "bullish");
+        assert_eq!(moves.count, 2);
     }
 
     #[test]
