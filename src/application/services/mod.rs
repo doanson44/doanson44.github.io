@@ -159,6 +159,61 @@ mod tests {
     use super::*;
     use crate::domain::markdown::RenderSegment;
 
+    #[derive(Clone)]
+    struct RecordingProxy {
+        requested_url: std::rc::Rc<std::cell::RefCell<Option<String>>>,
+        response: String,
+    }
+
+    impl ProxyClient for RecordingProxy {
+        fn fetch(
+            &self,
+            target_url: &str,
+            on_result: std::rc::Rc<dyn Fn(Result<String, String>)>,
+        ) {
+            *self.requested_url.borrow_mut() = Some(target_url.to_string());
+            on_result(Ok(self.response.clone()));
+        }
+    }
+
+    #[test]
+    fn futures_history_uses_contract_monthly_candles_and_preserves_multiplier_symbols() {
+        let requested_url = std::rc::Rc::new(std::cell::RefCell::new(None));
+        let proxy = RecordingProxy {
+            requested_url: requested_url.clone(),
+            response: r#"{"success":true,"code":0,"data":{"time":[1757894400,1780272000],"open":[100.0,120.0],"close":[110.0,130.0],"high":[115.0,140.0],"low":[95.0,118.0],"vol":[1.0,2.0],"amount":[100.0,200.0]}}"#.to_string(),
+        };
+        let result = std::rc::Rc::new(std::cell::RefCell::new(None));
+        let result_for_callback = result.clone();
+
+        FuturesHistoryService::new(proxy).load_history(
+            "1000PEPE_USDT",
+            1_760_000_000,
+            std::rc::Rc::new(move |value| {
+                *result_for_callback.borrow_mut() = Some(value);
+            }),
+        );
+
+        let url = requested_url
+            .borrow()
+            .clone()
+            .expect("Futures history URL should be requested");
+        assert_eq!(
+            url,
+            "https://api.mexc.com/api/v1/contract/kline/1000PEPE_USDT?interval=Month1&start=0"
+        );
+
+        let extremes = result
+            .borrow_mut()
+            .take()
+            .expect("Futures history callback should run")
+            .expect("Futures history response should parse");
+        assert_eq!(extremes.historical_low, Some(95.0));
+        assert_eq!(extremes.historical_high, Some(140.0));
+        assert_eq!(extremes.week_52_low, Some(118.0));
+        assert_eq!(extremes.week_52_high, Some(140.0));
+    }
+
     #[test]
     fn test_service_renders_markdown() {
         let result = MarkdownService::render("# Hello");
