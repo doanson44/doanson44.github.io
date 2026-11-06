@@ -228,6 +228,114 @@ pub fn parse_mexc_klines_response(raw: &str, symbol: &str) -> Result<MarketPrice
     })
 }
 
+/// MEXC Futures K-line response using parallel OHLCV arrays.
+#[derive(Debug, Deserialize)]
+struct MexcFuturesKlineResponse {
+    success: bool,
+    #[serde(default)]
+    code: Option<i64>,
+    #[serde(default, alias = "msg")]
+    message: Option<String>,
+    data: Option<MexcFuturesKlineData>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MexcFuturesKlineData {
+    time: Vec<u64>,
+    open: Vec<serde_json::Value>,
+    high: Vec<serde_json::Value>,
+    low: Vec<serde_json::Value>,
+    close: Vec<serde_json::Value>,
+    vol: Vec<serde_json::Value>,
+    #[serde(default)]
+    amount: Option<Vec<serde_json::Value>>,
+}
+
+/// Parses MEXC Futures contract K-line data into normalized market history.
+pub fn parse_mexc_futures_klines_response(
+    raw: &str,
+    symbol: &str,
+) -> Result<MarketPriceHistory, String> {
+    let requested_symbol = symbol.trim().to_ascii_uppercase();
+    if requested_symbol.is_empty() {
+        return Err("MEXC Futures symbol cannot be empty".to_string());
+    }
+
+    let response: MexcFuturesKlineResponse = serde_json::from_str(raw)
+        .map_err(|error| format!("Invalid MEXC Futures K-line response: {error}"))?;
+    if !response.success {
+        let code = response.code.map(|value| format!(" (code {value})")).unwrap_or_default();
+        let message = response.message.unwrap_or_else(|| "unknown upstream error".to_string());
+        return Err(format!("MEXC Futures K-line request failed{code}: {message}"));
+    }
+
+    let data = response
+        .data
+        .ok_or_else(|| "MEXC Futures K-line response has no data".to_string())?;
+    let count = data.time.len();
+    if count == 0 {
+        return Err("MEXC Futures K-line response is empty".to_string());
+    }
+
+    for (name, length) in [
+        ("open", data.open.len()),
+        ("high", data.high.len()),
+        ("low", data.low.len()),
+        ("close", data.close.len()),
+        ("volume", data.vol.len()),
+    ] {
+        if length != count {
+            return Err(format!(
+                "MEXC Futures K-line {name} array has {length} values; expected {count}"
+            ));
+        }
+    }
+
+    if let Some(amount) = &data.amount {
+        if amount.len() != count {
+            return Err(format!(
+                "MEXC Futures K-line amount array has {} values; expected {count}",
+                amount.len()
+            ));
+        }
+    }
+
+    let parse_number = |value: &serde_json::Value, index: usize, name: &str| {
+        value
+            .as_f64()
+            .or_else(|| value.as_str().and_then(|text| text.parse::<f64>().ok()))
+            .filter(|number| number.is_finite())
+            .ok_or_else(|| format!("MEXC Futures K-line row {index} has an invalid {name}"))
+    };
+
+    let mut candles = Vec::with_capacity(count);
+    for index in 0..count {
+        candles.push(MarketPriceHistoryCandle {
+            symbol: requested_symbol.clone(),
+            timestamp: data.time[index].to_string(),
+            basic_price: 0.0,
+            open: parse_number(&data.open[index], index, "open price")?,
+            high: parse_number(&data.high[index], index, "high price")?,
+            low: parse_number(&data.low[index], index, "low price")?,
+            close: parse_number(&data.close[index], index, "close price")?,
+            volume: parse_number(&data.vol[index], index, "volume")?,
+            ceiling: None,
+            floor: None,
+            total_value: data
+                .amount
+                .as_ref()
+                .map(|values| parse_number(&values[index], index, "amount"))
+                .transpose()?,
+        });
+    }
+
+    candles.sort_by(|left, right| left.timestamp.cmp(&right.timestamp));
+    Ok(MarketPriceHistory {
+        symbol: requested_symbol,
+        candles,
+    })
+}
+
 /// Normalized market data returned by the CafeF market-data endpoint.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MarketResponse {
@@ -327,6 +435,45 @@ mod tests {
         assert_eq!(result.candles[0].close, 61372.97);
         assert_eq!(result.candles[0].volume, 2447.30963309);
         assert_eq!(result.candles[0].total_value, Some(149274811.89));
+    }
+
+    #[test]
+    fn parses_mexc_futures_klines_response() {
+        let result = parse_mexc_futures_klines_response(
+            r#"{"success":true,"code":0,"data":{"time":[1782979200,1782993600],"open":["60150.52",61372.97],"close":["61372.97","62000.0"],"high":["61421.05","62100.0"],"low":["60129.56","61200.0"],"vol":["2447.30963309","1500.0"],"amount":["149274811.89","93000000.0"]}}"#,
+            "BTC_USDT",
+        )
+        .expect("valid MEXC Futures response should parse");
+
+        assert_eq!(result.symbol, "BTC_USDT");
+        assert_eq!(result.candles.len(), 2);
+        assert_eq!(result.candles[0].timestamp, "1782979200");
+        assert_eq!(result.candles[0].open, 60150.52);
+        assert_eq!(result.candles[0].high, 61421.05);
+        assert_eq!(result.candles[0].low, 60129.56);
+        assert_eq!(result.candles[0].close, 61372.97);
+        assert_eq!(result.candles[0].volume, 2447.30963309);
+        assert_eq!(result.candles[0].total_value, Some(149274811.89));
+    }
+
+    #[test]
+    fn rejects_mexc_futures_klines_with_mismatched_arrays() {
+        let result = parse_mexc_futures_klines_response(
+            r#"{"success":true,"code":0,"data":{"time":[1,2],"open":["1"],"close":["1","2"],"high":["1","2"],"low":["1","2"],"vol":["1","2"]}}"#,
+            "BTC_USDT",
+        );
+
+        assert!(result.unwrap_err().contains("open array"));
+    }
+
+    #[test]
+    fn rejects_unsuccessful_mexc_futures_klines_response() {
+        let result = parse_mexc_futures_klines_response(
+            r#"{"success":false,"code":500,"message":"upstream unavailable"}"#,
+            "BTC_USDT",
+        );
+
+        assert!(result.unwrap_err().contains("upstream unavailable"));
     }
 
     #[test]
