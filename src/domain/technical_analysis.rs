@@ -1754,7 +1754,13 @@ pub fn analyze(
         &config.breakout_detection,
     );
     let patterns = if config.pattern_detection.enabled {
-        pattern_analysis(&market_structure)
+        pattern_analysis(
+            &candles,
+            &market_structure,
+            &config.pattern_detection,
+            config.market_structure.swing_detection.lookback,
+            config.market_structure.support_resistance.cluster_tolerance_percent / 100.0,
+        )
     } else {
         Vec::new()
     };
@@ -2355,17 +2361,270 @@ fn detect_breakout_retest(
     }
 }
 
-fn pattern_analysis(structure: &MarketStructureAnalysis) -> Vec<Pattern> {
-    if structure.state == "higher_high_higher_low" && structure.structure_sequence.len() >= 3 {
-        vec![Pattern {
-            name: "ascending_structure".to_string(),
-            pattern_type: "chart_pattern".to_string(),
-            status: "forming".to_string(),
-            confidence: 0.72,
-        }]
+fn pattern_analysis(
+    candles: &[Candle],
+    structure: &MarketStructureAnalysis,
+    config: &PatternDetectionConfig,
+    swing_lookback: usize,
+    tolerance: f64,
+) -> Vec<Pattern> {
+    let mut patterns = if config.candlestick_patterns {
+        candlestick_patterns(candles)
     } else {
         Vec::new()
+    };
+    let swings = detect_swings(candles, swing_lookback);
+
+    for name in &config.chart_patterns {
+        let detected = match name.as_str() {
+            "ascending_structure"
+                if structure.state == "higher_high_higher_low"
+                    && structure.structure_sequence.len() >= 3 =>
+            {
+                Some(Pattern {
+                    name: name.clone(),
+                    pattern_type: "chart_pattern".to_string(),
+                    status: "forming".to_string(),
+                    confidence: 0.72,
+                })
+            }
+            "double_top" => double_top_pattern(&swings, candles, tolerance),
+            "double_bottom" => double_bottom_pattern(&swings, candles, tolerance),
+            "head_and_shoulders" => head_and_shoulders_pattern(&swings, candles),
+            "inverse_head_and_shoulders" => inverse_head_and_shoulders_pattern(&swings, candles),
+            "ascending_triangle" => triangle_pattern(&swings, "ascending", tolerance),
+            "descending_triangle" => triangle_pattern(&swings, "descending", tolerance),
+            "symmetrical_triangle" => triangle_pattern(&swings, "symmetrical", tolerance),
+            _ => None,
+        };
+        if let Some(pattern) = detected {
+            patterns.push(pattern);
+        }
     }
+
+    patterns
+}
+
+fn candlestick_patterns(candles: &[Candle]) -> Vec<Pattern> {
+    let Some(current) = candles.last() else {
+        return Vec::new();
+    };
+    let range = current.high - current.low;
+    if !range.is_finite() || range <= 0.0 {
+        return Vec::new();
+    }
+
+    let body = (current.close - current.open).abs();
+    let upper_wick = current.high - current.open.max(current.close);
+    let lower_wick = current.open.min(current.close) - current.low;
+    let mut patterns = Vec::new();
+
+    let mut add = |name: &str, confidence: f64| {
+        patterns.push(Pattern {
+            name: name.to_string(),
+            pattern_type: "candlestick".to_string(),
+            status: "confirmed".to_string(),
+            confidence,
+        });
+    };
+
+    if body / range <= 0.1 {
+        add("doji", 0.65);
+    }
+    if body > 0.0 && lower_wick >= body * 2.0 && upper_wick <= body && body / range <= 0.4 {
+        add("hammer", 0.7);
+    }
+    if body > 0.0 && upper_wick >= body * 2.0 && lower_wick <= body && body / range <= 0.4 {
+        add("shooting_star", 0.7);
+    }
+    if body / range >= 0.8 && upper_wick / range <= 0.1 && lower_wick / range <= 0.1 {
+        if current.close > current.open {
+            add("bullish_marubozu", 0.75);
+        } else if current.close < current.open {
+            add("bearish_marubozu", 0.75);
+        }
+    }
+
+    if let Some(previous) = candles.get(candles.len().saturating_sub(2)) {
+        let previous_bearish = previous.close < previous.open;
+        let previous_bullish = previous.close > previous.open;
+        let current_bullish = current.close > current.open;
+        let current_bearish = current.close < current.open;
+        if previous_bearish
+            && current_bullish
+            && current.open <= previous.close
+            && current.close >= previous.open
+        {
+            add("bullish_engulfing", 0.8);
+        }
+        if previous_bullish
+            && current_bearish
+            && current.open >= previous.close
+            && current.close <= previous.open
+        {
+            add("bearish_engulfing", 0.8);
+        }
+    }
+
+    patterns
+}
+
+fn double_top_pattern(swings: &[Swing], candles: &[Candle], tolerance: f64) -> Option<Pattern> {
+    let highs = swings
+        .iter()
+        .filter(|swing| swing.kind == SwingKind::High)
+        .collect::<Vec<_>>();
+    let (first, second) = (highs.get(highs.len().checked_sub(2)?)?, highs.last()?);
+    if !levels_are_similar(first.price, second.price, tolerance) {
+        return None;
+    }
+    let neckline = swings
+        .iter()
+        .filter(|swing| {
+            swing.kind == SwingKind::Low
+                && swing.index > first.index
+                && swing.index < second.index
+        })
+        .map(|swing| swing.price)
+        .min_by(f64::total_cmp)?;
+    let latest_close = candles.last()?.close;
+    Some(Pattern {
+        name: "double_top".to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: if latest_close < neckline { "confirmed" } else { "forming" }.to_string(),
+        confidence: 0.75,
+    })
+}
+
+fn double_bottom_pattern(swings: &[Swing], candles: &[Candle], tolerance: f64) -> Option<Pattern> {
+    let lows = swings
+        .iter()
+        .filter(|swing| swing.kind == SwingKind::Low)
+        .collect::<Vec<_>>();
+    let (first, second) = (lows.get(lows.len().checked_sub(2)?)?, lows.last()?);
+    if !levels_are_similar(first.price, second.price, tolerance) {
+        return None;
+    }
+    let neckline = swings
+        .iter()
+        .filter(|swing| {
+            swing.kind == SwingKind::High
+                && swing.index > first.index
+                && swing.index < second.index
+        })
+        .map(|swing| swing.price)
+        .max_by(f64::total_cmp)?;
+    let latest_close = candles.last()?.close;
+    Some(Pattern {
+        name: "double_bottom".to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: if latest_close > neckline { "confirmed" } else { "forming" }.to_string(),
+        confidence: 0.75,
+    })
+}
+
+fn head_and_shoulders_pattern(swings: &[Swing], candles: &[Candle]) -> Option<Pattern> {
+    let recent = swings.get(swings.len().checked_sub(5)?..)?;
+    if recent[0].kind != SwingKind::High
+        || recent[1].kind != SwingKind::Low
+        || recent[2].kind != SwingKind::High
+        || recent[3].kind != SwingKind::Low
+        || recent[4].kind != SwingKind::High
+    {
+        return None;
+    }
+    let shoulders = (recent[0].price + recent[4].price) / 2.0;
+    if !levels_are_similar(recent[0].price, recent[4].price, 0.03)
+        || recent[2].price <= recent[0].price.max(recent[4].price)
+    {
+        return None;
+    }
+    let neckline = (recent[1].price + recent[3].price) / 2.0;
+    Some(Pattern {
+        name: "head_and_shoulders".to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: if candles.last()?.close < neckline { "confirmed" } else { "forming" }
+            .to_string(),
+        confidence: (0.75 + (1.0 - (recent[0].price - recent[4].price).abs() / shoulders) * 0.1)
+            .clamp(0.5, 0.9),
+    })
+}
+
+fn inverse_head_and_shoulders_pattern(swings: &[Swing], candles: &[Candle]) -> Option<Pattern> {
+    let recent = swings.get(swings.len().checked_sub(5)?..)?;
+    if recent[0].kind != SwingKind::Low
+        || recent[1].kind != SwingKind::High
+        || recent[2].kind != SwingKind::Low
+        || recent[3].kind != SwingKind::High
+        || recent[4].kind != SwingKind::Low
+    {
+        return None;
+    }
+    let shoulders = (recent[0].price + recent[4].price) / 2.0;
+    if !levels_are_similar(recent[0].price, recent[4].price, 0.03)
+        || recent[2].price >= recent[0].price.min(recent[4].price)
+    {
+        return None;
+    }
+    let neckline = (recent[1].price + recent[3].price) / 2.0;
+    Some(Pattern {
+        name: "inverse_head_and_shoulders".to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: if candles.last()?.close > neckline { "confirmed" } else { "forming" }
+            .to_string(),
+        confidence: (0.75 + (1.0 - (recent[0].price - recent[4].price).abs() / shoulders) * 0.1)
+            .clamp(0.5, 0.9),
+    })
+}
+
+fn triangle_pattern(swings: &[Swing], kind: &str, tolerance: f64) -> Option<Pattern> {
+    let highs = swings
+        .iter()
+        .filter(|swing| swing.kind == SwingKind::High)
+        .collect::<Vec<_>>();
+    let lows = swings
+        .iter()
+        .filter(|swing| swing.kind == SwingKind::Low)
+        .collect::<Vec<_>>();
+    let high_points = highs.get(highs.len().checked_sub(3)?..)?;
+    let low_points = lows.get(lows.len().checked_sub(3)?..)?;
+    let highs_flat = levels_are_similar(
+        high_points.first()?.price,
+        high_points.last()?.price,
+        tolerance,
+    );
+    let lows_flat = levels_are_similar(
+        low_points.first()?.price,
+        low_points.last()?.price,
+        tolerance,
+    );
+    let highs_falling = high_points[0].price > high_points[1].price
+        && high_points[1].price > high_points[2].price;
+    let lows_rising =
+        low_points[0].price < low_points[1].price && low_points[1].price < low_points[2].price;
+
+    let detected = match kind {
+        "ascending" => highs_flat && lows_rising,
+        "descending" => lows_flat && highs_falling,
+        "symmetrical" => highs_falling && lows_rising,
+        _ => false,
+    };
+    detected.then(|| Pattern {
+        name: match kind {
+            "ascending" => "ascending_triangle",
+            "descending" => "descending_triangle",
+            _ => "symmetrical_triangle",
+        }
+        .to_string(),
+        pattern_type: "chart_pattern".to_string(),
+        status: "forming".to_string(),
+        confidence: 0.7,
+    })
+}
+
+fn levels_are_similar(left: f64, right: f64, tolerance: f64) -> bool {
+    let reference = (left.abs() + right.abs()) / 2.0;
+    reference > 0.0 && (left - right).abs() / reference <= tolerance
 }
 
 fn divergence_analysis(
@@ -2838,6 +3097,34 @@ mod tests {
         assert_eq!(result.direction.as_deref(), Some("up"));
         assert_eq!(result.resistance_level, Some(10.0));
         assert!(result.volume_confirmation);
+    }
+
+    #[test]
+    fn candlestick_patterns_detect_bullish_engulfing() {
+        let candles = vec![
+            Candle {
+                timestamp: "0".into(),
+                open: 12.0,
+                high: 12.5,
+                low: 9.0,
+                close: 10.0,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+            Candle {
+                timestamp: "1".into(),
+                open: 9.5,
+                high: 13.0,
+                low: 9.0,
+                close: 12.5,
+                volume: 1.0,
+                metadata: CandleMetadata::default(),
+            },
+        ];
+
+        let patterns = candlestick_patterns(&candles);
+
+        assert!(patterns.iter().any(|pattern| pattern.name == "bullish_engulfing"));
     }
 
     #[test]
