@@ -305,9 +305,11 @@ impl TechnicalAnalysisService {
         for period in &mut config.indicators.moving_averages.sma {
             *period = (*period).min(available).max(1);
         }
+        config.indicators.moving_averages.sma.dedup();
         for period in &mut config.indicators.moving_averages.ema {
             *period = (*period).min(available).max(1);
         }
+        config.indicators.moving_averages.ema.dedup();
 
         config.indicators.momentum.rsi.period =
             config.indicators.momentum.rsi.period.min(available).max(1);
@@ -612,7 +614,7 @@ mod tests {
 
         assert_eq!(config.data_requirements.minimum_candles, 80);
         assert_eq!(config.data_requirements.recommended_candles, 80);
-        assert_eq!(config.indicators.moving_averages.sma, vec![20, 50, 80, 80]);
+        assert_eq!(config.indicators.moving_averages.sma, vec![20, 50, 80]);
         assert_eq!(config.indicators.moving_averages.ema, vec![9, 20, 50, 80]);
     }
 
