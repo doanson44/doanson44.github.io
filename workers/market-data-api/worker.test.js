@@ -151,6 +151,8 @@ test("Vietnam stock snapshot is normalized from CafeF", async () => {
     assert.equal(response.status, 200);
     const payload = await response.json();
     assert.equal(payload.meta.source, "CafeF");
+    assert.equal(payload.meta.priceUnit, "thousand VND");
+    assert.equal(payload.meta.volumeUnit, "shares");
     assert.equal(payload.data[0].symbol, "FPT");
     assert.equal(payload.data[0].price, 125.5);
   } finally {
@@ -193,6 +195,7 @@ test("Vietnam stock analysis returns daily candles and indicators", async () => 
     assert.equal(payload.meta.source, "CafeF");
     assert.equal(payload.meta.timeframe, "1d");
     assert.equal(payload.meta.timezone, "Asia/Ho_Chi_Minh");
+    assert.equal(payload.meta.priceUnit, "thousand VND");
     assert.equal(payload.candles.length, 40);
     assert.equal(payload.analysis.indicators.values.sma["20"], 129.5);
     assert.equal(payload.dataQuality.missingIntervalCheck, "not_applicable_for_exchange_calendar");
