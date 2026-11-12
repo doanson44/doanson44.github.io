@@ -515,7 +515,7 @@ fn TickerTableRow(ticker: TrackedFuturesTicker, state: SocketState) -> impl Into
                 </div>
             </td>
             <th class="px-3 py-2 text-left font-semibold text-[var(--text-primary)]" scope="row">
-                <span class="font-mono">{symbol.clone()}</span>
+                <a href=format!("#/coin/price?symbol={}", symbol) class="rounded-sm font-mono text-[var(--text-primary)] underline decoration-[var(--border-color)] underline-offset-4 transition hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]">{symbol.clone()}</a>
             </th>
             <td class="px-3 py-2 text-right">
                 <div class="flex min-w-28 items-center justify-end gap-2">
@@ -590,7 +590,9 @@ fn TickerMobileCard(ticker: TrackedFuturesTicker, state: SocketState) -> impl In
     view! {
         <article class=move || if is_pinned.get() { "rounded-lg border border-[var(--accent)]/60 bg-[var(--accent)]/5 p-3 shadow-sm" } else { "rounded-lg border border-[var(--border-color)] bg-[var(--surface)] p-3 shadow-sm" }>
             <div class="flex items-start gap-2">
-                <div class="min-w-0 flex-1"><h3 class="m-0 truncate font-mono text-base font-semibold text-[var(--text-primary)]">{symbol.clone()}</h3>
+                <div class="min-w-0 flex-1"><h3 class="m-0 truncate font-mono text-base font-semibold text-[var(--text-primary)]">
+                    <a href=format!("#/coin/price?symbol={}", symbol) class="rounded-sm text-[var(--text-primary)] underline decoration-[var(--border-color)] underline-offset-4 transition hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]">{symbol.clone()}</a>
+                </h3>
                     <div class="mt-1 flex items-center gap-2"><span class="font-mono font-medium text-[var(--text-primary)]">{format_number(ticker.ticker.last_price)}</span><span class=format!("font-medium {change_class}")>{format_percent(ticker.ticker.change_24h)}</span></div></div>
                 <div class="flex shrink-0 items-center gap-1">
                     <button type="button" class="min-h-11 min-w-11 rounded-md border border-[var(--accent)]/60 px-2 py-1 text-xl font-semibold leading-none text-[var(--accent)] hover:bg-[var(--surface-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
