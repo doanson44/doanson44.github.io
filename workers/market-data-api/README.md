@@ -1,8 +1,10 @@
 # doanson44 Market Data API
 
-A separate Cloudflare Worker that exposes normalized, read-only MEXC Futures market data for AI agents and external clients.
+A separate Cloudflare Worker implementation that is intended to expose normalized, read-only MEXC Futures and CafeF Vietnam stock data for AI agents and external clients.
 
-This Worker is intentionally separate from the GitHub Pages Leptos CSR application. GitHub Pages cannot host server-side API handlers.
+> **Deployment status: source only / not verified as deployed.** This repository contains the Worker implementation, but this document does not establish a live production hostname. The expected `workers.dev` hostname below is only a deployment guess until Wrangler confirms it. Do not call it a production API, publish the guessed hostname, or assume it is reachable.
+
+This Worker is separate from the GitHub Pages Leptos CSR application. The current browser application does **not** call this Worker: stock data uses the existing direct CafeF browser adapter, while Futures candle requests use the existing MEXC integration through the configured generic forward proxy. GitHub Pages cannot host server-side API handlers.
 
 ## Current scope
 
@@ -93,12 +95,12 @@ npx wrangler login
 npm run deploy
 ```
 
-3. Cloudflare will report the deployed `workers.dev` URL. If deployed to the same Cloudflare account currently hosting `doanson44-forward-proxy.work-sontd.workers.dev`, the expected URL is `https://doanson44-market-data-api.work-sontd.workers.dev`. Treat this as an expected hostname until the deployment command confirms it.
+3. Cloudflare will report the deployed `workers.dev` URL. Use only the exact URL printed by the successful deployment; do not assume that the forward proxy's account or subdomain determines this Worker's hostname.
 4. Smoke-test `/health`, `/openapi.json`, and each data endpoint.
 5. The OpenAPI endpoint derives its server URL from the incoming request origin.
 6. Update the market-data Agent Skill and AI Catalog with the verified URL only after deployment succeeds.
 
-No Cloudflare credentials or deployment secrets are stored in this repository. Deployment has not been performed by this source change.
+No Cloudflare credentials or deployment secrets are stored in this repository. Deployment has not been performed or verified by this source change. Until a deployment is confirmed and smoke-tested, the endpoints and OpenAPI document described above are local/source-level implementation details, not a live public API.
 
 ## CORS
 
