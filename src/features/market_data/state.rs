@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use crate::application::services::market::MarketService;
 use crate::application::services::proxy::ProxyService;
 use crate::application::services::technical_analysis::TechnicalAnalysisService;
-use crate::domain::market::{MarketPriceHistory, MarketStock};
+use crate::domain::market::MarketPriceHistory;
 use crate::domain::technical_analysis::AnalysisResult;
 use crate::infrastructure::browser;
 use crate::infrastructure::market::MarketApi;
