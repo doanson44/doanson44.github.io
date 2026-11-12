@@ -26,7 +26,7 @@ Implemented:
 
 Not published because the corresponding services do not exist:
 
-- An RFC 9727 API Catalog. The repository's Cloudflare forward proxy is a generic MEXC relay that permits multiple HTTP methods, including write methods. It is not a narrow, documented, safe-to-advertise public API contract and has no health endpoint or published OpenAPI contract. Do not advertise it until it is reviewed and split into a read-only public API with explicit operations, rate limits, and a health endpoint.
+- An RFC 9727 API Catalog. The configured Cloudflare forward proxy is a generic HTTP forwarder that accepts multiple HTTP methods, including write methods. It is not a narrow, documented, safe-to-advertise public API contract and has no health endpoint or published OpenAPI contract. The repository also contains a separate `workers/market-data-api/` implementation with an OpenAPI document, but its README records that deployment has not been performed or verified. The browser application does not currently call that Worker. Do not advertise either component as a live public market-data API until a read-only deployment is confirmed, reviewed, and equipped with explicit operations, rate limits, and a health endpoint.
 - OAuth/OIDC discovery, OAuth Protected Resource Metadata, and `/auth.md`: no authorization server, protected API, or agent-registration flow exists.
 - MCP Server Card: WebMCP is a browser-side integration, not a remotely hosted MCP server or transport endpoint.
 - DNS-AID records: no remotely callable MCP/A2A agent endpoint exists, and DNS records for `github.io` are controlled by GitHub.
