@@ -11,7 +11,8 @@ A **Rust-first, client-side multi-feature web platform** with developer tools, M
 - 📊 **Mermaid Diagrams** — Diagram rendering and PNG export
 - 🎮 **Games** — Browser-based experiments
 - 📄 **CV / Portfolio** — Public professional profile
-- 🔌 **Socket Playground** — External-backend realtime/WebSocket experiments
+- 🔌 **Socket Playground** — MEXC Futures realtime/WebSocket and trading experiments
+- 📈 **Market JSON Pages** — Symbol-based crypto and Vietnam stock price/history/technical-analysis JSON views
 - 🦀 **Rust-Powered** — Core logic written in Rust, compiled to WebAssembly
 - 🔒 **100% Client-Side** — Application execution stays in the browser
 - 🎨 **Dark/Light Theme** — Project-owned CSS variables with Tailwind utilities
