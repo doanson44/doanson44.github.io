@@ -18,9 +18,9 @@
     {
       "name": "market-data-playground",
       "type": "skill-md",
-      "description": "Explain the read-only market-data Socket playground on doanson44.github.io, including its public MEXC market-data sources and limitations. Use when users ask about the Socket page or its market data.",
+      "description": "Explain the implemented CafeF Vietnam stock and MEXC Futures market-data integrations, browser-side request paths, Rust analysis engine, and Socket trading boundaries.",
       "url": "/.well-known/agent-skills/market-data-playground/SKILL.md",
-      "digest": "sha256:51407fc98326709bbcd1f0df6289a477a9ff0076c599db9eae44dcdc6e45d825"
+      "digest": "sha256:22364172d7b1f014d06189a83bcf430709f3bdb29ec76cb8555549c4feef6f25"
     }
   ]
 }
