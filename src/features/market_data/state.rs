@@ -394,7 +394,7 @@ fn error_json(stage: &str, message: &str) -> String {
 
 fn pretty_json(value: &Value) -> String {
     serde_json::to_string_pretty(value)
-        .unwrap_or_else(|_| "{"status":"error","error":"JSON serialization failed"}".to_string())
+        .unwrap_or_else(|_| r#"{"status":"error","error":"JSON serialization failed"}"#.to_string())
 }
 
 #[cfg(test)]
