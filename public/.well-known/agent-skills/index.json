@@ -18,9 +18,9 @@
     {
       "name": "market-data-playground",
       "type": "skill-md",
-      "description": "Explain the implemented CafeF Vietnam stock and MEXC Futures market-data integrations, browser-side request paths, Rust analysis engine, and Socket trading boundaries.",
+      "description": "Explain the CafeF stock and MEXC Futures integrations, JSON price routes, Rust analysis output, data limitations, and Socket trading boundaries.",
       "url": "/.well-known/agent-skills/market-data-playground/SKILL.md",
-      "digest": "sha256:22364172d7b1f014d06189a83bcf430709f3bdb29ec76cb8555549c4feef6f25"
+      "digest": "sha256:d17ccf16fe27c391eac0237a2f08d50550133c23fd1b8a51ca13f18e398e1344"
     }
   ]
 }
