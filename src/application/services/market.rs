@@ -50,6 +50,16 @@ where
         );
     }
 
+    /// Fetches the raw daily history response for one symbol.
+    pub fn fetch_history_raw(
+        &self,
+        symbol: &str,
+        on_result: Rc<dyn Fn(Result<String, String>)>,
+    ) {
+        let symbol = symbol.trim().to_ascii_uppercase();
+        self.client.fetch_history(&symbol, on_result);
+    }
+
     pub fn fetch_url(&self, target_url: &str, on_result: Rc<dyn Fn(Result<String, String>)>) {
         self.client.fetch_url(target_url, on_result);
     }
