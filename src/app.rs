@@ -12,6 +12,7 @@ use crate::features::cv::page::CvPage;
 use crate::features::cv::review_page::CvReviewPage;
 use crate::features::games::page::GamesPage;
 use crate::features::home::page::HomePage;
+use crate::features::market_data::page::{CoinPricePage, StockPricePage};
 use crate::features::socket::page::SocketPage;
 use crate::features::tools::accounts::page::AccountManagerPage;
 use crate::features::tools::base64::page::Base64Page;
@@ -35,7 +36,7 @@ pub fn App() -> impl IntoView {
         <I18nContextProvider>
         <div class="app-container flex min-h-screen flex-col" id="app">
             {move || {
-                if is_hangman_route(&current_hash.get()) {
+                if is_hangman_route(&current_hash.get()) || is_json_data_route(&current_hash.get()) {
                     ().into_any()
                 } else {
                     view! { <Navbar /> }.into_any()
@@ -46,6 +47,8 @@ pub fn App() -> impl IntoView {
                     let route = current_hash.get();
                     if is_hangman_route(&route) {
                         "app-main app-main--hangman flex min-h-[100dvh] flex-1 flex-col overflow-hidden"
+                    } else if is_json_data_route(&route) {
+                        "app-main app-main--json-data min-h-screen flex-1"
                     } else if is_workspace_route(&route) {
                         "app-main app-main--workspace flex min-h-0 flex-1 flex-col overflow-hidden"
                     } else if route == "/socket" {
@@ -58,7 +61,7 @@ pub fn App() -> impl IntoView {
                 {move || render_page(current_hash.get())}
             </main>
             {move || {
-                if is_hangman_route(&current_hash.get()) {
+                if is_hangman_route(&current_hash.get()) || is_json_data_route(&current_hash.get()) {
                     ().into_any()
                 } else {
                     view! { <Footer /> }.into_any()
@@ -97,35 +100,52 @@ fn create_hash_signal() -> RwSignal<String> {
     hash
 }
 
+fn route_path(route: &str) -> &str {
+    route.split_once('?').map_or(route, |(path, _)| path)
+}
+
+fn query_param<'a>(route: &'a str, name: &str) -> Option<&'a str> {
+    let (_, query) = route.split_once('?')?;
+    query.split('&').find_map(|pair| {
+        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
+        (key == name).then_some(value)
+    })
+}
+
 fn is_hangman_route(route: &str) -> bool {
-    route == "/games/hangman"
+    route_path(route) == "/games/hangman"
+}
+
+fn is_json_data_route(route: &str) -> bool {
+    matches!(route_path(route), "/coin/price" | "/stock/price")
 }
 
 fn is_workspace_route(route: &str) -> bool {
-    route.starts_with("/tools/") && route != "/tools"
+    route_path(route).starts_with("/tools/") && route_path(route) != "/tools"
 }
 
 fn render_page(route: String) -> leptos::prelude::AnyView {
-    if let Some(slug) = route.strip_prefix("/tools/finance/") {
+    let path = route_path(&route);
+    if let Some(slug) = path.strip_prefix("/tools/finance/") {
         if let Some(tool) = FinanceTool::from_route(slug) {
             return view! { <FinancePage tool=tool /> }.into_any();
         }
     }
-    if let Some(slug) = route.strip_prefix("/tools/") {
+    if let Some(slug) = path.strip_prefix("/tools/") {
         if let Some(tool) = ToolId::from_route(slug) {
             return view! { <DeveloperToolPage tool=tool /> }.into_any();
         }
     }
-    if let Some(slug) = route.strip_prefix("/games/") {
+    if let Some(slug) = path.strip_prefix("/games/") {
         if let Some(game) = crate::features::games::page::GameKind::from_slug(slug) {
             return view! { <GamesPage game=Some(game) /> }.into_any();
         }
     }
-    if let Some(card_id) = route.strip_prefix("/cv/review/") {
+    if let Some(card_id) = path.strip_prefix("/cv/review/") {
         return view! { <CvReviewPage card_id=Some(card_id.to_string()) /> }.into_any();
     }
 
-    match route.as_str() {
+    match path {
         "/" => view! { <HomePage /> }.into_any(),
         "/tools" => view! { <ToolsPage /> }.into_any(),
         "/tools/markdown" => view! { <MarkdownPage /> }.into_any(),
@@ -136,6 +156,12 @@ fn render_page(route: String) -> leptos::prelude::AnyView {
         "/tools/time" => view! { <TimePage /> }.into_any(),
         "/tools/market" => view! { <MarketPage /> }.into_any(),
         "/tools/proxy" => view! { <ProxyPage /> }.into_any(),
+        "/coin/price" => view! {
+            <CoinPricePage symbol=query_param(&route, "symbol").unwrap_or_default().to_string() />
+        }.into_any(),
+        "/stock/price" => view! {
+            <StockPricePage symbol=query_param(&route, "symbol").unwrap_or_default().to_string() />
+        }.into_any(),
         "/games" => view! { <GamesPage game=None /> }.into_any(),
         "/cv" => view! { <CvPage /> }.into_any(),
         "/cv/review" => view! { <CvReviewPage card_id=None /> }.into_any(),
