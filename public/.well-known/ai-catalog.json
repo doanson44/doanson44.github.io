@@ -35,11 +35,12 @@
       "displayName": "Market Data Playground",
       "type": "text/markdown",
       "url": "https://doanson44.github.io/.well-known/agent-skills/market-data-playground/SKILL.md",
-      "description": "Documents the read-only MEXC market-data playground, its data sources, and its limitations.",
+      "description": "Documents the implemented CafeF Vietnam stock and MEXC Futures browser integrations, Rust technical-analysis engine, data limitations, and the separate Socket trading boundary. The optional Market Data Worker source is not a deployed public API.",
       "representativeQueries": [
-        "How does the Socket market-data page get its futures ticker data?",
-        "Can the market-data playground place exchange trades?",
-        "What should I check when the market-data feed disconnects?"
+        "How does the browser application retrieve Vietnam stock prices and history?",
+        "How does the Socket page retrieve MEXC Futures ticker and candle data?",
+        "Is the repository's Market Data Worker deployed as a public API?",
+        "Can the Socket page place exchange trades?"
       ]
     }
   ]
